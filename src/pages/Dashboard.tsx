@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
-  FileCheck, 
   Clock, 
   TrendingUp, 
   Play,
@@ -36,6 +35,20 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface EnrolledCourse {
+  id: string;
+  course_id: string;
+  progress: number;
+  completed_lessons: number;
+  course: {
+    id: string;
+    title: string;
+    title_ar: string;
+    lessons_count: number;
+    duration_hours: number;
+  };
+}
+
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
@@ -43,6 +56,7 @@ const Dashboard: React.FC = () => {
   const isArabic = language === 'ar';
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,26 +66,48 @@ const Dashboard: React.FC = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('full_name, phone, grade, avatar_url')
           .eq('user_id', user.id)
           .maybeSingle();
         
-        if (error) throw error;
-        setProfile(data);
+        if (profileError) throw profileError;
+        setProfile(profileData);
+
+        // Fetch enrolled courses with course details
+        const { data: enrollmentsData, error: enrollmentsError } = await supabase
+          .from('course_enrollments')
+          .select(`
+            id,
+            course_id,
+            progress,
+            completed_lessons,
+            course:courses (
+              id,
+              title,
+              title_ar,
+              lessons_count,
+              duration_hours
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (enrollmentsError) throw enrollmentsError;
+        setEnrolledCourses((enrollmentsData || []) as unknown as EnrolledCourse[]);
       } catch (err) {
-        console.error('Error fetching profile:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, [user]);
 
   if (authLoading || loading) {
@@ -85,13 +121,15 @@ const Dashboard: React.FC = () => {
   const studentName = profile?.full_name || user?.email?.split('@')[0] || 'طالب';
   const gradeInfo = profile?.grade ? GRADE_OPTIONS[profile.grade] : null;
 
-  // Placeholder stats - to be replaced with real data later
+  // Calculate real stats
+  const totalLessonsCompleted = enrolledCourses.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
+  const totalLessons = enrolledCourses.reduce((sum, e) => sum + (e.course?.lessons_count || 0), 0);
+  const lessonsRemaining = totalLessons - totalLessonsCompleted;
+
   const stats = {
-    lessonsCompleted: 0,
-    lessonsRemaining: 0,
-    examsTaken: 0,
-    examsPending: 0,
-    averageScore: 0,
+    lessonsCompleted: totalLessonsCompleted,
+    lessonsRemaining: lessonsRemaining,
+    coursesEnrolled: enrolledCourses.length,
   };
 
   return (
@@ -128,13 +166,11 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-4 mb-8">
             {[
               { icon: BookOpen, value: stats.lessonsCompleted, label: t('dashboard.lessonsCompleted'), color: 'text-primary bg-primary/10' },
               { icon: BookOpen, value: stats.lessonsRemaining, label: t('dashboard.lessonsRemaining'), color: 'text-accent bg-accent/10' },
-              { icon: FileCheck, value: stats.examsTaken, label: t('dashboard.examsTaken'), color: 'text-green-600 bg-green-100' },
-              { icon: FileCheck, value: stats.examsPending, label: t('dashboard.examsPending'), color: 'text-orange-600 bg-orange-100' },
-              { icon: Award, value: `${stats.averageScore}%`, label: isArabic ? 'المتوسط' : 'Average Score', color: 'text-purple-600 bg-purple-100' },
+              { icon: Award, value: stats.coursesEnrolled, label: isArabic ? 'الكورسات المشترك بها' : 'Courses Enrolled', color: 'text-green-600 bg-green-100' },
             ].map((stat, index) => (
               <div 
                 key={index}
@@ -155,7 +191,7 @@ const Dashboard: React.FC = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* No Courses Message */}
+              {/* Enrolled Courses */}
               <div className="bg-card rounded-2xl border border-border p-6 animate-fade-in-up animation-delay-200">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -164,21 +200,56 @@ const Dashboard: React.FC = () => {
                   </h2>
                 </div>
 
-                <div className="text-center py-8">
-                  <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {isArabic ? 'لم تشترك في أي كورس بعد' : 'No courses enrolled yet'}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {isArabic ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start learning'}
-                  </p>
-                  <Button asChild>
-                    <Link to="/courses">
-                      {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
-                      <ChevronRight className="w-4 h-4 mr-2" />
-                    </Link>
-                  </Button>
-                </div>
+                {enrolledCourses.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      {isArabic ? 'لم تشترك في أي كورس بعد' : 'No courses enrolled yet'}
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {isArabic ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start learning'}
+                    </p>
+                    <Button asChild>
+                      <Link to="/courses">
+                        {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
+                        <ChevronRight className="w-4 h-4 mr-2" />
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {enrolledCourses.map((enrollment) => {
+                      const course = enrollment.course;
+                      if (!course) return null;
+                      const progressPercent = course.lessons_count > 0 
+                        ? Math.round((enrollment.completed_lessons / course.lessons_count) * 100) 
+                        : 0;
+                      
+                      return (
+                        <div key={enrollment.id} className="p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-foreground">
+                              {isArabic ? course.title_ar : course.title}
+                            </h4>
+                            <Badge variant="secondary">
+                              {enrollment.completed_lessons}/{course.lessons_count} {isArabic ? 'درس' : 'lessons'}
+                            </Badge>
+                          </div>
+                          <Progress value={progressPercent} className="h-2 mb-2" />
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              {progressPercent}% {isArabic ? 'مكتمل' : 'complete'}
+                            </span>
+                            <Button variant="ghost" size="sm" className="gap-1">
+                              <Play className="w-3 h-3" />
+                              {isArabic ? 'متابعة' : 'Continue'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Recent Activity */}
