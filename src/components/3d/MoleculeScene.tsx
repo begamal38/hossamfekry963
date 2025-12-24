@@ -40,13 +40,13 @@ function Molecule() {
   });
 
   const atoms: AtomProps[] = [
-    { position: [0, 0, 0], color: '#1F4FD8', size: 0.5, speed: 0.5 },
-    { position: [1.2, 0.8, 0], color: '#6FA8FF', size: 0.35, speed: 0.7 },
-    { position: [-1.2, 0.8, 0], color: '#6FA8FF', size: 0.35, speed: 0.8 },
-    { position: [0, -1, 0.8], color: '#6FA8FF', size: 0.35, speed: 0.6 },
-    { position: [0, -1, -0.8], color: '#6FA8FF', size: 0.35, speed: 0.9 },
-    { position: [2, -0.5, 1], color: '#1F4FD8', size: 0.4, speed: 0.4 },
-    { position: [-2, -0.5, -1], color: '#1F4FD8', size: 0.4, speed: 0.5 },
+    { position: [0, 0, 0], color: '#3173b8', size: 0.5, speed: 0.5 },
+    { position: [1.2, 0.8, 0], color: '#5a9fd4', size: 0.35, speed: 0.7 },
+    { position: [-1.2, 0.8, 0], color: '#5a9fd4', size: 0.35, speed: 0.8 },
+    { position: [0, -1, 0.8], color: '#5a9fd4', size: 0.35, speed: 0.6 },
+    { position: [0, -1, -0.8], color: '#5a9fd4', size: 0.35, speed: 0.9 },
+    { position: [2, -0.5, 1], color: '#3173b8', size: 0.4, speed: 0.4 },
+    { position: [-2, -0.5, -1], color: '#3173b8', size: 0.4, speed: 0.5 },
   ];
 
   return (
@@ -68,7 +68,7 @@ export default function MoleculeScene() {
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
-        <pointLight position={[-10, -10, -5]} intensity={0.5} color="#6FA8FF" />
+        <pointLight position={[-10, -10, -5]} intensity={0.5} color="#5a9fd4" />
         
         <Molecule />
       </Canvas>
