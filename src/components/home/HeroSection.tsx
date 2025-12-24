@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import teacherImage from '@/assets/teacher.jpg';
 
 const MoleculeScene = lazy(() => import('@/components/3d/MoleculeScene'));
 
@@ -48,7 +49,7 @@ export const HeroSection: React.FC = () => {
                 </Link>
               </Button>
               <Button variant="heroOutline" size="xl" asChild>
-                <Link to="/signup">
+                <Link to="/auth">
                   <Play className="w-5 h-5" />
                   {t('hero.createAccount')}
                 </Link>
@@ -72,11 +73,28 @@ export const HeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* 3D Scene */}
+          {/* Teacher Image with 3D Scene */}
           <div className={`relative h-[400px] lg:h-[600px] ${isRTL ? 'lg:order-1' : ''}`}>
-            <Suspense fallback={<HeroFallback />}>
-              <MoleculeScene />
-            </Suspense>
+            {/* 3D Background */}
+            <div className="absolute inset-0 z-0">
+              <Suspense fallback={<HeroFallback />}>
+                <MoleculeScene />
+              </Suspense>
+            </div>
+            
+            {/* Teacher Image */}
+            <div className="relative z-10 flex items-center justify-center h-full">
+              <div className="relative">
+                {/* Glow effect behind image */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-accent/30 rounded-3xl blur-2xl scale-110" />
+                
+                <img 
+                  src={teacherImage} 
+                  alt="Hossam Fekry - Chemistry Teacher"
+                  className="relative rounded-2xl shadow-2xl max-h-[500px] w-auto object-cover border-4 border-background/50"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
