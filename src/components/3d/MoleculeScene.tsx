@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, forwardRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,7 +10,7 @@ interface AtomProps {
   speed?: number;
 }
 
-const Atom: React.FC<AtomProps> = ({ position, color, size = 0.3, speed = 1 }) => {
+const Atom = forwardRef<THREE.Mesh, AtomProps>(({ position, color, size = 0.3, speed = 1 }, ref) => {
   const meshRef = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
@@ -21,14 +21,17 @@ const Atom: React.FC<AtomProps> = ({ position, color, size = 0.3, speed = 1 }) =
 
   return (
     <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-      <Sphere ref={meshRef} args={[size, 32, 32]} position={position}>
+      <mesh ref={meshRef} position={position}>
+        <sphereGeometry args={[size, 32, 32]} />
         <meshStandardMaterial color={color} roughness={0.2} metalness={0.8} />
-      </Sphere>
+      </mesh>
     </Float>
   );
-};
+});
 
-const Molecule: React.FC = () => {
+Atom.displayName = 'Atom';
+
+const Molecule = forwardRef<THREE.Group>((_, ref) => {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
@@ -55,11 +58,13 @@ const Molecule: React.FC = () => {
       ))}
     </group>
   );
-};
+});
 
-const MoleculeScene: React.FC = () => {
+Molecule.displayName = 'Molecule';
+
+const MoleculeScene = forwardRef<HTMLDivElement>((_, ref) => {
   return (
-    <div className="absolute inset-0 rounded-3xl overflow-hidden">
+    <div ref={ref} className="absolute inset-0 rounded-3xl overflow-hidden">
       <Canvas
         camera={{ position: [0, 0, 6], fov: 50 }}
         style={{ background: 'transparent' }}
@@ -78,6 +83,8 @@ const MoleculeScene: React.FC = () => {
       </div>
     </div>
   );
-};
+});
+
+MoleculeScene.displayName = 'MoleculeScene';
 
 export default MoleculeScene;
