@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Globe } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Globe, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.jpg';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+  const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navLinks = [
     { href: '/', label: t('nav.home') },
@@ -22,6 +25,11 @@ export const Navbar: React.FC = () => {
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -66,12 +74,35 @@ export const Navbar: React.FC = () => {
               <Globe className="w-4 h-4" />
               {language === 'en' ? 'AR' : 'EN'}
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">{t('nav.login')}</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/signup">{t('nav.signUp')}</Link>
-            </Button>
+            
+            {user ? (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard" className="gap-2">
+                    <User className="w-4 h-4" />
+                    {t('nav.dashboard')}
+                  </Link>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="gap-2 text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('nav.logout')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/auth">{t('nav.login')}</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/auth">{t('nav.signUp')}</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -113,16 +144,32 @@ export const Navbar: React.FC = () => {
                 </Link>
               ))}
               <div className="flex gap-2 mt-4 px-4">
-                <Button variant="outline" className="flex-1" asChild>
-                  <Link to="/login" onClick={() => setIsOpen(false)}>
-                    {t('nav.login')}
-                  </Link>
-                </Button>
-                <Button className="flex-1" asChild>
-                  <Link to="/signup" onClick={() => setIsOpen(false)}>
-                    {t('nav.signUp')}
-                  </Link>
-                </Button>
+                {user ? (
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      handleSignOut();
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    {t('nav.logout')}
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" className="flex-1" asChild>
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
+                        {t('nav.login')}
+                      </Link>
+                    </Button>
+                    <Button className="flex-1" asChild>
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
+                        {t('nav.signUp')}
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
