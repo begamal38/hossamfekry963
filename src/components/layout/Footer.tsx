@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import logo from '@/assets/logo.jpg';
 
 export const Footer: React.FC = () => {
   const { t } = useLanguage();
@@ -13,11 +14,12 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-md">
-                <span className="text-primary-foreground font-bold text-lg">HF</span>
-              </div>
-              <span className="font-bold text-xl text-foreground">Hossam Fekry</span>
+            <div className="mb-4">
+              <img 
+                src={logo} 
+                alt="Hossam Fekry" 
+                className="h-12 w-auto object-contain"
+              />
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Your complete platform to truly understand Chemistry. Built for Thanaweya Amma students.
