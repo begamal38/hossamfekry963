@@ -92,6 +92,7 @@ export const HeroSection: React.FC = () => {
                   src={teacherImage} 
                   alt="Hossam Fekry - Chemistry Teacher"
                   className="relative rounded-2xl shadow-2xl max-h-[500px] w-auto object-cover border-4 border-background/50"
+                  fetchPriority="high"
                 />
               </div>
             </div>
