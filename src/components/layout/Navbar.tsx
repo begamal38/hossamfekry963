@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
     { href: '/', label: t('nav.home') },
     { href: '/free-lessons', label: t('nav.freeLessons') },
     { href: '/courses', label: t('nav.courses') },
-    { href: '/dashboard', label: t('nav.dashboard') },
+    ...(user ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
