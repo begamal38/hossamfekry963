@@ -4,10 +4,11 @@ import { Menu, X, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import logo from '@/assets/logo.jpg';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { language, setLanguage, t, isRTL } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
 
   const navLinks = [
@@ -28,13 +29,12 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-md">
-              <span className="text-primary-foreground font-bold text-lg">HF</span>
-            </div>
-            <span className="font-bold text-xl text-foreground hidden sm:block">
-              Hossam Fekry
-            </span>
+          <Link to="/" className="flex items-center">
+            <img 
+              src={logo} 
+              alt="Hossam Fekry" 
+              className="h-12 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
