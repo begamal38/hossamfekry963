@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,13 @@ const HeroFallback: React.FC = () => (
 
 export const HeroSection: React.FC = () => {
   const { t, isRTL } = useLanguage();
+  const [showMolecule, setShowMolecule] = useState(false);
+
+  // Defer 3D scene loading to avoid blocking critical rendering path
+  useEffect(() => {
+    const timer = setTimeout(() => setShowMolecule(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="relative min-h-screen pt-20 overflow-hidden bg-gradient-hero">
@@ -75,11 +82,15 @@ export const HeroSection: React.FC = () => {
 
           {/* Teacher Image with 3D Scene */}
           <div className={`relative h-[400px] lg:h-[600px] ${isRTL ? 'lg:order-1' : ''}`}>
-            {/* 3D Background */}
+            {/* 3D Background - deferred loading */}
             <div className="absolute inset-0 z-0">
-              <Suspense fallback={<HeroFallback />}>
-                <MoleculeScene />
-              </Suspense>
+              {showMolecule ? (
+                <Suspense fallback={<HeroFallback />}>
+                  <MoleculeScene />
+                </Suspense>
+              ) : (
+                <HeroFallback />
+              )}
             </div>
             
             {/* Teacher Image */}
