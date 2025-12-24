@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_enrollments: {
+        Row: {
+          completed_lessons: number | null
+          course_id: string
+          enrolled_at: string
+          id: string
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_lessons?: number | null
+          course_id: string
+          enrolled_at?: string
+          id?: string
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_lessons?: number | null
+          course_id?: string
+          enrolled_at?: string
+          id?: string
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          duration_hours: number | null
+          grade: string
+          id: string
+          is_free: boolean | null
+          lessons_count: number | null
+          price: number | null
+          thumbnail_url: string | null
+          title: string
+          title_ar: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          duration_hours?: number | null
+          grade: string
+          id?: string
+          is_free?: boolean | null
+          lessons_count?: number | null
+          price?: number | null
+          thumbnail_url?: string | null
+          title: string
+          title_ar: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          duration_hours?: number | null
+          grade?: string
+          id?: string
+          is_free?: boolean | null
+          lessons_count?: number | null
+          price?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
