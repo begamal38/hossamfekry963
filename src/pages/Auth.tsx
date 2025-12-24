@@ -17,6 +17,13 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters').max(100);
 const phoneSchema = z.string().regex(/^(\+?20)?0?1[0125][0-9]{8}$/, 'رقم الموبايل غير صحيح');
 
+const GRADE_OPTIONS = [
+  { value: 'second_arabic', labelAr: 'ثانية ثانوي عربي', labelEn: '2nd Year - Arabic' },
+  { value: 'second_languages', labelAr: 'ثانية ثانوي لغات', labelEn: '2nd Year - Languages' },
+  { value: 'third_arabic', labelAr: 'ثالثة ثانوي عربي', labelEn: '3rd Year - Arabic' },
+  { value: 'third_languages', labelAr: 'ثالثة ثانوي لغات', labelEn: '3rd Year - Languages' },
+];
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -26,12 +33,13 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [grade, setGrade] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; grade?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { t, isRTL } = useLanguage();
@@ -46,7 +54,7 @@ const Auth = () => {
   }, [user, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string; phone?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; phone?: string; grade?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -69,6 +77,10 @@ const Auth = () => {
         if (!phoneResult.success) {
           newErrors.phone = phoneResult.error.errors[0].message;
         }
+      }
+
+      if (!grade) {
+        newErrors.grade = 'يرجى اختيار المرحلة الدراسية';
       }
     }
     
@@ -211,7 +223,7 @@ const Auth = () => {
           navigate('/dashboard');
         }
       } else {
-        const { error } = await signUp(email, password, fullName, phone);
+        const { error } = await signUp(email, password, fullName, phone, grade);
         if (error) {
           if (error.message.includes('already registered')) {
             toast({
@@ -392,6 +404,29 @@ const Auth = () => {
                     </Button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Grade Selection - Only for Signup */}
+            {!isLogin && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
+                <select
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
+                  className={cn(
+                    "w-full h-10 px-3 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring",
+                    errors.grade ? "border-destructive" : "border-input"
+                  )}
+                >
+                  <option value="">اختر المرحلة الدراسية</option>
+                  {GRADE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.labelAr}
+                    </option>
+                  ))}
+                </select>
+                {errors.grade && <p className="text-sm text-destructive">{errors.grade}</p>}
               </div>
             )}
 

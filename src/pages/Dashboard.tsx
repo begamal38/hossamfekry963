@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   FileCheck, 
@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Calendar,
   Award,
-  Target
+  Target,
+  Settings
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -17,55 +18,81 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-// Mock data for student dashboard
-const mockStudentData = {
-  name: 'Ahmed',
-  nameAr: 'أحمد',
-  enrolledCourses: [
-    {
-      id: '1',
-      title: 'Organic Chemistry Fundamentals',
-      titleAr: 'أساسيات الكيمياء العضوية',
-      progress: 75,
-      lessonsCompleted: 18,
-      totalLessons: 24,
-      nextLesson: 'Alkenes and Alkynes',
-      nextLessonAr: 'الألكينات والألكاينات',
-    },
-    {
-      id: '2',
-      title: 'Electrochemistry Complete Course',
-      titleAr: 'دورة الكيمياء الكهربائية الكاملة',
-      progress: 40,
-      lessonsCompleted: 6,
-      totalLessons: 16,
-      nextLesson: 'Galvanic Cells',
-      nextLessonAr: 'الخلايا الجلفانية',
-    },
-  ],
-  stats: {
-    lessonsCompleted: 24,
-    lessonsRemaining: 16,
-    examsTaken: 5,
-    examsPending: 3,
-    averageScore: 85,
-  },
-  recentActivity: [
-    { type: 'lesson', title: 'Completed: Aromatic Compounds', titleAr: 'اكتمل: المركبات الأروماتية', time: '2 hours ago', timeAr: 'منذ ساعتين' },
-    { type: 'exam', title: 'Passed: Organic Chemistry Quiz 3', titleAr: 'اجتاز: اختبار الكيمياء العضوية 3', time: 'Yesterday', timeAr: 'أمس' },
-    { type: 'lesson', title: 'Completed: Functional Groups', titleAr: 'اكتمل: المجموعات الوظيفية', time: '2 days ago', timeAr: 'منذ يومين' },
-  ],
-  upcomingExams: [
-    { id: '1', title: 'Organic Chemistry Mid-term', titleAr: 'امتحان منتصف الكيمياء العضوية', date: 'Dec 28, 2024', dateAr: '28 ديسمبر 2024', duration: '60 min' },
-    { id: '2', title: 'Electrochemistry Quiz 2', titleAr: 'اختبار الكيمياء الكهربائية 2', date: 'Jan 5, 2025', dateAr: '5 يناير 2025', duration: '30 min' },
-  ],
+const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
+  'second_arabic': { ar: 'ثانية ثانوي عربي', en: '2nd Year - Arabic' },
+  'second_languages': { ar: 'ثانية ثانوي لغات', en: '2nd Year - Languages' },
+  'third_arabic': { ar: 'ثالثة ثانوي عربي', en: '3rd Year - Arabic' },
+  'third_languages': { ar: 'ثالثة ثانوي لغات', en: '3rd Year - Languages' },
 };
+
+interface Profile {
+  full_name: string | null;
+  phone: string | null;
+  grade: string | null;
+  avatar_url: string | null;
+}
 
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const isArabic = language === 'ar';
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, phone, grade, avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        setProfile(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const studentName = profile?.full_name || user?.email?.split('@')[0] || 'طالب';
+  const gradeInfo = profile?.grade ? GRADE_OPTIONS[profile.grade] : null;
+
+  // Placeholder stats - to be replaced with real data later
+  const stats = {
+    lessonsCompleted: 0,
+    lessonsRemaining: 0,
+    examsTaken: 0,
+    examsPending: 0,
+    averageScore: 0,
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -75,22 +102,39 @@ const Dashboard: React.FC = () => {
         <div className="container mx-auto px-4">
           {/* Welcome Header */}
           <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              {t('dashboard.welcome')}, {isArabic ? mockStudentData.nameAr : mockStudentData.name}! 👋
-            </h1>
-            <p className="text-muted-foreground">
-              {isArabic ? 'استمر في رحلة تعلمك' : 'Continue your learning journey'}
-            </p>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                  {t('dashboard.welcome')}, {studentName}! 👋
+                </h1>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="text-muted-foreground">
+                    {isArabic ? 'استمر في رحلة تعلمك' : 'Continue your learning journey'}
+                  </p>
+                  {gradeInfo && (
+                    <Badge variant="secondary" className="text-sm">
+                      {isArabic ? gradeInfo.ar : gradeInfo.en}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Button variant="outline" asChild className="gap-2">
+                <Link to="/settings">
+                  <Settings className="w-4 h-4" />
+                  {isArabic ? 'إعدادات الحساب' : 'Account Settings'}
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             {[
-              { icon: BookOpen, value: mockStudentData.stats.lessonsCompleted, label: t('dashboard.lessonsCompleted'), color: 'text-primary bg-primary/10' },
-              { icon: BookOpen, value: mockStudentData.stats.lessonsRemaining, label: t('dashboard.lessonsRemaining'), color: 'text-accent bg-accent/10' },
-              { icon: FileCheck, value: mockStudentData.stats.examsTaken, label: t('dashboard.examsTaken'), color: 'text-green-600 bg-green-100' },
-              { icon: FileCheck, value: mockStudentData.stats.examsPending, label: t('dashboard.examsPending'), color: 'text-orange-600 bg-orange-100' },
-              { icon: Award, value: `${mockStudentData.stats.averageScore}%`, label: isArabic ? 'المتوسط' : 'Average Score', color: 'text-purple-600 bg-purple-100' },
+              { icon: BookOpen, value: stats.lessonsCompleted, label: t('dashboard.lessonsCompleted'), color: 'text-primary bg-primary/10' },
+              { icon: BookOpen, value: stats.lessonsRemaining, label: t('dashboard.lessonsRemaining'), color: 'text-accent bg-accent/10' },
+              { icon: FileCheck, value: stats.examsTaken, label: t('dashboard.examsTaken'), color: 'text-green-600 bg-green-100' },
+              { icon: FileCheck, value: stats.examsPending, label: t('dashboard.examsPending'), color: 'text-orange-600 bg-orange-100' },
+              { icon: Award, value: `${stats.averageScore}%`, label: isArabic ? 'المتوسط' : 'Average Score', color: 'text-purple-600 bg-purple-100' },
             ].map((stat, index) => (
               <div 
                 key={index}
@@ -111,7 +155,7 @@ const Dashboard: React.FC = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Continue Learning */}
+              {/* No Courses Message */}
               <div className="bg-card rounded-2xl border border-border p-6 animate-fade-in-up animation-delay-200">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -120,37 +164,20 @@ const Dashboard: React.FC = () => {
                   </h2>
                 </div>
 
-                <div className="space-y-4">
-                  {mockStudentData.enrolledCourses.map((course) => (
-                    <div 
-                      key={course.id}
-                      className="group p-4 rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-semibold text-foreground mb-1">
-                            {isArabic ? course.titleAr : course.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {isArabic ? 'الدرس التالي:' : 'Next:'} {isArabic ? course.nextLessonAr : course.nextLesson}
-                          </p>
-                        </div>
-                        <Button size="sm" variant="outline" className="gap-2">
-                          <Play className="w-4 h-4" />
-                          {isArabic ? 'استمر' : 'Continue'}
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <Progress value={course.progress} className="flex-1 h-2" />
-                        <span className="text-sm font-medium text-primary">{course.progress}%</span>
-                      </div>
-                      
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {course.lessonsCompleted} / {course.totalLessons} {isArabic ? 'دروس' : 'lessons'}
-                      </p>
-                    </div>
-                  ))}
+                <div className="text-center py-8">
+                  <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {isArabic ? 'لم تشترك في أي كورس بعد' : 'No courses enrolled yet'}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {isArabic ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start learning'}
+                  </p>
+                  <Button asChild>
+                    <Link to="/courses">
+                      {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
+                      <ChevronRight className="w-4 h-4 mr-2" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
 
@@ -161,71 +188,52 @@ const Dashboard: React.FC = () => {
                   {t('dashboard.recentActivity')}
                 </h2>
 
-                <div className="space-y-4">
-                  {mockStudentData.recentActivity.map((activity, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center",
-                        activity.type === 'lesson' ? 'bg-primary/10' : 'bg-green-100'
-                      )}>
-                        {activity.type === 'lesson' 
-                          ? <BookOpen className="w-5 h-5 text-primary" />
-                          : <FileCheck className="w-5 h-5 text-green-600" />
-                        }
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground text-sm">
-                          {isArabic ? activity.titleAr : activity.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {isArabic ? activity.timeAr : activity.time}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  ))}
+                <div className="text-center py-8 text-muted-foreground">
+                  {isArabic ? 'لا يوجد نشاط حديث' : 'No recent activity'}
                 </div>
               </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Upcoming Exams */}
+              {/* Profile Info Card */}
               <div className="bg-card rounded-2xl border border-border p-6 animate-fade-in-up animation-delay-400">
                 <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
-                  {t('dashboard.upcomingExams')}
+                  {isArabic ? 'معلومات الحساب' : 'Account Info'}
                 </h2>
 
                 <div className="space-y-4">
-                  {mockStudentData.upcomingExams.map((exam) => (
-                    <div 
-                      key={exam.id}
-                      className="p-4 rounded-xl border border-border hover:border-primary/30 transition-colors"
-                    >
-                      <h3 className="font-semibold text-foreground text-sm mb-2">
-                        {isArabic ? exam.titleAr : exam.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                        <Calendar className="w-3 h-3" />
-                        {isArabic ? exam.dateAr : exam.date}
-                        <span className="mx-1">•</span>
-                        <Clock className="w-3 h-3" />
-                        {exam.duration}
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {isArabic ? 'قادم' : 'Upcoming'}
-                      </Badge>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-bold">
+                        {studentName.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                  ))}
+                    <div>
+                      <p className="font-medium text-foreground">{studentName}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    </div>
+                  </div>
+
+                  {profile?.phone && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'رقم الواتساب' : 'WhatsApp'}</p>
+                      <p className="font-medium text-foreground">{profile.phone}</p>
+                    </div>
+                  )}
+
+                  {gradeInfo && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'المرحلة الدراسية' : 'Grade'}</p>
+                      <p className="font-medium text-foreground">{isArabic ? gradeInfo.ar : gradeInfo.en}</p>
+                    </div>
+                  )}
                 </div>
 
                 <Button variant="outline" className="w-full mt-4" asChild>
-                  <Link to="/exams">
-                    {isArabic ? 'عرض كل الامتحانات' : 'View All Exams'}
+                  <Link to="/settings">
+                    {isArabic ? 'تعديل الحساب' : 'Edit Profile'}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>

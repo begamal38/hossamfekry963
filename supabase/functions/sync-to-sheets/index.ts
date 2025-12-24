@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const GRADE_LABELS: Record<string, string> = {
+  'second_arabic': 'ثانية ثانوي عربي',
+  'second_languages': 'ثانية ثانوي لغات',
+  'third_arabic': 'ثالثة ثانوي عربي',
+  'third_languages': 'ثالثة ثانوي لغات',
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,14 +35,17 @@ serve(async (req) => {
 
     // For automatic sync on signup
     if (action === "add_student" && studentData) {
-      const { full_name, email, phone, created_at } = studentData;
+      const { full_name, email, phone, grade, created_at } = studentData;
+      
+      const gradeLabel = grade ? GRADE_LABELS[grade] || grade : "";
       
       // Append row to Google Sheet
-      const range = "Sheet1!A:E";
+      const range = "Sheet1!A:F";
       const values = [[
         full_name || "",
         email || "",
         phone || "",
+        gradeLabel,
         created_at || new Date().toISOString(),
         "Active"
       ]];
@@ -72,18 +82,19 @@ serve(async (req) => {
 
       // Clear existing data and add all profiles
       const values = [
-        ["Full Name", "Email", "Phone", "Created At", "Phone Verified"],
+        ["Full Name", "Email", "Phone", "Grade", "Created At", "Phone Verified"],
         ...profiles.map(p => [
           p.full_name || "",
           "", // Email is in auth.users, would need to join
           p.phone || "",
+          p.grade ? GRADE_LABELS[p.grade] || p.grade : "",
           p.created_at,
           p.phone_verified ? "Yes" : "No"
         ])
       ];
 
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A:E?valueInputOption=USER_ENTERED&key=${googleSheetsApiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A:F?valueInputOption=USER_ENTERED&key=${googleSheetsApiKey}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
