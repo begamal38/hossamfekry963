@@ -97,7 +97,7 @@ const Courses: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleEnroll = async (courseId: string, isFree: boolean) => {
+  const handleEnroll = async (courseId: string, isFree: boolean, price: number) => {
     if (!user) {
       toast({
         title: isArabic ? 'يرجى تسجيل الدخول' : 'Please login',
@@ -108,6 +108,13 @@ const Courses: React.FC = () => {
       return;
     }
 
+    // If paid course, redirect to payment page
+    if (!isFree && price > 0) {
+      navigate(`/payment/${courseId}`);
+      return;
+    }
+
+    // Free course - enroll directly
     setEnrollingId(courseId);
     try {
       const { error } = await supabase
@@ -307,7 +314,7 @@ interface CourseCardProps {
   isArabic: boolean;
   isEnrolled: boolean;
   enrollingId: string | null;
-  onEnroll: (courseId: string, isFree: boolean) => void;
+  onEnroll: (courseId: string, isFree: boolean, price: number) => void;
   index: number;
   t: (key: string) => string;
 }
@@ -393,7 +400,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <Button 
             variant={course.is_free ? 'default' : 'outline'} 
             className="w-full"
-            onClick={() => onEnroll(course.id, course.is_free)}
+            onClick={() => onEnroll(course.id, course.is_free, course.price)}
             disabled={enrollingId === course.id}
           >
             {enrollingId === course.id ? (

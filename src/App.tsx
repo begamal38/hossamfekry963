@@ -11,6 +11,7 @@ import Courses from "./pages/Courses";
 import FreeLessons from "./pages/FreeLessons";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/courses" element={<Courses />} />
               <Route path="/free-lessons" element={<FreeLessons />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/payment/:courseId" element={<Payment />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
