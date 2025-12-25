@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
                 </h1>
                 <div className="flex items-center gap-3 flex-wrap">
                   <p className="text-muted-foreground">
-                    {isArabic ? 'استمر في رحلة تعلمك' : 'Continue your learning journey'}
+                    {isArabic ? 'لوحة تحكم الطالب' : 'Student Dashboard'}
                   </p>
                   {gradeInfo && (
                     <Badge variant="secondary" className="text-sm">
