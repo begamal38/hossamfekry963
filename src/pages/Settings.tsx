@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Camera, Save, ArrowRight } from 'lucide-react';
+import { User, Phone, Camera, Save, Lock, Eye, EyeOff } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -26,10 +26,17 @@ const Settings: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [grade, setGrade] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  
+  // Password change states
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -95,6 +102,60 @@ const Settings: React.FC = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'خطأ',
+        description: 'يرجى إدخال كلمة المرور الجديدة وتأكيدها',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'خطأ',
+        description: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'خطأ',
+        description: 'كلمة المرور الجديدة وتأكيدها غير متطابقتين',
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'تم التغيير',
+        description: 'تم تغيير كلمة المرور بنجاح',
+      });
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Error changing password:', err);
+      toast({
+        variant: 'destructive',
+        title: 'خطأ',
+        description: err.message || 'فشل في تغيير كلمة المرور',
+      });
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -215,6 +276,81 @@ const Settings: React.FC = () => {
                   <>
                     <Save className="w-5 h-5" />
                     حفظ التغييرات
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Password Change Section */}
+          <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-200">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              تغيير كلمة المرور
+            </h2>
+
+            <div className="space-y-6">
+              {/* New Password */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">كلمة المرور الجديدة</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="أدخل كلمة المرور الجديدة"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">تأكيد كلمة المرور</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="أعد إدخال كلمة المرور الجديدة"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Change Password Button */}
+              <Button
+                onClick={handleChangePassword}
+                disabled={savingPassword}
+                variant="outline"
+                className="w-full gap-2"
+                size="lg"
+              >
+                {savingPassword ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    جاري التغيير...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    تغيير كلمة المرور
                   </>
                 )}
               </Button>
