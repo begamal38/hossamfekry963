@@ -15,11 +15,16 @@ interface Stats {
   activeEnrollments: number;
 }
 
+interface Profile {
+  full_name: string | null;
+}
+
 export default function AssistantDashboard() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { isRTL } = useLanguage();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<Stats>({
     totalStudents: 0,
     totalEnrollments: 0,
@@ -45,6 +50,15 @@ export default function AssistantDashboard() {
       if (!user || !canAccessDashboard()) return;
 
       try {
+        // Fetch profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        setProfile(profileData);
+
         // Fetch total students
         const { count: studentsCount } = await supabase
           .from('profiles')
@@ -116,6 +130,9 @@ export default function AssistantDashboard() {
     },
   ];
 
+  const fullName = profile?.full_name || user?.email?.split('@')[0] || '';
+  const firstName = fullName.split(' ')[0];
+
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
@@ -123,10 +140,10 @@ export default function AssistantDashboard() {
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
-            {isRTL ? 'لوحة تحكم المدرس المساعد' : 'Assistant Teacher Dashboard'}
+            {isRTL ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isRTL ? 'مرحباً بك في لوحة التحكم' : 'Welcome to your dashboard'}
+            {isRTL ? 'لوحة تحكم المدرس المساعد' : 'Assistant Teacher Dashboard'}
           </p>
         </div>
 
