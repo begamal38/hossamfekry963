@@ -15,6 +15,7 @@ import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 import AssistantDashboard from "./pages/assistant/AssistantDashboard";
 import Students from "./pages/assistant/Students";
+import StudentDetails from "./pages/assistant/StudentDetails";
 import Enrollments from "./pages/assistant/Enrollments";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               {/* Assistant Teacher Routes */}
               <Route path="/assistant" element={<AssistantDashboard />} />
               <Route path="/assistant/students" element={<Students />} />
+              <Route path="/assistant/students/:userId" element={<StudentDetails />} />
               <Route path="/assistant/enrollments" element={<Enrollments />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

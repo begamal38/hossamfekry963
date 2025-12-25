@@ -172,11 +172,18 @@ export default function Students() {
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
                       {isRTL ? 'تاريخ التسجيل' : 'Registered'}
                     </th>
+                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
+                      {isRTL ? 'الإجراءات' : 'Actions'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-muted/30 transition-colors">
+                    <tr 
+                      key={student.id} 
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/assistant/students/${student.user_id}`)}
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -203,6 +210,11 @@ export default function Students() {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {new Date(student.created_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Button variant="outline" size="sm">
+                          {isRTL ? 'عرض التفاصيل' : 'View Details'}
+                        </Button>
                       </td>
                     </tr>
                   ))}
