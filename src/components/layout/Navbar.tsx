@@ -20,7 +20,7 @@ export const Navbar: React.FC = () => {
     { href: '/', label: t('nav.home') },
     { href: '/free-lessons', label: t('nav.freeLessons') },
     { href: '/courses', label: t('nav.courses') },
-    ...(user ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
+    ...(user && !canAccessDashboard() ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
     ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'لوحة التحكم' : 'Control Panel' }] : []),
   ];
 
