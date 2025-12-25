@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -42,16 +43,21 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; grade?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in - based on role
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && !roleLoading) {
+      if (canAccessDashboard()) {
+        navigate('/assistant');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, roleLoading, canAccessDashboard, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; grade?: string } = {};
@@ -220,7 +226,7 @@ const Auth = () => {
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
           });
-          navigate('/dashboard');
+          // Redirect will happen automatically via useEffect
         }
       } else {
         const { error } = await signUp(email, password, fullName, phone, grade);
@@ -243,7 +249,7 @@ const Auth = () => {
             title: 'Account created!',
             description: 'Welcome to Hossam Fekry Chemistry Platform.',
           });
-          navigate('/dashboard');
+          // Redirect will happen automatically via useEffect (new users go to student dashboard)
         }
       }
     } catch (err) {

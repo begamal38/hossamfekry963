@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,7 @@ interface EnrolledCourse {
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
+  const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const isArabic = language === 'ar';
 
@@ -59,11 +61,19 @@ const Dashboard: React.FC = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Redirect assistant teachers and admins to their dashboard
+  useEffect(() => {
+    if (!roleLoading && canAccessDashboard()) {
+      navigate('/assistant');
+    }
+  }, [roleLoading, canAccessDashboard, navigate]);
 
   useEffect(() => {
     const fetchData = async () => {
