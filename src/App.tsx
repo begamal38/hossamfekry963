@@ -13,6 +13,8 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
+import Campaigns from "./pages/Campaigns";
+import About from "./pages/About";
 import AssistantDashboard from "./pages/assistant/AssistantDashboard";
 import Students from "./pages/assistant/Students";
 import StudentDetails from "./pages/assistant/StudentDetails";
@@ -37,6 +39,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/free-lessons" element={<FreeLessons />} />
+              <Route path="/campaigns" element={<Campaigns />} />
+              <Route path="/about" element={<About />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/payment/:courseId" element={<Payment />} />
               {/* Assistant Teacher Routes */}

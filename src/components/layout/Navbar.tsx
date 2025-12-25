@@ -20,6 +20,8 @@ export const Navbar: React.FC = () => {
     { href: '/', label: t('nav.home') },
     { href: '/free-lessons', label: t('nav.freeLessons') },
     { href: '/courses', label: t('nav.courses') },
+    { href: '/campaigns', label: language === 'ar' ? 'حملاتنا الإعلانية' : 'Campaigns' },
+    { href: '/about', label: language === 'ar' ? 'عن حسام فكري' : 'About' },
     ...(user && !canAccessDashboard() ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
     ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'لوحة التحكم' : 'Control Panel' }] : []),
   ];
