@@ -56,7 +56,7 @@ export const HeroSection: React.FC = () => {
                 </Link>
               </Button>
               <Button variant="heroOutline" size="xl" asChild>
-                <Link to="/auth">
+                <Link to="/auth?mode=signup">
                   <Play className="w-5 h-5" />
                   {t('hero.createAccount')}
                 </Link>
