@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Video, Award, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -158,17 +158,35 @@ export default function AssistantDashboard() {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             {isRTL ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
-          <div className="flex flex-wrap gap-4">
-            <Button asChild>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Button asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/students">
-                <Users className="h-4 w-4 me-2" />
-                {isRTL ? 'إدارة الطلاب' : 'Manage Students'}
+                <Users className="h-6 w-6" />
+                <span>{isRTL ? 'إدارة الطلاب' : 'Manage Students'}</span>
               </Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/enrollments">
-                <CreditCard className="h-4 w-4 me-2" />
-                {isRTL ? 'إدارة الاشتراكات' : 'Manage Enrollments'}
+                <CreditCard className="h-6 w-6" />
+                <span>{isRTL ? 'إدارة الاشتراكات' : 'Manage Enrollments'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
+              <Link to="/assistant/lessons">
+                <BookOpen className="h-6 w-6" />
+                <span>{isRTL ? 'إدارة الدروس' : 'Manage Lessons'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
+              <Link to="/assistant/attendance">
+                <ClipboardList className="h-6 w-6" />
+                <span>{isRTL ? 'تسجيل الحضور' : 'Record Attendance'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
+              <Link to="/assistant/grades">
+                <Award className="h-6 w-6" />
+                <span>{isRTL ? 'تسجيل الدرجات' : 'Record Grades'}</span>
               </Link>
             </Button>
           </div>

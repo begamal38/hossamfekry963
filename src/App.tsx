@@ -17,6 +17,9 @@ import AssistantDashboard from "./pages/assistant/AssistantDashboard";
 import Students from "./pages/assistant/Students";
 import StudentDetails from "./pages/assistant/StudentDetails";
 import Enrollments from "./pages/assistant/Enrollments";
+import ManageLessons from "./pages/assistant/ManageLessons";
+import RecordAttendance from "./pages/assistant/RecordAttendance";
+import RecordGrades from "./pages/assistant/RecordGrades";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +44,9 @@ const App = () => (
               <Route path="/assistant/students" element={<Students />} />
               <Route path="/assistant/students/:userId" element={<StudentDetails />} />
               <Route path="/assistant/enrollments" element={<Enrollments />} />
+              <Route path="/assistant/lessons" element={<ManageLessons />} />
+              <Route path="/assistant/attendance" element={<RecordAttendance />} />
+              <Route path="/assistant/grades" element={<RecordGrades />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
