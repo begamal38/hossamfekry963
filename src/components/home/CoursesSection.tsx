@@ -89,9 +89,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
           </Badge>
         )}
         
-        <button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+        <Link 
+          to="/courses" 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+        >
           <Play className="w-6 h-6 text-primary-foreground ml-1" />
-        </button>
+        </Link>
       </div>
 
       {/* Content */}

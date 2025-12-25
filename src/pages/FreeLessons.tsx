@@ -94,8 +94,10 @@ const FreeLessons: React.FC = () => {
                   </div>
                 </div>
 
-                <Button size="sm" variant="outline" className="shrink-0">
-                  {isArabic ? 'شاهد' : 'Watch'}
+                <Button size="sm" variant="outline" className="shrink-0" asChild>
+                  <Link to="/auth">
+                    {isArabic ? 'شاهد' : 'Watch'}
+                  </Link>
                 </Button>
               </div>
             ))}

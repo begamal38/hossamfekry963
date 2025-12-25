@@ -106,7 +106,15 @@ export const StudentCard: React.FC<StudentCardProps> = ({
       </div>
 
       {/* View Details Button */}
-      <Button variant="outline" className="w-full gap-2" size="sm">
+      <Button 
+        variant="outline" 
+        className="w-full gap-2" 
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.();
+        }}
+      >
         {isRTL ? 'عرض التفاصيل' : 'View Details'}
         <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
       </Button>
