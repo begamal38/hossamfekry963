@@ -246,7 +246,14 @@ export default function Students() {
                           {new Date(student.created_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
                         </td>
                         <td className="px-6 py-4">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/assistant/students/${student.user_id}`);
+                            }}
+                          >
                             {isRTL ? 'عرض التفاصيل' : 'View Details'}
                           </Button>
                         </td>
