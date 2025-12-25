@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Globe, LogOut, User } from 'lucide-react';
+import { Menu, X, Globe, LogOut, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.jpg';
 
@@ -11,6 +12,7 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { user, signOut } = useAuth();
+  const { canAccessDashboard } = useUserRole();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,6 +21,7 @@ export const Navbar: React.FC = () => {
     { href: '/free-lessons', label: t('nav.freeLessons') },
     { href: '/courses', label: t('nav.courses') },
     ...(user ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
+    ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'لوحة التحكم' : 'Control Panel' }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
