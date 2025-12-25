@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -9,6 +9,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { StudentFilters } from '@/components/assistant/StudentFilters';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 interface Profile {
   id: string;
@@ -19,6 +20,13 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   created_at: string;
+}
+
+interface EnrichedStudent extends Profile {
+  avgProgress: number;
+  avgExamScore: number;
+  totalExams: number;
+  enrollmentCount: number;
 }
 
 // Helper to get group label
@@ -46,8 +54,8 @@ export default function Students() {
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { isRTL } = useLanguage();
   const navigate = useNavigate();
-  const [students, setStudents] = useState<Profile[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Profile[]>([]);
+  const [students, setStudents] = useState<EnrichedStudent[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<EnrichedStudent[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filter states
@@ -74,14 +82,51 @@ export default function Students() {
       if (!user || !canAccessDashboard()) return;
 
       try {
-        const { data, error } = await supabase
+        // Fetch profiles
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, user_id, full_name, phone, grade, academic_year, language_track, created_at')
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        setStudents(data || []);
-        setFilteredStudents(data || []);
+        if (profilesError) throw profilesError;
+
+        // Fetch all enrollments for progress data
+        const { data: enrollmentsData } = await supabase
+          .from('course_enrollments')
+          .select('user_id, progress');
+
+        // Fetch all exam results
+        const { data: examResultsData } = await supabase
+          .from('exam_results')
+          .select('user_id, score, exams:exam_id(max_score)');
+
+        // Enrich students with progress and exam data
+        const enrichedStudents: EnrichedStudent[] = (profilesData || []).map(profile => {
+          const userEnrollments = (enrollmentsData || []).filter(e => e.user_id === profile.user_id);
+          const userExamResults = (examResultsData || []).filter(e => e.user_id === profile.user_id);
+          
+          const avgProgress = userEnrollments.length > 0
+            ? Math.round(userEnrollments.reduce((sum, e) => sum + (e.progress || 0), 0) / userEnrollments.length)
+            : 0;
+          
+          const avgExamScore = userExamResults.length > 0
+            ? Math.round(userExamResults.reduce((sum, e) => {
+                const maxScore = (e.exams as any)?.max_score || 100;
+                return sum + ((e.score / maxScore) * 100);
+              }, 0) / userExamResults.length)
+            : 0;
+
+          return {
+            ...profile,
+            avgProgress,
+            avgExamScore,
+            totalExams: userExamResults.length,
+            enrollmentCount: userEnrollments.length,
+          };
+        });
+
+        setStudents(enrichedStudents);
+        setFilteredStudents(enrichedStudents);
       } catch (error) {
         console.error('Error fetching students:', error);
       } finally {
@@ -116,8 +161,31 @@ export default function Students() {
       filtered = filtered.filter((s) => s.language_track === languageTrackFilter);
     }
 
-    // Progress and exam filters would need additional data from enrollments/results
-    // For now, they're placeholders
+    // Progress filter
+    if (progressFilter !== 'all') {
+      filtered = filtered.filter((s) => {
+        switch (progressFilter) {
+          case 'high': return s.avgProgress >= 70;
+          case 'medium': return s.avgProgress >= 30 && s.avgProgress < 70;
+          case 'low': return s.avgProgress < 30;
+          default: return true;
+        }
+      });
+    }
+
+    // Exam filter
+    if (examFilter !== 'all') {
+      filtered = filtered.filter((s) => {
+        switch (examFilter) {
+          case 'excellent': return s.avgExamScore >= 85;
+          case 'good': return s.avgExamScore >= 70 && s.avgExamScore < 85;
+          case 'average': return s.avgExamScore >= 50 && s.avgExamScore < 70;
+          case 'weak': return s.avgExamScore < 50 && s.totalExams > 0;
+          case 'no_exams': return s.totalExams === 0;
+          default: return true;
+        }
+      });
+    }
 
     setFilteredStudents(filtered);
   }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, students]);
@@ -198,8 +266,11 @@ export default function Students() {
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
                       {isRTL ? 'المجموعة' : 'Group'}
                     </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'تاريخ التسجيل' : 'Registered'}
+                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground hidden md:table-cell">
+                      {isRTL ? 'التقدم' : 'Progress'}
+                    </th>
+                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground hidden lg:table-cell">
+                      {isRTL ? 'الامتحانات' : 'Exams'}
                     </th>
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
                       {isRTL ? 'الإجراءات' : 'Actions'}
@@ -209,6 +280,13 @@ export default function Students() {
                 <tbody className="divide-y divide-border">
                   {filteredStudents.map((student) => {
                     const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
+                    
+                    const getScoreColor = (score: number) => {
+                      if (score >= 85) return 'text-green-600';
+                      if (score >= 70) return 'text-blue-600';
+                      if (score >= 50) return 'text-yellow-600';
+                      return 'text-red-600';
+                    };
                     
                     return (
                       <tr 
@@ -242,8 +320,28 @@ export default function Students() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-muted-foreground">
-                          {new Date(student.created_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          <div className="flex items-center gap-2">
+                            <Progress value={student.avgProgress} className="w-16 h-2" />
+                            <span className="text-sm text-muted-foreground">{student.avgProgress}%</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 hidden lg:table-cell">
+                          {student.totalExams > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Award className={`h-4 w-4 ${getScoreColor(student.avgExamScore)}`} />
+                              <span className={`font-medium ${getScoreColor(student.avgExamScore)}`}>
+                                {student.avgExamScore}%
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                ({student.totalExams} {isRTL ? 'امتحان' : 'exams'})
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              {isRTL ? 'لا توجد امتحانات' : 'No exams'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <Button 
