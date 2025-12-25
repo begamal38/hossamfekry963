@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -7,8 +7,10 @@ import { cn } from '@/lib/utils';
 interface StudentFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  gradeFilter: string;
-  onGradeFilterChange: (value: string) => void;
+  academicYearFilter: string;
+  onAcademicYearFilterChange: (value: string) => void;
+  languageTrackFilter: string;
+  onLanguageTrackFilterChange: (value: string) => void;
   progressFilter: string;
   onProgressFilterChange: (value: string) => void;
   examFilter: string;
@@ -20,8 +22,10 @@ interface StudentFiltersProps {
 export const StudentFilters: React.FC<StudentFiltersProps> = ({
   searchTerm,
   onSearchChange,
-  gradeFilter,
-  onGradeFilterChange,
+  academicYearFilter,
+  onAcademicYearFilterChange,
+  languageTrackFilter,
+  onLanguageTrackFilterChange,
   progressFilter,
   onProgressFilterChange,
   examFilter,
@@ -29,13 +33,13 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
   isRTL,
   onClearFilters,
 }) => {
-  const hasActiveFilters = gradeFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all';
+  const hasActiveFilters = academicYearFilter !== 'all' || languageTrackFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all';
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 mb-6">
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col gap-4">
         {/* Search */}
-        <div className="flex-1 relative">
+        <div className="relative">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={isRTL ? 'بحث بالاسم أو رقم الهاتف...' : 'Search by name or phone...'}
@@ -47,18 +51,26 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
 
         {/* Filters Row */}
         <div className="flex flex-wrap gap-3">
-          {/* Grade Filter */}
+          {/* Academic Year Filter */}
           <select
-            value={gradeFilter}
-            onChange={(e) => onGradeFilterChange(e.target.value)}
+            value={academicYearFilter}
+            onChange={(e) => onAcademicYearFilterChange(e.target.value)}
             className="px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground min-w-[140px]"
           >
-            <option value="all">{isRTL ? 'جميع المراحل' : 'All Grades'}</option>
-            <option value="first">{isRTL ? 'الصف الأول' : '1st Secondary'}</option>
-            <option value="second_arabic">{isRTL ? 'ثانية عربي' : '2nd Arabic'}</option>
-            <option value="second_languages">{isRTL ? 'ثانية لغات' : '2nd Languages'}</option>
-            <option value="third_arabic">{isRTL ? 'ثالثة عربي' : '3rd Arabic'}</option>
-            <option value="third_languages">{isRTL ? 'ثالثة لغات' : '3rd Languages'}</option>
+            <option value="all">{isRTL ? 'كل الصفوف' : 'All Years'}</option>
+            <option value="second_secondary">{isRTL ? 'الثاني الثانوي' : 'Second Secondary'}</option>
+            <option value="third_secondary">{isRTL ? 'الثالث الثانوي' : 'Third Secondary'}</option>
+          </select>
+
+          {/* Language Track Filter */}
+          <select
+            value={languageTrackFilter}
+            onChange={(e) => onLanguageTrackFilterChange(e.target.value)}
+            className="px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground min-w-[140px]"
+          >
+            <option value="all">{isRTL ? 'كل الأنواع' : 'All Tracks'}</option>
+            <option value="arabic">{isRTL ? 'عربي' : 'Arabic'}</option>
+            <option value="languages">{isRTL ? 'لغات' : 'Languages'}</option>
           </select>
 
           {/* Progress Filter */}
@@ -90,12 +102,35 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
               variant="ghost"
               size="sm"
               onClick={onClearFilters}
-              className="text-muted-foreground"
+              className="text-muted-foreground gap-1"
             >
-              {isRTL ? 'مسح الفلاتر' : 'Clear Filters'}
+              <X className="w-4 h-4" />
+              {isRTL ? 'مسح' : 'Clear'}
             </Button>
           )}
         </div>
+
+        {/* Active Filter Summary */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2">
+            {academicYearFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                {academicYearFilter === 'second_secondary' 
+                  ? (isRTL ? 'الثاني الثانوي' : 'Second Secondary')
+                  : (isRTL ? 'الثالث الثانوي' : 'Third Secondary')
+                }
+              </span>
+            )}
+            {languageTrackFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                {languageTrackFilter === 'arabic'
+                  ? (isRTL ? 'عربي' : 'Arabic')
+                  : (isRTL ? 'لغات' : 'Languages')
+                }
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

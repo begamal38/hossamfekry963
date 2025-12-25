@@ -254,31 +254,37 @@ export type Database = {
       }
       profiles: {
         Row: {
+          academic_year: string | null
           avatar_url: string | null
           created_at: string
           full_name: string | null
           grade: string | null
           id: string
+          language_track: string | null
           phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          academic_year?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           grade?: string | null
           id?: string
+          language_track?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          academic_year?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           grade?: string | null
           id?: string
+          language_track?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
