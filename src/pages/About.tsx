@@ -69,7 +69,7 @@ const About = () => {
                 {isArabic ? 'معلم الكيمياء' : 'Chemistry Teacher'}
               </Badge>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                {isArabic ? 'أ/ حسام فكري' : 'Mr. Hossam Fikry'}
+                {isArabic ? 'أ/ حسام فكري' : 'Mr. Hossam Fekry'}
               </h1>
               <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
                 {isArabic 
