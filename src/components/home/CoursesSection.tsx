@@ -120,7 +120,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
 
         {/* CTA */}
         <Button variant={course.isFree ? 'default' : 'outline'} className="w-full" asChild>
-          <Link to="/courses">
+          <Link to={course.isFree ? "/free-lessons" : "/auth?mode=signup"}>
             {course.isFree ? t('courses.preview') : t('courses.enroll')}
           </Link>
         </Button>
