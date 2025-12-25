@@ -14,13 +14,13 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <div className="mb-4">
+            <Link to="/" className="inline-block mb-4">
               <img 
                 src={logo} 
                 alt="Hossam Fekry" 
-                className="h-12 w-auto object-contain"
+                className="h-12 w-auto object-contain hover:opacity-80 transition-opacity"
               />
-            </div>
+            </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Your complete platform to truly understand Chemistry. Built for Thanaweya Amma students.
             </p>
