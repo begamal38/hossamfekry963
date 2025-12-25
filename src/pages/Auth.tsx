@@ -55,11 +55,6 @@ const Auth = () => {
   const [academicYear, setAcademicYear] = useState('');
   const [languageTrack, setLanguageTrack] = useState('');
   const [showGroupConfirmation, setShowGroupConfirmation] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
@@ -118,76 +113,6 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const sendOtp = async () => {
-    const phoneResult = phoneSchema.safeParse(phone);
-    if (!phoneResult.success) {
-      setErrors({ ...errors, phone: phoneResult.error.errors[0].message });
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      const response = await supabase.functions.invoke('send-otp', {
-        body: { phone }
-      });
-
-      if (response.error) {
-        throw response.error;
-      }
-
-      setOtpSent(true);
-      setShowOtpInput(true);
-      toast({
-        title: 'تم إرسال الكود',
-        description: 'تم إرسال كود التحقق على واتساب',
-      });
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'خطأ',
-        description: 'فشل في إرسال كود التحقق',
-      });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const verifyOtp = async () => {
-    if (otp.length !== 6) {
-      toast({
-        variant: 'destructive',
-        title: 'خطأ',
-        description: 'كود التحقق يجب أن يكون 6 أرقام',
-      });
-      return;
-    }
-
-    setOtpLoading(true);
-    try {
-      const response = await supabase.functions.invoke('verify-otp', {
-        body: { phone, otp }
-      });
-
-      if (response.error || !response.data?.verified) {
-        throw new Error('Invalid OTP');
-      }
-
-      setPhoneVerified(true);
-      setShowOtpInput(false);
-      toast({
-        title: 'تم التحقق',
-        description: 'تم التحقق من رقم الموبايل بنجاح',
-      });
-    } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'خطأ',
-        description: 'كود التحقق غير صحيح',
-      });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -248,16 +173,6 @@ const Auth = () => {
     e.preventDefault();
     
     if (!validateForm()) return;
-
-    // For signup, require phone verification if phone is provided
-    if (!isLogin && phone && !phoneVerified) {
-      toast({
-        variant: 'destructive',
-        title: 'التحقق مطلوب',
-        description: 'يرجى التحقق من رقم الموبايل أولاً',
-      });
-      return;
-    }
     
     setLoading(true);
 
@@ -476,54 +391,11 @@ const Auth = () => {
                     type="tel"
                     placeholder="01xxxxxxxxx"
                     value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      setPhoneVerified(false);
-                      setOtpSent(false);
-                      setShowOtpInput(false);
-                    }}
-                    className={cn("pl-10 pr-24", errors.phone && "border-destructive")}
-                    disabled={phoneVerified}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={cn("pl-10", errors.phone && "border-destructive")}
                   />
-                  {!phoneVerified && phone && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 text-xs"
-                      onClick={sendOtp}
-                      disabled={otpLoading || otpSent}
-                    >
-                      {otpLoading ? '...' : otpSent ? 'تم الإرسال' : 'تحقق'}
-                    </Button>
-                  )}
-                  {phoneVerified && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>
-                  )}
                 </div>
                 {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
-                
-                {/* OTP Input */}
-                {showOtpInput && !phoneVerified && (
-                  <div className="flex gap-2 mt-2">
-                    <Input
-                      type="text"
-                      placeholder="أدخل كود التحقق"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      maxLength={6}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={verifyOtp}
-                      disabled={otpLoading || otp.length !== 6}
-                    >
-                      {otpLoading ? '...' : 'تأكيد'}
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -684,9 +556,6 @@ const Auth = () => {
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErrors({});
-                  setShowOtpInput(false);
-                  setOtpSent(false);
-                  setPhoneVerified(false);
                 }}
                 className="mr-2 text-primary font-medium hover:underline"
               >
