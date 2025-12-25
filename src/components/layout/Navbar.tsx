@@ -81,15 +81,28 @@ export const Navbar: React.FC = () => {
             </Button>
             
             {user ? (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleSignOut}
-                className="gap-2 text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4" />
-                {t('nav.logout')}
-              </Button>
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  asChild
+                  className="gap-2"
+                >
+                  <Link to="/settings">
+                    <Settings className="w-4 h-4" />
+                    {language === 'ar' ? 'الإعدادات' : 'Settings'}
+                  </Link>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="gap-2 text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('nav.logout')}
+                </Button>
+              </>
             ) : (
               <>
                 <Button variant="outline" size="sm" asChild>
@@ -140,19 +153,31 @@ export const Navbar: React.FC = () => {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex gap-2 mt-4 px-4">
+              <div className="flex flex-col gap-2 mt-4 px-4">
                 {user ? (
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 gap-2"
-                    onClick={() => {
-                      handleSignOut();
-                      setIsOpen(false);
-                    }}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    {t('nav.logout')}
-                  </Button>
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      asChild
+                    >
+                      <Link to="/settings" onClick={() => setIsOpen(false)}>
+                        <Settings className="w-4 h-4" />
+                        {language === 'ar' ? 'الإعدادات' : 'Settings'}
+                      </Link>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      onClick={() => {
+                        handleSignOut();
+                        setIsOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {t('nav.logout')}
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button variant="outline" className="flex-1" asChild>
