@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, User, Phone, GraduationCap, ArrowLeft } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { StudentFilters } from '@/components/assistant/StudentFilters';
+import { Badge } from '@/components/ui/badge';
 
 interface Profile {
   id: string;
@@ -15,13 +16,29 @@ interface Profile {
   full_name: string | null;
   phone: string | null;
   grade: string | null;
+  academic_year: string | null;
+  language_track: string | null;
   created_at: string;
 }
 
-const gradeLabels: Record<string, string> = {
-  'grade_1': 'الصف الأول الثانوي',
-  'grade_2': 'الصف الثاني الثانوي',
-  'grade_3': 'الصف الثالث الثانوي',
+// Helper to get group label
+const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
+  if (!academicYear || !languageTrack) return null;
+  
+  const yearLabels: Record<string, { ar: string; en: string }> = {
+    'second_secondary': { ar: 'الثاني الثانوي', en: 'Second Secondary' },
+    'third_secondary': { ar: 'الثالث الثانوي', en: 'Third Secondary' },
+  };
+  
+  const trackLabels: Record<string, { ar: string; en: string }> = {
+    'arabic': { ar: 'عربي', en: 'Arabic' },
+    'languages': { ar: 'لغات', en: 'Languages' },
+  };
+  
+  const year = yearLabels[academicYear];
+  const track = trackLabels[languageTrack];
+  if (!year || !track) return null;
+  return isArabic ? `${year.ar} - ${track.ar}` : `${year.en} - ${track.en}`;
 };
 
 export default function Students() {
@@ -32,8 +49,13 @@ export default function Students() {
   const [students, setStudents] = useState<Profile[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [gradeFilter, setGradeFilter] = useState('all');
+  const [academicYearFilter, setAcademicYearFilter] = useState('all');
+  const [languageTrackFilter, setLanguageTrackFilter] = useState('all');
+  const [progressFilter, setProgressFilter] = useState('all');
+  const [examFilter, setExamFilter] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -54,7 +76,7 @@ export default function Students() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, user_id, full_name, phone, grade, academic_year, language_track, created_at')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -84,13 +106,29 @@ export default function Students() {
       );
     }
 
-    // Grade filter
-    if (gradeFilter !== 'all') {
-      filtered = filtered.filter((s) => s.grade === gradeFilter);
+    // Academic year filter
+    if (academicYearFilter !== 'all') {
+      filtered = filtered.filter((s) => s.academic_year === academicYearFilter);
     }
 
+    // Language track filter
+    if (languageTrackFilter !== 'all') {
+      filtered = filtered.filter((s) => s.language_track === languageTrackFilter);
+    }
+
+    // Progress and exam filters would need additional data from enrollments/results
+    // For now, they're placeholders
+
     setFilteredStudents(filtered);
-  }, [searchTerm, gradeFilter, students]);
+  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, students]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setAcademicYearFilter('all');
+    setLanguageTrackFilter('all');
+    setProgressFilter('all');
+    setExamFilter('all');
+  };
 
   if (authLoading || roleLoading) {
     return (
@@ -121,29 +159,20 @@ export default function Students() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-xl p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={isRTL ? 'بحث بالاسم أو رقم الهاتف...' : 'Search by name or phone...'}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="ps-10"
-              />
-            </div>
-            <select
-              value={gradeFilter}
-              onChange={(e) => setGradeFilter(e.target.value)}
-              className="px-4 py-2 bg-background border border-input rounded-lg text-foreground"
-            >
-              <option value="all">{isRTL ? 'جميع المراحل' : 'All Grades'}</option>
-              <option value="grade_1">{isRTL ? 'الصف الأول' : 'Grade 1'}</option>
-              <option value="grade_2">{isRTL ? 'الصف الثاني' : 'Grade 2'}</option>
-              <option value="grade_3">{isRTL ? 'الصف الثالث' : 'Grade 3'}</option>
-            </select>
-          </div>
-        </div>
+        <StudentFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          academicYearFilter={academicYearFilter}
+          onAcademicYearFilterChange={setAcademicYearFilter}
+          languageTrackFilter={languageTrackFilter}
+          onLanguageTrackFilterChange={setLanguageTrackFilter}
+          progressFilter={progressFilter}
+          onProgressFilterChange={setProgressFilter}
+          examFilter={examFilter}
+          onExamFilterChange={setExamFilter}
+          isRTL={isRTL}
+          onClearFilters={clearFilters}
+        />
 
         {/* Students List */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -167,7 +196,7 @@ export default function Students() {
                       {isRTL ? 'الهاتف' : 'Phone'}
                     </th>
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'المرحلة' : 'Grade'}
+                      {isRTL ? 'المجموعة' : 'Group'}
                     </th>
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
                       {isRTL ? 'تاريخ التسجيل' : 'Registered'}
@@ -178,46 +207,52 @@ export default function Students() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredStudents.map((student) => (
-                    <tr 
-                      key={student.id} 
-                      className="hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/assistant/students/${student.user_id}`)}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                  {filteredStudents.map((student) => {
+                    const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
+                    
+                    return (
+                      <tr 
+                        key={student.id} 
+                        className="hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/assistant/students/${student.user_id}`)}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                            <span className="font-medium text-foreground">
+                              {student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
+                            </span>
                           </div>
-                          <span className="font-medium text-foreground">
-                            {student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="h-4 w-4" />
-                          <span dir="ltr">{student.phone || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-foreground">
-                            {student.grade ? (gradeLabels[student.grade] || student.grade) : '-'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {new Date(student.created_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Button variant="outline" size="sm">
-                          {isRTL ? 'عرض التفاصيل' : 'View Details'}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Phone className="h-4 w-4" />
+                            <span dir="ltr">{student.phone || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {groupLabel ? (
+                            <Badge variant="secondary" className="font-normal">
+                              <GraduationCap className="h-3 w-3 me-1" />
+                              {groupLabel}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {new Date(student.created_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <Button variant="outline" size="sm">
+                            {isRTL ? 'عرض التفاصيل' : 'View Details'}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

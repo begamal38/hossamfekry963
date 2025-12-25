@@ -18,12 +18,27 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters').max(100);
 const phoneSchema = z.string().regex(/^(\+?20)?0?1[0125][0-9]{8}$/, 'رقم الموبايل غير صحيح');
 
-const GRADE_OPTIONS = [
-  { value: 'second_arabic', labelAr: 'ثانية ثانوي عربي', labelEn: '2nd Year - Arabic' },
-  { value: 'second_languages', labelAr: 'ثانية ثانوي لغات', labelEn: '2nd Year - Languages' },
-  { value: 'third_arabic', labelAr: 'ثالثة ثانوي عربي', labelEn: '3rd Year - Arabic' },
-  { value: 'third_languages', labelAr: 'ثالثة ثانوي لغات', labelEn: '3rd Year - Languages' },
+// Academic year options
+const ACADEMIC_YEAR_OPTIONS = [
+  { value: 'second_secondary', labelAr: 'الصف الثاني الثانوي', labelEn: 'Second Secondary' },
+  { value: 'third_secondary', labelAr: 'الصف الثالث الثانوي', labelEn: 'Third Secondary' },
 ];
+
+// Language track options
+const LANGUAGE_TRACK_OPTIONS = [
+  { value: 'arabic', labelAr: 'عربي', labelEn: 'Arabic' },
+  { value: 'languages', labelAr: 'لغات', labelEn: 'Languages' },
+];
+
+// Combined grade label for display
+const getGroupLabel = (academicYear: string, languageTrack: string, isArabic: boolean) => {
+  const yearLabel = ACADEMIC_YEAR_OPTIONS.find(o => o.value === academicYear);
+  const trackLabel = LANGUAGE_TRACK_OPTIONS.find(o => o.value === languageTrack);
+  if (!yearLabel || !trackLabel) return '';
+  return isArabic 
+    ? `${yearLabel.labelAr} - ${trackLabel.labelAr}`
+    : `${yearLabel.labelEn} - ${trackLabel.labelEn}`;
+};
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -34,13 +49,15 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [grade, setGrade] = useState('');
+  const [academicYear, setAcademicYear] = useState('');
+  const [languageTrack, setLanguageTrack] = useState('');
+  const [showGroupConfirmation, setShowGroupConfirmation] = useState(false);
   const [otp, setOtp] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; grade?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
@@ -60,7 +77,7 @@ const Auth = () => {
   }, [user, roleLoading, canAccessDashboard, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string; phone?: string; grade?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -85,8 +102,12 @@ const Auth = () => {
         }
       }
 
-      if (!grade) {
-        newErrors.grade = 'يرجى اختيار المرحلة الدراسية';
+      if (!academicYear) {
+        newErrors.academicYear = 'يرجى اختيار الصف الدراسي';
+      }
+
+      if (!languageTrack) {
+        newErrors.languageTrack = 'يرجى اختيار نوع التعليم';
       }
     }
     
@@ -229,7 +250,7 @@ const Auth = () => {
           // Redirect will happen automatically via useEffect
         }
       } else {
-        const { error } = await signUp(email, password, fullName, phone, grade);
+        const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack);
         if (error) {
           if (error.message.includes('already registered')) {
             toast({
@@ -413,26 +434,74 @@ const Auth = () => {
               </div>
             )}
 
-            {/* Grade Selection - Only for Signup */}
+            {/* Academic Group Selection - Only for Signup */}
             {!isLogin && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
-                <select
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className={cn(
-                    "w-full h-10 px-3 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring",
-                    errors.grade ? "border-destructive" : "border-input"
-                  )}
-                >
-                  <option value="">اختر المرحلة الدراسية</option>
-                  {GRADE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.labelAr}
-                    </option>
-                  ))}
-                </select>
-                {errors.grade && <p className="text-sm text-destructive">{errors.grade}</p>}
+              <div className="space-y-4">
+                {/* Warning Banner */}
+                <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+                  <p className="text-sm text-warning-foreground font-medium flex items-center gap-2">
+                    ⚠️ تنبيه مهم
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    لا يمكن تغيير المجموعة الدراسية بعد التسجيل. يرجى التأكد من اختيار البيانات الصحيحة.
+                  </p>
+                </div>
+
+                {/* Academic Year Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">الصف الدراسي</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {ACADEMIC_YEAR_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setAcademicYear(option.value)}
+                        className={cn(
+                          "p-3 rounded-lg border-2 text-sm font-medium transition-all",
+                          academicYear === option.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card hover:border-primary/50"
+                        )}
+                      >
+                        {option.labelAr}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.academicYear && <p className="text-sm text-destructive">{errors.academicYear}</p>}
+                </div>
+
+                {/* Language Track Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">نوع التعليم</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {LANGUAGE_TRACK_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setLanguageTrack(option.value)}
+                        className={cn(
+                          "p-3 rounded-lg border-2 text-sm font-medium transition-all",
+                          languageTrack === option.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card hover:border-primary/50"
+                        )}
+                      >
+                        {option.labelAr}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.languageTrack && <p className="text-sm text-destructive">{errors.languageTrack}</p>}
+                </div>
+
+                {/* Selected Group Preview */}
+                {academicYear && languageTrack && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                    <p className="text-xs text-muted-foreground mb-1">المجموعة المختارة:</p>
+                    <p className="font-semibold text-primary">
+                      {getGroupLabel(academicYear, languageTrack, true)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

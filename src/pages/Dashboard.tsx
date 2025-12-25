@@ -25,18 +25,33 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
-const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  'first': { ar: 'الصف الأول الثانوي', en: '1st Year Secondary' },
-  'second_arabic': { ar: 'ثانية ثانوي عربي', en: '2nd Year - Arabic' },
-  'second_languages': { ar: 'ثانية ثانوي لغات', en: '2nd Year - Languages' },
-  'third_arabic': { ar: 'ثالثة ثانوي عربي', en: '3rd Year - Arabic' },
-  'third_languages': { ar: 'ثالثة ثانوي لغات', en: '3rd Year - Languages' },
+// Academic year labels
+const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
+  'second_secondary': { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' },
+  'third_secondary': { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' },
+};
+
+// Language track labels
+const LANGUAGE_TRACK_LABELS: Record<string, { ar: string; en: string }> = {
+  'arabic': { ar: 'عربي', en: 'Arabic' },
+  'languages': { ar: 'لغات', en: 'Languages' },
+};
+
+// Helper to get full group label
+const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
+  if (!academicYear || !languageTrack) return null;
+  const year = ACADEMIC_YEAR_LABELS[academicYear];
+  const track = LANGUAGE_TRACK_LABELS[languageTrack];
+  if (!year || !track) return null;
+  return isArabic ? `${year.ar} - ${track.ar}` : `${year.en} - ${track.en}`;
 };
 
 interface Profile {
   full_name: string | null;
   phone: string | null;
   grade: string | null;
+  academic_year: string | null;
+  language_track: string | null;
   avatar_url: string | null;
 }
 
@@ -104,7 +119,7 @@ const Dashboard: React.FC = () => {
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('full_name, phone, grade, avatar_url')
+          .select('full_name, phone, grade, academic_year, language_track, avatar_url')
           .eq('user_id', user.id)
           .maybeSingle();
         
@@ -210,7 +225,7 @@ const Dashboard: React.FC = () => {
 
   const fullName = profile?.full_name || user?.email?.split('@')[0] || '';
   const firstName = fullName.split(' ')[0];
-  const gradeInfo = profile?.grade ? GRADE_OPTIONS[profile.grade] : null;
+  const groupLabel = getGroupLabel(profile?.academic_year || null, profile?.language_track || null, isArabic);
 
   // Calculate stats
   const totalLessonsCompleted = enrolledCourses.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
@@ -253,9 +268,9 @@ const Dashboard: React.FC = () => {
                   <p className="text-muted-foreground">
                     {isArabic ? 'لوحة تحكم الطالب' : 'Student Dashboard'}
                   </p>
-                  {gradeInfo && (
+                  {groupLabel && (
                     <Badge variant="secondary" className="text-sm">
-                      {isArabic ? gradeInfo.ar : gradeInfo.en}
+                      {groupLabel}
                     </Badge>
                   )}
                 </div>
@@ -417,13 +432,13 @@ const Dashboard: React.FC = () => {
                     </div>
                   )}
 
-                  {gradeInfo && (
+                  {groupLabel && (
                     <div className="p-3 rounded-lg bg-muted/50">
                       <p className="text-xs text-muted-foreground mb-1">
-                        {isArabic ? 'المرحلة الدراسية' : 'Grade'}
+                        {isArabic ? 'المجموعة الدراسية' : 'Academic Group'}
                       </p>
                       <p className="font-medium text-foreground">
-                        {isArabic ? gradeInfo.ar : gradeInfo.en}
+                        {groupLabel}
                       </p>
                     </div>
                   )}
