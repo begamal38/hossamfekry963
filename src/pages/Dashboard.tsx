@@ -118,7 +118,8 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const studentName = profile?.full_name || user?.email?.split('@')[0] || 'طالب';
+  const fullName = profile?.full_name || user?.email?.split('@')[0] || '';
+  const firstName = fullName.split(' ')[0];
   const gradeInfo = profile?.grade ? GRADE_OPTIONS[profile.grade] : null;
 
   // Calculate real stats
@@ -143,7 +144,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                  {t('dashboard.welcome')}, {studentName}! 👋
+                  {isArabic ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`}
                 </h1>
                 <div className="flex items-center gap-3 flex-wrap">
                   <p className="text-muted-foreground">
@@ -278,11 +279,11 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                       <span className="text-primary font-bold">
-                        {studentName.charAt(0).toUpperCase()}
+                        {firstName.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{studentName}</p>
+                      <p className="font-medium text-foreground">{fullName}</p>
                       <p className="text-xs text-muted-foreground">{user?.email}</p>
                     </div>
                   </div>
