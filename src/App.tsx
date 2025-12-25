@@ -22,6 +22,7 @@ import Enrollments from "./pages/assistant/Enrollments";
 import ManageLessons from "./pages/assistant/ManageLessons";
 import RecordAttendance from "./pages/assistant/RecordAttendance";
 import RecordGrades from "./pages/assistant/RecordGrades";
+import Reports from "./pages/assistant/Reports";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/assistant/lessons" element={<ManageLessons />} />
               <Route path="/assistant/attendance" element={<RecordAttendance />} />
               <Route path="/assistant/grades" element={<RecordGrades />} />
+              <Route path="/assistant/reports" element={<Reports />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

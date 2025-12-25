@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Video, Award, ClipboardList } from 'lucide-react';
+import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -13,6 +13,10 @@ interface Stats {
   totalEnrollments: number;
   pendingEnrollments: number;
   activeEnrollments: number;
+  totalLessons: number;
+  totalExams: number;
+  totalAttendance: number;
+  avgExamScore: number;
 }
 
 interface Profile {
@@ -30,6 +34,10 @@ export default function AssistantDashboard() {
     totalEnrollments: 0,
     pendingEnrollments: 0,
     activeEnrollments: 0,
+    totalLessons: 0,
+    totalExams: 0,
+    totalAttendance: 0,
+    avgExamScore: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -59,25 +67,43 @@ export default function AssistantDashboard() {
         
         setProfile(profileData);
 
-        // Fetch total students
-        const { count: studentsCount } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-
-        // Fetch enrollments stats
-        const { data: enrollments } = await supabase
-          .from('course_enrollments')
-          .select('status');
+        // Fetch all stats in parallel
+        const [
+          { count: studentsCount },
+          { data: enrollments },
+          { count: lessonsCount },
+          { count: examsCount },
+          { count: attendanceCount },
+          { data: examResults }
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('course_enrollments').select('status'),
+          supabase.from('lessons').select('*', { count: 'exact', head: true }),
+          supabase.from('exams').select('*', { count: 'exact', head: true }),
+          supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
+          supabase.from('exam_results').select('score, exams:exam_id(max_score)')
+        ]);
 
         const totalEnrollments = enrollments?.length || 0;
         const pendingEnrollments = enrollments?.filter(e => e.status === 'pending').length || 0;
         const activeEnrollments = enrollments?.filter(e => e.status === 'active').length || 0;
+
+        const avgExamScore = (examResults || []).length > 0
+          ? Math.round((examResults || []).reduce((sum, r) => {
+              const maxScore = (r.exams as any)?.max_score || 100;
+              return sum + ((r.score / maxScore) * 100);
+            }, 0) / examResults!.length)
+          : 0;
 
         setStats({
           totalStudents: studentsCount || 0,
           totalEnrollments,
           pendingEnrollments,
           activeEnrollments,
+          totalLessons: lessonsCount || 0,
+          totalExams: examsCount || 0,
+          totalAttendance: attendanceCount || 0,
+          avgExamScore,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -122,11 +148,25 @@ export default function AssistantDashboard() {
       link: '/assistant/enrollments',
     },
     {
-      title: isRTL ? 'إجمالي الاشتراكات' : 'Total Enrollments',
-      value: stats.totalEnrollments,
-      icon: TrendingUp,
+      title: isRTL ? 'إجمالي الدروس' : 'Total Lessons',
+      value: stats.totalLessons,
+      icon: BookOpen,
+      color: 'bg-blue-500/10 text-blue-600',
+      link: '/assistant/lessons',
+    },
+    {
+      title: isRTL ? 'الامتحانات' : 'Exams',
+      value: stats.totalExams,
+      icon: Award,
+      color: 'bg-purple-500/10 text-purple-600',
+      link: '/assistant/grades',
+    },
+    {
+      title: isRTL ? 'الحضور الكلي' : 'Total Attendance',
+      value: stats.totalAttendance,
+      icon: ClipboardList,
       color: 'bg-accent/10 text-accent',
-      link: '/assistant/enrollments',
+      link: '/assistant/attendance',
     },
   ];
 
@@ -148,23 +188,21 @@ export default function AssistantDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statCards.map((stat, index) => (
             <Link
               key={index}
               to={stat.link}
-              className="bg-card border border-border rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
+              className="bg-card border border-border rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">{stat.title}</p>
-                  <p className="text-3xl font-bold text-foreground mt-2">
-                    {loading ? '...' : stat.value}
-                  </p>
+              <div className="flex flex-col">
+                <div className={`p-2 rounded-lg ${stat.color} w-fit mb-2`}>
+                  <stat.icon className="h-5 w-5" />
                 </div>
-                <div className={`p-3 rounded-xl ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
-                </div>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? '...' : stat.value}
+                </p>
+                <p className="text-muted-foreground text-xs mt-1">{stat.title}</p>
               </div>
             </Link>
           ))}
@@ -204,6 +242,12 @@ export default function AssistantDashboard() {
               <Link to="/assistant/grades">
                 <Award className="h-6 w-6" />
                 <span>{isRTL ? 'تسجيل الدرجات' : 'Record Grades'}</span>
+              </Link>
+            </Button>
+            <Button variant="secondary" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/20">
+              <Link to="/assistant/reports">
+                <BarChart3 className="h-6 w-6" />
+                <span>{isRTL ? 'التقارير والإحصائيات' : 'Reports & Stats'}</span>
               </Link>
             </Button>
           </div>
