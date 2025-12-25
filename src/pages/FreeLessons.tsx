@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -108,8 +109,10 @@ const FreeLessons: React.FC = () => {
                 : 'Want more? Sign up to access all courses'
               }
             </p>
-            <Button variant="hero" size="lg">
-              {t('nav.signUp')}
+            <Button variant="hero" size="lg" asChild>
+              <Link to="/auth">
+                {t('nav.signUp')}
+              </Link>
             </Button>
           </div>
         </div>
