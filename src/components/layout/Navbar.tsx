@@ -81,23 +81,15 @@ export const Navbar: React.FC = () => {
             </Button>
             
             {user ? (
-              <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/dashboard" className="gap-2">
-                    <User className="w-4 h-4" />
-                    {t('nav.dashboard')}
-                  </Link>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="gap-2 text-muted-foreground hover:text-destructive"
-                >
-                  <LogOut className="w-4 h-4" />
-                  {t('nav.logout')}
-                </Button>
-              </>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleSignOut}
+                className="gap-2 text-muted-foreground hover:text-destructive"
+              >
+                <LogOut className="w-4 h-4" />
+                {t('nav.logout')}
+              </Button>
             ) : (
               <>
                 <Button variant="outline" size="sm" asChild>
