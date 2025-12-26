@@ -236,9 +236,35 @@ export default function SendNotifications() {
         notification.target_id = selectedStudent;
       }
 
-      const { error } = await supabase.from('notifications').insert(notification);
+      const { data: insertedNotification, error } = await supabase
+        .from('notifications')
+        .insert(notification)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send email notifications in background
+      supabase.functions.invoke('send-notification-email', {
+        body: {
+          notification_id: insertedNotification.id,
+          target_type: targetType,
+          target_value: targetType === 'course' ? selectedCourse : 
+                        targetType === 'lesson' ? selectedLesson : 
+                        targetType === 'user' ? selectedStudent : null,
+          title: titleEn,
+          title_ar: titleAr,
+          message: messageEn,
+          message_ar: messageAr,
+          type: notificationType,
+        }
+      }).then(({ data, error: emailError }) => {
+        if (emailError) {
+          console.error('Email notification error:', emailError);
+        } else if (data?.emails_sent > 0) {
+          console.log(`${data.emails_sent} email(s) sent`);
+        }
+      });
 
       toast({
         title: isArabic ? 'تم الإرسال' : 'Sent',
