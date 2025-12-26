@@ -10,6 +10,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { DeviceManagement } from '@/components/settings/DeviceManagement';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const GRADE_OPTIONS = [
   { value: 'second_arabic', labelAr: 'ثانية ثانوي عربي', labelEn: '2nd Year - Arabic' },
@@ -23,6 +25,7 @@ const Settings: React.FC = () => {
   const { isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isStudent } = useUserRole();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -356,6 +359,13 @@ const Settings: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {/* Device Management Section - Only for students */}
+          {isStudent() && (
+            <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-300">
+              <DeviceManagement />
+            </div>
+          )}
         </div>
       </main>
 

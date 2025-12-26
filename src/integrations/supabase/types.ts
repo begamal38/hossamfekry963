@@ -557,6 +557,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_devices: {
+        Row: {
+          browser_info: string | null
+          created_at: string
+          device_fingerprint: string
+          device_name: string | null
+          first_seen_at: string
+          id: string
+          is_primary: boolean | null
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          browser_info?: string | null
+          created_at?: string
+          device_fingerprint: string
+          device_name?: string | null
+          first_seen_at?: string
+          id?: string
+          is_primary?: boolean | null
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          browser_info?: string | null
+          created_at?: string
+          device_fingerprint?: string
+          device_name?: string | null
+          first_seen_at?: string
+          id?: string
+          is_primary?: boolean | null
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -577,6 +613,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          device_id: string | null
+          ended_at: string | null
+          ended_reason: string | null
+          id: string
+          is_active: boolean | null
+          session_token: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          device_id?: string | null
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_token: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          device_id?: string | null
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_token?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "user_devices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
