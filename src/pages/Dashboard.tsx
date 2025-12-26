@@ -9,6 +9,9 @@ import {
   Settings,
   Play,
   CheckCircle2,
+  Globe,
+  MapPin,
+  Layers,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -16,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CourseProgressCard } from '@/components/dashboard/CourseProgressCard';
-import { LessonActivityList, LessonActivity } from '@/components/dashboard/LessonActivityList';
+import { LessonActivityList, LessonActivity, LessonAttendanceStatus } from '@/components/dashboard/LessonActivityList';
 import { ExamActivityList, ExamActivity } from '@/components/dashboard/ExamActivityList';
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,6 +27,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+
+// Attendance mode config
+const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
+  online: { ar: 'أونلاين', en: 'Online', icon: Globe, color: 'text-purple-600' },
+  center: { ar: 'سنتر', en: 'Center', icon: MapPin, color: 'text-blue-600' },
+  hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600' },
+};
 
 // Academic year labels
 const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
@@ -53,6 +63,7 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   avatar_url: string | null;
+  attendance_mode: 'online' | 'center' | 'hybrid' | null;
 }
 
 interface EnrolledCourse {
@@ -119,7 +130,7 @@ const Dashboard: React.FC = () => {
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('full_name, phone, grade, academic_year, language_track, avatar_url')
+          .select('full_name, phone, grade, academic_year, language_track, avatar_url, attendance_mode')
           .eq('user_id', user.id)
           .maybeSingle();
         
@@ -271,6 +282,14 @@ const Dashboard: React.FC = () => {
                   {groupLabel && (
                     <Badge variant="secondary" className="text-sm">
                       {groupLabel}
+                    </Badge>
+                  )}
+                  {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
+                    <Badge variant="outline" className={cn("text-sm gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
+                      {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
+                      {isArabic 
+                        ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
+                        : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
                     </Badge>
                   )}
                 </div>

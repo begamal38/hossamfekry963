@@ -181,6 +181,7 @@ export type Database = {
       }
       lesson_attendance: {
         Row: {
+          attendance_type: Database["public"]["Enums"]["attendance_type"]
           attended_at: string
           created_at: string
           id: string
@@ -188,6 +189,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attendance_type?: Database["public"]["Enums"]["attendance_type"]
           attended_at?: string
           created_at?: string
           id?: string
@@ -195,6 +197,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attendance_type?: Database["public"]["Enums"]["attendance_type"]
           attended_at?: string
           created_at?: string
           id?: string
@@ -255,6 +258,7 @@ export type Database = {
       profiles: {
         Row: {
           academic_year: string | null
+          attendance_mode: Database["public"]["Enums"]["attendance_mode"]
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -267,6 +271,7 @@ export type Database = {
         }
         Insert: {
           academic_year?: string | null
+          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -279,6 +284,7 @@ export type Database = {
         }
         Update: {
           academic_year?: string | null
+          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -327,6 +333,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "assistant_teacher" | "student"
+      attendance_mode: "online" | "center" | "hybrid"
+      attendance_type: "center" | "online"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -455,6 +463,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "assistant_teacher", "student"],
+      attendance_mode: ["online", "center", "hybrid"],
+      attendance_type: ["center", "online"],
     },
   },
 } as const
