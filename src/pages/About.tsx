@@ -71,11 +71,12 @@ const About = () => {
     },
     {
       id: 3,
-      newspaper: isRTL ? 'الوطن' : 'Al-Watan',
-      title: isRTL ? 'موجه الكيمياء يشرح منهج التعليم الجديد' : 'Chemistry Supervisor Explains New Curriculum',
-      preview: isRTL ? 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ' : 'Innovative teaching system to understand Chemistry without memorization',
-      embedUrl: 'https://www.elwatannews.com',
+      newspaper: isRTL ? 'مشاهير العرب' : 'Mashaher Net',
+      title: isRTL ? 'الأستاذ حسام فكري.. رحلة 25 عاماً في صناعة التفوق بالكيمياء' : 'Mr. Hossam Fekry.. 25 Years Journey in Creating Chemistry Excellence',
+      preview: isRTL ? 'قصة نجاح ملهمة في تعليم الكيمياء للثانوية العامة' : 'An inspiring success story in teaching Chemistry for high school',
+      embedUrl: 'https://mashaher.net/148640',
       isExternal: true,
+      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
     },
     {
       id: 4,
