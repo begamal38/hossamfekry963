@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -274,6 +275,14 @@ const About = () => {
                 <p className="text-foreground font-bold text-lg pt-4">
                   {t('about.message.cta')}
                 </p>
+              </div>
+              
+              <div className="mt-8">
+                <Button size="lg" asChild className="px-8">
+                  <Link to="/auth?mode=signup">
+                    {t('nav.signUp')}
+                  </Link>
+                </Button>
               </div>
             </div>
           </section>
