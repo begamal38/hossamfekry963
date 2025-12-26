@@ -5,6 +5,7 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { CoursesSection } from '@/components/home/CoursesSection';
 import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection';
+import { PressSection } from '@/components/home/PressSection';
 
 const Index: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const Index: React.FC = () => {
         <HeroSection />
         <FeaturesSection />
         <CoursesSection />
+        <PressSection />
         <ProgressPreviewSection />
       </main>
       <Footer />
