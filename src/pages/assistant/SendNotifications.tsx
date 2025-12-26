@@ -144,7 +144,7 @@ const MESSAGE_TEMPLATES: {
   },
 ];
 
-const GRADES = ['first_secondary', 'second_secondary', 'third_secondary'];
+const GRADES = ['second_arabic', 'second_languages', 'third_arabic', 'third_languages'];
 const ATTENDANCE_MODES = ['online', 'center', 'hybrid'];
 
 export default function SendNotifications() {
@@ -316,9 +316,10 @@ export default function SendNotifications() {
 
   const getGradeLabel = (grade: string) => {
     const labels: Record<string, { en: string; ar: string }> = {
-      'first_secondary': { en: '1st Secondary', ar: 'أولى ثانوي' },
-      'second_secondary': { en: '2nd Secondary', ar: 'تانية ثانوي' },
-      'third_secondary': { en: '3rd Secondary', ar: 'تالتة ثانوي' },
+      'second_arabic': { en: '2nd Secondary (Arabic)', ar: 'تانية ثانوي عربي' },
+      'second_languages': { en: '2nd Secondary (Languages)', ar: 'تانية ثانوي لغات' },
+      'third_arabic': { en: '3rd Secondary (Arabic)', ar: 'تالتة ثانوي عربي' },
+      'third_languages': { en: '3rd Secondary (Languages)', ar: 'تالتة ثانوي لغات' },
     };
     return isArabic ? labels[grade]?.ar : labels[grade]?.en || grade;
   };
