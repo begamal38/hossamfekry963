@@ -149,7 +149,7 @@ export default function AssistantDashboard() {
       link: '/assistant/enrollments',
     },
     {
-      title: isRTL ? 'إجمالي الدروس' : 'Total Lessons',
+      title: isRTL ? 'إجمالي الحصص' : 'Total Lessons',
       value: stats.totalLessons,
       icon: BookOpen,
       color: 'bg-blue-500/10 text-blue-600',
@@ -236,7 +236,7 @@ export default function AssistantDashboard() {
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/lessons">
                 <BookOpen className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الدروس' : 'Manage Lessons'}</span>
+                <span>{isRTL ? 'إدارة الحصص' : 'Manage Lessons'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">

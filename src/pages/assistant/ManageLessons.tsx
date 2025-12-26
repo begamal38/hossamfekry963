@@ -118,7 +118,7 @@ export default function ManageLessons() {
 
       toast({
         title: isArabic ? 'تم بنجاح' : 'Success',
-        description: isArabic ? 'تم إضافة الدرس' : 'Lesson added successfully'
+        description: isArabic ? 'تم إضافة الحصة' : 'Lesson added successfully'
       });
 
       setNewLesson({ title: '', title_ar: '', lesson_type: 'online', video_url: '' });
@@ -128,14 +128,14 @@ export default function ManageLessons() {
       console.error('Error adding lesson:', error);
       toast({
         title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'فشل في إضافة الدرس' : 'Failed to add lesson',
+        description: isArabic ? 'فشل في إضافة الحصة' : 'Failed to add lesson',
         variant: 'destructive'
       });
     }
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا الدرس؟' : 'Are you sure you want to delete this lesson?')) {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذه الحصة؟' : 'Are you sure you want to delete this lesson?')) {
       return;
     }
 
@@ -149,7 +149,7 @@ export default function ManageLessons() {
 
       toast({
         title: isArabic ? 'تم بنجاح' : 'Success',
-        description: isArabic ? 'تم حذف الدرس' : 'Lesson deleted successfully'
+        description: isArabic ? 'تم حذف الحصة' : 'Lesson deleted successfully'
       });
 
       fetchLessons();
@@ -175,7 +175,7 @@ export default function ManageLessons() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
             <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
           </Button>
-          <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الدروس' : 'Manage Lessons'}</h1>
+          <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
         </div>
 
         {/* Course Selector */}
@@ -197,21 +197,21 @@ export default function ManageLessons() {
         {/* Add Lesson Button */}
         <Button onClick={() => setShowAddForm(true)} className="mb-6 gap-2">
           <Plus className="h-4 w-4" />
-          {isArabic ? 'إضافة درس جديد' : 'Add New Lesson'}
+          {isArabic ? 'إضافة حصة جديدة' : 'Add New Lesson'}
         </Button>
 
         {/* Add Lesson Form */}
         {showAddForm && (
           <div className="bg-card border rounded-xl p-6 mb-6">
-            <h3 className="font-semibold mb-4">{isArabic ? 'درس جديد' : 'New Lesson'}</h3>
+            <h3 className="font-semibold mb-4">{isArabic ? 'حصة جديدة' : 'New Lesson'}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <Input
-                placeholder={isArabic ? 'عنوان الدرس (إنجليزي)' : 'Lesson Title (English)'}
+                placeholder={isArabic ? 'عنوان الحصة (إنجليزي)' : 'Lesson Title (English)'}
                 value={newLesson.title}
                 onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
               />
               <Input
-                placeholder={isArabic ? 'عنوان الدرس (عربي)' : 'Lesson Title (Arabic)'}
+                placeholder={isArabic ? 'عنوان الحصة (عربي)' : 'Lesson Title (Arabic)'}
                 value={newLesson.title_ar}
                 onChange={(e) => setNewLesson({ ...newLesson, title_ar: e.target.value })}
               />
@@ -250,7 +250,7 @@ export default function ManageLessons() {
                 onChange={(e) => setNewLesson({ ...newLesson, video_url: e.target.value })}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {isArabic ? 'اختياري - أضف رابط فيديو يوتيوب للدرس' : 'Optional - Add a YouTube video link for the lesson'}
+                {isArabic ? 'اختياري - أضف رابط فيديو يوتيوب للحصة' : 'Optional - Add a YouTube video link for the lesson'}
               </p>
             </div>
             <div className="flex gap-2">
@@ -264,7 +264,7 @@ export default function ManageLessons() {
         <div className="bg-card border rounded-xl overflow-hidden">
           {lessons.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              {isArabic ? 'لا توجد دروس بعد' : 'No lessons yet'}
+              {isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
             </div>
           ) : (
             <div className="divide-y">
@@ -279,7 +279,7 @@ export default function ManageLessons() {
                     )}
                     <span className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</span>
                     {lesson.video_url && (
-                      <span title={isArabic ? 'يحتوي فيديو' : 'Has video'}>
+                      <span title={isArabic ? 'فيها فيديو' : 'Has video'}>
                         <Youtube className="h-4 w-4 text-red-500" />
                       </span>
                     )}
