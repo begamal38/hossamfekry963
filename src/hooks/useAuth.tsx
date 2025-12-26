@@ -84,15 +84,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    // Clear local state first to ensure UI updates even if server call fails
+    // Clear local state first so UI updates immediately
     setUser(null);
     setSession(null);
-    
+
+    // Clear persisted auth tokens immediately so a page refresh can't restore an old session
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+
+    // Best-effort server sign out (may fail if the session already expired)
     try {
       await supabase.auth.signOut();
-    } catch (error) {
-      // Ignore errors - session might already be expired/invalid
-      console.log('Sign out completed (session may have been expired)');
+    } catch {
+      // ignore
     }
   };
 
