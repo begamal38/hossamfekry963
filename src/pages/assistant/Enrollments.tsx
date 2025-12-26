@@ -61,10 +61,28 @@ const Enrollments = () => {
     setLoading(true);
 
     try {
-      // Fetch enrollments with related data
+      // First, get only student user_ids (exclude assistant_teacher and admin)
+      const { data: studentRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'student');
+
+      if (rolesError) throw rolesError;
+
+      const studentUserIds = studentRoles?.map(r => r.user_id) || [];
+
+      if (studentUserIds.length === 0) {
+        setEnrollments([]);
+        setFilteredEnrollments([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch enrollments only for students
       const { data: enrollmentsData, error: enrollmentsError } = await supabase
         .from('course_enrollments')
         .select('*')
+        .in('user_id', studentUserIds)
         .order('enrolled_at', { ascending: false });
 
       if (enrollmentsError) throw enrollmentsError;
