@@ -68,6 +68,7 @@ export default function AssistantDashboard() {
         setProfile(profileData);
 
         // Fetch all stats in parallel
+        // Count only users with 'student' role
         const [
           { count: studentsCount },
           { data: enrollments },
@@ -76,7 +77,7 @@ export default function AssistantDashboard() {
           { count: attendanceCount },
           { data: examResults }
         ] = await Promise.all([
-          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
           supabase.from('course_enrollments').select('status'),
           supabase.from('lessons').select('*', { count: 'exact', head: true }),
           supabase.from('exams').select('*', { count: 'exact', head: true }),
