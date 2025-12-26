@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -244,11 +244,13 @@ const Auth = () => {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img 
-            src={logo} 
-            alt="Hossam Fekry" 
-            className="h-16 w-auto mx-auto mb-4"
-          />
+          <Link to="/">
+            <img 
+              src={logo} 
+              alt="Hossam Fekry" 
+              className="h-16 w-auto mx-auto mb-4 hover:opacity-80 transition-opacity cursor-pointer"
+            />
+          </Link>
           <h1 className="text-2xl font-bold text-foreground">
             {isForgotPassword 
               ? 'استعادة كلمة المرور'
