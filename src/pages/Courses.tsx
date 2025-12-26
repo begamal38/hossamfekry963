@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Filter, Search, BookOpen, CheckCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { ContentTypeBadge } from '@/components/course/ContentTypeBadge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -348,11 +349,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
         
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
         
-        {course.is_free && (
-          <Badge className="absolute top-3 left-3 bg-green-600 text-white">
-            {isArabic ? 'مجاني' : 'Free'}
-          </Badge>
-        )}
+        {/* Free/Paid Badge */}
+        <div className="absolute top-3 left-3">
+          <ContentTypeBadge isFree={course.is_free} />
+        </div>
         
         {isEnrolled && (
           <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground gap-1">

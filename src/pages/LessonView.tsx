@@ -18,6 +18,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PracticeSection } from '@/components/practice/PracticeSection';
+import { LessonQA } from '@/components/qa/LessonQA';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -550,6 +552,12 @@ export default function LessonView() {
               )}
             </div>
           </div>
+
+          {/* Practice Section */}
+          <PracticeSection lessonId={lesson.id} />
+
+          {/* Q&A Section */}
+          <LessonQA lessonId={lesson.id} />
         </div>
 
         {/* Lesson List Sidebar */}

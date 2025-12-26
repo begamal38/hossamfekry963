@@ -22,6 +22,7 @@ import { CourseProgressCard } from '@/components/dashboard/CourseProgressCard';
 import { LessonActivityList, LessonActivity, LessonAttendanceStatus } from '@/components/dashboard/LessonActivityList';
 import { ExamActivityList, ExamActivity } from '@/components/dashboard/ExamActivityList';
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
+import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -427,6 +428,18 @@ const Dashboard: React.FC = () => {
               <OverallProgressCard
                 progressPercent={overallProgress}
                 isRTL={isArabic}
+              />
+
+              {/* Performance Chart */}
+              <PerformanceChart
+                examScores={examResults.map(r => ({
+                  score: r.score,
+                  maxScore: r.exam?.max_score || 100,
+                  title: isArabic ? r.exam?.title_ar : r.exam?.title
+                }))}
+                lessonsCompleted={totalLessonsCompleted}
+                totalLessons={totalLessons}
+                attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
               />
 
               {/* Profile Card */}
