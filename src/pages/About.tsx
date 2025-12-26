@@ -1,174 +1,226 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { GraduationCap, Award, Users, BookOpen, Star, Heart, Target, Lightbulb } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { GraduationCap, Award, Users, BookOpen, Tv, Calendar, Heart, Rocket } from 'lucide-react';
 import teacherImage from '@/assets/teacher.jpg';
 
 const About = () => {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
-
-  const achievements = [
+  const stats = [
     {
-      icon: Users,
-      value: '10,000+',
-      label: isArabic ? 'طالب وطالبة' : 'Students',
+      icon: Calendar,
+      value: '25',
+      label: 'سنة خبرة',
     },
     {
-      icon: GraduationCap,
-      value: '15+',
-      label: isArabic ? 'سنة خبرة' : 'Years Experience',
+      icon: Users,
+      value: '+10,000',
+      label: 'طالب اتعلم معايا',
+    },
+    {
+      icon: Tv,
+      value: '2020',
+      label: 'بداية قناة مدرستنا',
     },
     {
       icon: Award,
-      value: '95%',
-      label: isArabic ? 'نسبة التفوق' : 'Excellence Rate',
-    },
-    {
-      icon: BookOpen,
-      value: '50+',
-      label: isArabic ? 'كورس تعليمي' : 'Courses',
-    },
-  ];
-
-  const values = [
-    {
-      icon: Target,
-      title: isArabic ? 'التميز' : 'Excellence',
-      description: isArabic 
-        ? 'نسعى دائماً لتقديم أعلى مستوى من التعليم والشرح المبسط'
-        : 'We always strive to provide the highest level of education and simplified explanations',
-    },
-    {
-      icon: Heart,
-      title: isArabic ? 'الشغف' : 'Passion',
-      description: isArabic 
-        ? 'حب الكيمياء هو ما يدفعنا لنقل هذا الشغف لكل طالب'
-        : 'Love for chemistry is what drives us to pass this passion to every student',
-    },
-    {
-      icon: Lightbulb,
-      title: isArabic ? 'الابتكار' : 'Innovation',
-      description: isArabic 
-        ? 'نستخدم أحدث الطرق والتقنيات في التعليم لضمان الفهم الأفضل'
-        : 'We use the latest methods and technologies in education to ensure better understanding',
+      value: 'موجه',
+      label: 'مادة الكيمياء',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background" dir="rtl">
       <Navbar />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Hero Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-            <div className="order-2 lg:order-1">
-              <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20">
-                {isArabic ? 'معلم الكيمياء' : 'Chemistry Teacher'}
-              </Badge>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                {isArabic ? 'أ/ حسام فكري' : 'Mr. Hossam Fekry'}
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                {isArabic 
-                  ? 'معلم كيمياء متخصص بخبرة تزيد عن 15 عاماً في تدريس الكيمياء للمرحلة الثانوية. شغفي هو تبسيط المفاهيم الكيميائية المعقدة وجعلها سهلة الفهم لجميع الطلاب.'
-                  : 'A specialized chemistry teacher with over 15 years of experience in teaching chemistry for high school. My passion is simplifying complex chemical concepts and making them easy to understand for all students.'}
-              </p>
-              <p className="text-muted-foreground mb-8 leading-relaxed">
-                {isArabic 
-                  ? 'أؤمن بأن كل طالب يستطيع التفوق في الكيمياء إذا حصل على الشرح المناسب والدعم الكافي. هدفي هو مساعدة كل طالب على تحقيق أقصى إمكاناته والوصول إلى التفوق الدراسي.'
-                  : 'I believe that every student can excel in chemistry if they receive the right explanation and sufficient support. My goal is to help every student achieve their maximum potential and reach academic excellence.'}
-              </p>
+          
+          {/* Hero Section - من هو حسام فكري */}
+          <section className="mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1">
+                <span className="inline-block bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+                  موجه مادة الكيمياء
+                </span>
+                
+                <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                  أنا حسام فكري
+                </h1>
+                
+                <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+                  لو بتدور على حد يفهمك الكيمياء بجد، مش بس يحفظهالك.. 
+                  يبقى إنت في المكان الصح.
+                </p>
+                
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  أنا مش مجرد مدرس، أنا موجه لمادة الكيمياء، 
+                  ومن أوائل المدرسين اللي ظهروا على قناة مدرستنا التابعة لوزارة التربية والتعليم 
+                  من سنة 2020.
+                </p>
+                
+                <p className="text-muted-foreground leading-relaxed">
+                  خبرتي في التدريس أكتر من 25 سنة، 
+                  وكل سنة بتعلم حاجة جديدة من طلابي زي ما بيتعلموا مني.
+                </p>
+              </div>
               
-              <div className="flex flex-wrap gap-3">
-                <Badge variant="secondary" className="text-sm py-2 px-4">
-                  <Star className="w-4 h-4 mr-2 text-yellow-500" />
-                  {isArabic ? 'معلم خبير' : 'Expert Teacher'}
-                </Badge>
-                <Badge variant="secondary" className="text-sm py-2 px-4">
-                  <GraduationCap className="w-4 h-4 mr-2 text-primary" />
-                  {isArabic ? 'ماجستير كيمياء' : 'MSc Chemistry'}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="order-1 lg:order-2 flex justify-center">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/10 rounded-3xl blur-xl"></div>
-                <img 
-                  src={teacherImage} 
-                  alt="Hossam Fikry"
-                  className="relative w-80 h-80 md:w-96 md:h-96 object-cover rounded-3xl shadow-2xl"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
-            {achievements.map((stat, index) => (
-              <div 
-                key={index}
-                className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <stat.icon className="w-6 h-6 text-primary" />
+              <div className="order-1 lg:order-2 flex justify-center">
+                <div className="relative">
+                  <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-xl"></div>
+                  <img 
+                    src={teacherImage} 
+                    alt="حسام فكري"
+                    className="relative w-80 h-80 md:w-96 md:h-96 object-cover rounded-3xl shadow-2xl"
+                  />
                 </div>
-                <p className="text-3xl font-bold text-foreground mb-2">{stat.value}</p>
-                <p className="text-muted-foreground text-sm">{stat.label}</p>
               </div>
-            ))}
-          </div>
-
-          {/* Values Section */}
-          <div className="mb-20">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
-                {isArabic ? 'قيمنا ورؤيتنا' : 'Our Values & Vision'}
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                {isArabic 
-                  ? 'نسعى لبناء جيل متميز من الطلاب المتفوقين في الكيمياء'
-                  : 'We strive to build an exceptional generation of students excelling in chemistry'}
-              </p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {values.map((value, index) => (
+          </section>
+
+          {/* Stats Section */}
+          <section className="mb-20">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
                 <div 
                   key={index}
-                  className="bg-card border border-border rounded-2xl p-8 text-center hover:shadow-lg transition-all hover:-translate-y-1"
+                  className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
                 >
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <value.icon className="w-8 h-8 text-primary" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <stat.icon className="w-6 h-6 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold text-foreground mb-3">{value.title}</h3>
-                  <p className="text-muted-foreground">{value.description}</p>
+                  <p className="text-3xl font-bold text-primary mb-2">{stat.value}</p>
+                  <p className="text-muted-foreground text-sm">{stat.label}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Story Section */}
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-3xl p-8 md:p-12">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-bold text-foreground mb-6">
-                {isArabic ? 'قصتي مع الكيمياء' : 'My Journey with Chemistry'}
-              </h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                {isArabic 
-                  ? 'بدأت رحلتي في تدريس الكيمياء منذ أكثر من 15 عاماً، وخلال هذه السنوات ساعدت آلاف الطلاب على فهم وحب الكيمياء. أسعى دائماً لتطوير أساليبي التعليمية ومواكبة أحدث الطرق لضمان تقديم أفضل تجربة تعليمية.'
-                  : 'I started my journey in teaching chemistry over 15 years ago, and during these years I have helped thousands of students understand and love chemistry. I always strive to develop my teaching methods and keep up with the latest approaches to ensure the best educational experience.'}
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                {isArabic 
-                  ? 'أفخر بكل طالب تخرج على يدي وحقق النجاح والتفوق. هدفي المستمر هو رؤية كل طالب يصل إلى أقصى إمكاناته ويحقق أحلامه.'
-                  : 'I am proud of every student who graduated under my guidance and achieved success and excellence. My ongoing goal is to see every student reach their maximum potential and achieve their dreams.'}
-              </p>
+          {/* Experience Section - الخبرة والمصداقية */}
+          <section className="mb-20">
+            <div className="bg-card border border-border rounded-3xl p-8 md:p-12">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                  <GraduationCap className="w-7 h-7 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  ليه تثق فيا؟
+                </h2>
+              </div>
+              
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <p>
+                  أنا مش بقولك كلام وخلاص.. 
+                  أنا موجه مادة الكيمياء، يعني شغلتي الأساسية إني أتابع المدرسين 
+                  وأتأكد إن المنهج بيتشرح صح.
+                </p>
+                
+                <p>
+                  ولما الوزارة قررت تعمل قناة مدرستنا سنة 2020، 
+                  كنت من المدرسين اللي اختاروهم يشرحوا الكيمياء لطلاب ثانوي على مستوى الجمهورية.
+                </p>
+                
+                <p>
+                  يعني لو بتسأل نفسك: ده فاهم ولا لأ؟ 
+                  الوزارة نفسها اختارتني أشرح لكل طلاب مصر.
+                </p>
+                
+                <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10">
+                  <p className="text-foreground font-medium">
+                    25 سنة بدرس فيهم كيمياء، شفت فيهم كل أنواع الطلاب.. 
+                    اللي بيحب المادة واللي بيكرهها، واللي مش فاهم ليه أصلا بيدرسها.
+                    <br />
+                    وبفهمهم كلهم.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
+
+          {/* Turning Point - نقطة التحول */}
+          <section className="mb-20">
+            <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl p-8 md:p-12">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center">
+                  <Rocket className="w-7 h-7 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  إزاي البلاتفورم ده اتولد؟
+                </h2>
+              </div>
+              
+              <div className="space-y-6 text-muted-foreground leading-relaxed">
+                <p>
+                  سنة 2020، لما كورونا قلبت الدنيا وكل حاجة اتقفلت، 
+                  الطلاب فضلوا في البيوت ومحدش عارف يعمل إيه.
+                </p>
+                
+                <p>
+                  في الوقت ده، قررت إني مستناش حد يحل المشكلة.. 
+                  قلت لازم أعمل حاجة بنفسي.
+                </p>
+                
+                <p>
+                  فبنيت البلاتفورم ده عشان الطالب يقدر يتابع دروسه من بيته، 
+                  من غير ما يضطر يروح سناتر أو يستنى حد.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                  <div className="bg-background/50 rounded-2xl p-6 border border-border">
+                    <BookOpen className="w-8 h-8 text-primary mb-4" />
+                    <h3 className="font-bold text-foreground mb-2">دروس كاملة</h3>
+                    <p className="text-sm">
+                      كل الدروس متسجلة ومتاحة في أي وقت، 
+                      تقدر ترجعلها وتفهمها على مهلك.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-background/50 rounded-2xl p-6 border border-border">
+                    <Users className="w-8 h-8 text-primary mb-4" />
+                    <h3 className="font-bold text-foreground mb-2">متابعة مستمرة</h3>
+                    <p className="text-sm">
+                      مش بس شرح وخلاص، 
+                      ده فيه متابعة ليك ولحضورك ودرجاتك.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Closing Message - رسالة ختامية */}
+          <section>
+            <div className="bg-card border border-border rounded-3xl p-8 md:p-12 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-8 h-8 text-primary" />
+              </div>
+              
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                رسالتي ليك
+              </h2>
+              
+              <div className="max-w-2xl mx-auto space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  أنا مش هقولك إن الكيمياء سهلة.. 
+                  لأ، هي محتاجة شغل وتركيز.
+                </p>
+                
+                <p>
+                  بس هقولك إنك لو فهمتها صح من الأول، 
+                  مش هتحتاج تحفظ حاجة.
+                </p>
+                
+                <p>
+                  أنا هنا عشان أفهمك، مش عشان أحفظك.
+                  <br />
+                  عشان أخليك تحب المادة، مش تخاف منها.
+                </p>
+                
+                <p className="text-foreground font-bold text-lg pt-4">
+                  ولو جاهز تبدأ صح، أنا معاك.
+                </p>
+              </div>
+            </div>
+          </section>
+          
         </div>
       </main>
 
