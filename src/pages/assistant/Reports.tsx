@@ -492,7 +492,7 @@ export default function Reports() {
                       {isArabic ? 'الطلاب' : 'Students'}
                     </th>
                     <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">
-                      {isArabic ? 'الدروس' : 'Lessons'}
+                      {isArabic ? 'الحصص' : 'Lessons'}
                     </th>
                     <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground hidden md:table-cell">
                       {isArabic ? 'التقدم' : 'Progress'}

@@ -182,7 +182,7 @@ export default function ManageCourses() {
   };
 
   const handleDelete = async (courseId: string) => {
-    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا الكورس؟ سيتم حذف جميع الدروس المرتبطة به.' : 'Are you sure you want to delete this course? All related lessons will be deleted.')) {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا الكورس؟ سيتم حذف جميع الحصص المرتبطة به.' : 'Are you sure you want to delete this course? All related lessons will be deleted.')) {
       return;
     }
 

@@ -68,7 +68,7 @@ export const LessonActivityList: React.FC<LessonActivityListProps> = ({
       <div className="text-center py-8">
         <Circle className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
         <p className="text-muted-foreground">
-          {isRTL ? 'لا توجد دروس بعد' : 'No lessons yet'}
+          {isRTL ? 'لا توجد حصص بعد' : 'No lessons yet'}
         </p>
       </div>
     );
