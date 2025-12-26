@@ -179,6 +179,38 @@ export type Database = {
           },
         ]
       }
+      lesson_answers: {
+        Row: {
+          answer: string
+          answered_by: string
+          created_at: string
+          id: string
+          question_id: string
+        }
+        Insert: {
+          answer: string
+          answered_by: string
+          created_at?: string
+          id?: string
+          question_id: string
+        }
+        Update: {
+          answer?: string
+          answered_by?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_attendance: {
         Row: {
           attendance_type: Database["public"]["Enums"]["attendance_type"]
@@ -207,6 +239,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lesson_attendance_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_answered: boolean | null
+          lesson_id: string
+          question: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_answered?: boolean | null
+          lesson_id: string
+          question: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_answered?: boolean | null
+          lesson_id?: string
+          question?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_questions_lesson_id_fkey"
             columns: ["lesson_id"]
             isOneToOne: false
             referencedRelation: "lessons"
@@ -360,6 +427,94 @@ export type Database = {
           },
         ]
       }
+      practice_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_answer: boolean | null
+          selected_option: number | null
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          selected_answer?: boolean | null
+          selected_option?: number | null
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_answer?: boolean | null
+          selected_option?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "practice_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_questions: {
+        Row: {
+          correct_answer: boolean | null
+          created_at: string
+          explanation: string | null
+          explanation_ar: string | null
+          id: string
+          lesson_id: string
+          options: Json | null
+          order_index: number | null
+          question: string
+          question_ar: string
+          question_type: Database["public"]["Enums"]["question_type"]
+        }
+        Insert: {
+          correct_answer?: boolean | null
+          created_at?: string
+          explanation?: string | null
+          explanation_ar?: string | null
+          id?: string
+          lesson_id: string
+          options?: Json | null
+          order_index?: number | null
+          question: string
+          question_ar: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+        }
+        Update: {
+          correct_answer?: boolean | null
+          created_at?: string
+          explanation?: string | null
+          explanation_ar?: string | null
+          id?: string
+          lesson_id?: string
+          options?: Json | null
+          order_index?: number | null
+          question?: string
+          question_ar?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           academic_year: string | null
@@ -458,6 +613,7 @@ export type Database = {
         | "attendance_online"
         | "attendance_followup"
         | "system_message"
+      question_type: "mcq" | "true_false"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -608,6 +764,7 @@ export const Constants = {
         "attendance_followup",
         "system_message",
       ],
+      question_type: ["mcq", "true_false"],
     },
   },
 } as const
