@@ -19,6 +19,7 @@ interface PressArticle {
   title: string;
   preview: string;
   embedUrl: string;
+  isExternal?: boolean;
 }
 
 const About = () => {
@@ -51,38 +52,43 @@ const About = () => {
   const pressArticles: PressArticle[] = [
     {
       id: 1,
-      newspaper: isRTL ? 'اليوم السابع' : 'Youm7',
-      title: isRTL ? 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء' : 'Golden Tips for High School Students in Chemistry',
-      preview: isRTL ? 'حسام فكري يكشف أسرار التفوق في الكيمياء' : 'Hossam Fekry reveals secrets to excel in Chemistry',
-      embedUrl: 'https://www.youm7.com/embed/article1',
+      newspaper: isRTL ? 'القاهرة تايمز' : 'Al Cahira Times',
+      title: isRTL ? 'الأستاذ حسام فكري.. قصة نجاح 25 عاما في الكيمياء' : 'Mr. Hossam Fekry.. A 25-Year Success Story in Chemistry',
+      preview: isRTL ? 'رحلة ربع قرن من التميز في تعليم الكيمياء' : 'A quarter-century journey of excellence in chemistry education',
+      embedUrl: 'https://alcahiratimes.com/%D8%A7%D9%84%D8%A3%D8%B3%D8%AA%D8%A7%D8%B0-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-%D9%82%D8%B5%D8%A9-%D9%86%D8%AC%D8%A7%D8%AD-25-%D8%B9%D8%A7%D9%85%D8%A7-%D9%81%D9%8A/',
+      isExternal: true,
     },
     {
       id: 2,
-      newspaper: isRTL ? 'الوطن' : 'Al-Watan',
-      title: isRTL ? 'موجه الكيمياء يشرح منهج التعليم الجديد' : 'Chemistry Supervisor Explains New Curriculum',
-      preview: isRTL ? 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ' : 'Innovative teaching system to understand Chemistry without memorization',
-      embedUrl: 'https://www.elwatannews.com/embed/article2',
+      newspaper: isRTL ? 'اليوم السابع' : 'Youm7',
+      title: isRTL ? 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء' : 'Golden Tips for High School Students in Chemistry',
+      preview: isRTL ? 'حسام فكري يكشف أسرار التفوق في الكيمياء' : 'Hossam Fekry reveals secrets to excel in Chemistry',
+      embedUrl: 'https://www.youm7.com',
+      isExternal: true,
     },
     {
       id: 3,
-      newspaper: isRTL ? 'المصري اليوم' : 'Al-Masry Al-Youm',
-      title: isRTL ? 'كيف تذاكر الكيمياء صح؟' : 'How to Study Chemistry Right?',
-      preview: isRTL ? 'خطة مذاكرة عملية من خبير 25 سنة' : 'Practical study plan from a 25-year expert',
-      embedUrl: 'https://www.almasryalyoum.com/embed/article3',
+      newspaper: isRTL ? 'الوطن' : 'Al-Watan',
+      title: isRTL ? 'موجه الكيمياء يشرح منهج التعليم الجديد' : 'Chemistry Supervisor Explains New Curriculum',
+      preview: isRTL ? 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ' : 'Innovative teaching system to understand Chemistry without memorization',
+      embedUrl: 'https://www.elwatannews.com',
+      isExternal: true,
     },
     {
       id: 4,
-      newspaper: isRTL ? 'صدى البلد' : 'Sada El-Balad',
-      title: isRTL ? 'حسام فكري: الفهم أهم من الحفظ' : 'Hossam Fekry: Understanding is More Important than Memorization',
-      preview: isRTL ? 'فلسفة تدريسية غيرت حياة آلاف الطلاب' : 'A teaching philosophy that changed thousands of students lives',
-      embedUrl: 'https://www.sadaelbalad.com/embed/article4',
+      newspaper: isRTL ? 'المصري اليوم' : 'Al-Masry Al-Youm',
+      title: isRTL ? 'كيف تذاكر الكيمياء صح؟' : 'How to Study Chemistry Right?',
+      preview: isRTL ? 'خطة مذاكرة عملية من خبير 25 سنة' : 'Practical study plan from a 25-year expert',
+      embedUrl: 'https://www.almasryalyoum.com',
+      isExternal: true,
     },
     {
       id: 5,
-      newspaper: isRTL ? 'الأهرام' : 'Al-Ahram',
-      title: isRTL ? 'تجربة التعليم عن بعد في زمن كورونا' : 'Remote Learning Experience During COVID',
-      preview: isRTL ? 'قصة نجاح منصة تعليمية مصرية' : 'Success story of an Egyptian educational platform',
-      embedUrl: 'https://www.ahram.org.eg/embed/article5',
+      newspaper: isRTL ? 'صدى البلد' : 'Sada El-Balad',
+      title: isRTL ? 'حسام فكري: الفهم أهم من الحفظ' : 'Hossam Fekry: Understanding is More Important than Memorization',
+      preview: isRTL ? 'فلسفة تدريسية غيرت حياة آلاف الطلاب' : 'A teaching philosophy that changed thousands of students lives',
+      embedUrl: 'https://www.sadaelbalad.com',
+      isExternal: true,
     },
   ];
 
@@ -209,15 +215,29 @@ const About = () => {
                     {article.preview}
                   </p>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                    onClick={() => setSelectedArticle(article)}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {t('about.press.readArticle')}
-                  </Button>
+                  {article.isExternal ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      asChild
+                    >
+                      <a href={article.embedUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-4 h-4" />
+                        {t('about.press.readArticle')}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      onClick={() => setSelectedArticle(article)}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {t('about.press.readArticle')}
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
