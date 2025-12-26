@@ -273,11 +273,11 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                  {isArabic ? `أهلاً ${firstName}! 👋` : `Welcome ${firstName}! 👋`}
+                  {t('dashboard.welcome')} {firstName}! 👋
                 </h1>
                 <div className="flex items-center gap-3 flex-wrap">
                   <p className="text-muted-foreground">
-                    {isArabic ? 'لوحة تحكم الطالب' : 'Student Dashboard'}
+                    {t('dashboard.student')}
                   </p>
                   {groupLabel && (
                     <Badge variant="secondary" className="text-sm">
@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
               <Button variant="outline" asChild className="gap-2">
                 <Link to="/settings">
                   <Settings className="w-4 h-4" />
-                  {isArabic ? 'الإعدادات' : 'Settings'}
+                  {t('nav.settings')}
                 </Link>
               </Button>
             </div>
@@ -308,25 +308,25 @@ const Dashboard: React.FC = () => {
             <StatCard
               icon={CheckCircle2}
               value={totalLessonsCompleted}
-              label={isArabic ? 'دروس مكتملة' : 'Lessons Completed'}
+              label={t('dashboard.lessonsCompleted')}
               variant="success"
             />
             <StatCard
               icon={BookOpen}
               value={lessonsRemaining}
-              label={isArabic ? 'دروس متبقية' : 'Lessons Remaining'}
+              label={t('dashboard.lessonsRemaining')}
               variant="primary"
             />
             <StatCard
               icon={Award}
               value={examsTaken}
-              label={isArabic ? 'امتحانات تمت' : 'Exams Taken'}
+              label={t('dashboard.examsTaken')}
               variant="accent"
             />
             <StatCard
               icon={Clock}
               value={examsPending}
-              label={isArabic ? 'امتحانات معلقة' : 'Exams Pending'}
+              label={t('dashboard.examsPending')}
               variant="warning"
             />
           </div>
@@ -339,11 +339,11 @@ const Dashboard: React.FC = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-primary" />
-                    {isArabic ? 'تقدم الكورسات' : 'Course Progress'}
+                    {t('courses.progress')}
                   </h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link to="/courses" className="gap-1">
-                      {isArabic ? 'عرض الكل' : 'View All'}
+                      {t('system.viewAll')}
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   </Button>
@@ -353,14 +353,14 @@ const Dashboard: React.FC = () => {
                   <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {isArabic ? 'لم تشترك في أي كورس بعد' : 'No courses enrolled yet'}
+                      {t('courses.noEnrolled')}
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      {isArabic ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start learning'}
+                      {t('courses.browseAvailable')}
                     </p>
                     <Button asChild>
                       <Link to="/courses">
-                        {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
+                        {t('dashboard.browseCourses')}
                       </Link>
                     </Button>
                   </div>
@@ -389,7 +389,7 @@ const Dashboard: React.FC = () => {
               <section className="bg-card rounded-xl border border-border p-6">
                 <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <Play className="w-5 h-5 text-primary" />
-                  {isArabic ? 'نشاط الدروس' : 'Lesson Activity'}
+                  {t('lesson.activity')}
                 </h2>
                 
                 <LessonActivityList
@@ -403,7 +403,7 @@ const Dashboard: React.FC = () => {
               <section className="bg-card rounded-xl border border-border p-6">
                 <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  {isArabic ? 'الامتحانات' : 'Exams'}
+                  {t('exams')}
                 </h2>
                 
                 <ExamActivityList
