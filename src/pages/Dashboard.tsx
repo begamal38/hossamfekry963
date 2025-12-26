@@ -109,6 +109,11 @@ const Dashboard: React.FC = () => {
   const [allExams, setAllExams] = useState<ExamActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
