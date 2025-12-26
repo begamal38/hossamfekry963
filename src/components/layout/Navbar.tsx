@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Globe, LogOut, User, Settings } from 'lucide-react';
+import { Menu, X, Globe, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,10 +20,10 @@ export const Navbar: React.FC = () => {
     { href: '/', label: t('nav.home') },
     { href: '/free-lessons', label: t('nav.freeLessons') },
     { href: '/courses', label: t('nav.courses') },
-    { href: '/campaigns', label: language === 'ar' ? 'حملاتنا الإعلانية' : 'Campaigns' },
-    { href: '/about', label: language === 'ar' ? 'عن حسام فكري' : 'About' },
+    { href: '/campaigns', label: t('nav.campaigns') },
+    { href: '/about', label: t('nav.about') },
     ...(user && !canAccessDashboard() ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
-    ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'لوحة التحكم' : 'Control Panel' }] : []),
+    ...(canAccessDashboard() ? [{ href: '/assistant', label: t('nav.controlPanel') }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -90,7 +90,7 @@ export const Navbar: React.FC = () => {
                 >
                   <Link to="/settings">
                     <Settings className="w-4 h-4" />
-                    {language === 'ar' ? 'الإعدادات' : 'Settings'}
+                    {t('nav.settings')}
                   </Link>
                 </Button>
                 <Button 
@@ -163,7 +163,7 @@ export const Navbar: React.FC = () => {
                     >
                       <Link to="/settings" onClick={() => setIsOpen(false)}>
                         <Settings className="w-4 h-4" />
-                        {language === 'ar' ? 'الإعدادات' : 'Settings'}
+                        {t('nav.settings')}
                       </Link>
                     </Button>
                     <Button 

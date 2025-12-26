@@ -36,7 +36,7 @@ export const HeroSection: React.FC = () => {
             <div className="space-y-4 animate-fade-in-up">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                Thanaweya Amma Chemistry
+                {t('hero.badge')}
               </div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
@@ -66,16 +66,16 @@ export const HeroSection: React.FC = () => {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border animate-fade-in-up animation-delay-300">
               <div>
-                <p className="text-3xl font-bold text-primary">500+</p>
-                <p className="text-sm text-muted-foreground">Video Lessons</p>
+                <p className="text-3xl font-bold text-primary">+500</p>
+                <p className="text-sm text-muted-foreground">{t('hero.stats.lessons')}</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-primary">10K+</p>
-                <p className="text-sm text-muted-foreground">Students</p>
+                <p className="text-3xl font-bold text-primary">+10K</p>
+                <p className="text-sm text-muted-foreground">{t('hero.stats.students')}</p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-primary">95%</p>
-                <p className="text-sm text-muted-foreground">Success Rate</p>
+                <p className="text-sm text-muted-foreground">{t('hero.stats.success')}</p>
               </div>
             </div>
           </div>

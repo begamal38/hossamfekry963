@@ -15,8 +15,7 @@ declare global {
 }
 
 const Campaigns = () => {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const { t, isRTL } = useLanguage();
 
   // Facebook post URLs - يمكنك تغيير هذه الروابط بروابط المنشورات الفعلية
   const facebookPosts = [
@@ -48,7 +47,7 @@ const Campaigns = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="pt-24 pb-16">
@@ -58,16 +57,14 @@ const Campaigns = () => {
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
               <Megaphone className="w-5 h-5" />
               <span className="text-sm font-medium">
-                {isArabic ? 'تابعنا على فيسبوك' : 'Follow us on Facebook'}
+                {t('campaigns.followUs')}
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              {isArabic ? 'حملاتنا الإعلانية' : 'Our Campaigns'}
+              {t('campaigns.title')}
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {isArabic 
-                ? 'تابع آخر العروض والأخبار من خلال منشوراتنا على فيسبوك'
-                : 'Follow our latest offers and news through our Facebook posts'}
+              {t('campaigns.subtitle')}
             </p>
           </div>
 
@@ -75,9 +72,7 @@ const Campaigns = () => {
           <div className="bg-gradient-to-r from-blue-600/10 via-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-2xl p-6 mb-12 flex items-center justify-center gap-4">
             <Facebook className="w-8 h-8 text-blue-600" />
             <p className="text-foreground">
-              {isArabic 
-                ? 'تابعنا على صفحتنا الرسمية على فيسبوك للحصول على آخر التحديثات والعروض'
-                : 'Follow our official Facebook page for the latest updates and offers'}
+              {t('campaigns.facebookBanner')}
             </p>
           </div>
 
@@ -106,14 +101,10 @@ const Campaigns = () => {
           {/* Placeholder Message */}
           <div className="mt-12 text-center bg-muted/50 rounded-2xl p-8">
             <p className="text-muted-foreground mb-4">
-              {isArabic 
-                ? '⚠️ ملاحظة: استبدل روابط المنشورات أعلاه بروابط منشوراتك الفعلية من فيسبوك'
-                : '⚠️ Note: Replace the post URLs above with your actual Facebook post URLs'}
+              {t('campaigns.note')}
             </p>
             <p className="text-sm text-muted-foreground">
-              {isArabic 
-                ? 'يمكنك الحصول على رابط المنشور من خلال الضغط على تاريخ المنشور ونسخ الرابط'
-                : 'You can get the post URL by clicking on the post date and copying the link'}
+              {t('campaigns.howToGet')}
             </p>
           </div>
 
@@ -121,12 +112,10 @@ const Campaigns = () => {
           <div className="mt-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 md:p-12 text-center text-white">
             <Facebook className="w-16 h-16 mx-auto mb-6 opacity-90" />
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              {isArabic ? 'تابعنا على فيسبوك' : 'Follow Us on Facebook'}
+              {t('campaigns.followTitle')}
             </h2>
             <p className="mb-6 opacity-90 max-w-xl mx-auto">
-              {isArabic 
-                ? 'انضم لمجتمعنا على فيسبوك وكن أول من يعرف عن العروض والخصومات الحصرية'
-                : 'Join our Facebook community and be the first to know about exclusive offers and discounts'}
+              {t('campaigns.followDesc')}
             </p>
             <a 
               href="https://facebook.com" 
@@ -135,7 +124,7 @@ const Campaigns = () => {
               className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors"
             >
               <Facebook className="w-5 h-5" />
-              {isArabic ? 'زيارة صفحتنا' : 'Visit Our Page'}
+              {t('campaigns.visitPage')}
             </a>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { GraduationCap, Award, Users, BookOpen, Tv, Calendar, Heart, Rocket, Newspaper, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,106 +21,103 @@ interface PressArticle {
 }
 
 const About = () => {
+  const { t, isRTL } = useLanguage();
   const [selectedArticle, setSelectedArticle] = useState<PressArticle | null>(null);
 
   const stats = [
     {
       icon: Calendar,
       value: '25',
-      label: 'سنة خبرة',
+      label: t('about.stats.experience'),
     },
     {
       icon: Users,
       value: '+10,000',
-      label: 'طالب اتعلموا معاه',
+      label: t('about.stats.students'),
     },
     {
       icon: Tv,
       value: '2020',
-      label: 'بداية قناة مدرستنا',
+      label: t('about.stats.channelStart'),
     },
     {
       icon: Award,
-      value: 'موجه',
-      label: 'مادة الكيمياء',
+      value: isRTL ? 'موجه' : 'Supervisor',
+      label: t('about.stats.role'),
     },
   ];
 
   const pressArticles: PressArticle[] = [
     {
       id: 1,
-      newspaper: 'اليوم السابع',
-      title: 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء',
-      preview: 'حسام فكري يكشف أسرار التفوق في الكيمياء',
+      newspaper: isRTL ? 'اليوم السابع' : 'Youm7',
+      title: isRTL ? 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء' : 'Golden Tips for High School Students in Chemistry',
+      preview: isRTL ? 'حسام فكري يكشف أسرار التفوق في الكيمياء' : 'Hossam Fekry reveals secrets to excel in Chemistry',
       embedUrl: 'https://www.youm7.com/embed/article1',
     },
     {
       id: 2,
-      newspaper: 'الوطن',
-      title: 'موجه الكيمياء يشرح منهج التعليم الجديد',
-      preview: 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ',
+      newspaper: isRTL ? 'الوطن' : 'Al-Watan',
+      title: isRTL ? 'موجه الكيمياء يشرح منهج التعليم الجديد' : 'Chemistry Supervisor Explains New Curriculum',
+      preview: isRTL ? 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ' : 'Innovative teaching system to understand Chemistry without memorization',
       embedUrl: 'https://www.elwatannews.com/embed/article2',
     },
     {
       id: 3,
-      newspaper: 'المصري اليوم',
-      title: 'كيف تذاكر الكيمياء صح؟',
-      preview: 'خطة مذاكرة عملية من خبير 25 سنة',
+      newspaper: isRTL ? 'المصري اليوم' : 'Al-Masry Al-Youm',
+      title: isRTL ? 'كيف تذاكر الكيمياء صح؟' : 'How to Study Chemistry Right?',
+      preview: isRTL ? 'خطة مذاكرة عملية من خبير 25 سنة' : 'Practical study plan from a 25-year expert',
       embedUrl: 'https://www.almasryalyoum.com/embed/article3',
     },
     {
       id: 4,
-      newspaper: 'صدى البلد',
-      title: 'حسام فكري: الفهم أهم من الحفظ',
-      preview: 'فلسفة تدريسية غيرت حياة آلاف الطلاب',
+      newspaper: isRTL ? 'صدى البلد' : 'Sada El-Balad',
+      title: isRTL ? 'حسام فكري: الفهم أهم من الحفظ' : 'Hossam Fekry: Understanding is More Important than Memorization',
+      preview: isRTL ? 'فلسفة تدريسية غيرت حياة آلاف الطلاب' : 'A teaching philosophy that changed thousands of students lives',
       embedUrl: 'https://www.sadaelbalad.com/embed/article4',
     },
     {
       id: 5,
-      newspaper: 'الأهرام',
-      title: 'تجربة التعليم عن بعد في زمن كورونا',
-      preview: 'قصة نجاح منصة تعليمية مصرية',
+      newspaper: isRTL ? 'الأهرام' : 'Al-Ahram',
+      title: isRTL ? 'تجربة التعليم عن بعد في زمن كورونا' : 'Remote Learning Experience During COVID',
+      preview: isRTL ? 'قصة نجاح منصة تعليمية مصرية' : 'Success story of an Egyptian educational platform',
       embedUrl: 'https://www.ahram.org.eg/embed/article5',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           
-          {/* Hero Section - من هو حسام فكري */}
+          {/* Hero Section */}
           <section className="mb-20">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="order-2 lg:order-1">
+              <div className={`${isRTL ? 'order-2 lg:order-1' : 'order-2 lg:order-1'}`}>
                 <span className="inline-block bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-                  موجه مادة الكيمياء
+                  {t('about.badge')}
                 </span>
                 
                 <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
-                  مين حسام فكري؟
+                  {t('about.title')}
                 </h1>
                 
                 <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                  لو بتدور على حد يفهمك الكيمياء بجد، مش بس يحفظهالك.. 
-                  يبقى إنت في المكان الصح.
+                  {t('about.intro')}
                 </p>
                 
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  حسام فكري مش مجرد مدرس، ده موجه لمادة الكيمياء، 
-                  ومن أوائل المدرسين اللي ظهروا على قناة مدرستنا التابعة لوزارة التربية والتعليم 
-                  من سنة 2020.
+                  {t('about.description1')}
                 </p>
                 
                 <p className="text-muted-foreground leading-relaxed">
-                  خبرته في التدريس أكتر من 25 سنة، 
-                  وكل سنة بيتعلم حاجة جديدة من طلابه زي ما بيتعلموا منه.
+                  {t('about.description2')}
                 </p>
               </div>
               
-              <div className="order-1 lg:order-2 flex justify-center">
+              <div className={`${isRTL ? 'order-1 lg:order-2' : 'order-1 lg:order-2'} flex justify-center`}>
                 <div className="relative">
                   <div className="absolute -inset-4 bg-primary/10 rounded-3xl blur-xl"></div>
                   <img 
@@ -150,7 +148,7 @@ const About = () => {
             </div>
           </section>
 
-          {/* Experience Section - الخبرة والمصداقية */}
+          {/* Experience Section */}
           <section className="mb-20">
             <div className="bg-card border border-border rounded-3xl p-8 md:p-12">
               <div className="flex items-center gap-4 mb-8">
@@ -158,50 +156,35 @@ const About = () => {
                   <GraduationCap className="w-7 h-7 text-primary" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  ليه تثق في حسام فكري؟
+                  {t('about.trust.title')}
                 </h2>
               </div>
               
               <div className="space-y-6 text-muted-foreground leading-relaxed">
-                <p>
-                  مش كلام وخلاص.. 
-                  حسام فكري موجه مادة الكيمياء، يعني شغلته الأساسية إنه يتابع المدرسين 
-                  ويتأكد إن المنهج بيتشرح صح.
-                </p>
-                
-                <p>
-                  ولما الوزارة قررت تعمل قناة مدرستنا سنة 2020، 
-                  كان من المدرسين اللي اختاروهم يشرحوا الكيمياء لطلاب ثانوي على مستوى الجمهورية.
-                </p>
-                
-                <p>
-                  يعني لو بتسأل نفسك: ده فاهم ولا لأ؟ 
-                  الوزارة نفسها اختارته يشرح لكل طلاب مصر.
-                </p>
+                <p>{t('about.trust.p1')}</p>
+                <p>{t('about.trust.p2')}</p>
+                <p>{t('about.trust.p3')}</p>
                 
                 <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10">
                   <p className="text-foreground font-medium">
-                    25 سنة بيدرس فيهم كيمياء، شاف فيهم كل أنواع الطلاب.. 
-                    اللي بيحب المادة واللي بيكرهها، واللي مش فاهم ليه أصلا بيدرسها.
-                    <br />
-                    وبيفهمهم كلهم.
+                    {t('about.trust.highlight')}
                   </p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Press Articles Section - مقالات صحفية */}
+          {/* Press Articles Section */}
           <section className="mb-20">
             <div className="text-center mb-12">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Newspaper className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                كلام الصحافة عن حسام فكري
+                {t('about.press.title')}
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                مقالات اتكتبت في جرائد مصرية عن نظام التدريس ونصائح للطلاب
+                {t('about.press.subtitle')}
               </p>
             </div>
             
@@ -232,14 +215,14 @@ const About = () => {
                     onClick={() => setSelectedArticle(article)}
                   >
                     <ExternalLink className="w-4 h-4" />
-                    اقرأ المقال
+                    {t('about.press.readArticle')}
                   </Button>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Turning Point - نقطة التحول */}
+          {/* Turning Point Section */}
           <section className="mb-20">
             <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl p-8 md:p-12">
               <div className="flex items-center gap-4 mb-8">
@@ -247,50 +230,33 @@ const About = () => {
                   <Rocket className="w-7 h-7 text-primary" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  إزاي البلاتفورم ده اتولد؟
+                  {t('about.platform.title')}
                 </h2>
               </div>
               
               <div className="space-y-6 text-muted-foreground leading-relaxed">
-                <p>
-                  سنة 2020، لما كورونا قلبت الدنيا وكل حاجة اتقفلت، 
-                  الطلاب فضلوا في البيوت ومحدش عارف يعمل إيه.
-                </p>
-                
-                <p>
-                  في الوقت ده، حسام فكري قرر إنه ميستناش حد يحل المشكلة.. 
-                  قال لازم يعمل حاجة بنفسه.
-                </p>
-                
-                <p>
-                  فبنى البلاتفورم ده عشان الطالب يقدر يتابع دروسه من بيته، 
-                  من غير ما يضطر يروح سناتر أو يستنى حد.
-                </p>
+                <p>{t('about.platform.p1')}</p>
+                <p>{t('about.platform.p2')}</p>
+                <p>{t('about.platform.p3')}</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                   <div className="bg-background/50 rounded-2xl p-6 border border-border">
                     <BookOpen className="w-8 h-8 text-primary mb-4" />
-                    <h3 className="font-bold text-foreground mb-2">دروس كاملة</h3>
-                    <p className="text-sm">
-                      كل الدروس متسجلة ومتاحة في أي وقت، 
-                      تقدر ترجعلها وتفهمها على مهلك.
-                    </p>
+                    <h3 className="font-bold text-foreground mb-2">{t('about.platform.lessons.title')}</h3>
+                    <p className="text-sm">{t('about.platform.lessons.desc')}</p>
                   </div>
                   
                   <div className="bg-background/50 rounded-2xl p-6 border border-border">
                     <Users className="w-8 h-8 text-primary mb-4" />
-                    <h3 className="font-bold text-foreground mb-2">متابعة مستمرة</h3>
-                    <p className="text-sm">
-                      مش بس شرح وخلاص، 
-                      ده فيه متابعة ليك ولحضورك ودرجاتك.
-                    </p>
+                    <h3 className="font-bold text-foreground mb-2">{t('about.platform.tracking.title')}</h3>
+                    <p className="text-sm">{t('about.platform.tracking.desc')}</p>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Closing Message - رسالة ختامية */}
+          {/* Closing Message */}
           <section>
             <div className="bg-card border border-border rounded-3xl p-8 md:p-12 text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
@@ -298,28 +264,15 @@ const About = () => {
               </div>
               
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
-                رسالة حسام فكري ليك
+                {t('about.message.title')}
               </h2>
               
               <div className="max-w-2xl mx-auto space-y-4 text-muted-foreground leading-relaxed">
-                <p>
-                  الكيمياء مش سهلة.. 
-                  هي محتاجة شغل وتركيز.
-                </p>
-                
-                <p>
-                  بس لو فهمتها صح من الأول، 
-                  مش هتحتاج تحفظ حاجة.
-                </p>
-                
-                <p>
-                  حسام فكري هنا عشان يفهمك، مش عشان يحفظك.
-                  <br />
-                  عشان يخليك تحب المادة، مش تخاف منها.
-                </p>
-                
+                <p>{t('about.message.p1')}</p>
+                <p>{t('about.message.p2')}</p>
+                <p>{t('about.message.p3')}</p>
                 <p className="text-foreground font-bold text-lg pt-4">
-                  ولو جاهز تبدأ صح، هو معاك.
+                  {t('about.message.cta')}
                 </p>
               </div>
             </div>
@@ -330,7 +283,7 @@ const About = () => {
 
       {/* Article Modal */}
       <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden" dir="rtl">
+        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
