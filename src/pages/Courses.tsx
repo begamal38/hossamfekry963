@@ -391,7 +391,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         {/* CTA */}
         {isEnrolled ? (
           <Button variant="default" className="w-full gap-2" asChild>
-            <Link to={`/dashboard`}>
+            <Link to={`/course/${course.id}`}>
               <Play className="w-4 h-4" />
               {isArabic ? 'متابعة التعلم' : 'Continue Learning'}
             </Link>
