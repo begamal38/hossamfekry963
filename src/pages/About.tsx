@@ -85,7 +85,7 @@ const About = () => {
       preview: isRTL ? 'توظيف التكنولوجيا الحديثة في تعليم الكيمياء' : 'Using modern technology in teaching Chemistry',
       embedUrl: 'https://exteranews.com/%D8%A3%D8%AD%D8%AF%D8%AB-%D8%AA%D9%82%D9%86%D9%8A%D8%A7%D8%AA-%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85-%D9%81%D9%8A-%D8%A7%D9%84%D9%83%D9%8A%D9%85%D9%8A%D8%A7%D8%A1-%D9%83%D9%8A%D9%81-%D9%8A%D9%88/',
       isExternal: true,
-      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
+      thumbnail: '/images/press/extranews-article.png',
     },
     {
       id: 5,
