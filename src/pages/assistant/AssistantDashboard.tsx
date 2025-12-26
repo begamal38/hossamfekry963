@@ -41,21 +41,21 @@ export default function AssistantDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  const hasAccess = canAccessDashboard();
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
+      return;
     }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    if (!roleLoading && !canAccessDashboard()) {
+    if (!authLoading && !roleLoading && user && !hasAccess) {
       navigate('/');
     }
-  }, [roleLoading, canAccessDashboard, navigate]);
+  }, [user, authLoading, roleLoading, hasAccess, navigate]);
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user || !canAccessDashboard()) return;
+      if (!user || !hasAccess) return;
 
       try {
         // Fetch profile
@@ -112,10 +112,10 @@ export default function AssistantDashboard() {
       }
     };
 
-    if (!roleLoading && canAccessDashboard()) {
+    if (!authLoading && !roleLoading && hasAccess) {
       fetchStats();
     }
-  }, [user, roleLoading, canAccessDashboard]);
+  }, [user, authLoading, roleLoading, hasAccess]);
 
   if (authLoading || roleLoading) {
     return (
