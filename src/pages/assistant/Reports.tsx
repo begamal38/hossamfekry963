@@ -80,8 +80,16 @@ export default function Reports() {
 
   const fetchReportData = async () => {
     try {
+      // First, get student user IDs from user_roles
+      const { data: studentRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'student');
+
+      const studentUserIds = (studentRoles || []).map(r => r.user_id);
+
       const [
-        { data: profiles },
+        { data: allProfiles },
         { data: courses },
         { data: enrollments },
         { data: lessons },
@@ -98,14 +106,17 @@ export default function Reports() {
         supabase.from('exam_results').select('*, exams:exam_id(max_score)')
       ]);
 
+      // Filter profiles to only include students
+      const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
+
       // Count attendance by type
       const centerAttendance = (attendance || []).filter(a => a.attendance_type === 'center').length;
       const onlineAttendance = (attendance || []).filter(a => a.attendance_type === 'online').length;
 
-      // Count students by attendance mode
-      const onlineStudents = (profiles || []).filter(p => p.attendance_mode === 'online').length;
-      const centerStudents = (profiles || []).filter(p => p.attendance_mode === 'center').length;
-      const hybridStudents = (profiles || []).filter(p => p.attendance_mode === 'hybrid').length;
+      // Count students by attendance mode (only actual students)
+      const onlineStudents = profiles.filter(p => p.attendance_mode === 'online').length;
+      const centerStudents = profiles.filter(p => p.attendance_mode === 'center').length;
+      const hybridStudents = profiles.filter(p => p.attendance_mode === 'hybrid').length;
 
       const activeEnrollments = (enrollments || []).filter(e => e.status === 'active').length;
       const pendingEnrollments = (enrollments || []).filter(e => e.status === 'pending').length;
@@ -122,7 +133,7 @@ export default function Reports() {
         : 0;
 
       setOverallStats({
-        totalStudents: (profiles || []).length,
+        totalStudents: profiles.length,
         totalEnrollments: (enrollments || []).length,
         activeEnrollments,
         pendingEnrollments,
