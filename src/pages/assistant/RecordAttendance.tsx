@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Video, Building, Users } from 'lucide-react';
+import { ArrowLeft, Check, Video, Building, Users, Globe, MapPin, Layers, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -21,12 +22,28 @@ interface Lesson {
   lesson_type: string;
 }
 
+type AttendanceMode = 'online' | 'center' | 'hybrid';
+type AttendanceType = 'center' | 'online';
+
 interface Student {
   user_id: string;
   full_name: string | null;
   phone: string | null;
-  isPresent: boolean;
+  attendance_mode: AttendanceMode;
+  centerAttended: boolean;
+  onlineCompleted: boolean;
 }
+
+interface ExistingAttendance {
+  user_id: string;
+  attendance_type: AttendanceType;
+}
+
+const ATTENDANCE_MODE_LABELS: Record<AttendanceMode, { ar: string; en: string; icon: typeof Globe }> = {
+  online: { ar: 'أونلاين', en: 'Online', icon: Globe },
+  center: { ar: 'سنتر', en: 'Center', icon: MapPin },
+  hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers },
+};
 
 export default function RecordAttendance() {
   const navigate = useNavigate();
@@ -40,6 +57,7 @@ export default function RecordAttendance() {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedLesson, setSelectedLesson] = useState<string>('');
+  const [filterMode, setFilterMode] = useState<AttendanceMode | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -59,7 +77,7 @@ export default function RecordAttendance() {
   }, [selectedCourse]);
 
   useEffect(() => {
-    if (selectedLesson) {
+    if (selectedLesson && students.length > 0) {
       fetchExistingAttendance();
     }
   }, [selectedLesson]);
@@ -105,7 +123,6 @@ export default function RecordAttendance() {
 
   const fetchStudents = async () => {
     try {
-      // Get enrolled students for this course
       const { data: enrollments, error: enrollError } = await supabase
         .from('course_enrollments')
         .select('user_id')
@@ -123,12 +140,19 @@ export default function RecordAttendance() {
 
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, phone')
+        .select('user_id, full_name, phone, attendance_mode')
         .in('user_id', userIds);
 
       if (profileError) throw profileError;
 
-      setStudents((profiles || []).map(p => ({ ...p, isPresent: false })));
+      setStudents((profiles || []).map(p => ({
+        user_id: p.user_id,
+        full_name: p.full_name,
+        phone: p.phone,
+        attendance_mode: (p.attendance_mode as AttendanceMode) || 'online',
+        centerAttended: false,
+        onlineCompleted: false,
+      })));
     } catch (error) {
       console.error('Error fetching students:', error);
     }
@@ -138,25 +162,45 @@ export default function RecordAttendance() {
     try {
       const { data, error } = await supabase
         .from('lesson_attendance')
-        .select('user_id')
+        .select('user_id, attendance_type')
         .eq('lesson_id', selectedLesson);
 
       if (error) throw error;
 
-      const presentIds = (data || []).map(a => a.user_id);
+      const attendanceMap = new Map<string, { center: boolean; online: boolean }>();
       
-      setStudents(prev => prev.map(s => ({
-        ...s,
-        isPresent: presentIds.includes(s.user_id)
-      })));
+      (data || []).forEach((a: ExistingAttendance) => {
+        const existing = attendanceMap.get(a.user_id) || { center: false, online: false };
+        if (a.attendance_type === 'center') {
+          existing.center = true;
+        } else if (a.attendance_type === 'online') {
+          existing.online = true;
+        }
+        attendanceMap.set(a.user_id, existing);
+      });
+
+      setStudents(prev => prev.map(s => {
+        const attendance = attendanceMap.get(s.user_id);
+        return {
+          ...s,
+          centerAttended: attendance?.center || false,
+          onlineCompleted: attendance?.online || false,
+        };
+      }));
     } catch (error) {
       console.error('Error fetching attendance:', error);
     }
   };
 
-  const toggleAttendance = (userId: string) => {
-    setStudents(prev => prev.map(s => 
-      s.user_id === userId ? { ...s, isPresent: !s.isPresent } : s
+  const toggleCenterAttendance = (userId: string) => {
+    setStudents(prev => prev.map(s =>
+      s.user_id === userId ? { ...s, centerAttended: !s.centerAttended } : s
+    ));
+  };
+
+  const toggleOnlineAttendance = (userId: string) => {
+    setStudents(prev => prev.map(s =>
+      s.user_id === userId ? { ...s, onlineCompleted: !s.onlineCompleted } : s
     ));
   };
 
@@ -178,23 +222,41 @@ export default function RecordAttendance() {
         .delete()
         .eq('lesson_id', selectedLesson);
 
-      // Insert new attendance records
-      const presentStudents = students.filter(s => s.isPresent);
-      
-      if (presentStudents.length > 0) {
+      // Build new attendance records
+      const attendanceRecords: { user_id: string; lesson_id: string; attendance_type: AttendanceType }[] = [];
+
+      students.forEach(s => {
+        if (s.centerAttended) {
+          attendanceRecords.push({
+            user_id: s.user_id,
+            lesson_id: selectedLesson,
+            attendance_type: 'center'
+          });
+        }
+        if (s.onlineCompleted) {
+          attendanceRecords.push({
+            user_id: s.user_id,
+            lesson_id: selectedLesson,
+            attendance_type: 'online'
+          });
+        }
+      });
+
+      if (attendanceRecords.length > 0) {
         const { error } = await supabase
           .from('lesson_attendance')
-          .insert(presentStudents.map(s => ({
-            user_id: s.user_id,
-            lesson_id: selectedLesson
-          })));
+          .insert(attendanceRecords);
 
         if (error) throw error;
       }
 
+      const attendedCount = students.filter(s => s.centerAttended || s.onlineCompleted).length;
+
       toast({
         title: isArabic ? 'تم بنجاح' : 'Success',
-        description: isArabic ? `تم تسجيل حضور ${presentStudents.length} طالب` : `Recorded attendance for ${presentStudents.length} students`
+        description: isArabic 
+          ? `تم تسجيل حضور ${attendedCount} طالب` 
+          : `Recorded attendance for ${attendedCount} students`
       });
     } catch (error) {
       console.error('Error saving attendance:', error);
@@ -210,6 +272,28 @@ export default function RecordAttendance() {
 
   const selectedLessonData = lessons.find(l => l.id === selectedLesson);
 
+  const filteredStudents = filterMode === 'all' 
+    ? students 
+    : students.filter(s => s.attendance_mode === filterMode);
+
+  const getAttendanceStatus = (student: Student) => {
+    if (student.centerAttended && student.onlineCompleted) {
+      return { label: isArabic ? 'حضور كامل' : 'Full Attendance', color: 'bg-green-500' };
+    }
+    if (student.centerAttended) {
+      return { label: isArabic ? 'حضور سنتر' : 'Center', color: 'bg-blue-500' };
+    }
+    if (student.onlineCompleted) {
+      return { label: isArabic ? 'أونلاين' : 'Online', color: 'bg-purple-500' };
+    }
+    return { label: isArabic ? 'غائب' : 'Absent', color: 'bg-red-500' };
+  };
+
+  const getModeIcon = (mode: AttendanceMode) => {
+    const Icon = ATTENDANCE_MODE_LABELS[mode].icon;
+    return <Icon className="h-3 w-3" />;
+  };
+
   if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -221,49 +305,56 @@ export default function RecordAttendance() {
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
-      
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl">
+
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
             <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
           </Button>
-          <h1 className="text-2xl font-bold">{isArabic ? 'تسجيل الحضور' : 'Record Attendance'}</h1>
+          <div>
+            <h1 className="text-2xl font-bold">{isArabic ? 'تسجيل الحضور' : 'Record Attendance'}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isArabic ? 'سجل حضور الطلاب في السنتر أو أونلاين' : 'Record student attendance for center or online'}
+            </p>
+          </div>
         </div>
 
         {/* Selectors */}
         <div className="bg-card border rounded-xl p-4 mb-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">{isArabic ? 'الكورس' : 'Course'}</label>
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="w-full px-4 py-2 bg-background border border-input rounded-lg"
-            >
-              {courses.map(course => (
-                <option key={course.id} value={course.id}>
-                  {isArabic ? course.title_ar : course.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">{isArabic ? 'الدرس' : 'Lesson'}</label>
-            <select
-              value={selectedLesson}
-              onChange={(e) => setSelectedLesson(e.target.value)}
-              className="w-full px-4 py-2 bg-background border border-input rounded-lg"
-            >
-              {lessons.length === 0 ? (
-                <option value="">{isArabic ? 'لا توجد دروس' : 'No lessons'}</option>
-              ) : (
-                lessons.map(lesson => (
-                  <option key={lesson.id} value={lesson.id}>
-                    {lesson.lesson_type === 'online' ? '🖥️' : '🏫'} {isArabic ? lesson.title_ar : lesson.title}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">{isArabic ? 'الكورس' : 'Course'}</label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg"
+              >
+                {courses.map(course => (
+                  <option key={course.id} value={course.id}>
+                    {isArabic ? course.title_ar : course.title}
                   </option>
-                ))
-              )}
-            </select>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">{isArabic ? 'الدرس' : 'Lesson'}</label>
+              <select
+                value={selectedLesson}
+                onChange={(e) => setSelectedLesson(e.target.value)}
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg"
+              >
+                {lessons.length === 0 ? (
+                  <option value="">{isArabic ? 'لا توجد دروس' : 'No lessons'}</option>
+                ) : (
+                  lessons.map(lesson => (
+                    <option key={lesson.id} value={lesson.id}>
+                      {lesson.lesson_type === 'online' ? '🖥️' : '🏫'} {isArabic ? lesson.title_ar : lesson.title}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
           {selectedLessonData && (
@@ -283,6 +374,38 @@ export default function RecordAttendance() {
           )}
         </div>
 
+        {/* Filter by Attendance Mode */}
+        <div className="bg-card border rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">{isArabic ? 'فلترة حسب نوع الحضور' : 'Filter by Attendance Mode'}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={filterMode === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterMode('all')}
+            >
+              {isArabic ? 'الكل' : 'All'} ({students.length})
+            </Button>
+            {(['center', 'online', 'hybrid'] as AttendanceMode[]).map(mode => {
+              const count = students.filter(s => s.attendance_mode === mode).length;
+              return (
+                <Button
+                  key={mode}
+                  variant={filterMode === mode ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterMode(mode)}
+                  className="gap-1"
+                >
+                  {getModeIcon(mode)}
+                  {isArabic ? ATTENDANCE_MODE_LABELS[mode].ar : ATTENDANCE_MODE_LABELS[mode].en} ({count})
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Students List */}
         <div className="bg-card border rounded-xl overflow-hidden mb-6">
           <div className="p-4 border-b flex items-center justify-between">
@@ -291,45 +414,123 @@ export default function RecordAttendance() {
               <span className="font-medium">{isArabic ? 'الطلاب المشتركين' : 'Enrolled Students'}</span>
             </div>
             <span className="text-sm text-muted-foreground">
-              {students.filter(s => s.isPresent).length} / {students.length}
+              {filteredStudents.filter(s => s.centerAttended || s.onlineCompleted).length} / {filteredStudents.length}
             </span>
           </div>
 
-          {students.length === 0 ? (
+          {/* Header Row */}
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
+            <div className="col-span-5">{isArabic ? 'الطالب' : 'Student'}</div>
+            <div className="col-span-2 text-center">{isArabic ? 'النوع' : 'Mode'}</div>
+            <div className="col-span-2 text-center">{isArabic ? 'سنتر' : 'Center'}</div>
+            <div className="col-span-2 text-center">{isArabic ? 'أونلاين' : 'Online'}</div>
+            <div className="col-span-1 text-center">{isArabic ? 'الحالة' : 'Status'}</div>
+          </div>
+
+          {filteredStudents.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              {isArabic ? 'لا يوجد طلاب مشتركين في هذا الكورس' : 'No students enrolled in this course'}
+              {isArabic ? 'لا يوجد طلاب' : 'No students found'}
             </div>
           ) : (
-            <div className="divide-y">
-              {students.map(student => (
-                <div
-                  key={student.user_id}
-                  onClick={() => toggleAttendance(student.user_id)}
-                  className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${
-                    student.isPresent ? 'bg-green-500/10' : 'hover:bg-muted/30'
-                  }`}
-                >
-                  <div>
-                    <p className="font-medium">{student.full_name || (isArabic ? 'بدون اسم' : 'No name')}</p>
-                    <p className="text-sm text-muted-foreground" dir="ltr">{student.phone}</p>
+            <div className="divide-y max-h-[500px] overflow-y-auto">
+              {filteredStudents.map(student => {
+                const status = getAttendanceStatus(student);
+                return (
+                  <div
+                    key={student.user_id}
+                    className="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                  >
+                    {/* Student Info */}
+                    <div className="col-span-5">
+                      <p className="font-medium text-sm truncate">
+                        {student.full_name || (isArabic ? 'بدون اسم' : 'No name')}
+                      </p>
+                      <p className="text-xs text-muted-foreground" dir="ltr">{student.phone}</p>
+                    </div>
+
+                    {/* Attendance Mode Badge */}
+                    <div className="col-span-2 flex justify-center">
+                      <Badge variant="outline" className="text-xs gap-1">
+                        {getModeIcon(student.attendance_mode)}
+                        <span className="hidden sm:inline">
+                          {isArabic 
+                            ? ATTENDANCE_MODE_LABELS[student.attendance_mode].ar 
+                            : ATTENDANCE_MODE_LABELS[student.attendance_mode].en}
+                        </span>
+                      </Badge>
+                    </div>
+
+                    {/* Center Attendance Toggle */}
+                    <div className="col-span-2 flex justify-center">
+                      <button
+                        onClick={() => toggleCenterAttendance(student.user_id)}
+                        className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          student.centerAttended
+                            ? 'bg-blue-500 border-blue-500 text-white'
+                            : 'border-muted-foreground/30 hover:border-blue-500/50'
+                        }`}
+                        title={isArabic ? 'حضور في السنتر' : 'Center attendance'}
+                      >
+                        {student.centerAttended && <Check className="h-4 w-4" />}
+                      </button>
+                    </div>
+
+                    {/* Online Attendance Toggle */}
+                    <div className="col-span-2 flex justify-center">
+                      <button
+                        onClick={() => toggleOnlineAttendance(student.user_id)}
+                        className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          student.onlineCompleted
+                            ? 'bg-purple-500 border-purple-500 text-white'
+                            : 'border-muted-foreground/30 hover:border-purple-500/50'
+                        }`}
+                        title={isArabic ? 'مشاهدة أونلاين' : 'Online completion'}
+                      >
+                        {student.onlineCompleted && <Check className="h-4 w-4" />}
+                      </button>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-1 flex justify-center">
+                      <div
+                        className={`w-3 h-3 rounded-full ${status.color}`}
+                        title={status.label}
+                      />
+                    </div>
                   </div>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    student.isPresent 
-                      ? 'bg-green-500 border-green-500 text-white' 
-                      : 'border-muted-foreground'
-                  }`}>
-                    {student.isPresent && <Check className="h-4 w-4" />}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
+        {/* Legend */}
+        <div className="bg-card border rounded-xl p-4 mb-6">
+          <p className="text-sm font-medium mb-3">{isArabic ? 'دليل الحالات' : 'Status Legend'}</p>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span>{isArabic ? 'حضور كامل (سنتر + أونلاين)' : 'Full (Center + Online)'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span>{isArabic ? 'حضور سنتر فقط' : 'Center Only'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-purple-500" />
+              <span>{isArabic ? 'أونلاين فقط' : 'Online Only'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span>{isArabic ? 'غائب' : 'Absent'}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Save Button */}
-        <Button 
-          onClick={handleSaveAttendance} 
-          className="w-full" 
+        <Button
+          onClick={handleSaveAttendance}
+          className="w-full"
           size="lg"
           disabled={saving || !selectedLesson}
         >
