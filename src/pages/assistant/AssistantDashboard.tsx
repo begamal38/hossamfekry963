@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText } from 'lucide-react';
+import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -213,11 +213,17 @@ export default function AssistantDashboard() {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             {isRTL ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/students">
                 <Users className="h-6 w-6" />
                 <span>{isRTL ? 'إدارة الطلاب' : 'Manage Students'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/30 bg-primary/5">
+              <Link to="/assistant/courses">
+                <GraduationCap className="h-6 w-6" />
+                <span>{isRTL ? 'إدارة الكورسات' : 'Manage Courses'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
