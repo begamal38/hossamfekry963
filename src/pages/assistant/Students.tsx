@@ -103,10 +103,29 @@ export default function Students() {
       if (!user || !canAccessDashboard()) return;
 
       try {
-        // Fetch profiles (exclude current assistant account)
+        // First, get all user_ids that have the 'student' role
+        const { data: studentRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'student');
+
+        if (rolesError) throw rolesError;
+
+        const studentUserIds = (studentRoles || []).map(r => r.user_id);
+
+        // If no students, return empty
+        if (studentUserIds.length === 0) {
+          setStudents([]);
+          setFilteredStudents([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch profiles only for users with student role (exclude current user)
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('user_id, full_name, phone, grade, academic_year, language_track, attendance_mode, created_at')
+          .in('user_id', studentUserIds)
           .neq('user_id', user.id)
           .order('created_at', { ascending: false });
 
