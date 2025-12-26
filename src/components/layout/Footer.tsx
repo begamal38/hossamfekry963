@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
               />
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Your complete platform to truly understand Chemistry. Built for Thanaweya Amma students.
+              {t('footer.description')}
             </p>
           </div>
 
@@ -40,14 +40,14 @@ export const Footer: React.FC = () => {
               </a>
               <div className="flex items-center gap-3 text-muted-foreground text-sm">
                 <MapPin className="w-4 h-4" />
-                Cairo, Egypt
+                {t('footer.location')}
               </div>
             </div>
           </div>
 
           {/* Legal */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t('footer.legal')}</h4>
             <div className="space-y-3">
               <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors text-sm">
                 {t('footer.terms')}
