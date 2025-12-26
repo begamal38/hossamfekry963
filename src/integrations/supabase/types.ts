@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_action_logs: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          assistant_id: string
+          created_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          assistant_id: string
+          created_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          assistant_id?: string
+          created_at?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       course_enrollments: {
         Row: {
           activated_at: string | null
@@ -524,6 +551,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           grade: string | null
+          is_suspended: boolean
           language_track: string | null
           phone: string | null
           updated_at: string
@@ -537,6 +565,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           grade?: string | null
+          is_suspended?: boolean
           language_track?: string | null
           phone?: string | null
           updated_at?: string
@@ -550,10 +579,35 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           grade?: string | null
+          is_suspended?: boolean
           language_track?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      student_notes: {
+        Row: {
+          assistant_id: string
+          created_at: string
+          id: string
+          note: string
+          student_id: string
+        }
+        Insert: {
+          assistant_id: string
+          created_at?: string
+          id?: string
+          note: string
+          student_id: string
+        }
+        Update: {
+          assistant_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          student_id?: string
         }
         Relationships: []
       }
