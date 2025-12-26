@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, DollarSign, Users } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -438,24 +438,35 @@ export default function ManageCourses() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
                     <Button 
-                      variant="outline" 
+                      variant="default" 
                       size="sm" 
-                      className="flex-1 gap-2"
-                      onClick={() => handleEdit(course)}
+                      className="w-full gap-2"
+                      onClick={() => navigate(`/assistant/lessons?course=${course.id}`)}
                     >
-                      <Pencil className="w-4 h-4" />
-                      {isArabic ? 'تعديل' : 'Edit'}
+                      <Video className="w-4 h-4" />
+                      {isArabic ? 'إدارة الحصص' : 'Manage Lessons'}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(course.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1 gap-2"
+                        onClick={() => handleEdit(course)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                        {isArabic ? 'تعديل' : 'Edit'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(course.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
