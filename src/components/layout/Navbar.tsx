@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.jpg';
 
@@ -82,6 +83,7 @@ export const Navbar: React.FC = () => {
             
             {user ? (
               <>
+                <NotificationBell />
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -116,7 +118,8 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-1">
+            {user && <NotificationBell />}
             <Button
               variant="ghost"
               size="icon"
