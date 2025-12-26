@@ -53,12 +53,12 @@ const About = () => {
   const pressArticles: PressArticle[] = [
     {
       id: 1,
-      newspaper: isRTL ? 'القاهرة تايمز' : 'Al Cahira Times',
+      newspaper: isRTL ? 'القاهرة تايمز' : 'Al Qahera Times',
       title: isRTL ? 'الأستاذ حسام فكري.. قصة نجاح 25 عاما في الكيمياء' : 'Mr. Hossam Fekry.. A 25-Year Success Story in Chemistry',
-      preview: isRTL ? 'رحلة ربع قرن من التميز في تعليم الكيمياء' : 'A quarter-century journey of excellence in chemistry education',
-      embedUrl: 'https://alcahiratimes.com/%D8%A7%D9%84%D8%A3%D8%B3%D8%AA%D8%A7%D8%B0-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-%D9%82%D8%B5%D8%A9-%D9%86%D8%AC%D8%A7%D8%AD-25-%D8%B9%D8%A7%D9%85%D8%A7-%D9%81%D9%8A/',
+      preview: isRTL ? 'نظام متابعة فريد يضمن الدرجة النهائية لطلاب الثانوية العامة' : 'A unique follow-up system that guarantees full marks for high school students',
+      embedUrl: 'https://alqaheratimes.com/288588/',
       isExternal: true,
-      thumbnail: 'https://alcahiratimes.com/wp-content/uploads/2024/12/حسام-فكري.jpg',
+      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
     },
     {
       id: 2,
