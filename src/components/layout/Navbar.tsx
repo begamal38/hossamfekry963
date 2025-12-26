@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Globe, LogOut, Settings } from 'lucide-react';
+import { Menu, X, Globe, LogOut, Settings, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.jpg';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { user, signOut } = useAuth();
   const { canAccessDashboard } = useUserRole();
@@ -70,7 +72,16 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -119,6 +130,13 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search className="w-5 h-5" />
+            </Button>
             {user && <NotificationBell />}
             <Button
               variant="ghost"
@@ -200,6 +218,9 @@ export const Navbar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </nav>
   );
 };
