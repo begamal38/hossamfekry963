@@ -131,6 +131,11 @@ const translations: Record<Language, Record<string, string>> = {
     'mode.online': 'Online',
     'mode.center': 'Center',
     'mode.hybrid': 'Hybrid',
+    'mode.change': 'Change Mode',
+    'mode.changeConfirm': 'Are you sure you want to change the attendance mode?',
+    'mode.changeNote': 'This affects attendance tracking and reports',
+    'mode.updated': 'Attendance mode updated successfully',
+    'mode.updateFailed': 'Failed to update attendance mode',
 
     // ══════════════════════════════════════════════════════════════════════════
     // ROLES
@@ -450,6 +455,11 @@ const translations: Record<Language, Record<string, string>> = {
     'mode.online': 'أونلاين',
     'mode.center': 'سنتر',
     'mode.hybrid': 'هجين',
+    'mode.change': 'غيّر النوع',
+    'mode.changeConfirm': 'متأكد إنك عايز تغير نوع الحضور؟',
+    'mode.changeNote': 'ده هيأثر على تسجيل الحضور والتقارير',
+    'mode.updated': 'تم تحديث نوع الحضور بنجاح',
+    'mode.updateFailed': 'مقدرش أحدث نوع الحضور',
 
     // ══════════════════════════════════════════════════════════════════════════
     // ROLES

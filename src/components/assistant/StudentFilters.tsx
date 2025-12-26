@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Wifi, Building2, Shuffle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ interface StudentFiltersProps {
   onProgressFilterChange: (value: string) => void;
   examFilter: string;
   onExamFilterChange: (value: string) => void;
+  attendanceModeFilter?: string;
+  onAttendanceModeFilterChange?: (value: string) => void;
   isRTL?: boolean;
   onClearFilters?: () => void;
 }
@@ -30,10 +32,12 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
   onProgressFilterChange,
   examFilter,
   onExamFilterChange,
+  attendanceModeFilter,
+  onAttendanceModeFilterChange,
   isRTL,
   onClearFilters,
 }) => {
-  const hasActiveFilters = academicYearFilter !== 'all' || languageTrackFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all';
+  const hasActiveFilters = academicYearFilter !== 'all' || languageTrackFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all' || (attendanceModeFilter && attendanceModeFilter !== 'all');
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 mb-6">
@@ -72,6 +76,20 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
             <option value="arabic">{isRTL ? 'عربي' : 'Arabic'}</option>
             <option value="languages">{isRTL ? 'لغات' : 'Languages'}</option>
           </select>
+
+          {/* Attendance Mode Filter */}
+          {onAttendanceModeFilterChange && (
+            <select
+              value={attendanceModeFilter || 'all'}
+              onChange={(e) => onAttendanceModeFilterChange(e.target.value)}
+              className="px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground min-w-[140px]"
+            >
+              <option value="all">{isRTL ? 'كل أنواع الحضور' : 'All Modes'}</option>
+              <option value="online">{isRTL ? 'أونلاين' : 'Online'}</option>
+              <option value="center">{isRTL ? 'سنتر' : 'Center'}</option>
+              <option value="hybrid">{isRTL ? 'هجين' : 'Hybrid'}</option>
+            </select>
+          )}
 
           {/* Progress Filter */}
           <select
@@ -126,6 +144,19 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
                 {languageTrackFilter === 'arabic'
                   ? (isRTL ? 'عربي' : 'Arabic')
                   : (isRTL ? 'لغات' : 'Languages')
+                }
+              </span>
+            )}
+            {attendanceModeFilter && attendanceModeFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                {attendanceModeFilter === 'online' && <Wifi className="h-3 w-3" />}
+                {attendanceModeFilter === 'center' && <Building2 className="h-3 w-3" />}
+                {attendanceModeFilter === 'hybrid' && <Shuffle className="h-3 w-3" />}
+                {attendanceModeFilter === 'online'
+                  ? (isRTL ? 'أونلاين' : 'Online')
+                  : attendanceModeFilter === 'center'
+                  ? (isRTL ? 'سنتر' : 'Center')
+                  : (isRTL ? 'هجين' : 'Hybrid')
                 }
               </span>
             )}
