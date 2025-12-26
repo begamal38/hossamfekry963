@@ -62,11 +62,12 @@ const About = () => {
     },
     {
       id: 2,
-      newspaper: isRTL ? 'اليوم السابع' : 'Youm7',
-      title: isRTL ? 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء' : 'Golden Tips for High School Students in Chemistry',
-      preview: isRTL ? 'حسام فكري يكشف أسرار التفوق في الكيمياء' : 'Hossam Fekry reveals secrets to excel in Chemistry',
-      embedUrl: 'https://www.youm7.com',
+      newspaper: isRTL ? 'التحرير نيوز' : 'El Tahrir News',
+      title: isRTL ? 'طلاب الأوائل يشهدون: كيف ساعدهم الأستاذ حسام فكري على التفوق في الكيمياء' : 'Top Students Testify: How Mr. Hossam Fekry Helped Them Excel in Chemistry',
+      preview: isRTL ? 'الكيمياء بقت أسهل مادة مع منهجية التدريس المميزة' : 'Chemistry became the easiest subject with the unique teaching methodology',
+      embedUrl: 'https://eltahrirnews.com/?p=69401',
       isExternal: true,
+      thumbnail: 'https://eltahrirnews.com/wp-content/uploads/2025/09/63683.png',
     },
     {
       id: 3,
