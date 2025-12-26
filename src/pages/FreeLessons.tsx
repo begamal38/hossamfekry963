@@ -95,7 +95,7 @@ const FreeLessons: React.FC = () => {
                 </div>
 
                 <Button size="sm" variant="outline" className="shrink-0" asChild>
-                  <Link to="/auth">
+                  <Link to={`/lesson/${lesson.id}`}>
                     {isArabic ? 'شاهد' : 'Watch'}
                   </Link>
                 </Button>
