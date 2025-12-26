@@ -101,6 +101,7 @@ const Dashboard: React.FC = () => {
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const isArabic = language === 'ar';
+  const isStaff = canAccessDashboard();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
@@ -117,10 +118,10 @@ const Dashboard: React.FC = () => {
 
   // Redirect assistant teachers and admins to their dashboard
   useEffect(() => {
-    if (!roleLoading && canAccessDashboard()) {
+    if (!roleLoading && isStaff) {
       navigate('/assistant');
     }
-  }, [roleLoading, canAccessDashboard, navigate]);
+  }, [roleLoading, isStaff, navigate]);
 
   useEffect(() => {
     const fetchData = async () => {

@@ -76,7 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        // Send the user back to /auth so we can route them by role reliably
+        redirectTo: `${window.location.origin}/auth`,
       }
     });
     return { error: error as Error | null };

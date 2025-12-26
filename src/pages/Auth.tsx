@@ -63,16 +63,13 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const hasAccess = canAccessDashboard();
+
   // Redirect if already logged in - based on role
   useEffect(() => {
-    if (user && !roleLoading) {
-      if (canAccessDashboard()) {
-        navigate('/assistant');
-      } else {
-        navigate('/dashboard');
-      }
-    }
-  }, [user, roleLoading, canAccessDashboard, navigate]);
+    if (!user || roleLoading) return;
+    navigate(hasAccess ? '/assistant' : '/dashboard');
+  }, [user, roleLoading, hasAccess, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string } = {};
