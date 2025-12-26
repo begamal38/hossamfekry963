@@ -1,0 +1,361 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Bell, 
+  BookOpen, 
+  Video, 
+  FileText, 
+  CheckCircle2, 
+  Clock, 
+  Building,
+  Globe,
+  MessageSquare,
+  ArrowLeft,
+  Check,
+  ChevronRight
+} from 'lucide-react';
+import { Navbar } from '@/components/layout/Navbar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
+
+type NotificationType = 
+  | 'course_announcement'
+  | 'lesson_available'
+  | 'lesson_reminder'
+  | 'exam_available'
+  | 'exam_reminder'
+  | 'exam_completed'
+  | 'attendance_center'
+  | 'attendance_online'
+  | 'attendance_followup'
+  | 'system_message';
+
+interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  title_ar: string;
+  message: string;
+  message_ar: string;
+  created_at: string;
+  course_id: string | null;
+  lesson_id: string | null;
+  exam_id: string | null;
+  isRead: boolean;
+}
+
+const NOTIFICATION_CONFIG: Record<NotificationType, {
+  icon: typeof Bell;
+  color: string;
+  bgColor: string;
+  labelEn: string;
+  labelAr: string;
+}> = {
+  course_announcement: {
+    icon: BookOpen,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-500/10',
+    labelEn: 'Course',
+    labelAr: 'كورس',
+  },
+  lesson_available: {
+    icon: Video,
+    color: 'text-green-600',
+    bgColor: 'bg-green-500/10',
+    labelEn: 'Lesson',
+    labelAr: 'حصة',
+  },
+  lesson_reminder: {
+    icon: Clock,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-500/10',
+    labelEn: 'Reminder',
+    labelAr: 'تذكير',
+  },
+  exam_available: {
+    icon: FileText,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-500/10',
+    labelEn: 'Exam',
+    labelAr: 'امتحان',
+  },
+  exam_reminder: {
+    icon: Clock,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-500/10',
+    labelEn: 'Exam Reminder',
+    labelAr: 'تذكير امتحان',
+  },
+  exam_completed: {
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bgColor: 'bg-green-500/10',
+    labelEn: 'Exam Done',
+    labelAr: 'امتحان خلص',
+  },
+  attendance_center: {
+    icon: Building,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-500/10',
+    labelEn: 'Attendance',
+    labelAr: 'حضور',
+  },
+  attendance_online: {
+    icon: Globe,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-500/10',
+    labelEn: 'Online',
+    labelAr: 'أونلاين',
+  },
+  attendance_followup: {
+    icon: Clock,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-500/10',
+    labelEn: 'Follow-up',
+    labelAr: 'متابعة',
+  },
+  system_message: {
+    icon: MessageSquare,
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-500/10',
+    labelEn: 'System',
+    labelAr: 'النظام',
+  },
+};
+
+export default function Notifications() {
+  const navigate = useNavigate();
+  const { t, language, isRTL } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const isArabic = language === 'ar';
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, authLoading]);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch all notifications
+      const { data: notificationsData, error: notifError } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (notifError) throw notifError;
+
+      // Fetch user's read notifications
+      const { data: readsData, error: readsError } = await supabase
+        .from('notification_reads')
+        .select('notification_id')
+        .eq('user_id', user.id);
+
+      if (readsError) throw readsError;
+
+      const readIds = new Set((readsData || []).map(r => r.notification_id));
+
+      // Map notifications with read status
+      const mappedNotifications: Notification[] = (notificationsData || []).map(n => ({
+        ...n,
+        type: n.type as NotificationType,
+        isRead: readIds.has(n.id),
+      }));
+
+      setNotifications(mappedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('notification_reads')
+        .insert({
+          notification_id: notificationId,
+          user_id: user.id,
+        });
+
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+
+    const unreadNotifications = notifications.filter(n => !n.isRead);
+    if (unreadNotifications.length === 0) return;
+
+    try {
+      const inserts = unreadNotifications.map(n => ({
+        notification_id: n.id,
+        user_id: user.id,
+      }));
+
+      await supabase
+        .from('notification_reads')
+        .upsert(inserts, { onConflict: 'notification_id,user_id' });
+
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, isRead: true }))
+      );
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return isArabic ? 'دلوقتي' : 'Just now';
+    if (diffMins < 60) return isArabic ? `من ${diffMins} دقيقة` : `${diffMins}m ago`;
+    if (diffHours < 24) return isArabic ? `من ${diffHours} ساعة` : `${diffHours}h ago`;
+    if (diffDays < 7) return isArabic ? `من ${diffDays} يوم` : `${diffDays}d ago`;
+    
+    return date.toLocaleDateString(isArabic ? 'ar-EG' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Navbar />
+
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className={cn("h-5 w-5", isRTL && "rotate-180")} />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <Bell className="h-6 w-6 text-primary" />
+                {isArabic ? 'الإشعارات' : 'Notifications'}
+              </h1>
+              {unreadCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {isArabic ? `${unreadCount} إشعار جديد` : `${unreadCount} unread`}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={markAllAsRead}>
+              <Check className="h-4 w-4 mr-1" />
+              {isArabic ? 'قراءة الكل' : 'Mark all read'}
+            </Button>
+          )}
+        </div>
+
+        {/* Notifications List */}
+        <div className="space-y-3">
+          {notifications.length === 0 ? (
+            <div className="text-center py-16">
+              <Bell className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                {isArabic ? 'مفيش إشعارات' : 'No notifications'}
+              </h3>
+              <p className="text-muted-foreground">
+                {isArabic ? 'هتلاقي الإشعارات هنا لما توصلك' : "You'll see notifications here when you get them"}
+              </p>
+            </div>
+          ) : (
+            notifications.map(notification => {
+              const config = NOTIFICATION_CONFIG[notification.type];
+              const Icon = config.icon;
+
+              return (
+                <div
+                  key={notification.id}
+                  onClick={() => !notification.isRead && markAsRead(notification.id)}
+                  className={cn(
+                    "bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md",
+                    !notification.isRead && "border-primary/30 bg-primary/5"
+                  )}
+                >
+                  <div className="flex gap-4">
+                    {/* Icon */}
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
+                      config.bgColor
+                    )}>
+                      <Icon className={cn("h-5 w-5", config.color)} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={cn("text-xs", config.color)}>
+                              {isArabic ? config.labelAr : config.labelEn}
+                            </Badge>
+                            {!notification.isRead && (
+                              <span className="w-2 h-2 rounded-full bg-primary" />
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-foreground">
+                            {isArabic ? notification.title_ar : notification.title}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {isArabic ? notification.message_ar : notification.message}
+                          </p>
+                        </div>
+
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(notification.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

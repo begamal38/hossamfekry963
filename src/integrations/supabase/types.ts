@@ -255,6 +255,108 @@ export type Database = {
           },
         ]
       }
+      notification_reads: {
+        Row: {
+          id: string
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          exam_id: string | null
+          id: string
+          lesson_id: string | null
+          message: string
+          message_ar: string
+          sender_id: string | null
+          target_id: string | null
+          target_type: Database["public"]["Enums"]["notification_target_type"]
+          target_value: string | null
+          title: string
+          title_ar: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          exam_id?: string | null
+          id?: string
+          lesson_id?: string | null
+          message: string
+          message_ar: string
+          sender_id?: string | null
+          target_id?: string | null
+          target_type?: Database["public"]["Enums"]["notification_target_type"]
+          target_value?: string | null
+          title: string
+          title_ar: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          exam_id?: string | null
+          id?: string
+          lesson_id?: string | null
+          message?: string
+          message_ar?: string
+          sender_id?: string | null
+          target_id?: string | null
+          target_type?: Database["public"]["Enums"]["notification_target_type"]
+          target_value?: string | null
+          title?: string
+          title_ar?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           academic_year: string | null
@@ -335,6 +437,24 @@ export type Database = {
       app_role: "admin" | "assistant_teacher" | "student"
       attendance_mode: "online" | "center" | "hybrid"
       attendance_type: "center" | "online"
+      notification_target_type:
+        | "all"
+        | "course"
+        | "lesson"
+        | "user"
+        | "grade"
+        | "attendance_mode"
+      notification_type:
+        | "course_announcement"
+        | "lesson_available"
+        | "lesson_reminder"
+        | "exam_available"
+        | "exam_reminder"
+        | "exam_completed"
+        | "attendance_center"
+        | "attendance_online"
+        | "attendance_followup"
+        | "system_message"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -465,6 +585,26 @@ export const Constants = {
       app_role: ["admin", "assistant_teacher", "student"],
       attendance_mode: ["online", "center", "hybrid"],
       attendance_type: ["center", "online"],
+      notification_target_type: [
+        "all",
+        "course",
+        "lesson",
+        "user",
+        "grade",
+        "attendance_mode",
+      ],
+      notification_type: [
+        "course_announcement",
+        "lesson_available",
+        "lesson_reminder",
+        "exam_available",
+        "exam_reminder",
+        "exam_completed",
+        "attendance_center",
+        "attendance_online",
+        "attendance_followup",
+        "system_message",
+      ],
     },
   },
 } as const
