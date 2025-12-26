@@ -224,6 +224,7 @@ export type Database = {
           order_index: number | null
           title: string
           title_ar: string
+          video_url: string | null
         }
         Insert: {
           course_id: string
@@ -234,6 +235,7 @@ export type Database = {
           order_index?: number | null
           title: string
           title_ar: string
+          video_url?: string | null
         }
         Update: {
           course_id?: string
@@ -244,6 +246,7 @@ export type Database = {
           order_index?: number | null
           title?: string
           title_ar?: string
+          video_url?: string | null
         }
         Relationships: [
           {
