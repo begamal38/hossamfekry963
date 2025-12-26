@@ -26,7 +26,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color, delay })
 );
 
 export const ProgressPreviewSection: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
   const stats = [
     {
@@ -60,14 +60,17 @@ export const ProgressPreviewSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-background">
+    <section className="py-20 lg:py-28 bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            {t('dashboard.progress')}
+            {isRTL ? 'تتبع تقدمك' : 'Track Your Progress'}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Track your learning journey with our comprehensive progress monitoring system
+            {isRTL 
+              ? 'تابع رحلتك التعليمية مع نظام متابعة شامل ومتكامل'
+              : 'Track your learning journey with our comprehensive progress monitoring system'
+            }
           </p>
           <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mt-6" />
         </div>
@@ -82,7 +85,9 @@ export const ProgressPreviewSection: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground">{t('dashboard.overallProgress')}</h3>
-                  <p className="text-sm text-muted-foreground">Organic Chemistry Course</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL ? 'كورس الكيمياء العضوية' : 'Organic Chemistry Course'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -94,8 +99,8 @@ export const ProgressPreviewSection: React.FC = () => {
             <Progress value={60} className="h-3" />
             
             <div className="flex justify-between mt-3 text-sm text-muted-foreground">
-              <span>18 lessons completed</span>
-              <span>12 lessons remaining</span>
+              <span>{isRTL ? '18 درس مكتمل' : '18 lessons completed'}</span>
+              <span>{isRTL ? '12 درس متبقي' : '12 lessons remaining'}</span>
             </div>
           </div>
 
