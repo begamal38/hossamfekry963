@@ -363,6 +363,7 @@ export type Database = {
           attendance_mode: Database["public"]["Enums"]["attendance_mode"]
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           grade: string | null
           id: string
@@ -376,6 +377,7 @@ export type Database = {
           attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           grade?: string | null
           id?: string
@@ -389,6 +391,7 @@ export type Database = {
           attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           grade?: string | null
           id?: string
