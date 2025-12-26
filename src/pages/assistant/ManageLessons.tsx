@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Building, Trash2, Youtube } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Plus, Video, Building, Trash2, Youtube, Pencil, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -23,10 +23,12 @@ interface Lesson {
   course_id: string;
   order_index: number;
   video_url: string | null;
+  duration_minutes: number | null;
 }
 
-export default function ManageLessons() {
+const ManageLessons = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { language, isRTL } = useLanguage();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
@@ -36,12 +38,14 @@ export default function ManageLessons() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newLesson, setNewLesson] = useState({
+  const [showForm, setShowForm] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [formData, setFormData] = useState({
     title: '',
     title_ar: '',
     lesson_type: 'online' as 'online' | 'center',
-    video_url: ''
+    video_url: '',
+    duration_minutes: 60
   });
 
   useEffect(() => {
@@ -51,6 +55,17 @@ export default function ManageLessons() {
     }
     fetchCourses();
   }, [roleLoading]);
+
+  useEffect(() => {
+    // Get course from URL params
+    const courseParam = searchParams.get('course');
+    if (courseParam && courses.length > 0) {
+      const courseExists = courses.find(c => c.id === courseParam);
+      if (courseExists) {
+        setSelectedCourse(courseParam);
+      }
+    }
+  }, [searchParams, courses]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -67,7 +82,12 @@ export default function ManageLessons() {
 
       if (error) throw error;
       setCourses(data || []);
-      if (data && data.length > 0) {
+      
+      // Set initial course from URL or first course
+      const courseParam = searchParams.get('course');
+      if (courseParam && data?.find(c => c.id === courseParam)) {
+        setSelectedCourse(courseParam);
+      } else if (data && data.length > 0) {
         setSelectedCourse(data[0].id);
       }
     } catch (error) {
@@ -92,43 +112,89 @@ export default function ManageLessons() {
     }
   };
 
-  const handleAddLesson = async () => {
-    if (!newLesson.title || !newLesson.title_ar) {
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      title_ar: '',
+      lesson_type: 'online',
+      video_url: '',
+      duration_minutes: 60
+    });
+    setEditingLesson(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (lesson: Lesson) => {
+    setEditingLesson(lesson);
+    setFormData({
+      title: lesson.title,
+      title_ar: lesson.title_ar,
+      lesson_type: lesson.lesson_type as 'online' | 'center',
+      video_url: lesson.video_url || '',
+      duration_minutes: lesson.duration_minutes || 60
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.title_ar) {
       toast({
         title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'يرجى ملء جميع الحقول' : 'Please fill all fields',
+        description: isArabic ? 'يرجى ملء العنوان بالعربي والإنجليزي' : 'Please fill both titles',
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('lessons')
-        .insert({
-          course_id: selectedCourse,
-          title: newLesson.title,
-          title_ar: newLesson.title_ar,
-          lesson_type: newLesson.lesson_type,
-          order_index: lessons.length,
-          video_url: newLesson.video_url || null
+      if (editingLesson) {
+        // Update existing lesson
+        const { error } = await supabase
+          .from('lessons')
+          .update({
+            title: formData.title,
+            title_ar: formData.title_ar,
+            lesson_type: formData.lesson_type,
+            video_url: formData.video_url || null,
+            duration_minutes: formData.duration_minutes
+          })
+          .eq('id', editingLesson.id);
+
+        if (error) throw error;
+
+        toast({
+          title: isArabic ? 'تم بنجاح' : 'Success',
+          description: isArabic ? 'تم تحديث الحصة' : 'Lesson updated successfully'
         });
+      } else {
+        // Create new lesson
+        const { error } = await supabase
+          .from('lessons')
+          .insert({
+            course_id: selectedCourse,
+            title: formData.title,
+            title_ar: formData.title_ar,
+            lesson_type: formData.lesson_type,
+            order_index: lessons.length,
+            video_url: formData.video_url || null,
+            duration_minutes: formData.duration_minutes
+          });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: isArabic ? 'تم بنجاح' : 'Success',
-        description: isArabic ? 'تم إضافة الحصة' : 'Lesson added successfully'
-      });
+        toast({
+          title: isArabic ? 'تم بنجاح' : 'Success',
+          description: isArabic ? 'تم إضافة الحصة' : 'Lesson added successfully'
+        });
+      }
 
-      setNewLesson({ title: '', title_ar: '', lesson_type: 'online', video_url: '' });
-      setShowAddForm(false);
+      resetForm();
       fetchLessons();
     } catch (error) {
-      console.error('Error adding lesson:', error);
+      console.error('Error saving lesson:', error);
       toast({
         title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'فشل في إضافة الحصة' : 'Failed to add lesson',
+        description: isArabic ? 'فشل في حفظ الحصة' : 'Failed to save lesson',
         variant: 'destructive'
       });
     }
@@ -158,6 +224,8 @@ export default function ManageLessons() {
     }
   };
 
+  const selectedCourseName = courses.find(c => c.id === selectedCourse);
+
   if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -171,11 +239,24 @@ export default function ManageLessons() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-            <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant/courses')}>
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
+              {selectedCourseName && (
+                <p className="text-muted-foreground text-sm">
+                  {isArabic ? selectedCourseName.title_ar : selectedCourseName.title}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {isArabic ? 'حصة جديدة' : 'New Lesson'}
           </Button>
-          <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
         </div>
 
         {/* Course Selector */}
@@ -183,7 +264,10 @@ export default function ManageLessons() {
           <label className="block text-sm font-medium mb-2">{isArabic ? 'اختر الكورس' : 'Select Course'}</label>
           <select
             value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
+            onChange={(e) => {
+              setSelectedCourse(e.target.value);
+              navigate(`/assistant/lessons?course=${e.target.value}`, { replace: true });
+            }}
             className="w-full px-4 py-2 bg-background border border-input rounded-lg"
           >
             {courses.map(course => (
@@ -194,68 +278,108 @@ export default function ManageLessons() {
           </select>
         </div>
 
-        {/* Add Lesson Button */}
-        <Button onClick={() => setShowAddForm(true)} className="mb-6 gap-2">
-          <Plus className="h-4 w-4" />
-          {isArabic ? 'إضافة حصة جديدة' : 'Add New Lesson'}
-        </Button>
-
-        {/* Add Lesson Form */}
-        {showAddForm && (
+        {/* Add/Edit Lesson Form */}
+        {showForm && (
           <div className="bg-card border rounded-xl p-6 mb-6">
-            <h3 className="font-semibold mb-4">{isArabic ? 'حصة جديدة' : 'New Lesson'}</h3>
+            <h3 className="font-semibold text-lg mb-4">
+              {editingLesson 
+                ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson')
+                : (isArabic ? 'حصة جديدة' : 'New Lesson')
+              }
+            </h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <Input
-                placeholder={isArabic ? 'عنوان الحصة (إنجليزي)' : 'Lesson Title (English)'}
-                value={newLesson.title}
-                onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
-              />
-              <Input
-                placeholder={isArabic ? 'عنوان الحصة (عربي)' : 'Lesson Title (Arabic)'}
-                value={newLesson.title_ar}
-                onChange={(e) => setNewLesson({ ...newLesson, title_ar: e.target.value })}
-              />
-            </div>
-            <div className="flex gap-4 mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="lesson_type"
-                  checked={newLesson.lesson_type === 'online'}
-                  onChange={() => setNewLesson({ ...newLesson, lesson_type: 'online' })}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'العنوان (إنجليزي)' : 'Title (English)'}
+                </label>
+                <Input
+                  placeholder="Lesson Title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
-                <Video className="h-4 w-4" />
-                {isArabic ? 'أونلاين' : 'Online'}
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="lesson_type"
-                  checked={newLesson.lesson_type === 'center'}
-                  onChange={() => setNewLesson({ ...newLesson, lesson_type: 'center' })}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'العنوان (عربي)' : 'Title (Arabic)'}
+                </label>
+                <Input
+                  placeholder="عنوان الحصة"
+                  value={formData.title_ar}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
                 />
-                <Building className="h-4 w-4" />
-                {isArabic ? 'سنتر' : 'Center'}
-              </label>
+              </div>
             </div>
-            {/* Video URL Input */}
+
+            {/* Lesson Type */}
             <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                {isArabic ? 'نوع الحصة' : 'Lesson Type'}
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson_type"
+                    checked={formData.lesson_type === 'online'}
+                    onChange={() => setFormData({ ...formData, lesson_type: 'online' })}
+                  />
+                  <Video className="h-4 w-4" />
+                  {isArabic ? 'أونلاين' : 'Online'}
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson_type"
+                    checked={formData.lesson_type === 'center'}
+                    onChange={() => setFormData({ ...formData, lesson_type: 'center' })}
+                  />
+                  <Building className="h-4 w-4" />
+                  {isArabic ? 'سنتر' : 'Center'}
+                </label>
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                {isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.duration_minutes}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
+                className="max-w-[200px]"
+              />
+            </div>
+
+            {/* Video URL */}
+            <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Youtube className="h-4 w-4 text-red-500" />
                 <label className="text-sm font-medium">{isArabic ? 'رابط الفيديو (يوتيوب)' : 'Video URL (YouTube)'}</label>
               </div>
               <Input
-                placeholder={isArabic ? 'https://www.youtube.com/watch?v=...' : 'https://www.youtube.com/watch?v=...'}
-                value={newLesson.video_url}
-                onChange={(e) => setNewLesson({ ...newLesson, video_url: e.target.value })}
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={formData.video_url}
+                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {isArabic ? 'اختياري - أضف رابط فيديو يوتيوب للحصة' : 'Optional - Add a YouTube video link for the lesson'}
               </p>
             </div>
+
             <div className="flex gap-2">
-              <Button onClick={handleAddLesson}>{isArabic ? 'إضافة' : 'Add'}</Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>{isArabic ? 'إلغاء' : 'Cancel'}</Button>
+              <Button onClick={handleSubmit}>
+                {editingLesson 
+                  ? (isArabic ? 'تحديث' : 'Update')
+                  : (isArabic ? 'إضافة' : 'Add')
+                }
+              </Button>
+              <Button variant="outline" onClick={resetForm}>
+                {isArabic ? 'إلغاء' : 'Cancel'}
+              </Button>
             </div>
           </div>
         )}
@@ -263,30 +387,52 @@ export default function ManageLessons() {
         {/* Lessons List */}
         <div className="bg-card border rounded-xl overflow-hidden">
           {lessons.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
+            <div className="p-12 text-center">
+              <Video className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                {isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding your first lesson'}
+              </p>
+              <Button onClick={() => setShowForm(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                {isArabic ? 'إضافة حصة' : 'Add Lesson'}
+              </Button>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-border">
               {lessons.map((lesson, index) => (
-                <div key={lesson.id} className="flex items-center justify-between p-4 hover:bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground">{index + 1}</span>
+                <div key={lesson.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <GripVertical className="h-4 w-4" />
+                      <span className="w-6 text-center font-medium">{index + 1}</span>
+                    </div>
                     {lesson.lesson_type === 'online' ? (
                       <Video className="h-5 w-5 text-blue-500" />
                     ) : (
                       <Building className="h-5 w-5 text-green-500" />
                     )}
-                    <span className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</span>
-                    {lesson.video_url && (
-                      <span title={isArabic ? 'فيها فيديو' : 'Has video'}>
-                        <Youtube className="h-4 w-4 text-red-500" />
-                      </span>
-                    )}
+                    <div>
+                      <p className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{lesson.duration_minutes || 60} {isArabic ? 'دقيقة' : 'min'}</span>
+                        {lesson.video_url && (
+                          <span className="flex items-center gap-1 text-red-500">
+                            <Youtube className="h-3 w-3" />
+                            {isArabic ? 'فيديو' : 'Video'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(lesson.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(lesson)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(lesson.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -295,4 +441,6 @@ export default function ManageLessons() {
       </main>
     </div>
   );
-}
+};
+
+export default ManageLessons;
