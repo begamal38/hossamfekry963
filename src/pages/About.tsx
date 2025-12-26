@@ -20,6 +20,7 @@ interface PressArticle {
   preview: string;
   embedUrl: string;
   isExternal?: boolean;
+  thumbnail?: string;
 }
 
 const About = () => {
@@ -57,6 +58,7 @@ const About = () => {
       preview: isRTL ? 'رحلة ربع قرن من التميز في تعليم الكيمياء' : 'A quarter-century journey of excellence in chemistry education',
       embedUrl: 'https://alcahiratimes.com/%D8%A7%D9%84%D8%A3%D8%B3%D8%AA%D8%A7%D8%B0-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-%D9%82%D8%B5%D8%A9-%D9%86%D8%AC%D8%A7%D8%AD-25-%D8%B9%D8%A7%D9%85%D8%A7-%D9%81%D9%8A/',
       isExternal: true,
+      thumbnail: 'https://alcahiratimes.com/wp-content/uploads/2024/12/حسام-فكري.jpg',
     },
     {
       id: 2,
@@ -197,48 +199,48 @@ const About = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pressArticles.map((article) => (
-                <div 
+                <a 
                   key={article.id}
-                  className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-all hover:-translate-y-1 group"
+                  href={article.embedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 group block"
                 >
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
-                      {article.newspaper}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                    {article.title}
-                  </h3>
-                  
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-1">
-                    {article.preview}
-                  </p>
-                  
-                  {article.isExternal ? (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      asChild
-                    >
-                      <a href={article.embedUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-4 h-4" />
-                        {t('about.press.readArticle')}
-                      </a>
-                    </Button>
+                  {/* Thumbnail */}
+                  {article.thumbnail ? (
+                    <div className="aspect-video bg-muted overflow-hidden">
+                      <img 
+                        src={article.thumbnail} 
+                        alt={article.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      onClick={() => setSelectedArticle(article)}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {t('about.press.readArticle')}
-                    </Button>
+                    <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                      <Newspaper className="w-12 h-12 text-primary/30" />
+                    </div>
                   )}
-                </div>
+                  
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                        {article.newspaper}
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                    </div>
+                    
+                    <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                      {article.title}
+                    </h3>
+                    
+                    <p className="text-muted-foreground text-sm line-clamp-2">
+                      {article.preview}
+                    </p>
+                  </div>
+                </a>
               ))}
             </div>
           </section>
