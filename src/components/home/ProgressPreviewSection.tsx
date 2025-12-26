@@ -64,11 +64,11 @@ export const ProgressPreviewSection: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            {isRTL ? 'تتبع تقدمك' : 'Track Your Progress'}
+            {isRTL ? 'شوف وصلت لفين 🚀' : 'Track Your Progress'}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             {isRTL 
-              ? 'تابع رحلتك التعليمية مع نظام متابعة شامل ومتكامل'
+              ? 'متابعة لحظة بلحظة.. عشان تعرف إنت ماشي صح ولا لأ'
               : 'Track your learning journey with our comprehensive progress monitoring system'
             }
           </p>
