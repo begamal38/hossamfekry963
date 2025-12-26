@@ -23,6 +23,7 @@ import ManageLessons from "./pages/assistant/ManageLessons";
 import RecordAttendance from "./pages/assistant/RecordAttendance";
 import RecordGrades from "./pages/assistant/RecordGrades";
 import Reports from "./pages/assistant/Reports";
+import ManageCourses from "./pages/assistant/ManageCourses";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/assistant/students" element={<Students />} />
               <Route path="/assistant/students/:userId" element={<StudentDetails />} />
               <Route path="/assistant/enrollments" element={<Enrollments />} />
+              <Route path="/assistant/courses" element={<ManageCourses />} />
               <Route path="/assistant/lessons" element={<ManageLessons />} />
               <Route path="/assistant/attendance" element={<RecordAttendance />} />
               <Route path="/assistant/grades" element={<RecordGrades />} />
