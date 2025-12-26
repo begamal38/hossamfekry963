@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -24,8 +24,8 @@ export const useUserRole = () => {
           .eq('user_id', user.id);
 
         if (error) throw error;
-        
-        setRoles((data || []).map(r => r.role as AppRole));
+
+        setRoles((data || []).map((r) => r.role as AppRole));
       } catch (error) {
         console.error('Error fetching roles:', error);
         setRoles([]);
@@ -37,11 +37,13 @@ export const useUserRole = () => {
     fetchRoles();
   }, [user]);
 
-  const hasRole = (role: AppRole) => roles.includes(role);
-  const isAdmin = () => hasRole('admin');
-  const isAssistantTeacher = () => hasRole('assistant_teacher');
-  const isStudent = () => hasRole('student');
-  const canAccessDashboard = () => isAdmin() || isAssistantTeacher();
+  const roleSet = useMemo(() => new Set(roles), [roles]);
+
+  const hasRole = useCallback((role: AppRole) => roleSet.has(role), [roleSet]);
+  const isAdmin = useCallback(() => hasRole('admin'), [hasRole]);
+  const isAssistantTeacher = useCallback(() => hasRole('assistant_teacher'), [hasRole]);
+  const isStudent = useCallback(() => hasRole('student'), [hasRole]);
+  const canAccessDashboard = useCallback(() => isAdmin() || isAssistantTeacher(), [isAdmin, isAssistantTeacher]);
 
   return {
     roles,
