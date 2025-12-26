@@ -6,6 +6,7 @@ import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { CoursesSection } from '@/components/home/CoursesSection';
 import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection';
 import { PressSection } from '@/components/home/PressSection';
+import { SocialProofSection } from '@/components/home/SocialProofSection';
 
 const Index: React.FC = () => {
   // Scroll to top on mount
@@ -19,6 +20,7 @@ const Index: React.FC = () => {
         <HeroSection />
         <FeaturesSection />
         <CoursesSection />
+        <SocialProofSection />
         <PressSection />
         <ProgressPreviewSection />
       </main>
