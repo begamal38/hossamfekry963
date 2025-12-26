@@ -70,6 +70,11 @@ export default function CourseView() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [courseId]);
+
   useEffect(() => {
     if (courseId) {
       fetchCourseData();

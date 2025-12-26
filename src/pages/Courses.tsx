@@ -54,6 +54,11 @@ const Courses: React.FC = () => {
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Fetch user profile and courses
   useEffect(() => {
     const fetchData = async () => {
@@ -77,7 +82,7 @@ const Courses: React.FC = () => {
 
           if (profileData?.grade) {
             setUserGrade(profileData.grade);
-            setSelectedGrade(profileData.grade);
+            // Don't auto-filter - keep 'all' as default
           }
 
           const { data: enrollmentsData } = await supabase

@@ -139,6 +139,11 @@ export default function LessonView() {
     { id: 'summary', title: isArabic ? 'الملخص' : 'Summary', icon: CheckCircle2 },
   ] : [];
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [lessonId]);
+
   useEffect(() => {
     if (lessonId) {
       fetchLesson();
