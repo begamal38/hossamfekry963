@@ -1,9 +1,27 @@
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { GraduationCap, Award, Users, BookOpen, Tv, Calendar, Heart, Rocket } from 'lucide-react';
+import { GraduationCap, Award, Users, BookOpen, Tv, Calendar, Heart, Rocket, Newspaper, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import teacherImage from '@/assets/teacher.jpg';
 
+interface PressArticle {
+  id: number;
+  newspaper: string;
+  title: string;
+  preview: string;
+  embedUrl: string;
+}
+
 const About = () => {
+  const [selectedArticle, setSelectedArticle] = useState<PressArticle | null>(null);
+
   const stats = [
     {
       icon: Calendar,
@@ -24,6 +42,44 @@ const About = () => {
       icon: Award,
       value: 'موجه',
       label: 'مادة الكيمياء',
+    },
+  ];
+
+  const pressArticles: PressArticle[] = [
+    {
+      id: 1,
+      newspaper: 'اليوم السابع',
+      title: 'نصائح ذهبية لطلاب الثانوية العامة في مادة الكيمياء',
+      preview: 'حسام فكري يكشف أسرار التفوق في الكيمياء',
+      embedUrl: 'https://www.youm7.com/embed/article1',
+    },
+    {
+      id: 2,
+      newspaper: 'الوطن',
+      title: 'موجه الكيمياء يشرح منهج التعليم الجديد',
+      preview: 'نظام تعليمي مبتكر لفهم الكيمياء بدون حفظ',
+      embedUrl: 'https://www.elwatannews.com/embed/article2',
+    },
+    {
+      id: 3,
+      newspaper: 'المصري اليوم',
+      title: 'كيف تذاكر الكيمياء صح؟',
+      preview: 'خطة مذاكرة عملية من خبير 25 سنة',
+      embedUrl: 'https://www.almasryalyoum.com/embed/article3',
+    },
+    {
+      id: 4,
+      newspaper: 'صدى البلد',
+      title: 'حسام فكري: الفهم أهم من الحفظ',
+      preview: 'فلسفة تدريسية غيرت حياة آلاف الطلاب',
+      embedUrl: 'https://www.sadaelbalad.com/embed/article4',
+    },
+    {
+      id: 5,
+      newspaper: 'الأهرام',
+      title: 'تجربة التعليم عن بعد في زمن كورونا',
+      preview: 'قصة نجاح منصة تعليمية مصرية',
+      embedUrl: 'https://www.ahram.org.eg/embed/article5',
     },
   ];
 
@@ -135,6 +191,54 @@ const About = () => {
             </div>
           </section>
 
+          {/* Press Articles Section - مقالات صحفية */}
+          <section className="mb-20">
+            <div className="text-center mb-12">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Newspaper className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                كلام الصحافة عن حسام فكري
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                مقالات اتكتبت في جرائد مصرية عن نظام التدريس ونصائح للطلاب
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pressArticles.map((article) => (
+                <div 
+                  key={article.id}
+                  className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-all hover:-translate-y-1 group"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                      {article.newspaper}
+                    </span>
+                  </div>
+                  
+                  <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                    {article.title}
+                  </h3>
+                  
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-1">
+                    {article.preview}
+                  </p>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                    onClick={() => setSelectedArticle(article)}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    اقرأ المقال
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Turning Point - نقطة التحول */}
           <section className="mb-20">
             <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-3xl p-8 md:p-12">
@@ -223,6 +327,35 @@ const About = () => {
           
         </div>
       </main>
+
+      {/* Article Modal */}
+      <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
+        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden" dir="rtl">
+          <DialogHeader className="p-6 pb-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">
+                {selectedArticle?.newspaper}
+              </span>
+            </div>
+            <DialogTitle className="text-xl font-bold text-foreground">
+              {selectedArticle?.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 p-6 pt-4 overflow-hidden">
+            <div className="w-full h-full bg-muted rounded-xl flex items-center justify-center">
+              {selectedArticle && (
+                <iframe
+                  src={selectedArticle.embedUrl}
+                  className="w-full h-full rounded-xl border-0"
+                  title={selectedArticle.title}
+                  loading="lazy"
+                />
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
