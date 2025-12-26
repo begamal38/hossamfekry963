@@ -345,7 +345,7 @@ export default function RecordAttendance() {
                 className="w-full px-4 py-2 bg-background border border-input rounded-lg"
               >
                 {lessons.length === 0 ? (
-                  <option value="">{isArabic ? 'لا توجد دروس' : 'No lessons'}</option>
+                  <option value="">{isArabic ? 'لا توجد حصص' : 'No lessons'}</option>
                 ) : (
                   lessons.map(lesson => (
                     <option key={lesson.id} value={lesson.id}>

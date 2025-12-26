@@ -47,7 +47,7 @@ const FreeLessons: React.FC = () => {
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               {isArabic 
-                ? 'ابدأ رحلة تعلمك مع دروس مجانية عالية الجودة'
+                ? 'ابدأ رحلة تعلمك مع حصص مجانية عالية الجودة'
                 : 'Start your learning journey with high-quality free lessons'
               }
             </p>
@@ -58,7 +58,7 @@ const FreeLessons: React.FC = () => {
           <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-12 animate-fade-in-up animation-delay-100">
             <div className="text-center p-4 bg-card rounded-xl border border-border">
               <p className="text-2xl font-bold text-primary">{freeLessons.length}</p>
-              <p className="text-sm text-muted-foreground">{isArabic ? 'دروس مجانية' : 'Free Lessons'}</p>
+              <p className="text-sm text-muted-foreground">{isArabic ? 'حصص مجانية' : 'Free Lessons'}</p>
             </div>
             <div className="text-center p-4 bg-card rounded-xl border border-border">
               <p className="text-2xl font-bold text-primary">4+</p>
