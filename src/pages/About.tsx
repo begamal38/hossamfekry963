@@ -85,7 +85,7 @@ const About = () => {
       preview: isRTL ? 'توظيف التكنولوجيا الحديثة في تعليم الكيمياء' : 'Using modern technology in teaching Chemistry',
       embedUrl: 'https://exteranews.com/%D8%A3%D8%AD%D8%AF%D8%AB-%D8%AA%D9%82%D9%86%D9%8A%D8%A7%D8%AA-%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85-%D9%81%D9%8A-%D8%A7%D9%84%D9%83%D9%8A%D9%85%D9%8A%D8%A7%D8%A1-%D9%83%D9%8A%D9%81-%D9%8A%D9%88/',
       isExternal: true,
-      thumbnail: 'https://exteranews.com/wp-content/uploads/2025/09/%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.webp',
+      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
     },
     {
       id: 5,
@@ -94,7 +94,7 @@ const About = () => {
       preview: isRTL ? 'خبرة 25 عاماً في تدريس الكيمياء' : '25 years of experience in teaching Chemistry',
       embedUrl: 'https://www.elbayanelmasry.com/%D8%B9%D8%A7%D8%AC%D9%84/%D8%A7%D9%84%D8%A3%D8%B3%D8%AA%D8%A7%D8%B0-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-%D8%AE%D8%A8%D8%B1%D8%A9-%D9%88%D8%AA%D9%85%D9%8A%D9%91%D8%B2-%D9%81%D9%8A-%D8%AA%D8%AF%D8%B1%D9%8A%D8%B3/',
       isExternal: true,
-      thumbnail: 'https://www.elbayanelmasry.com/wp-content/uploads/2025/09/%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.webp',
+      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
     },
   ];
 
