@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Wifi, Building2, Shuffle } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { StudentFilters } from '@/components/assistant/StudentFilters';
+import { StudentImport } from '@/components/assistant/StudentImport';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +79,9 @@ export default function Students() {
   const [newMode, setNewMode] = useState<AttendanceMode>('online');
   const [updatingMode, setUpdatingMode] = useState(false);
   
+  // Import dialog state
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
@@ -98,83 +102,83 @@ export default function Students() {
     }
   }, [roleLoading, canAccessDashboard, navigate]);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      if (!user || !canAccessDashboard()) return;
+  const fetchStudents = async () => {
+    if (!user || !canAccessDashboard()) return;
 
-      try {
-        // First, get all user_ids that have the 'student' role
-        const { data: studentRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'student');
+    try {
+      // First, get all user_ids that have the 'student' role
+      const { data: studentRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'student');
 
-        if (rolesError) throw rolesError;
+      if (rolesError) throw rolesError;
 
-        const studentUserIds = (studentRoles || []).map(r => r.user_id);
+      const studentUserIds = (studentRoles || []).map(r => r.user_id);
 
-        // If no students, return empty
-        if (studentUserIds.length === 0) {
-          setStudents([]);
-          setFilteredStudents([]);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch profiles only for users with student role (exclude current user)
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, phone, grade, academic_year, language_track, attendance_mode, created_at')
-          .in('user_id', studentUserIds)
-          .neq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (profilesError) throw profilesError;
-
-        // Fetch all enrollments for progress data
-        const { data: enrollmentsData } = await supabase
-          .from('course_enrollments')
-          .select('user_id, progress');
-
-        // Fetch all exam results
-        const { data: examResultsData } = await supabase
-          .from('exam_results')
-          .select('user_id, score, exams:exam_id(max_score)');
-
-        // Enrich students with progress and exam data
-        const enrichedStudents: EnrichedStudent[] = (profilesData || []).map(profile => {
-          const userEnrollments = (enrollmentsData || []).filter(e => e.user_id === profile.user_id);
-          const userExamResults = (examResultsData || []).filter(e => e.user_id === profile.user_id);
-          
-          const avgProgress = userEnrollments.length > 0
-            ? Math.round(userEnrollments.reduce((sum, e) => sum + (e.progress || 0), 0) / userEnrollments.length)
-            : 0;
-          
-          const avgExamScore = userExamResults.length > 0
-            ? Math.round(userExamResults.reduce((sum, e) => {
-                const maxScore = (e.exams as any)?.max_score || 100;
-                return sum + ((e.score / maxScore) * 100);
-              }, 0) / userExamResults.length)
-            : 0;
-
-          return {
-            ...profile,
-            avgProgress,
-            avgExamScore,
-            totalExams: userExamResults.length,
-            enrollmentCount: userEnrollments.length,
-          };
-        });
-
-        setStudents(enrichedStudents);
-        setFilteredStudents(enrichedStudents);
-      } catch (error) {
-        console.error('Error fetching students:', error);
-      } finally {
+      // If no students, return empty
+      if (studentUserIds.length === 0) {
+        setStudents([]);
+        setFilteredStudents([]);
         setLoading(false);
+        return;
       }
-    };
 
+      // Fetch profiles only for users with student role (exclude current user)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone, grade, academic_year, language_track, attendance_mode, created_at')
+        .in('user_id', studentUserIds)
+        .neq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Fetch all enrollments for progress data
+      const { data: enrollmentsData } = await supabase
+        .from('course_enrollments')
+        .select('user_id, progress');
+
+      // Fetch all exam results
+      const { data: examResultsData } = await supabase
+        .from('exam_results')
+        .select('user_id, score, exams:exam_id(max_score)');
+
+      // Enrich students with progress and exam data
+      const enrichedStudents: EnrichedStudent[] = (profilesData || []).map(profile => {
+        const userEnrollments = (enrollmentsData || []).filter(e => e.user_id === profile.user_id);
+        const userExamResults = (examResultsData || []).filter(e => e.user_id === profile.user_id);
+        
+        const avgProgress = userEnrollments.length > 0
+          ? Math.round(userEnrollments.reduce((sum, e) => sum + (e.progress || 0), 0) / userEnrollments.length)
+          : 0;
+        
+        const avgExamScore = userExamResults.length > 0
+          ? Math.round(userExamResults.reduce((sum, e) => {
+              const maxScore = (e.exams as any)?.max_score || 100;
+              return sum + ((e.score / maxScore) * 100);
+            }, 0) / userExamResults.length)
+          : 0;
+
+        return {
+          ...profile,
+          avgProgress,
+          avgExamScore,
+          totalExams: userExamResults.length,
+          enrollmentCount: userEnrollments.length,
+        };
+      });
+
+      setStudents(enrichedStudents);
+      setFilteredStudents(enrichedStudents);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (!roleLoading && canAccessDashboard()) {
       fetchStudents();
     }
@@ -370,17 +374,27 @@ export default function Students() {
               </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleExport} 
-            disabled={exporting}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            {exporting 
-              ? (isRTL ? 'جاري التصدير...' : 'Exporting...') 
-              : (isRTL ? 'تصدير البيانات' : 'Export Data')}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              onClick={() => setImportDialogOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              {isRTL ? 'استيراد طلاب' : 'Import Students'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleExport} 
+              disabled={exporting}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {exporting 
+                ? (isRTL ? 'جاري التصدير...' : 'Exporting...') 
+                : (isRTL ? 'تصدير البيانات' : 'Export Data')}
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -581,6 +595,17 @@ export default function Students() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Student Import Dialog */}
+        <StudentImport
+          isOpen={importDialogOpen}
+          onClose={() => setImportDialogOpen(false)}
+          onSuccess={() => {
+            setImportDialogOpen(false);
+            fetchStudents();
+          }}
+          isRTL={isRTL}
+        />
       </main>
     </div>
   );
