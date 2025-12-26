@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { StudentFilters } from '@/components/assistant/StudentFilters';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   id: string;
@@ -53,11 +54,12 @@ export default function Students() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { isRTL } = useLanguage();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [students, setStudents] = useState<EnrichedStudent[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<EnrichedStudent[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [exporting, setExporting] = useState(false);
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
@@ -199,6 +201,40 @@ export default function Students() {
     setExamFilter('all');
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-students');
+      
+      if (error) throw error;
+
+      // Create blob and download
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: isRTL ? 'تم التصدير بنجاح' : 'Export Successful',
+        description: isRTL ? 'تم تحميل ملف بيانات الطلاب' : 'Students data file downloaded',
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        variant: 'destructive',
+        title: isRTL ? 'خطأ في التصدير' : 'Export Error',
+        description: isRTL ? 'حدث خطأ أثناء تصدير البيانات' : 'An error occurred while exporting data',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -213,18 +249,31 @@ export default function Students() {
       
       <main className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-            <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {isRTL ? 'إدارة الطلاب' : 'Student Management'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isRTL ? `${filteredStudents.length} طالب` : `${filteredStudents.length} students`}
-            </p>
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {isRTL ? 'إدارة الطلاب' : 'Student Management'}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {isRTL ? `${filteredStudents.length} طالب` : `${filteredStudents.length} students`}
+              </p>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            disabled={exporting}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {exporting 
+              ? (isRTL ? 'جاري التصدير...' : 'Exporting...') 
+              : (isRTL ? 'تصدير البيانات' : 'Export Data')}
+          </Button>
         </div>
 
         {/* Filters */}

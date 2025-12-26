@@ -2,3 +2,6 @@ project_id = "yqtogmjwkcmeufiwwhba"
 
 [functions.send-notification-email]
 verify_jwt = true
+
+[functions.export-students]
+verify_jwt = true
