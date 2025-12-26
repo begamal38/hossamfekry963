@@ -11,7 +11,8 @@ import {
   Target,
   Clock,
   ChevronRight,
-  Lock
+  Lock,
+  Youtube
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,26 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
+// Helper function to extract YouTube video ID from various URL formats
+const getYouTubeVideoId = (url: string): string | null => {
+  if (!url) return null;
+  
+  // Match various YouTube URL formats
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/shorts\/([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+};
+
 interface Lesson {
   id: string;
   title: string;
@@ -30,6 +51,7 @@ interface Lesson {
   order_index: number;
   duration_minutes: number;
   lesson_type: string;
+  video_url: string | null;
 }
 
 interface Course {
@@ -319,6 +341,25 @@ export default function LessonView() {
 
         {/* Content */}
         <div className="container mx-auto px-4 py-8 max-w-4xl">
+          {/* Video Player - Show if lesson has video URL */}
+          {lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Youtube className="w-5 h-5 text-red-500" />
+                <h2 className="font-semibold">{isArabic ? 'فيديو الحصة' : 'Lesson Video'}</h2>
+              </div>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYouTubeVideoId(lesson.video_url)}?rel=0&modestbranding=1`}
+                  title={isArabic ? lesson.title_ar : lesson.title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
           {/* Section Navigation */}
           <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
             {sections.map((section, index) => {

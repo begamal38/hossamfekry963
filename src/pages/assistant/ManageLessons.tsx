@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Building, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Video, Building, Trash2, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -22,6 +22,7 @@ interface Lesson {
   lesson_type: string;
   course_id: string;
   order_index: number;
+  video_url: string | null;
 }
 
 export default function ManageLessons() {
@@ -39,7 +40,8 @@ export default function ManageLessons() {
   const [newLesson, setNewLesson] = useState({
     title: '',
     title_ar: '',
-    lesson_type: 'online' as 'online' | 'center'
+    lesson_type: 'online' as 'online' | 'center',
+    video_url: ''
   });
 
   useEffect(() => {
@@ -108,7 +110,8 @@ export default function ManageLessons() {
           title: newLesson.title,
           title_ar: newLesson.title_ar,
           lesson_type: newLesson.lesson_type,
-          order_index: lessons.length
+          order_index: lessons.length,
+          video_url: newLesson.video_url || null
         });
 
       if (error) throw error;
@@ -118,7 +121,7 @@ export default function ManageLessons() {
         description: isArabic ? 'تم إضافة الدرس' : 'Lesson added successfully'
       });
 
-      setNewLesson({ title: '', title_ar: '', lesson_type: 'online' });
+      setNewLesson({ title: '', title_ar: '', lesson_type: 'online', video_url: '' });
       setShowAddForm(false);
       fetchLessons();
     } catch (error) {
@@ -235,6 +238,21 @@ export default function ManageLessons() {
                 {isArabic ? 'سنتر' : 'Center'}
               </label>
             </div>
+            {/* Video URL Input */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Youtube className="h-4 w-4 text-red-500" />
+                <label className="text-sm font-medium">{isArabic ? 'رابط الفيديو (يوتيوب)' : 'Video URL (YouTube)'}</label>
+              </div>
+              <Input
+                placeholder={isArabic ? 'https://www.youtube.com/watch?v=...' : 'https://www.youtube.com/watch?v=...'}
+                value={newLesson.video_url}
+                onChange={(e) => setNewLesson({ ...newLesson, video_url: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {isArabic ? 'اختياري - أضف رابط فيديو يوتيوب للدرس' : 'Optional - Add a YouTube video link for the lesson'}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleAddLesson}>{isArabic ? 'إضافة' : 'Add'}</Button>
               <Button variant="outline" onClick={() => setShowAddForm(false)}>{isArabic ? 'إلغاء' : 'Cancel'}</Button>
@@ -260,6 +278,11 @@ export default function ManageLessons() {
                       <Building className="h-5 w-5 text-green-500" />
                     )}
                     <span className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</span>
+                    {lesson.video_url && (
+                      <span title={isArabic ? 'يحتوي فيديو' : 'Has video'}>
+                        <Youtube className="h-4 w-4 text-red-500" />
+                      </span>
+                    )}
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(lesson.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
