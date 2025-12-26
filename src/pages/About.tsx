@@ -80,11 +80,12 @@ const About = () => {
     },
     {
       id: 4,
-      newspaper: isRTL ? 'المصري اليوم' : 'Al-Masry Al-Youm',
-      title: isRTL ? 'كيف تذاكر الكيمياء صح؟' : 'How to Study Chemistry Right?',
-      preview: isRTL ? 'خطة مذاكرة عملية من خبير 25 سنة' : 'Practical study plan from a 25-year expert',
-      embedUrl: 'https://www.almasryalyoum.com',
+      newspaper: isRTL ? 'اكسترا نيوز' : 'Extra News',
+      title: isRTL ? 'أحدث تقنيات التعليم في الكيمياء: كيف يوظف الأستاذ حسام فكري التكنولوجيا لنجاح طلاب الثانوية العامة' : 'Latest Education Technologies in Chemistry: How Mr. Hossam Fekry Uses Technology for High School Students Success',
+      preview: isRTL ? 'توظيف التكنولوجيا الحديثة في تعليم الكيمياء' : 'Using modern technology in teaching Chemistry',
+      embedUrl: 'https://exteranews.com/%D8%A3%D8%AD%D8%AF%D8%AB-%D8%AA%D9%82%D9%86%D9%8A%D8%A7%D8%AA-%D8%A7%D9%84%D8%AA%D8%B9%D9%84%D9%8A%D9%85-%D9%81%D9%8A-%D8%A7%D9%84%D9%83%D9%8A%D9%85%D9%8A%D8%A7%D8%A1-%D9%83%D9%8A%D9%81-%D9%8A%D9%88/',
       isExternal: true,
+      thumbnail: 'https://exteranews.com/wp-content/uploads/2025/09/%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.webp',
     },
     {
       id: 5,
