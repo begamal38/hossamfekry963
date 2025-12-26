@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Wifi, Building2, Shuffle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,6 +11,17 @@ import { StudentFilters } from '@/components/assistant/StudentFilters';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import type { Database } from '@/integrations/supabase/types';
+
+type AttendanceMode = Database['public']['Enums']['attendance_mode'];
 
 interface Profile {
   user_id: string;
@@ -19,6 +30,7 @@ interface Profile {
   grade: string | null;
   academic_year: string | null;
   language_track: string | null;
+  attendance_mode: AttendanceMode;
   created_at: string;
 }
 
@@ -52,19 +64,27 @@ const getGroupLabel = (academicYear: string | null, languageTrack: string | null
 export default function Students() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [students, setStudents] = useState<EnrichedStudent[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<EnrichedStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  
+  // Attendance mode dialog state
+  const [modeDialogOpen, setModeDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<EnrichedStudent | null>(null);
+  const [newMode, setNewMode] = useState<AttendanceMode>('online');
+  const [updatingMode, setUpdatingMode] = useState(false);
+  
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
   const [languageTrackFilter, setLanguageTrackFilter] = useState('all');
   const [progressFilter, setProgressFilter] = useState('all');
   const [examFilter, setExamFilter] = useState('all');
+  const [attendanceModeFilter, setAttendanceModeFilter] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -86,7 +106,7 @@ export default function Students() {
         // Fetch profiles (exclude current assistant account)
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, full_name, phone, grade, academic_year, language_track, created_at')
+          .select('user_id, full_name, phone, grade, academic_year, language_track, attendance_mode, created_at')
           .neq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -189,8 +209,13 @@ export default function Students() {
       });
     }
 
+    // Attendance mode filter
+    if (attendanceModeFilter !== 'all') {
+      filtered = filtered.filter((s) => s.attendance_mode === attendanceModeFilter);
+    }
+
     setFilteredStudents(filtered);
-  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, students]);
+  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, attendanceModeFilter, students]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -198,6 +223,70 @@ export default function Students() {
     setLanguageTrackFilter('all');
     setProgressFilter('all');
     setExamFilter('all');
+    setAttendanceModeFilter('all');
+  };
+
+  // Handle opening the mode change dialog
+  const openModeDialog = (student: EnrichedStudent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedStudent(student);
+    setNewMode(student.attendance_mode);
+    setModeDialogOpen(true);
+  };
+
+  // Handle updating attendance mode
+  const handleUpdateMode = async () => {
+    if (!selectedStudent) return;
+    
+    setUpdatingMode(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ attendance_mode: newMode })
+        .eq('user_id', selectedStudent.user_id);
+
+      if (error) throw error;
+
+      // Update local state
+      setStudents(prev => prev.map(s => 
+        s.user_id === selectedStudent.user_id 
+          ? { ...s, attendance_mode: newMode }
+          : s
+      ));
+
+      toast({
+        title: t('mode.updated'),
+        description: `${selectedStudent.full_name || (isRTL ? 'الطالب' : 'Student')}`,
+      });
+
+      setModeDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating attendance mode:', error);
+      toast({
+        variant: 'destructive',
+        title: t('mode.updateFailed'),
+      });
+    } finally {
+      setUpdatingMode(false);
+    }
+  };
+
+  // Get mode icon
+  const getModeIcon = (mode: AttendanceMode) => {
+    switch (mode) {
+      case 'online': return <Wifi className="h-3 w-3" />;
+      case 'center': return <Building2 className="h-3 w-3" />;
+      case 'hybrid': return <Shuffle className="h-3 w-3" />;
+    }
+  };
+
+  // Get mode color
+  const getModeVariant = (mode: AttendanceMode): "default" | "secondary" | "outline" => {
+    switch (mode) {
+      case 'online': return 'secondary';
+      case 'center': return 'default';
+      case 'hybrid': return 'outline';
+    }
   };
 
   const handleExport = async () => {
@@ -287,6 +376,8 @@ export default function Students() {
           onProgressFilterChange={setProgressFilter}
           examFilter={examFilter}
           onExamFilterChange={setExamFilter}
+          attendanceModeFilter={attendanceModeFilter}
+          onAttendanceModeFilterChange={setAttendanceModeFilter}
           isRTL={isRTL}
           onClearFilters={clearFilters}
         />
@@ -314,6 +405,9 @@ export default function Students() {
                     </th>
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
                       {isRTL ? 'المجموعة' : 'Group'}
+                    </th>
+                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
+                      {t('attendance.mode')}
                     </th>
                     <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground hidden md:table-cell">
                       {isRTL ? 'التقدم' : 'Progress'}
@@ -369,6 +463,16 @@ export default function Students() {
                             <span className="text-muted-foreground">-</span>
                           )}
                         </td>
+                        <td className="px-6 py-4">
+                          <Badge 
+                            variant={getModeVariant(student.attendance_mode)}
+                            className="cursor-pointer hover:opacity-80 transition-opacity gap-1"
+                            onClick={(e) => openModeDialog(student, e)}
+                          >
+                            {getModeIcon(student.attendance_mode)}
+                            {t(`mode.${student.attendance_mode}`)}
+                          </Badge>
+                        </td>
                         <td className="px-6 py-4 hidden md:table-cell">
                           <div className="flex items-center gap-2">
                             <Progress value={student.avgProgress} className="w-16 h-2" />
@@ -412,6 +516,52 @@ export default function Students() {
             </div>
           )}
         </div>
+
+        {/* Attendance Mode Change Dialog */}
+        <Dialog open={modeDialogOpen} onOpenChange={setModeDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('mode.change')}</DialogTitle>
+              <DialogDescription>
+                {selectedStudent?.full_name || (isRTL ? 'الطالب' : 'Student')}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                {t('mode.changeNote')}
+              </p>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {(['online', 'center', 'hybrid'] as AttendanceMode[]).map((mode) => (
+                  <Button
+                    key={mode}
+                    variant={newMode === mode ? 'default' : 'outline'}
+                    className="flex flex-col items-center gap-2 h-auto py-4"
+                    onClick={() => setNewMode(mode)}
+                  >
+                    {mode === 'online' && <Wifi className="h-5 w-5" />}
+                    {mode === 'center' && <Building2 className="h-5 w-5" />}
+                    {mode === 'hybrid' && <Shuffle className="h-5 w-5" />}
+                    <span className="text-xs">{t(`mode.${mode}`)}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setModeDialogOpen(false)}>
+                {t('system.cancel')}
+              </Button>
+              <Button 
+                onClick={handleUpdateMode} 
+                disabled={updatingMode || newMode === selectedStudent?.attendance_mode}
+              >
+                {updatingMode ? t('system.loading') : t('system.save')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
