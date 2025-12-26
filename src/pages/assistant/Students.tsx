@@ -13,7 +13,6 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
-  id: string;
   user_id: string;
   full_name: string | null;
   phone: string | null;
@@ -87,7 +86,7 @@ export default function Students() {
         // Fetch profiles (exclude current assistant account)
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, user_id, full_name, phone, grade, academic_year, language_track, created_at')
+          .select('user_id, full_name, phone, grade, academic_year, language_track, created_at')
           .neq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -340,7 +339,7 @@ export default function Students() {
                     
                     return (
                       <tr 
-                        key={student.id} 
+                        key={student.user_id} 
                         className="hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => navigate(`/assistant/students/${student.user_id}`)}
                       >
