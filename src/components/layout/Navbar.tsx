@@ -25,7 +25,10 @@ export const Navbar: React.FC = () => {
     { href: '/courses', label: t('nav.courses') },
     { href: '/campaigns', label: t('nav.campaigns') },
     { href: '/about', label: t('nav.about') },
-    ...(user && !canAccessDashboard() ? [{ href: '/dashboard', label: t('nav.dashboard') }] : []),
+    ...(user && !canAccessDashboard() ? [
+      { href: '/dashboard', label: t('nav.dashboard') },
+      { href: '/profile', label: language === 'ar' ? 'ملفي' : 'My Profile' },
+    ] : []),
     ...(canAccessDashboard() ? [{ href: '/assistant', label: t('nav.controlPanel') }] : []),
   ];
 
