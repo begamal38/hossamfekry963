@@ -410,7 +410,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </Button>
         ) : (
           <Button 
-            variant={course.is_free ? 'default' : 'outline'} 
+            variant="default"
             className="w-full"
             onClick={() => onEnroll(course.id, course.is_free, course.price)}
             disabled={enrollingId === course.id}
