@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { ThemeSelector } from '@/components/theme/ThemeSelector';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 
@@ -85,6 +86,8 @@ export const Navbar: React.FC = () => {
               <Search className="w-5 h-5" />
             </Button>
             
+            <ThemeSelector />
+            
             <Button
               variant="ghost"
               size="sm"
@@ -140,6 +143,7 @@ export const Navbar: React.FC = () => {
             >
               <Search className="w-5 h-5" />
             </Button>
+            <ThemeSelector />
             {user && <NotificationBell />}
             <Button
               variant="ghost"
