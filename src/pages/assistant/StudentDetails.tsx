@@ -348,8 +348,8 @@ export default function StudentDetails() {
     setActionLoading(true);
     try {
       const { error } = await supabase.from('notifications').insert({
-        type: 'general' as any,
-        target_type: 'individual' as any,
+        type: 'system_message',
+        target_type: 'user',
         target_id: userId,
         title: isArabic ? 'رسالة من المساعد' : 'Message from Assistant',
         title_ar: 'رسالة من المساعد',

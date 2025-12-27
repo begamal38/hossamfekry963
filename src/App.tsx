@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import Campaigns from "./pages/Campaigns";
 import About from "./pages/About";
 import Notifications from "./pages/Notifications";
+import StudentProfile from "./pages/StudentProfile";
 import AssistantDashboard from "./pages/assistant/AssistantDashboard";
 import Students from "./pages/assistant/Students";
 import StudentDetails from "./pages/assistant/StudentDetails";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/about" element={<About />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<StudentProfile />} />
                 <Route path="/payment/:courseId" element={<Payment />} />
                 {/* Assistant Teacher Routes */}
                 <Route path="/assistant" element={<AssistantDashboard />} />
