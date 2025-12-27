@@ -162,19 +162,26 @@ const Courses: React.FC = () => {
     return enrollments.some(e => e.course_id === courseId);
   };
 
-  // Filter courses
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = 
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.title_ar.includes(searchQuery);
-    
-    const matchesGrade = selectedGrade === 'all' || course.grade === selectedGrade;
-    const matchesFree = !showFreeOnly || course.is_free;
-    
-    return matchesSearch && matchesGrade && matchesFree;
-  });
+  // Filter and sort courses (free courses first for marketing)
+  const filteredCourses = courses
+    .filter(course => {
+      const matchesSearch = 
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.title_ar.includes(searchQuery);
+      
+      const matchesGrade = selectedGrade === 'all' || course.grade === selectedGrade;
+      const matchesFree = !showFreeOnly || course.is_free;
+      
+      return matchesSearch && matchesGrade && matchesFree;
+    })
+    .sort((a, b) => {
+      // Free courses always first
+      if (a.is_free && !b.is_free) return -1;
+      if (!a.is_free && b.is_free) return 1;
+      return 0;
+    });
 
-  // Separate user's grade courses and others
+  // Separate user's grade courses and others (maintaining free-first order)
   const userGradeCourses = userGrade 
     ? filteredCourses.filter(c => c.grade === userGrade)
     : [];
