@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import logo from '@/assets/logo.jpg';
+import logo from '@/assets/logo.png';
 
 export const Footer: React.FC = () => {
   const { t } = useLanguage();
