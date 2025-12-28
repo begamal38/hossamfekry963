@@ -47,11 +47,11 @@ export function RequireResolvedAccess({
   const authResolved = !authLoading;
 
   // STEP 2: Check if roles are resolved (only matters if user is authenticated)
-  // hasAttemptedFetch ensures we don't wait forever for roles
+  // "Resolved" here means: we actually finished at least one fetch attempt AND we are no longer loading.
+  // This prevents premature authorization decisions on slow networks / first login.
   const rolesResolved = useMemo(() => {
     if (!user) return true; // No user = no roles to load
-    // Roles are resolved if: not loading OR we've at least attempted to fetch
-    return !rolesLoading || hasAttemptedFetch;
+    return hasAttemptedFetch && !rolesLoading;
   }, [user, rolesLoading, hasAttemptedFetch]);
 
   // STEP 3: Overall resolution - both auth and roles must be resolved
@@ -79,24 +79,31 @@ export function RequireResolvedAccess({
   }, [allow, canAccessDashboard, hasRole, requireAuth, user, hasAttemptedFetch, roles]);
 
   // STEP 5: Determine if we should show Access Denied
-  // Access Denied is ONLY shown when:
-  // - User is authenticated
+  // Access Denied is ONLY shown when ALL are true:
+  // - Auth is confirmed
   // - Roles are fully resolved
   // - Authorization check explicitly failed
-  // - User is a student (staff should never see Access Denied)
+  // - Role is explicitly "student"
   const shouldShowAccessDenied = useMemo(() => {
-    if (!isFullyResolved) return false; // Still loading
+    if (!isFullyResolved) return false; // Still loading (never deny)
     if (!user) return false; // Not authenticated (will show login prompt)
     if (isAllowed) return false; // Access is allowed
-    
-    // Only students can be denied access - staff always pass
+
+    // Staff should never see Access Denied.
     const isStaff = hasRole('admin') || hasRole('assistant_teacher');
     if (isStaff) {
       console.warn('[Auth] Staff user would have been denied - allowing as fail-safe');
       return false;
     }
-    
-    return true; // Student with explicit access violation
+
+    // STRICT: only students can be denied. If role is missing/unknown, allow (fail-safe).
+    const isStudent = hasRole('student');
+    if (!isStudent) {
+      console.warn('[Auth] Role not resolved as student while deny was computed - allowing as fail-safe');
+      return false;
+    }
+
+    return true;
   }, [isFullyResolved, user, isAllowed, hasRole]);
 
   const redirect = `${location.pathname}${location.search}`;
