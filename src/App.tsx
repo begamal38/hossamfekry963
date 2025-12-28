@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
+import FirstLoginWelcome from "@/components/welcome/FirstLoginWelcome";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
@@ -47,6 +48,7 @@ const App = () => (
         <ThemeProvider>
           <SessionProtectionProvider>
             <GovernorateCheck>
+              <FirstLoginWelcome />
               <TooltipProvider>
                 <Toaster />
                 <Sonner />

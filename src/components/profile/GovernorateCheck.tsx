@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import GovernoratePrompt from './GovernoratePrompt';
 
@@ -9,12 +10,20 @@ interface GovernorateCheckProps {
 
 const GovernorateCheck = ({ children }: GovernorateCheckProps) => {
   const { user } = useAuth();
+  const { isStudent, loading: roleLoading } = useUserRole();
   const [needsGovernorate, setNeedsGovernorate] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkGovernorate = async () => {
-      if (!user) {
+      if (!user || roleLoading) {
+        setLoading(false);
+        return;
+      }
+
+      // Only check governorate for students - assistant teachers don't need it
+      if (!isStudent()) {
+        setNeedsGovernorate(false);
         setLoading(false);
         return;
       }
@@ -38,7 +47,7 @@ const GovernorateCheck = ({ children }: GovernorateCheckProps) => {
     };
 
     checkGovernorate();
-  }, [user]);
+  }, [user, roleLoading, isStudent]);
 
   const handleGovernorateComplete = () => {
     setNeedsGovernorate(false);
