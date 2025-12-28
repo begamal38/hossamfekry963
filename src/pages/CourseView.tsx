@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
@@ -60,8 +61,10 @@ export default function CourseView() {
   const navigate = useNavigate();
   const { t, language, isRTL } = useLanguage();
   const { user } = useAuth();
+  const { loading: rolesLoading, isAdmin, isAssistantTeacher } = useUserRole();
   const { toast } = useToast();
   const isArabic = language === 'ar';
+  const canBypassAcademicRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -84,6 +87,12 @@ export default function CourseView() {
     }
   }, [courseId, user]);
 
+  useEffect(() => {
+    if (canBypassAcademicRestrictions) {
+      setAccessBlocked(null);
+    }
+  }, [canBypassAcademicRestrictions]);
+
   const fetchCourseData = async () => {
     try {
       // Fetch course
@@ -96,7 +105,7 @@ export default function CourseView() {
       if (courseError) throw courseError;
       setCourse(courseData);
 
-      // VALIDATION: Check if user can access this course's academic path
+      // VALIDATION: Restrict by academic path for students only (admins/assistants bypass)
       if (user) {
         const { data: profileData } = await supabase
           .from('profiles')
@@ -106,20 +115,26 @@ export default function CourseView() {
 
         if (profileData) {
           setUserProfile(profileData);
-          
+        }
+
+        if (profileData && !canBypassAcademicRestrictions) {
           // Parse course grade
           const coursePath = parseAcademicPath(courseData.grade);
-          const validation = canAccessContent(profileData, { 
-            grade: coursePath.grade, 
-            language_track: coursePath.track 
+          const validation = canAccessContent(profileData, {
+            grade: coursePath.grade,
+            language_track: coursePath.track,
           });
-          
+
           if (!validation.allowed) {
-            setAccessBlocked({ 
-              blocked: true, 
-              message: isArabic ? validation.messageAr : validation.message 
+            setAccessBlocked({
+              blocked: true,
+              message: isArabic ? validation.messageAr : validation.message,
             });
+          } else {
+            setAccessBlocked(null);
           }
+        } else {
+          setAccessBlocked(null);
         }
       }
       // Fetch lessons
