@@ -41,20 +41,17 @@ export function RequireResolvedAccess({
     return () => window.clearTimeout(id);
   }, [location.key, timeoutMs]);
 
+  // DEBUG MODE: Consider resolved immediately once auth loading is done
   const isResolved = useMemo(() => {
     if (authLoading) return false;
-    if (requireAuth && !user) return true; // resolved: unauthenticated
-    if (!user) return true; // resolved: no user and auth not required
-    // Consider resolved once roles loading is done - even if roles array is empty (students may have no roles)
-    return !rolesLoading;
-  }, [authLoading, requireAuth, rolesLoading, user]);
+    return true; // DEBUG: Skip role loading wait
+  }, [authLoading]);
 
+  // DEBUG MODE: Allow all authenticated users unconditionally
   const isAllowed = useMemo(() => {
     if (!user) return !requireAuth;
-    if (!allow) return true; // No access predicate means allow all authenticated users
-    // Pass rolesLoading as false since we've already resolved - don't re-block access
-    return allow({ hasRole, canAccessDashboard, rolesLoading: false });
-  }, [allow, canAccessDashboard, hasRole, requireAuth, user]);
+    return true; // DEBUG: Skip all permission checks
+  }, [requireAuth, user]);
 
   const redirect = `${location.pathname}${location.search}`;
 
