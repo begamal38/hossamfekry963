@@ -231,12 +231,8 @@ const Auth = () => {
             });
           }
         } else {
-          // Set flash flag for welcome toast
+          // Set flash flag for welcome toast (shown by FirstLoginWelcome component)
           sessionStorage.setItem('dmt_login_flash', 'true');
-          toast({
-            title: 'Welcome back!',
-            description: 'You have successfully logged in.',
-          });
           // Redirect will happen automatically via useEffect
         }
       } else {
@@ -256,12 +252,8 @@ const Auth = () => {
             });
           }
         } else {
-          // Set flash flag for welcome toast
+          // Set flash flag for welcome toast (shown by FirstLoginWelcome component)
           sessionStorage.setItem('dmt_login_flash', 'true');
-          toast({
-            title: 'Account created!',
-            description: 'Welcome to Hossam Fekry Chemistry Platform.',
-          });
           // Redirect will happen automatically via useEffect (new users go to student dashboard)
         }
       }

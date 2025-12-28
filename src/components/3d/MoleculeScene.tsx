@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, Sphere } from '@react-three/drei';
+import { Float, MeshDistortMaterial, Sphere, Trail, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface AtomProps {
@@ -16,7 +16,9 @@ function Atom({ position, color, size = 0.3, emissive, emissiveIntensity = 0.5 }
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 2) * 0.05);
+      // More dynamic pulsing effect
+      const pulse = 1 + Math.sin(state.clock.elapsedTime * 2 + position[0]) * 0.08;
+      meshRef.current.scale.setScalar(pulse);
     }
   });
 
@@ -61,17 +63,25 @@ function Bond({ start, end, color = '#5a9fd4' }: BondProps) {
     };
   }, [start, end]);
 
+  useFrame((state) => {
+    if (ref.current) {
+      // Subtle glow pulsing
+      const material = ref.current.material as THREE.MeshStandardMaterial;
+      material.emissiveIntensity = 0.3 + Math.sin(state.clock.elapsedTime * 3) * 0.15;
+    }
+  });
+
   return (
     <mesh ref={ref} position={position} rotation={rotation}>
-      <cylinderGeometry args={[0.05, 0.05, length, 8]} />
+      <cylinderGeometry args={[0.04, 0.04, length, 12]} />
       <meshStandardMaterial 
         color={color} 
-        roughness={0.3} 
-        metalness={0.7}
+        roughness={0.2} 
+        metalness={0.8}
         emissive={color}
         emissiveIntensity={0.3}
         transparent
-        opacity={0.8}
+        opacity={0.85}
       />
     </mesh>
   );
@@ -80,20 +90,37 @@ function Bond({ start, end, color = '#5a9fd4' }: BondProps) {
 function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null);
   
-  const particles = useMemo(() => {
-    const positions = new Float32Array(100 * 3);
-    for (let i = 0; i < 100; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+  const { positions, colors } = useMemo(() => {
+    const count = 150;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 12;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
+      
+      // Vary colors between blue and cyan
+      const hue = 0.55 + Math.random() * 0.1;
+      const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
     }
-    return positions;
+    return { positions, colors };
   }, []);
 
   useFrame((state) => {
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.05;
-      particlesRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.03) * 0.1;
+      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.03;
+      particlesRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.02) * 0.15;
+      
+      // Floating effect
+      const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < positions.length / 3; i++) {
+        positions[i * 3 + 1] += Math.sin(state.clock.elapsedTime + i) * 0.001;
+      }
+      particlesRef.current.geometry.attributes.position.needsUpdate = true;
     }
   });
 
@@ -102,19 +129,57 @@ function FloatingParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={100}
-          array={particles}
+          count={150}
+          array={positions}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-color"
+          count={150}
+          array={colors}
           itemSize={3}
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.05}
-        color="#5a9fd4"
+        size={0.06}
+        vertexColors
         transparent
-        opacity={0.6}
+        opacity={0.7}
         sizeAttenuation
       />
     </points>
+  );
+}
+
+// Orbiting electron effect
+function OrbitingElectron({ radius, speed, color }: { radius: number; speed: number; color: string }) {
+  const ref = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    if (ref.current) {
+      const t = state.clock.elapsedTime * speed;
+      ref.current.position.x = Math.cos(t) * radius;
+      ref.current.position.z = Math.sin(t) * radius;
+      ref.current.position.y = Math.sin(t * 0.5) * 0.3;
+    }
+  });
+
+  return (
+    <Trail
+      width={0.1}
+      length={8}
+      color={color}
+      attenuation={(t) => t * t}
+    >
+      <mesh ref={ref}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={2}
+        />
+      </mesh>
+    </Trail>
   );
 }
 
@@ -123,32 +188,33 @@ function Molecule() {
 
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.15;
-      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.15;
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
+      // Smoother, more elegant rotation
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.12;
+      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.08) * 0.12;
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.4) * 0.25;
     }
   });
 
   // Water molecule structure (H2O) - center
   const waterAtoms: AtomProps[] = [
-    { position: [0, 0, 0], color: '#ef4444', size: 0.55, emissive: '#ef4444', emissiveIntensity: 0.4 }, // Oxygen (red)
-    { position: [0.8, 0.6, 0], color: '#ffffff', size: 0.35, emissive: '#3173b8', emissiveIntensity: 0.6 }, // Hydrogen
-    { position: [-0.8, 0.6, 0], color: '#ffffff', size: 0.35, emissive: '#3173b8', emissiveIntensity: 0.6 }, // Hydrogen
+    { position: [0, 0, 0], color: '#ef4444', size: 0.55, emissive: '#ef4444', emissiveIntensity: 0.5 }, // Oxygen (red)
+    { position: [0.8, 0.6, 0], color: '#ffffff', size: 0.35, emissive: '#60a5fa', emissiveIntensity: 0.7 }, // Hydrogen
+    { position: [-0.8, 0.6, 0], color: '#ffffff', size: 0.35, emissive: '#60a5fa', emissiveIntensity: 0.7 }, // Hydrogen
   ];
 
   // Additional decorative molecules
   const extraAtoms: AtomProps[] = [
     // Carbon dioxide molecule (left)
-    { position: [-2.5, -0.5, 0.5], color: '#4a4a4a', size: 0.45, emissive: '#3173b8', emissiveIntensity: 0.3 },
-    { position: [-3.5, -0.5, 0.5], color: '#ef4444', size: 0.4, emissive: '#ef4444', emissiveIntensity: 0.4 },
-    { position: [-1.5, -0.5, 0.5], color: '#ef4444', size: 0.4, emissive: '#ef4444', emissiveIntensity: 0.4 },
+    { position: [-2.5, -0.5, 0.5], color: '#374151', size: 0.45, emissive: '#60a5fa', emissiveIntensity: 0.4 },
+    { position: [-3.5, -0.5, 0.5], color: '#ef4444', size: 0.4, emissive: '#ef4444', emissiveIntensity: 0.5 },
+    { position: [-1.5, -0.5, 0.5], color: '#ef4444', size: 0.4, emissive: '#ef4444', emissiveIntensity: 0.5 },
     
     // Methane-like (right top)
-    { position: [2.5, 1, -0.5], color: '#4a4a4a', size: 0.5, emissive: '#22c55e', emissiveIntensity: 0.4 },
-    { position: [3.2, 1.5, -0.2], color: '#ffffff', size: 0.3, emissive: '#3173b8', emissiveIntensity: 0.5 },
-    { position: [1.8, 1.5, -0.2], color: '#ffffff', size: 0.3, emissive: '#3173b8', emissiveIntensity: 0.5 },
-    { position: [2.5, 0.3, -0.8], color: '#ffffff', size: 0.3, emissive: '#3173b8', emissiveIntensity: 0.5 },
-    { position: [2.5, 0.5, 0.3], color: '#ffffff', size: 0.3, emissive: '#3173b8', emissiveIntensity: 0.5 },
+    { position: [2.5, 1, -0.5], color: '#374151', size: 0.5, emissive: '#22c55e', emissiveIntensity: 0.5 },
+    { position: [3.2, 1.5, -0.2], color: '#ffffff', size: 0.3, emissive: '#60a5fa', emissiveIntensity: 0.6 },
+    { position: [1.8, 1.5, -0.2], color: '#ffffff', size: 0.3, emissive: '#60a5fa', emissiveIntensity: 0.6 },
+    { position: [2.5, 0.3, -0.8], color: '#ffffff', size: 0.3, emissive: '#60a5fa', emissiveIntensity: 0.6 },
+    { position: [2.5, 0.5, 0.3], color: '#ffffff', size: 0.3, emissive: '#60a5fa', emissiveIntensity: 0.6 },
   ];
 
   // Bonds
@@ -168,6 +234,11 @@ function Molecule() {
 
   return (
     <group ref={groupRef}>
+      {/* Orbiting electrons for visual effect */}
+      <OrbitingElectron radius={1.5} speed={2} color="#60a5fa" />
+      <OrbitingElectron radius={2} speed={1.5} color="#3b82f6" />
+      <OrbitingElectron radius={2.5} speed={1} color="#2563eb" />
+      
       {/* Render bonds first (behind atoms) */}
       {bonds.map((bond, i) => (
         <Bond key={`bond-${i}`} {...bond} />
@@ -175,14 +246,14 @@ function Molecule() {
       
       {/* Water molecule */}
       {waterAtoms.map((atom, i) => (
-        <Float key={`water-${i}`} speed={2} rotationIntensity={0.2} floatIntensity={0.3}>
+        <Float key={`water-${i}`} speed={2.5} rotationIntensity={0.25} floatIntensity={0.4}>
           <Atom {...atom} />
         </Float>
       ))}
       
       {/* Extra molecules */}
       {extraAtoms.map((atom, i) => (
-        <Float key={`extra-${i}`} speed={1.5} rotationIntensity={0.1} floatIntensity={0.2}>
+        <Float key={`extra-${i}`} speed={1.8} rotationIntensity={0.15} floatIntensity={0.25}>
           <Atom {...atom} />
         </Float>
       ))}
@@ -195,20 +266,23 @@ function GlowingSphere() {
 
   useFrame((state) => {
     if (ref.current) {
-      ref.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime) * 0.1);
+      // More dynamic breathing effect
+      const scale = 1 + Math.sin(state.clock.elapsedTime * 0.8) * 0.15;
+      ref.current.scale.setScalar(scale);
+      ref.current.rotation.y = state.clock.elapsedTime * 0.1;
     }
   });
 
   return (
-    <Sphere ref={ref} args={[3.5, 64, 64]} position={[0, 0, -3]}>
+    <Sphere ref={ref} args={[3.5, 64, 64]} position={[0, 0, -4]}>
       <MeshDistortMaterial
-        color="#3173b8"
+        color="#3b82f6"
         attach="material"
-        distort={0.3}
-        speed={2}
-        roughness={0.4}
+        distort={0.4}
+        speed={2.5}
+        roughness={0.3}
         transparent
-        opacity={0.1}
+        opacity={0.12}
       />
     </Sphere>
   );
@@ -222,21 +296,27 @@ export default function MoleculeScene() {
         style={{ background: 'transparent' }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 10, 5]} intensity={1.2} color="#ffffff" />
-        <pointLight position={[-5, 5, 5]} intensity={0.8} color="#3173b8" />
-        <pointLight position={[5, -5, -5]} intensity={0.6} color="#5a9fd4" />
-        <spotLight position={[0, 10, 0]} intensity={0.5} color="#ffffff" angle={0.5} />
+        {/* Enhanced lighting */}
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[10, 10, 5]} intensity={1.3} color="#ffffff" />
+        <pointLight position={[-5, 5, 5]} intensity={1} color="#3b82f6" />
+        <pointLight position={[5, -5, -5]} intensity={0.8} color="#60a5fa" />
+        <pointLight position={[0, 5, 0]} intensity={0.6} color="#93c5fd" />
+        <spotLight position={[0, 10, 0]} intensity={0.6} color="#ffffff" angle={0.5} penumbra={0.5} />
+        
+        {/* Background stars for depth */}
+        <Stars radius={50} depth={50} count={300} factor={2} saturation={0.5} fade speed={0.5} />
         
         <GlowingSphere />
         <FloatingParticles />
         <Molecule />
       </Canvas>
       
-      {/* Glow overlay */}
+      {/* Enhanced glow overlay */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute top-1/3 left-1/3 w-40 h-40 bg-accent/20 rounded-full blur-2xl animate-pulse-glow animation-delay-300" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute top-1/3 left-1/3 w-48 h-48 bg-accent/25 rounded-full blur-2xl animate-pulse-glow animation-delay-300" />
+        <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-primary/15 rounded-full blur-2xl animate-pulse-glow animation-delay-200" />
       </div>
     </div>
   );
