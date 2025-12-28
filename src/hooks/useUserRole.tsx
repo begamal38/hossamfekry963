@@ -1,18 +1,25 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 type AppRole = 'admin' | 'assistant_teacher' | 'student';
 
 export const useUserRole = () => {
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // One-shot retry for the common "just logged in" race where the first role query can fail.
+  const retryCountRef = useRef(0);
+
   const fetchRoles = useCallback(async () => {
+    // Don’t query roles until auth is fully initialized.
+    if (authLoading) return;
+
     setLoading(true);
 
-    if (!user) {
+    if (!user || !session) {
+      retryCountRef.current = 0;
       setRoles([]);
       setLoading(false);
       return;
@@ -26,14 +33,23 @@ export const useUserRole = () => {
 
       if (error) throw error;
 
+      retryCountRef.current = 0;
       setRoles((data || []).map((r) => r.role as AppRole));
     } catch (error) {
-      console.error('Error fetching roles:', error);
-      setRoles([]);
+      // If the first request fails right after login, retry once after a short delay.
+      if (retryCountRef.current < 1) {
+        retryCountRef.current += 1;
+        window.setTimeout(() => {
+          fetchRoles();
+        }, 600);
+      } else {
+        console.error('Error fetching roles:', error);
+        setRoles([]);
+      }
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [authLoading, session, user]);
 
   useEffect(() => {
     fetchRoles();
