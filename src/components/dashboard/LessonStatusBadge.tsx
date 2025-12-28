@@ -12,20 +12,20 @@ interface LessonStatusBadgeProps {
 const statusConfig = {
   completed: {
     icon: CheckCircle2,
-    labelEn: 'Completed',
-    labelAr: 'مكتمل',
+    labelEn: 'Session Completed',
+    labelAr: 'الحصة مكتملة',
     className: 'bg-success/10 text-success border-success/20',
   },
   in_progress: {
     icon: Clock,
-    labelEn: 'In Progress',
-    labelAr: 'جاري',
+    labelEn: 'Session In Progress',
+    labelAr: 'الحصة جارية',
     className: 'bg-warning/10 text-warning border-warning/20',
   },
   not_started: {
     icon: Circle,
-    labelEn: 'Not Started',
-    labelAr: 'لم يبدأ',
+    labelEn: 'Session Not Started',
+    labelAr: 'الحصة لم تبدأ',
     className: 'bg-muted text-muted-foreground border-border',
   },
 };

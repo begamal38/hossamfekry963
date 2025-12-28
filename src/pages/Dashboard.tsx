@@ -251,8 +251,8 @@ const Dashboard: React.FC = () => {
   const lessonActivities: LessonActivity[] = enrolledCourses.slice(0, 5).map((enrollment, index) => ({
     id: `lesson-${index}`,
     title: isArabic 
-      ? `الدرس ${enrollment.completed_lessons + 1}` 
-      : `Lesson ${enrollment.completed_lessons + 1}`,
+      ? `الحصة ${enrollment.completed_lessons + 1}` 
+      : `Session ${enrollment.completed_lessons + 1}`,
     courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
     isCompleted: false,
     isLastAccessed: index === 0,

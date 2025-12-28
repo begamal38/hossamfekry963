@@ -297,9 +297,9 @@ export default function CourseView() {
                 </p>
 
                 <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mb-6">
-                  <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
-                    {lessons.length} {isArabic ? 'حصة' : 'lessons'}
+                    {lessons.length} {isArabic ? 'حصة' : 'sessions'}
                   </span>
                   <span className="flex items-center gap-2">
                     <Clock className="w-5 h-5" />
@@ -355,7 +355,7 @@ export default function CourseView() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>{isArabic ? 'تقدمك' : 'Your Progress'}</span>
-                        <span>{completedLessons}/{lessons.length} {isArabic ? 'حصة' : 'lessons'}</span>
+                        <span>{completedLessons}/{lessons.length} {isArabic ? 'حصة' : 'sessions'}</span>
                       </div>
                       <Progress value={progressPercent} className="h-2" />
                     </div>
@@ -450,10 +450,10 @@ export default function CourseView() {
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {isArabic ? 'لسه مفيش حصص' : 'No lessons yet'}
+                {isArabic ? 'لسه مفيش حصص' : 'No sessions yet'}
               </h3>
               <p className="text-muted-foreground">
-                {isArabic ? 'الحصص هتتضاف قريب' : 'Lessons will be added soon'}
+                {isArabic ? 'الحصص هتتضاف قريب' : 'Sessions will be added soon'}
               </p>
             </div>
           )}
