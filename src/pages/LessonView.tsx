@@ -25,14 +25,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
-// Helper function to extract YouTube video ID from various URL formats
+// Helper function to extract YouTube video ID from various URL formats (including full iframe embed codes)
 const getYouTubeVideoId = (url: string): string | null => {
   if (!url) return null;
   
-  // Match various YouTube URL formats
+  // Match various YouTube URL formats - including when embedded in iframe HTML
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/shorts\/([^&\n?#]+)/
+    /youtube\.com\/embed\/([^"&\n?#\s]+)/,        // Embed URL (handles iframe src)
+    /youtube\.com\/watch\?v=([^&\n?#\s]+)/,       // Standard watch URL
+    /youtu\.be\/([^&\n?#\s]+)/,                    // Short URL
+    /youtube\.com\/shorts\/([^&\n?#\s]+)/          // Shorts URL
   ];
   
   for (const pattern of patterns) {
