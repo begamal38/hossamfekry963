@@ -12,12 +12,13 @@ export const useUserRole = () => {
   const { user, session, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   // One-shot retry for the common "just logged in" race where the first role query can fail.
   const retryCountRef = useRef(0);
 
   const fetchRoles = useCallback(async () => {
-    // Don’t query roles until auth is fully initialized.
+    // Don't query roles until auth is fully initialized.
     if (authLoading) return;
 
     if (!user || !session) {
@@ -25,6 +26,7 @@ export const useUserRole = () => {
       retryCountRef.current = 0;
       setRoles([]);
       setLoading(false);
+      setHasAttemptedFetch(true);
       return;
     }
 
@@ -35,6 +37,7 @@ export const useUserRole = () => {
     if (cacheFresh) {
       setRoles(cachedForUser.roles);
       setLoading(false);
+      setHasAttemptedFetch(true);
       return;
     }
 
@@ -70,7 +73,10 @@ export const useUserRole = () => {
         roleCache = { userId: user.id, roles: [], fetchedAt: Date.now() };
       }
     } finally {
-      if (!keepLoadingForRetry) setLoading(false);
+      if (!keepLoadingForRetry) {
+        setLoading(false);
+        setHasAttemptedFetch(true);
+      }
     }
   }, [authLoading, session, user]);
 
@@ -89,6 +95,7 @@ export const useUserRole = () => {
   return {
     roles,
     loading,
+    hasAttemptedFetch,
     hasRole,
     isAdmin,
     isAssistantTeacher,
