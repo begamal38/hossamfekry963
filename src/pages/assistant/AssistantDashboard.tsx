@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap, Send } from 'lucide-react';
+import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap, Send, MapPin, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -261,6 +261,18 @@ export default function AssistantDashboard() {
               <Link to="/assistant/notifications">
                 <Send className="h-6 w-6 text-green-600" />
                 <span className="text-green-700">{isRTL ? 'إرسال إشعارات' : 'Send Notifications'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-blue-500/30 bg-blue-500/5">
+              <Link to="/assistant/center-groups">
+                <MapPin className="h-6 w-6 text-blue-600" />
+                <span className="text-blue-700">{isRTL ? 'مجموعات السنتر' : 'Center Groups'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-purple-500/30 bg-purple-500/5">
+              <Link to="/assistant/center-sessions">
+                <Calendar className="h-6 w-6 text-purple-600" />
+                <span className="text-purple-700">{isRTL ? 'جلسات السنتر' : 'Center Sessions'}</span>
               </Link>
             </Button>
           </div>

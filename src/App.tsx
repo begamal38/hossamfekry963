@@ -35,6 +35,8 @@ import RecordGrades from "./pages/assistant/RecordGrades";
 import Reports from "./pages/assistant/Reports";
 import ManageCourses from "./pages/assistant/ManageCourses";
 import SendNotifications from "./pages/assistant/SendNotifications";
+import CenterGroups from "./pages/assistant/CenterGroups";
+import CenterSessions from "./pages/assistant/CenterSessions";
 
 const queryClient = new QueryClient();
 
@@ -259,6 +261,28 @@ const App = () => (
                         allow={({ canAccessDashboard }) => canAccessDashboard()}
                       >
                         <SendNotifications />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/center-groups"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <CenterGroups />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/center-sessions"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <CenterSessions />
                       </RequireResolvedAccess>
                     }
                   />
