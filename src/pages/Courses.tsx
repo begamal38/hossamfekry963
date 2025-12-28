@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
+import { filterCoursesForStudents, ACTIVE_SCOPE } from '@/lib/contentVisibility';
 
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
@@ -212,8 +213,13 @@ const Courses: React.FC = () => {
       ? combineAcademicPath(userProfile.academic_year, userProfile.language_track) 
       : null);
 
+  // Filter courses by active scope (students only see active scope courses)
+  const scopedCourses = filterCoursesForStudents(courses, {
+    bypassScope: canBypassAcademicRestrictions,
+  });
+
   // Filter and sort courses (free courses first for marketing)
-  const filteredCourses = courses
+  const filteredCourses = scopedCourses
     .filter(course => {
       const matchesSearch = 
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
