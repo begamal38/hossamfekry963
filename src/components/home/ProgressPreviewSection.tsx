@@ -12,11 +12,8 @@ interface StatCardProps {
   delay: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color, delay }) => (
-  <div className={cn(
-    "bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in-up",
-    delay
-  )}>
+const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color }) => (
+  <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-lg transition-shadow duration-300">
     <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4", color)}>
       {icon}
     </div>
@@ -60,9 +57,9 @@ export const ProgressPreviewSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <section className="py-20 lg:py-28 bg-background" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16 animate-fade-in-up">
+        <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {isRTL ? 'شوف وصلت لفين 🚀' : 'Track Your Progress 🚀'}
           </h2>
@@ -77,7 +74,7 @@ export const ProgressPreviewSection: React.FC = () => {
 
         <div className="max-w-4xl mx-auto">
           {/* Overall Progress */}
-          <div className="bg-card rounded-2xl border border-border p-8 mb-8 animate-fade-in-up">
+          <div className="bg-card rounded-2xl border border-border p-8 mb-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-primary to-accent flex items-center justify-center">

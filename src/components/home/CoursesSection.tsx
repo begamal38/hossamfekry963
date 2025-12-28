@@ -70,16 +70,17 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
   const description = language === 'ar' ? course.descriptionAr : course.description;
 
   return (
-    <div className={cn(
-      "group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:-translate-y-2 transition-all duration-300 animate-fade-in-up",
-      `animation-delay-${(index + 1) * 100}`
-    )}>
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden">
+    <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
+      {/* Image - fixed height, no layout shift */}
+      <div className="relative h-48 overflow-hidden bg-muted">
         <img 
           src={course.image} 
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          width={400}
+          height={192}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
         
@@ -133,17 +134,17 @@ export const CoursesSection: React.FC = () => {
   const { t } = useLanguage();
 
   return (
-    <section className="py-20 lg:py-28 bg-muted/30">
+    <section className="py-20 lg:py-28 bg-muted/30" style={{ contain: 'layout' }}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
-          <div className="animate-fade-in-up">
+          <div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               {t('courses.title')}
             </h2>
             <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full" />
           </div>
           
-          <Button variant="outline" className="animate-fade-in-up animation-delay-100" asChild>
+          <Button variant="outline" asChild>
             <Link to="/courses">
               {t('courses.viewAll')}
               <ArrowRight className="w-4 h-4 ml-2" />

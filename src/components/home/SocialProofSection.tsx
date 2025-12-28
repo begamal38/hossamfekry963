@@ -66,7 +66,7 @@ export const SocialProofSection: React.FC = () => {
   const isArabic = language === 'ar';
 
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-16 bg-muted/30" style={{ contain: 'layout' }}>
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-12">
