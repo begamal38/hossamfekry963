@@ -74,11 +74,18 @@ const Auth = () => {
 
   const hasAccess = canAccessDashboard();
 
-  // Redirect if already logged in - based on role
+  // Redirect if already logged in - based on role (or explicit redirect)
   useEffect(() => {
     if (!user || roleLoading) return;
+
+    const redirect = searchParams.get('redirect');
+    if (redirect) {
+      navigate(redirect);
+      return;
+    }
+
     navigate(hasAccess ? '/assistant' : '/dashboard');
-  }, [user, roleLoading, hasAccess, navigate]);
+  }, [user, roleLoading, hasAccess, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
