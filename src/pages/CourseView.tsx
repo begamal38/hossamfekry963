@@ -90,11 +90,11 @@ export default function CourseView() {
   const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
   const [accessBlocked, setAccessBlocked] = useState<{ blocked: boolean; message: string } | null>(null);
 
-  // Filter lessons for student view (must be in chapter, for admins show all)
+  // Filter lessons for student view (must be in chapter for paid courses, for admins show all)
   const visibleLessons = useMemo(() => {
     if (canBypassRestrictions) return lessons;
-    return filterLessonsForStudents(lessons);
-  }, [lessons, canBypassRestrictions]);
+    return filterLessonsForStudents(lessons, { isFreeCourse: course?.is_free || false });
+  }, [lessons, canBypassRestrictions, course?.is_free]);
 
   // Calculate progress based on lessons with valid videos only
   const progressData = useMemo(() => {
