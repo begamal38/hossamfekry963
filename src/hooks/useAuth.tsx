@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, phone?: string, academicYear?: string, languageTrack?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string, academicYear?: string, languageTrack?: string, governorate?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, phone?: string, academicYear?: string, languageTrack?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, phone?: string, academicYear?: string, languageTrack?: string, governorate?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     // Generate combined grade for backward compatibility
@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           grade: grade,
           academic_year: academicYear,
           language_track: languageTrack,
+          governorate: governorate,
         }
       }
     });
