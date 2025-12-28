@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,7 +8,8 @@ import {
   Clock,
   Users,
   Lock,
-  Unlock
+  Unlock,
+  FileVideo
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -22,6 +23,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
+import { filterLessonsForStudents, hasValidVideo, calculateProgress } from '@/lib/contentVisibility';
 
 interface Course {
   id: string;
@@ -43,6 +45,15 @@ interface Lesson {
   order_index: number;
   duration_minutes: number;
   lesson_type: string;
+  chapter_id: string | null;
+  video_url: string | null;
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  title_ar: string;
+  order_index: number;
 }
 
 interface Attendance {
@@ -70,6 +81,7 @@ export default function CourseView() {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string>('');
@@ -77,6 +89,18 @@ export default function CourseView() {
   const [enrolling, setEnrolling] = useState(false);
   const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
   const [accessBlocked, setAccessBlocked] = useState<{ blocked: boolean; message: string } | null>(null);
+
+  // Filter lessons for student view (must be in chapter, for admins show all)
+  const visibleLessons = useMemo(() => {
+    if (canBypassRestrictions) return lessons;
+    return filterLessonsForStudents(lessons);
+  }, [lessons, canBypassRestrictions]);
+
+  // Calculate progress based on lessons with valid videos only
+  const progressData = useMemo(() => {
+    const completedIds = attendances.map(a => a.lesson_id);
+    return calculateProgress(visibleLessons, completedIds);
+  }, [visibleLessons, attendances]);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -246,8 +270,7 @@ export default function CourseView() {
     return attendances.some(a => a.lesson_id === lessonId);
   };
 
-  const completedLessons = lessons.filter(l => isLessonCompleted(l.id)).length;
-  const progressPercent = lessons.length > 0 ? (completedLessons / lessons.length) * 100 : 0;
+  // Progress is now calculated via useMemo with progressData
 
   // Determine lesson access based on role and enrollment
   const canAccessLesson = (index: number) => {
@@ -413,9 +436,9 @@ export default function CourseView() {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>{isArabic ? 'تقدمك' : 'Your Progress'}</span>
-                        <span>{completedLessons}/{lessons.length} {isArabic ? 'حصة' : 'sessions'}</span>
+                        <span>{progressData.completed}/{progressData.total} {isArabic ? 'حصة' : 'sessions'}</span>
                       </div>
-                      <Progress value={progressPercent} className="h-2" />
+                      <Progress value={progressData.percent} className="h-2" />
                     </div>
                   </div>
                 )}
@@ -435,28 +458,34 @@ export default function CourseView() {
         <div className="container mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold mb-6">
             {isArabic ? 'محتوى الكورس' : 'Course Content'}
+            {visibleLessons.length < lessons.length && canBypassRestrictions && (
+              <span className="text-sm font-normal text-muted-foreground mr-2">
+                ({lessons.length - visibleLessons.length} {isArabic ? 'حصص مخفية' : 'hidden lessons'})
+              </span>
+            )}
           </h2>
 
           <div className="space-y-3">
-            {lessons.map((lesson, index) => {
+            {visibleLessons.map((lesson, index) => {
               const completed = isLessonCompleted(lesson.id);
               const canAccess = canAccessLesson(index);
+              const hasVideo = hasValidVideo(lesson.video_url);
 
               return (
                 <div
                   key={lesson.id}
                   className={cn(
                     "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
-                    canAccess ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
+                    canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
                   )}
-                  onClick={() => canAccess && navigate(`/lesson/${lesson.id}`)}
+                  onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
                 >
                   {/* Lesson Number */}
                   <div className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
                     completed 
                       ? "bg-green-500 text-white" 
-                      : canAccess
+                      : canAccess && hasVideo
                       ? "bg-primary/10 text-primary"
                       : "bg-muted text-muted-foreground"
                   )}>
@@ -465,26 +494,32 @@ export default function CourseView() {
 
                   {/* Lesson Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">
-                      {isArabic ? lesson.title_ar : lesson.title}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold truncate">
+                        {isArabic ? lesson.title_ar : lesson.title}
+                      </h3>
+                      {!hasVideo && (
+                        <Badge variant="secondary" className="text-xs shrink-0">
+                          <FileVideo className="w-3 h-3 mr-1" />
+                          {isArabic ? 'قيد الإعداد' : 'Coming Soon'}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
                       </span>
-                      <Badge variant="outline" className="text-xs">
-                        {lesson.lesson_type === 'center' 
-                          ? (isArabic ? 'سنتر' : 'Center')
-                          : (isArabic ? 'أونلاين' : 'Online')
-                        }
-                      </Badge>
                     </div>
                   </div>
 
                   {/* Action */}
                   <div className="shrink-0">
-                    {canAccess ? (
+                    {!hasVideo ? (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        {isArabic ? 'قريباً' : 'Soon'}
+                      </Badge>
+                    ) : canAccess ? (
                       <Button size="sm" variant={completed ? "secondary" : "default"}>
                         {completed ? (
                           <>{isArabic ? 'مراجعة' : 'Review'}</>
@@ -504,7 +539,7 @@ export default function CourseView() {
             })}
           </div>
 
-          {lessons.length === 0 && (
+          {visibleLessons.length === 0 && (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">

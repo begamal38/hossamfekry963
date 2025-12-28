@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
+import { hasValidVideo } from '@/lib/contentVisibility';
 
 // Use shared utility
 const getYouTubeVideoId = extractYouTubeVideoId;
@@ -271,43 +272,48 @@ export default function LessonView() {
             ) : (
               <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center">
                 <Play className="w-16 h-16 text-muted-foreground/40 mb-4" />
-                <p className="text-muted-foreground font-medium">
-                  {isArabic ? 'الفيديو قريباً' : 'Video Coming Soon'}
+                <p className="text-muted-foreground font-medium text-lg">
+                  {isArabic ? 'المحتوى قيد الإعداد' : 'Content Under Preparation'}
+                </p>
+                <p className="text-muted-foreground/60 text-sm mt-2">
+                  {isArabic ? 'سيتم إضافة الفيديو قريباً' : 'Video will be added soon'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Primary Action: Mark Complete */}
-          <div className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
-            {completed ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+          {/* Primary Action: Mark Complete - Only show if video is available */}
+          {hasValidVideo(lesson.video_url) ? (
+            <div className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
+              {completed ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-green-600">
+                    {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done! Lesson completed'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {isArabic ? 'استمر للحصة التالية' : 'Continue to the next lesson'}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-green-600">
-                  {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done! Lesson completed'}
-                </h3>
-                <p className="text-muted-foreground">
-                  {isArabic ? 'استمر للحصة التالية' : 'Continue to the next lesson'}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <p className="text-lg text-muted-foreground">
-                  {isArabic ? 'خلصت مشاهدة الفيديو؟' : 'Finished watching the video?'}
-                </p>
-                <Button 
-                  size="lg" 
-                  onClick={handleComplete} 
-                  className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6"
-                >
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  {isArabic ? 'خلصت الحصة' : 'Mark as Complete'}
-                </Button>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-lg text-muted-foreground">
+                    {isArabic ? 'خلصت مشاهدة الفيديو؟' : 'Finished watching the video?'}
+                  </p>
+                  <Button 
+                    size="lg" 
+                    onClick={handleComplete} 
+                    className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6"
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    {isArabic ? 'خلصت الحصة' : 'Mark as Complete'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : null}
 
           {/* Navigation */}
           <div className="flex items-center justify-between gap-4">
