@@ -262,34 +262,35 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Grade */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
-                {isStudent() && initialGrade ? (
-                  // Students with set grade see read-only display
-                  <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
-                    {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
-                  </div>
-                ) : (
-                  // Assistants/admins or students without grade can edit
-                  <select
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    disabled={isStudent() && !!initialGrade}
-                  >
-                    <option value="">اختر المرحلة</option>
-                    {GRADE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.labelAr}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {isStudent() && initialGrade && (
-                  <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
-                )}
-              </div>
+              {/* Grade - Only show for students */}
+              {isStudent() && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
+                  {initialGrade ? (
+                    // Students with set grade see read-only display
+                    <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
+                      {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
+                    </div>
+                  ) : (
+                    // Students without grade can set it
+                    <select
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">اختر المرحلة</option>
+                      {GRADE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.labelAr}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {initialGrade && (
+                    <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
+                  )}
+                </div>
+              )}
 
               {/* Save Button */}
               <Button
