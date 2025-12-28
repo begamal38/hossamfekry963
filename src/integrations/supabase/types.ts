@@ -543,6 +543,7 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          is_free_lesson: boolean
           key_points: Json | null
           lesson_type: string
           linked_exam_id: string | null
@@ -563,6 +564,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_free_lesson?: boolean
           key_points?: Json | null
           lesson_type?: string
           linked_exam_id?: string | null
@@ -583,6 +585,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_free_lesson?: boolean
           key_points?: Json | null
           lesson_type?: string
           linked_exam_id?: string | null

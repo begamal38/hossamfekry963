@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Trash2, Youtube, Pencil, GripVertical, Layers, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, Video, Trash2, Youtube, Pencil, GripVertical, Layers, Clock, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ interface Lesson {
   order_index: number;
   video_url: string | null;
   duration_minutes: number | null;
+  is_free_lesson: boolean;
 }
 
 const ManageLessons = () => {
@@ -68,6 +69,7 @@ const ManageLessons = () => {
     video_url: '',
     duration_minutes: 60,
     chapter_id: '',
+    is_free_lesson: false,
   });
 
   useEffect(() => {
@@ -142,7 +144,7 @@ const ManageLessons = () => {
     try {
       const { data, error } = await supabase
         .from('lessons')
-        .select('id, title, title_ar, lesson_type, course_id, chapter_id, order_index, video_url, duration_minutes')
+        .select('id, title, title_ar, lesson_type, course_id, chapter_id, order_index, video_url, duration_minutes, is_free_lesson')
         .eq('course_id', selectedCourse)
         .order('order_index');
 
@@ -159,6 +161,7 @@ const ManageLessons = () => {
       video_url: '',
       duration_minutes: 60,
       chapter_id: '',
+      is_free_lesson: false,
     });
     setEditingLesson(null);
     setShowForm(false);
@@ -171,6 +174,7 @@ const ManageLessons = () => {
       video_url: lesson.video_url || '',
       duration_minutes: lesson.duration_minutes || 60,
       chapter_id: lesson.chapter_id || '',
+      is_free_lesson: lesson.is_free_lesson || false,
     });
     setShowForm(true);
   };
@@ -206,6 +210,7 @@ const ManageLessons = () => {
         video_url: embedUrl,
         duration_minutes: formData.duration_minutes,
         chapter_id: formData.chapter_id || null,
+        is_free_lesson: formData.is_free_lesson,
       };
 
       if (editingLesson) {
@@ -439,6 +444,25 @@ const ManageLessons = () => {
               </Select>
             </div>
 
+            {/* Free Lesson Checkbox */}
+            <div className="mb-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_free_lesson}
+                  onChange={(e) => setFormData({ ...formData, is_free_lesson: e.target.checked })}
+                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                />
+                <div className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">حصة مجانية</span>
+                </div>
+              </label>
+              <p className="text-xs text-muted-foreground mt-1 mr-8">
+                ستظهر هذه الحصة في قسم الحصص المجانية للجميع
+              </p>
+            </div>
+
             <div className="flex gap-2">
               <Button onClick={handleSubmit} size="lg">
                 {editingLesson ? 'تحديث' : 'إضافة الحصة'}
@@ -486,6 +510,12 @@ const ManageLessons = () => {
                             <Youtube className="h-3 w-3" />
                             فيديو
                           </span>
+                        )}
+                        {lesson.is_free_lesson && (
+                          <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                            <Gift className="h-3 w-3 ml-1" />
+                            مجانية
+                          </Badge>
                         )}
                         {getChapterName(lesson.chapter_id) && (
                           <Badge variant="outline" className="text-xs">
