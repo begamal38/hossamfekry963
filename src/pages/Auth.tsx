@@ -72,12 +72,9 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect if already logged in - based on role (or explicit redirect)
+  // DEBUG MODE: Redirect immediately after login without role checks
   useEffect(() => {
     if (!user) return;
-    
-    // Wait until roles have been fetched at least once
-    if (roleLoading || !hasAttemptedFetch) return;
 
     const redirect = searchParams.get('redirect');
     if (redirect) {
@@ -85,10 +82,9 @@ const Auth = () => {
       return;
     }
 
-    // Check if user is staff (admin or assistant_teacher)
-    const isStaff = isAssistantTeacher() || isAdmin();
-    navigate(isStaff ? '/assistant' : '/dashboard', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams]);
+    // DEBUG: Always go to dashboard, skip role-based routing
+    navigate('/dashboard', { replace: true });
+  }, [user, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
