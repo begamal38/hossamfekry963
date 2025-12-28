@@ -72,20 +72,23 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect after login - wait for roles to load for proper routing
+  // Redirect after login - wait for roles to FULLY load for proper routing
   useEffect(() => {
+    // No user = no redirect
     if (!user) return;
-    
-    // Wait for role fetch to complete (but hasAttemptedFetch ensures we don't wait forever)
-    if (roleLoading && !hasAttemptedFetch) return;
 
+    // CRITICAL: Wait until roles are FULLY resolved (not loading AND attempted fetch)
+    // This prevents redirecting before we know the actual role
+    if (roleLoading || !hasAttemptedFetch) return;
+
+    // Handle explicit redirect param first
     const redirect = searchParams.get('redirect');
     if (redirect) {
       navigate(redirect, { replace: true });
       return;
     }
 
-    // Route based on role - staff go to assistant dashboard, others to student dashboard
+    // Route based on RESOLVED role - staff go to assistant dashboard, students to student dashboard
     const isStaff = isAssistantTeacher() || isAdmin();
     navigate(isStaff ? '/assistant' : '/dashboard', { replace: true });
   }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams]);
