@@ -231,6 +231,8 @@ const Auth = () => {
             });
           }
         } else {
+          // Set flash flag for welcome toast
+          sessionStorage.setItem('dmt_login_flash', 'true');
           toast({
             title: 'Welcome back!',
             description: 'You have successfully logged in.',
@@ -254,6 +256,8 @@ const Auth = () => {
             });
           }
         } else {
+          // Set flash flag for welcome toast
+          sessionStorage.setItem('dmt_login_flash', 'true');
           toast({
             title: 'Account created!',
             description: 'Welcome to Hossam Fekry Chemistry Platform.',
