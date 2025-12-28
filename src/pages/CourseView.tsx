@@ -90,11 +90,11 @@ export default function CourseView() {
   const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
   const [accessBlocked, setAccessBlocked] = useState<{ blocked: boolean; message: string } | null>(null);
 
-  // Filter lessons for student view (must be in chapter for paid courses, for admins show all)
+  // Filter lessons for student view (show all lessons, chapter is organizational only)
   const visibleLessons = useMemo(() => {
-    if (canBypassRestrictions) return lessons;
-    return filterLessonsForStudents(lessons, { isFreeCourse: course?.is_free || false });
-  }, [lessons, canBypassRestrictions, course?.is_free]);
+    // All lessons are visible now - chapter is for organization, not visibility
+    return lessons;
+  }, [lessons]);
 
   // Calculate progress based on lessons with valid videos only
   const progressData = useMemo(() => {
@@ -539,11 +539,6 @@ export default function CourseView() {
         <div className="container mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold mb-6">
             {isArabic ? 'محتوى الكورس' : 'Course Content'}
-            {visibleLessons.length < lessons.length && canBypassRestrictions && (
-              <span className="text-sm font-normal text-muted-foreground mr-2">
-                ({lessons.length - visibleLessons.length} {isArabic ? 'حصص مخفية' : 'hidden lessons'})
-              </span>
-            )}
           </h2>
 
           <div className="space-y-3">
@@ -620,11 +615,11 @@ export default function CourseView() {
             })}
           </div>
 
-          {visibleLessons.length === 0 && (
+          {lessons.length === 0 && (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {isArabic ? 'لسه مفيش حصص' : 'No sessions yet'}
+                {isArabic ? 'قريباً' : 'Coming Soon'}
               </h3>
               <p className="text-muted-foreground">
                 {isArabic ? 'الحصص هتتضاف قريب' : 'Sessions will be added soon'}
