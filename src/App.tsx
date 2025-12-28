@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RequireResolvedAccess } from "@/components/routing/RequireResolvedAccess";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -51,31 +52,216 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/courses" element={<Courses />} />
-                  <Route path="/course/:courseId" element={<CourseView />} />
-                  <Route path="/course/:courseId/lessons" element={<CourseView />} />
-                  <Route path="/lesson/:lessonId" element={<LessonView />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <Dashboard />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/courses"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <Courses />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/course/:courseId"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <CourseView />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/course/:courseId/lessons"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <CourseView />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/lesson/:lessonId"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <LessonView />
+                      </RequireResolvedAccess>
+                    }
+                  />
+
+                  {/* Public routes */}
                   <Route path="/free-lessons" element={<FreeLessons />} />
                   <Route path="/campaigns" element={<Campaigns />} />
                   <Route path="/about" element={<About />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/profile" element={<StudentProfile />} />
                   <Route path="/install" element={<Install />} />
-                  <Route path="/payment/:courseId" element={<Payment />} />
+
+                  <Route
+                    path="/settings"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <Settings />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/notifications"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <Notifications />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <StudentProfile />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/payment/:courseId"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <Payment />
+                      </RequireResolvedAccess>
+                    }
+                  />
                   {/* Assistant Teacher Routes */}
-                  <Route path="/assistant" element={<AssistantDashboard />} />
-                  <Route path="/assistant/students" element={<Students />} />
-                  <Route path="/assistant/students/:userId" element={<StudentDetails />} />
-                  <Route path="/assistant/enrollments" element={<Enrollments />} />
-                  <Route path="/assistant/courses" element={<ManageCourses />} />
-                  <Route path="/assistant/chapters" element={<ManageChapters />} />
-                  <Route path="/assistant/lessons" element={<ManageLessons />} />
-                  <Route path="/assistant/attendance" element={<RecordAttendance />} />
-                  <Route path="/assistant/grades" element={<RecordGrades />} />
-                  <Route path="/assistant/reports" element={<Reports />} />
-                  <Route path="/assistant/notifications" element={<SendNotifications />} />
+                  <Route
+                    path="/assistant"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <AssistantDashboard />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/students"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <Students />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/students/:userId"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <StudentDetails />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/enrollments"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <Enrollments />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/courses"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <ManageCourses />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/chapters"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <ManageChapters />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/lessons"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <ManageLessons />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/attendance"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <RecordAttendance />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/grades"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <RecordGrades />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/reports"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <Reports />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/notifications"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <SendNotifications />
+                      </RequireResolvedAccess>
+                    }
+                  />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -9,33 +9,35 @@ export const useUserRole = () => {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      if (!user) {
-        setRoles([]);
-        setLoading(false);
-        return;
-      }
+  const fetchRoles = useCallback(async () => {
+    setLoading(true);
 
-      try {
-        const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
+    if (!user) {
+      setRoles([]);
+      setLoading(false);
+      return;
+    }
 
-        if (error) throw error;
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
 
-        setRoles((data || []).map((r) => r.role as AppRole));
-      } catch (error) {
-        console.error('Error fetching roles:', error);
-        setRoles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      if (error) throw error;
 
-    fetchRoles();
+      setRoles((data || []).map((r) => r.role as AppRole));
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      setRoles([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   const roleSet = useMemo(() => new Set(roles), [roles]);
 
@@ -53,5 +55,6 @@ export const useUserRole = () => {
     isAssistantTeacher,
     isStudent,
     canAccessDashboard,
+    refreshRoles: fetchRoles,
   };
 };
