@@ -25,7 +25,6 @@ import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard'
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -99,10 +98,8 @@ interface ExamResult {
 const Dashboard: React.FC = () => {
   const { t, language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
-  const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const isArabic = language === 'ar';
-  const isStaff = canAccessDashboard();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
@@ -115,19 +112,11 @@ const Dashboard: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Redirect if not logged in
+  // NOTE: Route access is now handled centrally (prevents redirect loops / stuck loading).
+  // Keep this page focused on data fetching & rendering only.
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  // Redirect assistant teachers and admins to their dashboard
-  useEffect(() => {
-    if (!roleLoading && isStaff) {
-      navigate('/assistant');
-    }
-  }, [roleLoading, isStaff, navigate]);
+    // no-op
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {

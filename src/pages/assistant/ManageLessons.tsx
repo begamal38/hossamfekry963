@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Video, Building, Trash2, Youtube, Pencil, GripVertical, Layers, Lock, FileText, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,7 +60,6 @@ interface Lesson {
 
 const ManageLessons = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { language, isRTL } = useLanguage();
   const { user, loading: authLoading } = useAuth();
@@ -94,21 +93,14 @@ const ManageLessons = () => {
   });
 
   useEffect(() => {
+    // NOTE: Route access is handled centrally in App routes.
+    // This effect only fetches page data once auth/roles are resolved.
     if (authLoading || roleLoading) return;
-
-    if (!user) {
-      const redirect = `${location.pathname}${location.search}`;
-      navigate(`/auth?redirect=${encodeURIComponent(redirect)}`);
-      return;
-    }
-
-    if (!canAccessDashboard()) {
-      navigate('/');
-      return;
-    }
+    if (!user) return;
+    if (!canAccessDashboard()) return;
 
     fetchCourses();
-  }, [authLoading, roleLoading, user, canAccessDashboard, navigate, location.pathname, location.search]);
+  }, [authLoading, roleLoading, user, canAccessDashboard]);
 
   useEffect(() => {
     const courseParam = searchParams.get('course');
