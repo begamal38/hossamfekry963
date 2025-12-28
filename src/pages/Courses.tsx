@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
 
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'ثانية ثانوي عربي', en: '2nd Year - Arabic' },
@@ -48,7 +49,7 @@ const Courses: React.FC = () => {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [userGrade, setUserGrade] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,13 +78,12 @@ const Courses: React.FC = () => {
         if (user) {
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('grade')
+            .select('grade, academic_year, language_track')
             .eq('user_id', user.id)
             .maybeSingle();
 
-          if (profileData?.grade) {
-            setUserGrade(profileData.grade);
-            // Don't auto-filter - keep 'all' as default
+          if (profileData) {
+            setUserProfile(profileData);
           }
 
           const { data: enrollmentsData } = await supabase
@@ -103,7 +103,7 @@ const Courses: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleEnroll = async (courseId: string, isFree: boolean, price: number) => {
+  const handleEnroll = async (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
     if (!user) {
       toast({
         title: isArabic ? 'يرجى تسجيل الدخول' : 'Please login',
@@ -112,6 +112,25 @@ const Courses: React.FC = () => {
       });
       navigate('/auth');
       return;
+    }
+
+    // VALIDATION: Check if student can access this course's academic path
+    if (userProfile) {
+      // Parse course grade to get track info
+      const coursePath = parseAcademicPath(courseGrade);
+      const validation = canAccessContent(userProfile, { 
+        grade: coursePath.grade, 
+        language_track: coursePath.track 
+      });
+      
+      if (!validation.allowed) {
+        toast({
+          variant: 'destructive',
+          title: isArabic ? 'غير مسموح' : 'Not Allowed',
+          description: isArabic ? validation.messageAr : validation.message,
+        });
+        return;
+      }
     }
 
     // If paid course, redirect to payment page
@@ -161,6 +180,12 @@ const Courses: React.FC = () => {
   const isEnrolled = (courseId: string) => {
     return enrollments.some(e => e.course_id === courseId);
   };
+
+  // Get the user's combined grade for filtering
+  const userGrade = userProfile?.grade || 
+    (userProfile?.academic_year && userProfile?.language_track 
+      ? combineAcademicPath(userProfile.academic_year, userProfile.language_track) 
+      : null);
 
   // Filter and sort courses (free courses first for marketing)
   const filteredCourses = courses
@@ -327,7 +352,7 @@ interface CourseCardProps {
   isArabic: boolean;
   isEnrolled: boolean;
   enrollingId: string | null;
-  onEnroll: (courseId: string, isFree: boolean, price: number) => void;
+  onEnroll: (courseId: string, isFree: boolean, price: number, courseGrade: string) => void;
   index: number;
   t: (key: string) => string;
 }
@@ -412,7 +437,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <Button 
             variant="default"
             className="w-full"
-            onClick={() => onEnroll(course.id, course.is_free, course.price)}
+            onClick={() => onEnroll(course.id, course.is_free, course.price, course.grade)}
             disabled={enrollingId === course.id}
           >
             {enrollingId === course.id ? (

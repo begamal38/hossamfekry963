@@ -20,6 +20,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
 
 interface Course {
   id: string;
@@ -69,6 +70,8 @@ export default function CourseView() {
   const [enrollmentStatus, setEnrollmentStatus] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
+  const [accessBlocked, setAccessBlocked] = useState<{ blocked: boolean; message: string } | null>(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -93,6 +96,32 @@ export default function CourseView() {
       if (courseError) throw courseError;
       setCourse(courseData);
 
+      // VALIDATION: Check if user can access this course's academic path
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('grade, academic_year, language_track')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setUserProfile(profileData);
+          
+          // Parse course grade
+          const coursePath = parseAcademicPath(courseData.grade);
+          const validation = canAccessContent(profileData, { 
+            grade: coursePath.grade, 
+            language_track: coursePath.track 
+          });
+          
+          if (!validation.allowed) {
+            setAccessBlocked({ 
+              blocked: true, 
+              message: isArabic ? validation.messageAr : validation.message 
+            });
+          }
+        }
+      }
       // Fetch lessons
       const { data: lessonsData } = await supabase
         .from('lessons')
@@ -136,6 +165,16 @@ export default function CourseView() {
   const handleEnroll = async () => {
     if (!user) {
       navigate('/auth');
+      return;
+    }
+
+    // VALIDATION: Block enrollment if access is blocked
+    if (accessBlocked?.blocked) {
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'غير مسموح' : 'Not Allowed',
+        description: accessBlocked.message,
+      });
       return;
     }
 
@@ -191,6 +230,8 @@ export default function CourseView() {
   const progressPercent = lessons.length > 0 ? (completedLessons / lessons.length) * 100 : 0;
 
   const canAccessLesson = (index: number) => {
+    // Block if academic path doesn't match
+    if (accessBlocked?.blocked) return false;
     if (course?.is_free) return true;
     if (!isEnrolled) return false;
     if (enrollmentStatus !== 'active') return false;
@@ -270,14 +311,25 @@ export default function CourseView() {
                   </span>
                 </div>
 
+                {/* Access Blocked Warning */}
+                {accessBlocked?.blocked && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-4">
+                    <p className="text-destructive font-medium">
+                      ⚠️ {accessBlocked.message}
+                    </p>
+                  </div>
+                )}
+
                 {!isEnrolled ? (
                   <Button 
                     size="lg" 
                     onClick={handleEnroll}
-                    disabled={enrolling}
+                    disabled={enrolling || accessBlocked?.blocked}
                     className="gap-2"
                   >
-                    {enrolling ? (
+                    {accessBlocked?.blocked ? (
+                      isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
+                    ) : enrolling ? (
                       isArabic ? 'جاري الاشتراك...' : 'Enrolling...'
                     ) : course.is_free ? (
                       <>{isArabic ? 'اشترك مجاناً' : 'Enroll Free'}</>
