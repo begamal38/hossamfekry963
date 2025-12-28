@@ -84,17 +84,6 @@ const Settings: React.FC = () => {
   const handleSave = async () => {
     if (!user) return;
     
-    // VALIDATION: Students cannot change grade once set
-    if (isStudent() && initialGrade && grade !== initialGrade) {
-      toast({
-        variant: 'destructive',
-        title: 'غير مسموح',
-        description: 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل. تواصل مع الإدارة للمساعدة.',
-      });
-      setGrade(initialGrade); // Reset to original
-      return;
-    }
-    
     setSaving(true);
     try {
       const { error } = await supabase
@@ -266,29 +255,18 @@ const Settings: React.FC = () => {
               {isStudent() && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
-                  {initialGrade ? (
-                    // Students with set grade see read-only display
-                    <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
-                      {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
-                    </div>
-                  ) : (
-                    // Students without grade can set it
-                    <select
-                      value={grade}
-                      onChange={(e) => setGrade(e.target.value)}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <option value="">اختر المرحلة</option>
-                      {GRADE_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.labelAr}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {initialGrade && (
-                    <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
-                  )}
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">اختر المرحلة</option>
+                    {GRADE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.labelAr}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
