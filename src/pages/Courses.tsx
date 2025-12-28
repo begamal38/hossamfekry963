@@ -106,20 +106,31 @@ const Courses: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleEnroll = async (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
+  const handleCourseAction = (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
+    // Assistant teachers and admins go directly to course management
+    if (canBypassAcademicRestrictions) {
+      navigate(`/course/${courseId}`);
+      return;
+    }
+
+    // Not logged in - redirect to auth
     if (!user) {
       toast({
         title: isArabic ? 'يرجى تسجيل الدخول' : 'Please sign in',
         description: isArabic ? 'يجب تسجيل الدخول للاشتراك في الكورس' : 'You need to sign in to enroll in a course',
       });
-      // Redirect to auth with return URL to come back to this course
       navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
       return;
     }
 
-    // VALIDATION: Check academic path restrictions for students only (admins/assistants bypass)
-    if (userProfile && !canBypassAcademicRestrictions) {
-      // Parse course grade to get track info
+    // Already enrolled - go to course
+    if (isEnrolled(courseId)) {
+      navigate(`/course/${courseId}`);
+      return;
+    }
+
+    // VALIDATION: Check academic path restrictions for students only
+    if (userProfile) {
       const coursePath = parseAcademicPath(courseGrade);
       const validation = canAccessContent(userProfile, {
         grade: coursePath.grade,
@@ -135,6 +146,7 @@ const Courses: React.FC = () => {
         return;
       }
     }
+
     // If paid course, redirect to payment page
     if (!isFree && price > 0) {
       navigate(`/payment/${courseId}`);
@@ -142,6 +154,12 @@ const Courses: React.FC = () => {
     }
 
     // Free course - enroll directly
+    handleFreeEnroll(courseId);
+  };
+
+  const handleFreeEnroll = async (courseId: string) => {
+    if (!user) return;
+    
     setEnrollingId(courseId);
     try {
       const { error } = await supabase
@@ -149,6 +167,7 @@ const Courses: React.FC = () => {
         .insert({
           user_id: user.id,
           course_id: courseId,
+          status: 'active', // Free courses are auto-active
         });
 
       if (error) {
@@ -157,6 +176,8 @@ const Courses: React.FC = () => {
             title: isArabic ? 'مشترك بالفعل' : 'Already enrolled',
             description: isArabic ? 'أنت مشترك في هذا الكورس بالفعل' : 'You are already enrolled in this course',
           });
+          // Navigate to course anyway
+          navigate(`/course/${courseId}`);
         } else {
           throw error;
         }
@@ -166,6 +187,8 @@ const Courses: React.FC = () => {
           title: isArabic ? 'تم الاشتراك!' : 'Enrolled!',
           description: isArabic ? 'تم الاشتراك في الكورس بنجاح' : 'Successfully enrolled in the course',
         });
+        // Navigate to course after enrollment
+        navigate(`/course/${courseId}`);
       }
     } catch (err) {
       console.error('Error enrolling:', err);
@@ -297,9 +320,10 @@ const Courses: React.FC = () => {
                     isArabic={isArabic}
                     isEnrolled={isEnrolled(course.id)}
                     enrollingId={enrollingId}
-                    onEnroll={handleEnroll}
+                    onAction={handleCourseAction}
                     index={index}
                     t={t}
+                    isAssistantOrAdmin={canBypassAcademicRestrictions}
                   />
                 ))}
               </div>
@@ -334,9 +358,10 @@ const Courses: React.FC = () => {
                   isArabic={isArabic}
                   isEnrolled={isEnrolled(course.id)}
                   enrollingId={enrollingId}
-                  onEnroll={handleEnroll}
+                  onAction={handleCourseAction}
                   index={index}
                   t={t}
+                  isAssistantOrAdmin={canBypassAcademicRestrictions}
                 />
               ))}
             </div>
@@ -354,9 +379,10 @@ interface CourseCardProps {
   isArabic: boolean;
   isEnrolled: boolean;
   enrollingId: string | null;
-  onEnroll: (courseId: string, isFree: boolean, price: number, courseGrade: string) => void;
+  onAction: (courseId: string, isFree: boolean, price: number, courseGrade: string) => void;
   index: number;
   t: (key: string) => string;
+  isAssistantOrAdmin?: boolean;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ 
@@ -364,9 +390,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
   isArabic, 
   isEnrolled, 
   enrollingId, 
-  onEnroll, 
+  onAction, 
   index,
-  t 
+  t,
+  isAssistantOrAdmin = false
 }) => {
   const gradeInfo = GRADE_OPTIONS[course.grade];
   
@@ -388,14 +415,22 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <ContentTypeBadge isFree={course.is_free} />
         </div>
         
-        {isEnrolled && (
+        {/* Show enrolled badge for students only, not for assistants/admins */}
+        {isEnrolled && !isAssistantOrAdmin && (
           <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground gap-1">
             <CheckCircle className="w-3 h-3" />
             {isArabic ? 'مشترك' : 'Enrolled'}
           </Badge>
         )}
         
-        {!isEnrolled && !course.is_free && (
+        {/* Show management badge for assistants/admins */}
+        {isAssistantOrAdmin && (
+          <Badge className="absolute top-3 right-3 bg-secondary text-secondary-foreground gap-1">
+            {isArabic ? 'مدرس' : 'Teacher'}
+          </Badge>
+        )}
+        
+        {!isEnrolled && !isAssistantOrAdmin && !course.is_free && (
           <Badge variant="secondary" className="absolute bottom-3 left-3 text-lg font-bold">
             {course.price} {isArabic ? 'ج.م' : 'EGP'}
           </Badge>
@@ -427,8 +462,19 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
         </div>
 
-        {/* CTA */}
-        {isEnrolled ? (
+        {/* CTA - Different behavior based on role */}
+        {isAssistantOrAdmin ? (
+          // Assistant/Admin: Always show "View Course" - no enrollment needed
+          <Button 
+            variant="default" 
+            className="w-full gap-2"
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
+          >
+            <BookOpen className="w-4 h-4" />
+            {isArabic ? 'عرض الكورس' : 'View Course'}
+          </Button>
+        ) : isEnrolled ? (
+          // Enrolled student: Continue learning
           <Button variant="default" className="w-full gap-2" asChild>
             <Link to={`/course/${course.id}`}>
               <Play className="w-4 h-4" />
@@ -436,10 +482,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
             </Link>
           </Button>
         ) : (
+          // Not enrolled student: Enroll button
           <Button 
             variant="default"
             className="w-full"
-            onClick={() => onEnroll(course.id, course.is_free, course.price, course.grade)}
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
             disabled={enrollingId === course.id}
           >
             {enrollingId === course.id ? (
