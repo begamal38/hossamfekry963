@@ -25,6 +25,8 @@ export const useUserRole = () => {
       return;
     }
 
+    let keepLoadingForRetry = false;
+
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -39,6 +41,7 @@ export const useUserRole = () => {
       // If the first request fails right after login, retry once after a short delay.
       if (retryCountRef.current < 1) {
         retryCountRef.current += 1;
+        keepLoadingForRetry = true;
         window.setTimeout(() => {
           fetchRoles();
         }, 600);
@@ -47,7 +50,7 @@ export const useUserRole = () => {
         setRoles([]);
       }
     } finally {
-      setLoading(false);
+      if (!keepLoadingForRetry) setLoading(false);
     }
   }, [authLoading, session, user]);
 
