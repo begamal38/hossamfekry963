@@ -4,7 +4,6 @@ import { Plus, Edit2, Trash2, BookOpen, ChevronRight, GripVertical, Layers } fro
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -50,11 +49,10 @@ export default function ManageChapters() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  
+  // Simplified form - Arabic only
   const [formData, setFormData] = useState({
-    title: '',
     title_ar: '',
-    description: '',
-    description_ar: '',
     order_index: 0,
   });
 
@@ -83,7 +81,6 @@ export default function ManageChapters() {
       }
       setCourses(data || []);
 
-      // Check for course_id in URL params
       const courseId = searchParams.get('course_id');
       if (courseId && data?.some(c => c.id === courseId)) {
         setSelectedCourse(courseId);
@@ -104,7 +101,6 @@ export default function ManageChapters() {
 
       setLoading(true);
       
-      // Fetch chapters with lesson count
       const { data: chaptersData, error } = await supabase
         .from('chapters')
         .select('*')
@@ -117,7 +113,6 @@ export default function ManageChapters() {
         return;
       }
 
-      // Get lesson counts for each chapter
       const { data: lessons } = await supabase
         .from('lessons')
         .select('chapter_id')
@@ -144,10 +139,7 @@ export default function ManageChapters() {
 
   const resetForm = () => {
     setFormData({
-      title: '',
       title_ar: '',
-      description: '',
-      description_ar: '',
       order_index: chapters.length,
     });
     setEditingChapter(null);
@@ -157,10 +149,7 @@ export default function ManageChapters() {
   const handleEdit = (chapter: Chapter) => {
     setEditingChapter(chapter);
     setFormData({
-      title: chapter.title,
       title_ar: chapter.title_ar,
-      description: chapter.description || '',
-      description_ar: chapter.description_ar || '',
       order_index: chapter.order_index,
     });
     setShowForm(true);
@@ -168,44 +157,47 @@ export default function ManageChapters() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCourse) return;
+    if (!selectedCourse || !formData.title_ar.trim()) {
+      toast({
+        title: 'خطأ',
+        description: 'يرجى إدخال عنوان الباب',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
+      const chapterData = {
+        title: formData.title_ar, // Use Arabic as fallback
+        title_ar: formData.title_ar,
+        order_index: formData.order_index,
+      };
+
       if (editingChapter) {
         const { error } = await supabase
           .from('chapters')
-          .update({
-            title: formData.title,
-            title_ar: formData.title_ar,
-            description: formData.description || null,
-            description_ar: formData.description_ar || null,
-            order_index: formData.order_index,
-          })
+          .update(chapterData)
           .eq('id', editingChapter.id);
 
         if (error) throw error;
 
         toast({
-          title: isRTL ? 'تم التحديث' : 'Updated',
-          description: isRTL ? 'تم تحديث الفصل بنجاح' : 'Chapter updated successfully',
+          title: 'تم التحديث',
+          description: 'تم تحديث الباب بنجاح',
         });
       } else {
         const { error } = await supabase
           .from('chapters')
           .insert({
             course_id: selectedCourse,
-            title: formData.title,
-            title_ar: formData.title_ar,
-            description: formData.description || null,
-            description_ar: formData.description_ar || null,
-            order_index: formData.order_index,
+            ...chapterData,
           });
 
         if (error) throw error;
 
         toast({
-          title: isRTL ? 'تمت الإضافة' : 'Added',
-          description: isRTL ? 'تمت إضافة الفصل بنجاح' : 'Chapter added successfully',
+          title: 'تمت الإضافة',
+          description: 'تمت إضافة الباب بنجاح',
         });
       }
 
@@ -221,15 +213,15 @@ export default function ManageChapters() {
     } catch (error) {
       console.error('Error saving chapter:', error);
       toast({
-        title: isRTL ? 'خطأ' : 'Error',
-        description: isRTL ? 'حدث خطأ أثناء الحفظ' : 'An error occurred while saving',
+        title: 'خطأ',
+        description: 'حدث خطأ أثناء الحفظ',
         variant: 'destructive',
       });
     }
   };
 
   const handleDelete = async (chapterId: string) => {
-    if (!confirm(isRTL ? 'هل أنت متأكد من حذف هذا الفصل؟' : 'Are you sure you want to delete this chapter?')) {
+    if (!confirm('هل أنت متأكد من حذف هذا الباب؟')) {
       return;
     }
 
@@ -243,14 +235,14 @@ export default function ManageChapters() {
 
       setChapters(chapters.filter(ch => ch.id !== chapterId));
       toast({
-        title: isRTL ? 'تم الحذف' : 'Deleted',
-        description: isRTL ? 'تم حذف الفصل بنجاح' : 'Chapter deleted successfully',
+        title: 'تم الحذف',
+        description: 'تم حذف الباب بنجاح',
       });
     } catch (error) {
       console.error('Error deleting chapter:', error);
       toast({
-        title: isRTL ? 'خطأ' : 'Error',
-        description: isRTL ? 'حدث خطأ أثناء الحذف' : 'An error occurred while deleting',
+        title: 'خطأ',
+        description: 'حدث خطأ أثناء الحذف',
         variant: 'destructive',
       });
     }
@@ -265,7 +257,7 @@ export default function ManageChapters() {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background" dir="rtl">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-24">
@@ -273,15 +265,15 @@ export default function ManageChapters() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Layers className="h-6 w-6 text-primary" />
-              {isRTL ? 'إدارة الفصول' : 'Manage Chapters'}
+              إدارة الأبواب
             </h1>
             <p className="text-muted-foreground mt-1">
-              {isRTL ? 'تنظيم الدروس في فصول' : 'Organize lessons into chapters'}
+              تنظيم الحصص في أبواب
             </p>
           </div>
           <Button onClick={() => { resetForm(); setShowForm(true); }} className="gap-2">
             <Plus className="h-4 w-4" />
-            {isRTL ? 'إضافة فصل' : 'Add Chapter'}
+            إضافة باب
           </Button>
         </div>
 
@@ -289,88 +281,43 @@ export default function ManageChapters() {
         <div className="mb-6">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
             <SelectTrigger className="w-full max-w-sm">
-              <SelectValue placeholder={isRTL ? 'اختر الكورس' : 'Select Course'} />
+              <SelectValue placeholder="اختر الكورس" />
             </SelectTrigger>
             <SelectContent>
               {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
-                  {isRTL ? course.title_ar : course.title}
+                  {course.title_ar}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Add/Edit Form */}
+        {/* Simplified Add/Edit Form */}
         {showForm && (
           <div className="bg-card border border-border rounded-xl p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">
-              {editingChapter 
-                ? (isRTL ? 'تعديل الفصل' : 'Edit Chapter')
-                : (isRTL ? 'إضافة فصل جديد' : 'Add New Chapter')}
+              {editingChapter ? 'تعديل الباب' : 'إضافة باب جديد'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    {isRTL ? 'العنوان (إنجليزي)' : 'Title (English)'}
-                  </label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    {isRTL ? 'العنوان (عربي)' : 'Title (Arabic)'}
-                  </label>
-                  <Input
-                    value={formData.title_ar}
-                    onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
-                    required
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    {isRTL ? 'الوصف (إنجليزي)' : 'Description (English)'}
-                  </label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    {isRTL ? 'الوصف (عربي)' : 'Description (Arabic)'}
-                  </label>
-                  <Textarea
-                    value={formData.description_ar}
-                    onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
-                    rows={2}
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">
-                    {isRTL ? 'الترتيب' : 'Order Index'}
-                  </label>
-                  <Input
-                    type="number"
-                    value={formData.order_index}
-                    onChange={(e) => setFormData({ ...formData, order_index: parseInt(e.target.value) || 0 })}
-                    min={0}
-                  />
-                </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  عنوان الباب <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  value={formData.title_ar}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                  placeholder="مثال: الباب الأول - الكيمياء العضوية"
+                  required
+                  className="text-lg"
+                />
               </div>
               <div className="flex gap-2">
                 <Button type="submit">
-                  {editingChapter ? (isRTL ? 'تحديث' : 'Update') : (isRTL ? 'إضافة' : 'Add')}
+                  {editingChapter ? 'تحديث' : 'إضافة'}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
-                  {isRTL ? 'إلغاء' : 'Cancel'}
+                  إلغاء
                 </Button>
               </div>
             </form>
@@ -386,15 +333,15 @@ export default function ManageChapters() {
           <div className="bg-card border border-border rounded-xl p-12 text-center">
             <Layers className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {isRTL ? 'لا توجد فصول' : 'No Chapters'}
+              لا توجد أبواب
             </h3>
             <p className="text-muted-foreground mb-4">
-              {isRTL ? 'أضف فصولاً لتنظيم الدروس' : 'Add chapters to organize lessons'}
+              أضف أبواباً لتنظيم الحصص
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {chapters.map((chapter, index) => (
+            {chapters.map((chapter) => (
               <div
                 key={chapter.id}
                 className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-primary/50 transition-colors"
@@ -404,17 +351,12 @@ export default function ManageChapters() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground">
-                    {isRTL ? chapter.title_ar : chapter.title}
+                    {chapter.title_ar}
                   </h3>
-                  {(chapter.description || chapter.description_ar) && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      {isRTL ? chapter.description_ar : chapter.description}
-                    </p>
-                  )}
                 </div>
                 <Badge variant="secondary">
-                  <BookOpen className="h-3 w-3 mr-1" />
-                  {chapter.lessons_count || 0} {isRTL ? 'درس' : 'lessons'}
+                  <BookOpen className="h-3 w-3 ml-1" />
+                  {chapter.lessons_count || 0} حصة
                 </Badge>
                 <div className="flex items-center gap-2">
                   <Button
@@ -422,9 +364,9 @@ export default function ManageChapters() {
                     size="sm"
                     asChild
                   >
-                    <Link to={`/assistant/lessons?chapter_id=${chapter.id}&course_id=${selectedCourse}`}>
-                      {isRTL ? 'الدروس' : 'Lessons'}
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                    <Link to={`/assistant/lessons?chapter_id=${chapter.id}&course=${selectedCourse}`}>
+                      الحصص
+                      <ChevronRight className="h-4 w-4 mr-1 rotate-180" />
                     </Link>
                   </Button>
                   <Button

@@ -24,28 +24,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 
-// Helper function to extract YouTube video ID from various URL formats (including full iframe embed codes)
-const getYouTubeVideoId = (url: string): string | null => {
-  if (!url) return null;
-  
-  // Match various YouTube URL formats - including when embedded in iframe HTML
-  const patterns = [
-    /youtube\.com\/embed\/([^"&\n?#\s]+)/,        // Embed URL (handles iframe src)
-    /youtube\.com\/watch\?v=([^&\n?#\s]+)/,       // Standard watch URL
-    /youtu\.be\/([^&\n?#\s]+)/,                    // Short URL
-    /youtube\.com\/shorts\/([^&\n?#\s]+)/          // Shorts URL
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-  
-  return null;
-};
+// Use shared utility
+const getYouTubeVideoId = extractYouTubeVideoId;
 
 interface Lesson {
   id: string;
