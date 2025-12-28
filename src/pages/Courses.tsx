@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ContentTypeBadge } from '@/components/course/ContentTypeBadge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -43,9 +44,11 @@ interface Enrollment {
 const Courses: React.FC = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
+  const { loading: rolesLoading, isAdmin, isAssistantTeacher } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isArabic = language === 'ar';
+  const canBypassAcademicRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -114,15 +117,15 @@ const Courses: React.FC = () => {
       return;
     }
 
-    // VALIDATION: Check if student can access this course's academic path
-    if (userProfile) {
+    // VALIDATION: Check academic path restrictions for students only (admins/assistants bypass)
+    if (userProfile && !canBypassAcademicRestrictions) {
       // Parse course grade to get track info
       const coursePath = parseAcademicPath(courseGrade);
-      const validation = canAccessContent(userProfile, { 
-        grade: coursePath.grade, 
-        language_track: coursePath.track 
+      const validation = canAccessContent(userProfile, {
+        grade: coursePath.grade,
+        language_track: coursePath.track,
       });
-      
+
       if (!validation.allowed) {
         toast({
           variant: 'destructive',
@@ -132,7 +135,6 @@ const Courses: React.FC = () => {
         return;
       }
     }
-
     // If paid course, redirect to payment page
     if (!isFree && price > 0) {
       navigate(`/payment/${courseId}`);
