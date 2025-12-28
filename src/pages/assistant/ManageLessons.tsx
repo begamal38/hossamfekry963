@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Video, Building, Trash2, Youtube, Pencil, GripVertical, Layers, Lock, FileText, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface Course {
@@ -59,8 +60,10 @@ interface Lesson {
 
 const ManageLessons = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { language, isRTL } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const isArabic = language === 'ar';
@@ -91,15 +94,21 @@ const ManageLessons = () => {
   });
 
   useEffect(() => {
-    if (roleLoading) return;
-    
+    if (authLoading || roleLoading) return;
+
+    if (!user) {
+      const redirect = `${location.pathname}${location.search}`;
+      navigate(`/auth?redirect=${encodeURIComponent(redirect)}`);
+      return;
+    }
+
     if (!canAccessDashboard()) {
       navigate('/');
       return;
     }
-    
+
     fetchCourses();
-  }, [roleLoading, canAccessDashboard, navigate]);
+  }, [authLoading, roleLoading, user, canAccessDashboard, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     const courseParam = searchParams.get('course');
