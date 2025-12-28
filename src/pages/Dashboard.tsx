@@ -23,6 +23,7 @@ import { LessonActivityList, LessonActivity, LessonAttendanceStatus } from '@/co
 import { ExamActivityList, ExamActivity } from '@/components/dashboard/ExamActivityList';
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
+import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -430,6 +431,11 @@ const Dashboard: React.FC = () => {
                 totalLessons={totalLessons}
                 attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
               />
+
+              {/* Center Attendance Section - only show for center/hybrid students */}
+              {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (
+                <CenterAttendanceSection isArabic={isArabic} />
+              )}
 
               {/* Profile Card */}
               <div className="bg-card rounded-xl border border-border p-6">

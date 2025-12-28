@@ -41,6 +41,156 @@ export type Database = {
         }
         Relationships: []
       }
+      center_group_members: {
+        Row: {
+          enrolled_at: string
+          group_id: string
+          id: string
+          is_active: boolean
+          student_id: string
+        }
+        Insert: {
+          enrolled_at?: string
+          group_id: string
+          id?: string
+          is_active?: boolean
+          student_id: string
+        }
+        Update: {
+          enrolled_at?: string
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "center_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_groups: {
+        Row: {
+          assistant_teacher_id: string
+          created_at: string
+          days_of_week: string[]
+          grade: string
+          id: string
+          is_active: boolean
+          language_track: string
+          name: string
+          time_slot: string
+          updated_at: string
+        }
+        Insert: {
+          assistant_teacher_id: string
+          created_at?: string
+          days_of_week?: string[]
+          grade: string
+          id?: string
+          is_active?: boolean
+          language_track: string
+          name: string
+          time_slot: string
+          updated_at?: string
+        }
+        Update: {
+          assistant_teacher_id?: string
+          created_at?: string
+          days_of_week?: string[]
+          grade?: string
+          id?: string
+          is_active?: boolean
+          language_track?: string
+          name?: string
+          time_slot?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      center_session_attendance: {
+        Row: {
+          id: string
+          marked_at: string
+          marked_by: string
+          notes: string | null
+          session_id: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          id?: string
+          marked_at?: string
+          marked_by: string
+          notes?: string | null
+          session_id: string
+          status: string
+          student_id: string
+        }
+        Update: {
+          id?: string
+          marked_at?: string
+          marked_by?: string
+          notes?: string | null
+          session_id?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_session_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "center_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_sessions: {
+        Row: {
+          assistant_teacher_id: string
+          created_at: string
+          group_id: string
+          id: string
+          is_completed: boolean
+          notes: string | null
+          session_date: string
+          session_time: string
+        }
+        Insert: {
+          assistant_teacher_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          session_date: string
+          session_time: string
+        }
+        Update: {
+          assistant_teacher_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_completed?: boolean
+          notes?: string | null
+          session_date?: string
+          session_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "center_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
