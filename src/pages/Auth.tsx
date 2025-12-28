@@ -28,8 +28,8 @@ const phoneSchema = z.string().regex(/^(\+?20)?0?1[0125][0-9]{8}$/, 'رقم ال
 
 // Academic year options
 const ACADEMIC_YEAR_OPTIONS = [
-  { value: 'second_secondary', labelAr: 'الصف الثاني الثانوي', labelEn: 'Second Secondary' },
-  { value: 'third_secondary', labelAr: 'الصف الثالث الثانوي', labelEn: 'Third Secondary' },
+  { value: 'second_secondary', labelAr: 'تانية ثانوي', labelEn: '2nd Secondary' },
+  { value: 'third_secondary', labelAr: 'تالته ثانوي', labelEn: '3rd Secondary' },
 ];
 
 // Language track options

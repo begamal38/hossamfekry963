@@ -25,10 +25,10 @@ interface Course {
 }
 
 const GRADE_OPTIONS = [
-  { value: 'second_arabic', labelAr: 'ثانية ثانوي - عربي', labelEn: 'Second Secondary - Arabic' },
-  { value: 'second_languages', labelAr: 'ثانية ثانوي - لغات', labelEn: 'Second Secondary - Languages' },
-  { value: 'third_arabic', labelAr: 'ثالثة ثانوي - عربي', labelEn: 'Third Secondary - Arabic' },
-  { value: 'third_languages', labelAr: 'ثالثة ثانوي - لغات', labelEn: 'Third Secondary - Languages' },
+  { value: 'second_arabic', labelAr: 'تانية ثانوي - عربي', labelEn: '2nd Secondary - Arabic' },
+  { value: 'second_languages', labelAr: 'تانية ثانوي - لغات', labelEn: '2nd Secondary - Languages' },
+  { value: 'third_arabic', labelAr: 'تالته ثانوي - عربي', labelEn: '3rd Secondary - Arabic' },
+  { value: 'third_languages', labelAr: 'تالته ثانوي - لغات', labelEn: '3rd Secondary - Languages' },
 ];
 
 export default function ManageCourses() {

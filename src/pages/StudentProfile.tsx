@@ -61,8 +61,8 @@ const ATTENDANCE_MODE_CONFIG = {
 };
 
 const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_secondary': { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' },
-  'third_secondary': { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' },
+  'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+  'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
 };
 
 const LANGUAGE_TRACK_LABELS: Record<string, { ar: string; en: string }> = {

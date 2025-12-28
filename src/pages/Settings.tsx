@@ -14,10 +14,10 @@ import { DeviceManagement } from '@/components/settings/DeviceManagement';
 import { useUserRole } from '@/hooks/useUserRole';
 
 const GRADE_OPTIONS = [
-  { value: 'second_arabic', labelAr: 'ثانية ثانوي عربي', labelEn: '2nd Year - Arabic' },
-  { value: 'second_languages', labelAr: 'ثانية ثانوي لغات', labelEn: '2nd Year - Languages' },
-  { value: 'third_arabic', labelAr: 'ثالثة ثانوي عربي', labelEn: '3rd Year - Arabic' },
-  { value: 'third_languages', labelAr: 'ثالثة ثانوي لغات', labelEn: '3rd Year - Languages' },
+  { value: 'second_arabic', labelAr: 'تانية ثانوي عربي', labelEn: '2nd Secondary - Arabic' },
+  { value: 'second_languages', labelAr: 'تانية ثانوي لغات', labelEn: '2nd Secondary - Languages' },
+  { value: 'third_arabic', labelAr: 'تالته ثانوي عربي', labelEn: '3rd Secondary - Arabic' },
+  { value: 'third_languages', labelAr: 'تالته ثانوي لغات', labelEn: '3rd Secondary - Languages' },
 ];
 
 const Settings: React.FC = () => {

@@ -67,8 +67,8 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
             className="px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground min-w-[140px]"
           >
             <option value="all">{isRTL ? 'كل الصفوف' : 'All Years'}</option>
-            <option value="second_secondary">{isRTL ? 'الثاني الثانوي' : 'Second Secondary'}</option>
-            <option value="third_secondary">{isRTL ? 'الثالث الثانوي' : 'Third Secondary'}</option>
+            <option value="second_secondary">{isRTL ? 'تانية ثانوي' : '2nd Secondary'}</option>
+            <option value="third_secondary">{isRTL ? 'تالته ثانوي' : '3rd Secondary'}</option>
           </select>
 
           {/* Language Track Filter */}
@@ -155,8 +155,8 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
             {academicYearFilter !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
                 {academicYearFilter === 'second_secondary' 
-                  ? (isRTL ? 'الثاني الثانوي' : 'Second Secondary')
-                  : (isRTL ? 'الثالث الثانوي' : 'Third Secondary')
+                  ? (isRTL ? 'تانية ثانوي' : '2nd Secondary')
+                  : (isRTL ? 'تالته ثانوي' : '3rd Secondary')
                 }
               </span>
             )}

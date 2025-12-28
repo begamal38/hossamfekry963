@@ -49,8 +49,8 @@ const getGroupLabel = (academicYear: string | null, languageTrack: string | null
   if (!academicYear || !languageTrack) return null;
   
   const yearLabels: Record<string, { ar: string; en: string }> = {
-    'second_secondary': { ar: 'الثاني الثانوي', en: 'Second Secondary' },
-    'third_secondary': { ar: 'الثالث الثانوي', en: 'Third Secondary' },
+    'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+    'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
   };
   
   const trackLabels: Record<string, { ar: string; en: string }> = {
