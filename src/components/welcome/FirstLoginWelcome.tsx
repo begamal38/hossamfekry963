@@ -1,43 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Sparkles, X } from 'lucide-react';
-
-const LOGIN_FLASH_KEY = 'dmt_login_flash';
+import { supabase } from '@/integrations/supabase/client';
 
 const FirstLoginWelcome = () => {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
   const [show, setShow] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-
-  useEffect(() => {
-    // Check if we just logged in (flag set by Auth.tsx)
-    const justLoggedIn = sessionStorage.getItem(LOGIN_FLASH_KEY);
-    
-    if (justLoggedIn) {
-      // Clear the flag immediately so refresh doesn't re-trigger
-      sessionStorage.removeItem(LOGIN_FLASH_KEY);
-      
-      // Show the toast
-      setShow(true);
-      
-      // Auto-dismiss after 1.5 seconds
-      const timer = setTimeout(() => {
-        handleClose();
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  const closeTimerRef = useRef<number | null>(null);
 
   const handleClose = () => {
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
     setIsExiting(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       setShow(false);
       setIsExiting(false);
     }, 300);
   };
+
+  useEffect(() => {
+    // Show ONLY on actual successful sign-in events (not on refresh / existing session).
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== 'SIGNED_IN') return;
+
+      setShow(true);
+      closeTimerRef.current = window.setTimeout(() => {
+        handleClose();
+      }, 1500);
+    });
+
+    return () => {
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
 
   if (!show) return null;
 
