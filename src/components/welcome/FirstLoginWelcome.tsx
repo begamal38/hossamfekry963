@@ -1,106 +1,102 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 
-const WELCOME_SHOWN_KEY = 'dmt_welcome_shown';
+const LOGIN_FLASH_KEY = 'dmt_login_flash';
 
 const FirstLoginWelcome = () => {
   const { language } = useLanguage();
-  const { user } = useAuth();
   const isRTL = language === 'ar';
   const [show, setShow] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-
-    // Check if welcome was already shown for this user
-    const welcomeShown = localStorage.getItem(`${WELCOME_SHOWN_KEY}_${user.id}`);
+    // Check if we just logged in (flag set by Auth.tsx)
+    const justLoggedIn = sessionStorage.getItem(LOGIN_FLASH_KEY);
     
-    if (!welcomeShown) {
-      // Show welcome message
+    if (justLoggedIn) {
+      // Clear the flag immediately so refresh doesn't re-trigger
+      sessionStorage.removeItem(LOGIN_FLASH_KEY);
+      
+      // Show the toast
       setShow(true);
       
-      // Mark as shown
-      localStorage.setItem(`${WELCOME_SHOWN_KEY}_${user.id}`, 'true');
-      
-      // Auto-dismiss after 3 seconds
+      // Auto-dismiss after 1.5 seconds
       const timer = setTimeout(() => {
-        setShow(false);
-      }, 3000);
+        handleClose();
+      }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, []);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      setShow(false);
+      setIsExiting(false);
+    }, 300);
+  };
 
   if (!show) return null;
 
   return (
-    <Dialog open={show} onOpenChange={setShow}>
-      <DialogContent 
+    <div 
+      className={cn(
+        "fixed top-4 z-[100] pointer-events-none",
+        isRTL ? "right-4" : "left-4"
+      )}
+    >
+      <div 
         className={cn(
-          "sm:max-w-md border-primary/20 bg-gradient-to-br from-card via-card to-primary/5",
-          "[&>button]:hidden"
-        )}
-        onPointerDownOutside={(e) => e.preventDefault()}
-      >
-        <div className={cn(
-          "text-center py-6 space-y-4",
+          "pointer-events-auto max-w-sm rounded-lg border border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg p-4 transition-all duration-300",
+          isExiting ? "opacity-0 translate-y-[-10px]" : "opacity-100 translate-y-0 animate-fade-in",
           isRTL && "rtl"
-        )}>
+        )}
+      >
+        <button 
+          onClick={handleClose}
+          className={cn(
+            "absolute top-2 text-muted-foreground hover:text-foreground transition-colors",
+            isRTL ? "left-2" : "right-2"
+          )}
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        
+        <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           
-          {/* Welcome Text */}
-          <div className="space-y-2">
-          {isRTL ? (
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {isRTL ? (
               <>
-                <p className="text-lg font-semibold text-primary">
+                <p className="text-sm font-semibold text-primary">
                   <span dir="ltr" className="inline-block">D.M.T</span> المجال في الكيمياء – حسام فكري
                 </p>
-                <h2 className="text-xl font-bold text-foreground leading-relaxed">
+                <p className="text-sm text-foreground mt-1">
                   أهلاً بيك في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة
-                </h2>
+                </p>
               </>
             ) : (
               <>
-                <p className="text-lg font-semibold text-primary">
+                <p className="text-sm font-semibold text-primary">
                   D.M.T — The Field in Chemistry | Hossam Fekry
                 </p>
-                <h2 className="text-xl font-bold text-foreground leading-relaxed">
+                <p className="text-sm text-foreground mt-1">
                   Welcome to Egypt's #1 platform for teaching Chemistry
-                </h2>
+                </p>
               </>
             )}
           </div>
-          
-          {/* Progress indicator */}
-          <div className="flex justify-center pt-2">
-            <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary animate-[progress_3s_linear]" style={{
-                animation: 'progress 3s linear forwards'
-              }} />
-            </div>
-          </div>
         </div>
-        
-        <style>{`
-          @keyframes progress {
-            from { width: 0%; }
-            to { width: 100%; }
-          }
-        `}</style>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
