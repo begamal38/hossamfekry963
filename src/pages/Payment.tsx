@@ -34,10 +34,10 @@ interface Course {
 }
 
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  'second_arabic': { ar: 'ثانية ثانوي عربي', en: '2nd Year - Arabic' },
-  'second_languages': { ar: 'ثانية ثانوي لغات', en: '2nd Year - Languages' },
-  'third_arabic': { ar: 'ثالثة ثانوي عربي', en: '3rd Year - Arabic' },
-  'third_languages': { ar: 'ثالثة ثانوي لغات', en: '3rd Year - Languages' },
+  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
+  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
+  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
+  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
 };
 
 // Payment info - can be updated

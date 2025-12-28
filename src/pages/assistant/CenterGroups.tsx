@@ -44,8 +44,8 @@ const DAYS_OPTIONS = [
 ];
 
 const GRADE_OPTIONS = [
-  { value: 'second_secondary', labelAr: 'الثاني الثانوي', labelEn: 'Second Secondary' },
-  { value: 'third_secondary', labelAr: 'الثالث الثانوي', labelEn: 'Third Secondary' },
+  { value: 'second_secondary', labelAr: 'تانية ثانوي', labelEn: '2nd Secondary' },
+  { value: 'third_secondary', labelAr: 'تالته ثانوي', labelEn: '3rd Secondary' },
 ];
 
 const TRACK_OPTIONS = [
@@ -463,9 +463,9 @@ export default function CenterGroups() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <p className="text-sm text-muted-foreground">
-                {isArabic
-                  ? `الطلاب المؤهلين (${selectedGroup?.grade === 'second_secondary' ? 'ثانية ثانوي' : 'ثالثة ثانوي'} - ${selectedGroup?.language_track === 'arabic' ? 'عربي' : 'لغات'})`
-                  : `Eligible students (${selectedGroup?.grade === 'second_secondary' ? 'Second Secondary' : 'Third Secondary'} - ${selectedGroup?.language_track === 'arabic' ? 'Arabic' : 'Languages'})`}
+              {isArabic
+                  ? `الطلاب المؤهلين (${selectedGroup?.grade === 'second_secondary' ? 'تانية ثانوي' : 'تالته ثانوي'} - ${selectedGroup?.language_track === 'arabic' ? 'عربي' : 'لغات'})`
+                  : `Eligible students (${selectedGroup?.grade === 'second_secondary' ? '2nd Secondary' : '3rd Secondary'} - ${selectedGroup?.language_track === 'arabic' ? 'Arabic' : 'Languages'})`}
               </p>
 
               {eligibleStudents.length === 0 ? (

@@ -105,8 +105,8 @@ export function canAccessContent(
   // Check grade match
   if (contentGrade && studentGrade !== contentGrade) {
     const gradeLabel = contentGrade === 'second_secondary' 
-      ? { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' }
-      : { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' };
+      ? { ar: 'تانية ثانوي', en: '2nd Secondary' }
+      : { ar: 'تالته ثانوي', en: '3rd Secondary' };
     
     return {
       allowed: false,
@@ -122,7 +122,7 @@ export function canAccessContent(
       : { ar: 'مسار اللغات', en: 'Languages track' };
     
     const fullLabel = contentGrade
-      ? `${contentGrade === 'second_secondary' ? 'الصف الثاني الثانوي' : 'الصف الثالث الثانوي'} ${trackLabel.ar}`
+      ? `${contentGrade === 'second_secondary' ? 'تانية ثانوي' : 'تالته ثانوي'} ${trackLabel.ar}`
       : trackLabel.ar;
     
     return {
@@ -152,8 +152,8 @@ export function canJoinCenterGroup(
   // Check academic path match
   if (studentProfile.academic_year !== groupPath.grade) {
     const gradeLabel = groupPath.grade === 'second_secondary'
-      ? { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' }
-      : { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' };
+      ? { ar: 'تانية ثانوي', en: '2nd Secondary' }
+      : { ar: 'تالته ثانوي', en: '3rd Secondary' };
     
     return {
       allowed: false,
@@ -179,8 +179,8 @@ export function canJoinCenterGroup(
 
 // Get formatted labels for academic paths
 export const GRADE_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_secondary': { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' },
-  'third_secondary': { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' },
+  'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+  'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
 };
 
 export const TRACK_LABELS: Record<string, { ar: string; en: string }> = {
@@ -189,10 +189,10 @@ export const TRACK_LABELS: Record<string, { ar: string; en: string }> = {
 };
 
 export const COMBINED_GRADE_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_arabic': { ar: 'ثانية ثانوي عربي', en: '2nd Year - Arabic' },
-  'second_languages': { ar: 'ثانية ثانوي لغات', en: '2nd Year - Languages' },
-  'third_arabic': { ar: 'ثالثة ثانوي عربي', en: '3rd Year - Arabic' },
-  'third_languages': { ar: 'ثالثة ثانوي لغات', en: '3rd Year - Languages' },
+  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
+  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
+  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
+  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
 };
 
 export function getAcademicPathLabel(

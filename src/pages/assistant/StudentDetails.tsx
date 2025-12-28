@@ -98,8 +98,8 @@ const ATTENDANCE_MODE_CONFIG = {
 };
 
 const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_secondary': { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' },
-  'third_secondary': { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' },
+  'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+  'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
 };
 
 const LANGUAGE_TRACK_LABELS: Record<string, { ar: string; en: string }> = {
@@ -473,10 +473,10 @@ export default function StudentDetails() {
   const getGradeLabel = (grade: string | null) => {
     if (!grade) return isArabic ? 'غير محدد' : 'Not specified';
     const grades: Record<string, { ar: string; en: string }> = {
-      'first': { ar: 'الصف الأول الثانوي', en: '1st Secondary' },
-      'second': { ar: 'الصف الثاني الثانوي', en: '2nd Secondary' },
-      'third_arabic': { ar: 'الصف الثالث الثانوي (عربي)', en: '3rd Secondary (Arabic)' },
-      'third_english': { ar: 'الصف الثالث الثانوي (لغات)', en: '3rd Secondary (Languages)' },
+      'first': { ar: 'أولى ثانوي', en: '1st Secondary' },
+      'second': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+      'third_arabic': { ar: 'تالته ثانوي (عربي)', en: '3rd Secondary (Arabic)' },
+      'third_english': { ar: 'تالته ثانوي (لغات)', en: '3rd Secondary (Languages)' },
     };
     return grades[grade]?.[isArabic ? 'ar' : 'en'] || grade;
   };
