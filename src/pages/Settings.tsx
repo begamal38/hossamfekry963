@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Camera, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Phone, Camera, Save, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { DeviceManagement } from '@/components/settings/DeviceManagement';
 import { useUserRole } from '@/hooks/useUserRole';
+import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
 
 const GRADE_OPTIONS = [
   { value: 'second_arabic', labelAr: 'تانية ثانوي عربي', labelEn: '2nd Secondary - Arabic' },
@@ -36,6 +37,7 @@ const Settings: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [grade, setGrade] = useState('');
+  const [governorate, setGovernorate] = useState('');
   const [initialGrade, setInitialGrade] = useState(''); // Track initial grade for validation
   const [avatarUrl, setAvatarUrl] = useState('');
   
@@ -58,7 +60,7 @@ const Settings: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, phone, grade, avatar_url')
+          .select('full_name, phone, grade, avatar_url, governorate')
           .eq('user_id', user.id)
           .maybeSingle();
         
@@ -68,6 +70,7 @@ const Settings: React.FC = () => {
           setFullName(data.full_name || '');
           setPhone(data.phone || '');
           setGrade(data.grade || '');
+          setGovernorate(data.governorate || '');
           setInitialGrade(data.grade || ''); // Store initial grade
           setAvatarUrl(data.avatar_url || '');
         }
@@ -83,6 +86,17 @@ const Settings: React.FC = () => {
 
   const handleSave = async () => {
     if (!user) return;
+
+    // VALIDATION: Students cannot change grade once set
+    if (isStudent() && initialGrade && grade !== initialGrade) {
+      toast({
+        variant: 'destructive',
+        title: 'غير مسموح',
+        description: 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل. تواصل مع الإدارة للمساعدة.',
+      });
+      setGrade(initialGrade); // Reset to original
+      return;
+    }
     
     setSaving(true);
     try {
@@ -92,6 +106,7 @@ const Settings: React.FC = () => {
           full_name: fullName,
           phone: phone,
           grade: grade,
+          governorate: governorate,
         })
         .eq('user_id', user.id);
       
@@ -255,20 +270,51 @@ const Settings: React.FC = () => {
               {isStudent() && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
-                  <select
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">اختر المرحلة</option>
-                    {GRADE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.labelAr}
-                      </option>
-                    ))}
-                  </select>
+                  {initialGrade ? (
+                    // Students with set grade see read-only display
+                    <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
+                      {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
+                    </div>
+                  ) : (
+                    // Students without grade can set it
+                    <select
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">اختر المرحلة</option>
+                      {GRADE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.labelAr}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {initialGrade && (
+                    <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
+                  )}
                 </div>
               )}
+
+              {/* Governorate */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  المحافظة
+                </label>
+                <select
+                  value={governorate}
+                  onChange={(e) => setGovernorate(e.target.value)}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">اختر المحافظة</option>
+                  {EGYPTIAN_GOVERNORATES.map((gov) => (
+                    <option key={gov.value} value={gov.value}>
+                      {gov.label_ar}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Save Button */}
               <Button
