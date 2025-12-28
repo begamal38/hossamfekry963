@@ -91,12 +91,15 @@ const ManageLessons = () => {
   });
 
   useEffect(() => {
-    if (!roleLoading && !canAccessDashboard()) {
+    if (roleLoading) return;
+    
+    if (!canAccessDashboard()) {
       navigate('/');
       return;
     }
+    
     fetchCourses();
-  }, [roleLoading]);
+  }, [roleLoading, canAccessDashboard, navigate]);
 
   useEffect(() => {
     const courseParam = searchParams.get('course');
