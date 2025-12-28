@@ -64,7 +64,9 @@ export default function CourseView() {
   const { loading: rolesLoading, isAdmin, isAssistantTeacher } = useUserRole();
   const { toast } = useToast();
   const isArabic = language === 'ar';
-  const canBypassAcademicRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
+  
+  // Determine if user can bypass academic restrictions and enrollment checks
+  const canBypassRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -85,13 +87,14 @@ export default function CourseView() {
     if (courseId) {
       fetchCourseData();
     }
-  }, [courseId, user]);
+  }, [courseId, user, rolesLoading]);
 
+  // Clear access block for assistants/admins immediately
   useEffect(() => {
-    if (canBypassAcademicRestrictions) {
+    if (canBypassRestrictions) {
       setAccessBlocked(null);
     }
-  }, [canBypassAcademicRestrictions]);
+  }, [canBypassRestrictions]);
 
   const fetchCourseData = async () => {
     try {
@@ -105,7 +108,7 @@ export default function CourseView() {
       if (courseError) throw courseError;
       setCourse(courseData);
 
-      // VALIDATION: Restrict by academic path for students only (admins/assistants bypass)
+      // VALIDATION: Only restrict by academic path for STUDENTS (not assistants/admins)
       if (user) {
         const { data: profileData } = await supabase
           .from('profiles')
@@ -117,8 +120,8 @@ export default function CourseView() {
           setUserProfile(profileData);
         }
 
-        if (profileData && !canBypassAcademicRestrictions) {
-          // Parse course grade
+        // Only check academic restrictions for students
+        if (profileData && !canBypassRestrictions) {
           const coursePath = parseAcademicPath(courseData.grade);
           const validation = canAccessContent(profileData, {
             grade: coursePath.grade,
@@ -134,6 +137,7 @@ export default function CourseView() {
             setAccessBlocked(null);
           }
         } else {
+          // Assistants and admins NEVER see access blocked
           setAccessBlocked(null);
         }
       }
@@ -245,12 +249,21 @@ export default function CourseView() {
   const completedLessons = lessons.filter(l => isLessonCompleted(l.id)).length;
   const progressPercent = lessons.length > 0 ? (completedLessons / lessons.length) * 100 : 0;
 
+  // Determine lesson access based on role and enrollment
   const canAccessLesson = (index: number) => {
-    // Block if academic path doesn't match
+    // Assistants and admins can ALWAYS access all lessons
+    if (canBypassRestrictions) return true;
+    
+    // Students: Block if academic path doesn't match
     if (accessBlocked?.blocked) return false;
+    
+    // Free courses: anyone can access
     if (course?.is_free) return true;
+    
+    // Paid courses: need enrollment and active status
     if (!isEnrolled) return false;
     if (enrollmentStatus !== 'active') return false;
+    
     return true;
   };
 
@@ -327,8 +340,8 @@ export default function CourseView() {
                   </span>
                 </div>
 
-                {/* Access Blocked Warning */}
-                {accessBlocked?.blocked && (
+                {/* Access Blocked Warning - ONLY for students, NEVER for assistants/admins */}
+                {accessBlocked?.blocked && !canBypassRestrictions && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-4">
                     <p className="text-destructive font-medium">
                       ⚠️ {accessBlocked.message}
@@ -336,7 +349,33 @@ export default function CourseView() {
                   </div>
                 )}
 
-                {!isEnrolled ? (
+                {/* Assistant/Admin view - Show management buttons, no enrollment needed */}
+                {canBypassRestrictions ? (
+                  <div className="space-y-3">
+                    <Badge className="bg-secondary text-secondary-foreground">
+                      {isArabic ? 'عرض المدرس' : 'Teacher View'}
+                    </Badge>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        size="lg"
+                        onClick={() => navigate('/assistant/lessons')}
+                        className="gap-2"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        {isArabic ? 'إدارة الحصص' : 'Manage Sessions'}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        size="lg"
+                        onClick={() => navigate('/assistant/courses')}
+                        className="gap-2"
+                      >
+                        {isArabic ? 'إدارة الكورسات' : 'Manage Courses'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : !isEnrolled ? (
+                  // Student not enrolled - Show enroll button
                   <Button 
                     size="lg" 
                     onClick={handleEnroll}
@@ -358,6 +397,7 @@ export default function CourseView() {
                     )}
                   </Button>
                 ) : (
+                  // Student enrolled - Show progress
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Badge className="bg-primary">
