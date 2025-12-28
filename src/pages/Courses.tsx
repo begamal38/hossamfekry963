@@ -235,8 +235,8 @@ const Courses: React.FC = () => {
             </h1>
             <p className="text-muted-foreground max-w-2xl">
               {isArabic 
-                ? 'اختر من مجموعة واسعة من الكورسات المصممة خصيصًا لطلاب الثانوية العامة'
-                : 'Choose from a wide range of courses designed specifically for Thanaweya Amma students'
+                ? 'اختر من مجموعة واسعة من الكورسات المصممة خصيصًا في الكيمياء عربي ولغات لطلاب الثانوية العامة'
+                : 'Choose from a wide range of Chemistry courses designed specifically for Arabic and Languages track Thanaweya Amma students'
               }
             </p>
           </div>
