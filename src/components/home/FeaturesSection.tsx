@@ -10,11 +10,8 @@ interface FeatureCardProps {
   delay: string;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, delay }) => (
-  <div className={cn(
-    "group relative p-8 bg-card rounded-2xl border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-fade-in-up",
-    delay
-  )}>
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description }) => (
+  <div className="group relative p-8 bg-card rounded-2xl border border-border hover:border-primary/30 transition-colors duration-300 hover:shadow-lg">
     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
     
     <div className="relative z-10">
@@ -55,9 +52,9 @@ export const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-background">
+    <section className="py-20 lg:py-28 bg-background" style={{ contain: 'layout' }}>
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16 animate-fade-in-up">
+        <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {t('features.title')}
           </h2>
