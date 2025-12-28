@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
-import { filterCoursesForStudents, ACTIVE_SCOPE } from '@/lib/contentVisibility';
+import { filterCoursesForStudents, ACTIVE_SCOPE, isCoursePreview } from '@/lib/contentVisibility';
 
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
@@ -110,6 +110,12 @@ const Courses: React.FC = () => {
   const handleCourseAction = (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
     // Assistant teachers and admins go directly to course management
     if (canBypassAcademicRestrictions) {
+      navigate(`/course/${courseId}`);
+      return;
+    }
+
+    // Check if course is in preview mode (not enrollable)
+    if (isCoursePreview(courseGrade)) {
       navigate(`/course/${courseId}`);
       return;
     }
@@ -330,6 +336,7 @@ const Courses: React.FC = () => {
                     index={index}
                     t={t}
                     isAssistantOrAdmin={canBypassAcademicRestrictions}
+                    isPreview={isCoursePreview(course.grade)}
                   />
                 ))}
               </div>
@@ -368,6 +375,7 @@ const Courses: React.FC = () => {
                   index={index}
                   t={t}
                   isAssistantOrAdmin={canBypassAcademicRestrictions}
+                  isPreview={isCoursePreview(course.grade)}
                 />
               ))}
             </div>
@@ -389,6 +397,7 @@ interface CourseCardProps {
   index: number;
   t: (key: string) => string;
   isAssistantOrAdmin?: boolean;
+  isPreview?: boolean;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ 
@@ -399,7 +408,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
   onAction, 
   index,
   t,
-  isAssistantOrAdmin = false
+  isAssistantOrAdmin = false,
+  isPreview = false
 }) => {
   const gradeInfo = GRADE_OPTIONS[course.grade];
   
@@ -411,18 +421,30 @@ const CourseCard: React.FC<CourseCardProps> = ({
       )}
     >
       {/* Image/Header */}
-      <div className="relative h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+      <div className={cn(
+        "relative h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center",
+        isPreview && "opacity-75"
+      )}>
         <BookOpen className="w-16 h-16 text-primary/50" />
         
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
         
-        {/* Free/Paid Badge */}
-        <div className="absolute top-3 left-3">
-          <ContentTypeBadge isFree={course.is_free} />
-        </div>
+        {/* Preview Badge - "قريباً" for upcoming courses */}
+        {isPreview && !isAssistantOrAdmin && (
+          <Badge className="absolute top-3 left-3 bg-amber-500 text-white gap-1">
+            {isArabic ? 'قريباً' : 'Coming Soon'}
+          </Badge>
+        )}
+        
+        {/* Free/Paid Badge - only show for active courses */}
+        {!isPreview && (
+          <div className="absolute top-3 left-3">
+            <ContentTypeBadge isFree={course.is_free} />
+          </div>
+        )}
         
         {/* Show enrolled badge for students only, not for assistants/admins */}
-        {isEnrolled && !isAssistantOrAdmin && (
+        {isEnrolled && !isAssistantOrAdmin && !isPreview && (
           <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground gap-1">
             <CheckCircle className="w-3 h-3" />
             {isArabic ? 'مشترك' : 'Enrolled'}
@@ -436,7 +458,14 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </Badge>
         )}
         
-        {!isEnrolled && !isAssistantOrAdmin && !course.is_free && (
+        {/* Show preview indicator for assistants/admins on preview courses */}
+        {isAssistantOrAdmin && isPreview && (
+          <Badge className="absolute top-3 left-3 bg-amber-500 text-white gap-1">
+            {isArabic ? 'معاينة' : 'Preview'}
+          </Badge>
+        )}
+        
+        {!isEnrolled && !isAssistantOrAdmin && !course.is_free && !isPreview && (
           <Badge variant="secondary" className="absolute bottom-3 left-3 text-lg font-bold">
             {course.price} {isArabic ? 'ج.م' : 'EGP'}
           </Badge>
@@ -468,7 +497,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
         </div>
 
-        {/* CTA - Different behavior based on role */}
+        {/* CTA - Different behavior based on role and preview status */}
         {isAssistantOrAdmin ? (
           // Assistant/Admin: Always show "View Course" - no enrollment needed
           <Button 
@@ -478,6 +507,16 @@ const CourseCard: React.FC<CourseCardProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             {isArabic ? 'عرض الكورس' : 'View Course'}
+          </Button>
+        ) : isPreview ? (
+          // Preview course: Show "View Details" - goes to preview page
+          <Button 
+            variant="secondary" 
+            className="w-full gap-2"
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
+          >
+            <BookOpen className="w-4 h-4" />
+            {isArabic ? 'عرض التفاصيل' : 'View Details'}
           </Button>
         ) : isEnrolled ? (
           // Enrolled student: Continue learning

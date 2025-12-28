@@ -23,7 +23,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
-import { filterLessonsForStudents, hasValidVideo, calculateProgress } from '@/lib/contentVisibility';
+import { filterLessonsForStudents, hasValidVideo, calculateProgress, isCoursePreview } from '@/lib/contentVisibility';
 
 interface Course {
   id: string;
@@ -313,6 +313,81 @@ export default function CourseView() {
   }
 
   const gradeInfo = GRADE_OPTIONS[course.grade];
+  const isPreviewCourse = isCoursePreview(course.grade);
+
+  // Preview mode: Show informational page for students (admins/assistants bypass)
+  if (isPreviewCourse && !canBypassRestrictions) {
+    return (
+      <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+        <Navbar />
+        <main className="pt-20 pb-16">
+          <div className="bg-gradient-to-br from-primary/10 to-accent/10 border-b">
+            <div className="container mx-auto px-4 py-8">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/courses')}
+                className="mb-4 gap-2"
+              >
+                <ArrowLeft className={cn("w-4 h-4", isRTL && "rotate-180")} />
+                {isArabic ? 'الكورسات' : 'Courses'}
+              </Button>
+
+              <div className="flex flex-col lg:flex-row gap-8">
+                <div className="flex-1">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Badge variant="outline">{isArabic ? gradeInfo?.ar : gradeInfo?.en}</Badge>
+                    <Badge className="bg-amber-500 text-white">
+                      {isArabic ? 'قريباً' : 'Coming Soon'}
+                    </Badge>
+                  </div>
+
+                  <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                    {isArabic ? course.title_ar : course.title}
+                  </h1>
+                  <p className="text-lg text-muted-foreground mb-6">
+                    {isArabic ? course.description_ar : course.description}
+                  </p>
+
+                  {/* Preview Notice */}
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-400 mb-2">
+                      {isArabic ? 'قريباً' : 'Coming Soon'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {isArabic 
+                        ? 'هذا المحتوى قيد الإعداد وسيتم إتاحته لاحقاً. تابعنا للحصول على التحديثات!'
+                        : 'This content is being prepared and will be available soon. Follow us for updates!'
+                      }
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5" />
+                      {lessons.length} {isArabic ? 'حصة' : 'sessions'}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      {course.duration_hours} {isArabic ? 'ساعة' : 'hours'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Course Image */}
+                <div className="lg:w-80 shrink-0">
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center opacity-75">
+                    <BookOpen className="w-20 h-20 text-primary/50" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -338,6 +413,12 @@ export default function CourseView() {
                   <Badge variant="outline">{isArabic ? gradeInfo?.ar : gradeInfo?.en}</Badge>
                   {course.is_free && (
                     <Badge className="bg-green-600">{isArabic ? 'مجاني' : 'Free'}</Badge>
+                  )}
+                  {/* Show preview badge for admins viewing preview courses */}
+                  {isPreviewCourse && canBypassRestrictions && (
+                    <Badge className="bg-amber-500 text-white">
+                      {isArabic ? 'معاينة' : 'Preview'}
+                    </Badge>
                   )}
                 </div>
 
