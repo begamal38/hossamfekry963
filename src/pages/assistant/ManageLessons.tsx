@@ -448,12 +448,12 @@ const ManageLessons = () => {
                 <Layers className="h-4 w-4 inline mr-1" />
                 {isArabic ? 'الفصل' : 'Chapter'}
               </label>
-              <Select value={formData.chapter_id} onValueChange={(val) => setFormData({ ...formData, chapter_id: val })}>
+              <Select value={formData.chapter_id || '__none__'} onValueChange={(val) => setFormData({ ...formData, chapter_id: val === '__none__' ? '' : val })}>
                 <SelectTrigger>
                   <SelectValue placeholder={isArabic ? 'اختر فصل (اختياري)' : 'Select Chapter (Optional)'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{isArabic ? 'بدون فصل' : 'No Chapter'}</SelectItem>
+                  <SelectItem value="__none__">{isArabic ? 'بدون فصل' : 'No Chapter'}</SelectItem>
                   {chapters.map(chapter => (
                     <SelectItem key={chapter.id} value={chapter.id}>
                       {isArabic ? chapter.title_ar : chapter.title}
