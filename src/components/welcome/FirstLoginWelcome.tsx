@@ -62,27 +62,23 @@ const FirstLoginWelcome = () => {
           
           {/* Welcome Text */}
           <div className="space-y-2">
-            {isRTL ? (
+          {isRTL ? (
               <>
-                <h2 className="text-xl font-bold text-foreground leading-relaxed">
-                  أهلاً بيك في المنصة رقم 1 في مصر
-                  <br />
-                  لتعليم الكيمياء للثانوية العامة
-                </h2>
                 <p className="text-lg font-semibold text-primary">
-                  المجال D.M.T في الكيمياء
+                  <span dir="ltr" className="inline-block">D.M.T</span> المجال في الكيمياء – حسام فكري
                 </p>
+                <h2 className="text-xl font-bold text-foreground leading-relaxed">
+                  أهلاً بيك في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة
+                </h2>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-foreground leading-relaxed">
-                  Welcome to Egypt's #1 platform
-                  <br />
-                  for teaching Chemistry
-                </h2>
                 <p className="text-lg font-semibold text-primary">
-                  D.M.T — The Field Leader in Chemistry
+                  D.M.T — The Field in Chemistry | Hossam Fekry
                 </p>
+                <h2 className="text-xl font-bold text-foreground leading-relaxed">
+                  Welcome to Egypt's #1 platform for teaching Chemistry
+                </h2>
               </>
             )}
           </div>
