@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Building, Trash2, Youtube, Pencil, GripVertical } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { ArrowLeft, Plus, Video, Building, Trash2, Youtube, Pencil, GripVertical, Layers, Lock, FileText, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/layout/Navbar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -15,15 +24,37 @@ interface Course {
   title_ar: string;
 }
 
+interface Chapter {
+  id: string;
+  title: string;
+  title_ar: string;
+  order_index: number;
+}
+
+interface Exam {
+  id: string;
+  title: string;
+  title_ar: string;
+}
+
 interface Lesson {
   id: string;
   title: string;
   title_ar: string;
   lesson_type: string;
   course_id: string;
+  chapter_id: string | null;
   order_index: number;
   video_url: string | null;
   duration_minutes: number | null;
+  summary: string | null;
+  summary_ar: string | null;
+  key_points: unknown;
+  assistant_notes: string | null;
+  assistant_notes_ar: string | null;
+  requires_previous_completion: boolean;
+  requires_exam_pass: boolean;
+  linked_exam_id: string | null;
 }
 
 const ManageLessons = () => {
@@ -35,8 +66,11 @@ const ManageLessons = () => {
   const isArabic = language === 'ar';
 
   const [courses, setCourses] = useState<Course[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [selectedChapter, setSelectedChapter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -45,7 +79,15 @@ const ManageLessons = () => {
     title_ar: '',
     lesson_type: 'online' as 'online' | 'center',
     video_url: '',
-    duration_minutes: 60
+    duration_minutes: 60,
+    chapter_id: '',
+    summary: '',
+    summary_ar: '',
+    assistant_notes: '',
+    assistant_notes_ar: '',
+    requires_previous_completion: false,
+    requires_exam_pass: false,
+    linked_exam_id: '',
   });
 
   useEffect(() => {
@@ -57,18 +99,24 @@ const ManageLessons = () => {
   }, [roleLoading]);
 
   useEffect(() => {
-    // Get course from URL params
     const courseParam = searchParams.get('course');
+    const chapterParam = searchParams.get('chapter_id');
+    
     if (courseParam && courses.length > 0) {
       const courseExists = courses.find(c => c.id === courseParam);
       if (courseExists) {
         setSelectedCourse(courseParam);
       }
     }
+    
+    if (chapterParam) {
+      setSelectedChapter(chapterParam);
+    }
   }, [searchParams, courses]);
 
   useEffect(() => {
     if (selectedCourse) {
+      fetchChaptersAndExams();
       fetchLessons();
     }
   }, [selectedCourse]);
@@ -83,7 +131,6 @@ const ManageLessons = () => {
       if (error) throw error;
       setCourses(data || []);
       
-      // Set initial course from URL or first course
       const courseParam = searchParams.get('course');
       if (courseParam && data?.find(c => c.id === courseParam)) {
         setSelectedCourse(courseParam);
@@ -97,6 +144,20 @@ const ManageLessons = () => {
     }
   };
 
+  const fetchChaptersAndExams = async () => {
+    try {
+      const [{ data: chaptersData }, { data: examsData }] = await Promise.all([
+        supabase.from('chapters').select('id, title, title_ar, order_index').eq('course_id', selectedCourse).order('order_index'),
+        supabase.from('exams').select('id, title, title_ar').eq('course_id', selectedCourse)
+      ]);
+      
+      setChapters(chaptersData || []);
+      setExams(examsData || []);
+    } catch (error) {
+      console.error('Error fetching chapters/exams:', error);
+    }
+  };
+
   const fetchLessons = async () => {
     try {
       const { data, error } = await supabase
@@ -106,7 +167,7 @@ const ManageLessons = () => {
         .order('order_index');
 
       if (error) throw error;
-      setLessons(data || []);
+      setLessons((data || []) as Lesson[]);
     } catch (error) {
       console.error('Error fetching lessons:', error);
     }
@@ -118,7 +179,15 @@ const ManageLessons = () => {
       title_ar: '',
       lesson_type: 'online',
       video_url: '',
-      duration_minutes: 60
+      duration_minutes: 60,
+      chapter_id: '',
+      summary: '',
+      summary_ar: '',
+      assistant_notes: '',
+      assistant_notes_ar: '',
+      requires_previous_completion: false,
+      requires_exam_pass: false,
+      linked_exam_id: '',
     });
     setEditingLesson(null);
     setShowForm(false);
@@ -131,7 +200,15 @@ const ManageLessons = () => {
       title_ar: lesson.title_ar,
       lesson_type: lesson.lesson_type as 'online' | 'center',
       video_url: lesson.video_url || '',
-      duration_minutes: lesson.duration_minutes || 60
+      duration_minutes: lesson.duration_minutes || 60,
+      chapter_id: lesson.chapter_id || '',
+      summary: lesson.summary || '',
+      summary_ar: lesson.summary_ar || '',
+      assistant_notes: lesson.assistant_notes || '',
+      assistant_notes_ar: lesson.assistant_notes_ar || '',
+      requires_previous_completion: lesson.requires_previous_completion || false,
+      requires_exam_pass: lesson.requires_exam_pass || false,
+      linked_exam_id: lesson.linked_exam_id || '',
     });
     setShowForm(true);
   };
@@ -147,17 +224,26 @@ const ManageLessons = () => {
     }
 
     try {
+      const lessonData = {
+        title: formData.title,
+        title_ar: formData.title_ar,
+        lesson_type: formData.lesson_type,
+        video_url: formData.video_url || null,
+        duration_minutes: formData.duration_minutes,
+        chapter_id: formData.chapter_id || null,
+        summary: formData.summary || null,
+        summary_ar: formData.summary_ar || null,
+        assistant_notes: formData.assistant_notes || null,
+        assistant_notes_ar: formData.assistant_notes_ar || null,
+        requires_previous_completion: formData.requires_previous_completion,
+        requires_exam_pass: formData.requires_exam_pass,
+        linked_exam_id: formData.linked_exam_id || null,
+      };
+
       if (editingLesson) {
-        // Update existing lesson
         const { error } = await supabase
           .from('lessons')
-          .update({
-            title: formData.title,
-            title_ar: formData.title_ar,
-            lesson_type: formData.lesson_type,
-            video_url: formData.video_url || null,
-            duration_minutes: formData.duration_minutes
-          })
+          .update(lessonData)
           .eq('id', editingLesson.id);
 
         if (error) throw error;
@@ -167,17 +253,12 @@ const ManageLessons = () => {
           description: isArabic ? 'تم تحديث الحصة' : 'Lesson updated successfully'
         });
       } else {
-        // Create new lesson
         const { error } = await supabase
           .from('lessons')
           .insert({
+            ...lessonData,
             course_id: selectedCourse,
-            title: formData.title,
-            title_ar: formData.title_ar,
-            lesson_type: formData.lesson_type,
             order_index: lessons.length,
-            video_url: formData.video_url || null,
-            duration_minutes: formData.duration_minutes
           });
 
         if (error) throw error;
@@ -225,6 +306,15 @@ const ManageLessons = () => {
   };
 
   const selectedCourseName = courses.find(c => c.id === selectedCourse);
+  const filteredLessons = selectedChapter === 'all' 
+    ? lessons 
+    : lessons.filter(l => l.chapter_id === selectedChapter);
+
+  const getChapterName = (chapterId: string | null) => {
+    if (!chapterId) return null;
+    const chapter = chapters.find(c => c.id === chapterId);
+    return chapter ? (isArabic ? chapter.title_ar : chapter.title) : null;
+  };
 
   if (loading || roleLoading) {
     return (
@@ -253,29 +343,57 @@ const ManageLessons = () => {
               )}
             </div>
           </div>
-          <Button onClick={() => setShowForm(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            {isArabic ? 'حصة جديدة' : 'New Lesson'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild className="gap-2">
+              <Link to={`/assistant/chapters?course_id=${selectedCourse}`}>
+                <Layers className="h-4 w-4" />
+                {isArabic ? 'الفصول' : 'Chapters'}
+              </Link>
+            </Button>
+            <Button onClick={() => setShowForm(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              {isArabic ? 'حصة جديدة' : 'New Lesson'}
+            </Button>
+          </div>
         </div>
 
-        {/* Course Selector */}
-        <div className="bg-card border rounded-xl p-4 mb-6">
-          <label className="block text-sm font-medium mb-2">{isArabic ? 'اختر الكورس' : 'Select Course'}</label>
-          <select
-            value={selectedCourse}
-            onChange={(e) => {
-              setSelectedCourse(e.target.value);
-              navigate(`/assistant/lessons?course=${e.target.value}`, { replace: true });
-            }}
-            className="w-full px-4 py-2 bg-background border border-input rounded-lg"
-          >
-            {courses.map(course => (
-              <option key={course.id} value={course.id}>
-                {isArabic ? course.title_ar : course.title}
-              </option>
-            ))}
-          </select>
+        {/* Course & Chapter Selectors */}
+        <div className="bg-card border rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">{isArabic ? 'اختر الكورس' : 'Select Course'}</label>
+            <Select value={selectedCourse} onValueChange={(val) => {
+              setSelectedCourse(val);
+              setSelectedChapter('all');
+              navigate(`/assistant/lessons?course=${val}`, { replace: true });
+            }}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map(course => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {isArabic ? course.title_ar : course.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">{isArabic ? 'تصفية حسب الفصل' : 'Filter by Chapter'}</label>
+            <Select value={selectedChapter} onValueChange={setSelectedChapter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{isArabic ? 'كل الدروس' : 'All Lessons'}</SelectItem>
+                {chapters.map(chapter => (
+                  <SelectItem key={chapter.id} value={chapter.id}>
+                    {isArabic ? chapter.title_ar : chapter.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Add/Edit Lesson Form */}
@@ -307,8 +425,30 @@ const ManageLessons = () => {
                   placeholder="عنوان الحصة"
                   value={formData.title_ar}
                   onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                  dir="rtl"
                 />
               </div>
+            </div>
+
+            {/* Chapter Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                <Layers className="h-4 w-4 inline mr-1" />
+                {isArabic ? 'الفصل' : 'Chapter'}
+              </label>
+              <Select value={formData.chapter_id} onValueChange={(val) => setFormData({ ...formData, chapter_id: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isArabic ? 'اختر فصل (اختياري)' : 'Select Chapter (Optional)'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{isArabic ? 'بدون فصل' : 'No Chapter'}</SelectItem>
+                  {chapters.map(chapter => (
+                    <SelectItem key={chapter.id} value={chapter.id}>
+                      {isArabic ? chapter.title_ar : chapter.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Lesson Type */}
@@ -355,7 +495,7 @@ const ManageLessons = () => {
             </div>
 
             {/* Video URL */}
-            <div className="mb-6">
+            <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Youtube className="h-4 w-4 text-red-500" />
                 <label className="text-sm font-medium">{isArabic ? 'رابط الفيديو (يوتيوب)' : 'Video URL (YouTube)'}</label>
@@ -365,9 +505,114 @@ const ManageLessons = () => {
                 value={formData.video_url}
                 onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                {isArabic ? 'اختياري - أضف رابط فيديو يوتيوب للحصة' : 'Optional - Add a YouTube video link for the lesson'}
-              </p>
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <BookOpen className="h-4 w-4 inline mr-1" />
+                  {isArabic ? 'ملخص الدرس (إنجليزي)' : 'Lesson Summary (English)'}
+                </label>
+                <Textarea
+                  placeholder="Brief summary of the lesson..."
+                  value={formData.summary}
+                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <BookOpen className="h-4 w-4 inline mr-1" />
+                  {isArabic ? 'ملخص الدرس (عربي)' : 'Lesson Summary (Arabic)'}
+                </label>
+                <Textarea
+                  placeholder="ملخص مختصر للدرس..."
+                  value={formData.summary_ar}
+                  onChange={(e) => setFormData({ ...formData, summary_ar: e.target.value })}
+                  rows={3}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Assistant Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'ملاحظات المدرس (إنجليزي)' : 'Teacher Notes (English)'}
+                </label>
+                <Textarea
+                  placeholder="Additional notes for students..."
+                  value={formData.assistant_notes}
+                  onChange={(e) => setFormData({ ...formData, assistant_notes: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'ملاحظات المدرس (عربي)' : 'Teacher Notes (Arabic)'}
+                </label>
+                <Textarea
+                  placeholder="ملاحظات إضافية للطلاب..."
+                  value={formData.assistant_notes_ar}
+                  onChange={(e) => setFormData({ ...formData, assistant_notes_ar: e.target.value })}
+                  rows={2}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Progression Settings */}
+            <div className="bg-muted/50 rounded-lg p-4 mb-4">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                {isArabic ? 'إعدادات التقدم' : 'Progression Settings'}
+              </h4>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.requires_previous_completion}
+                    onChange={(e) => setFormData({ ...formData, requires_previous_completion: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">
+                    {isArabic ? 'يتطلب إكمال الدرس السابق' : 'Requires previous lesson completion'}
+                  </span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.requires_exam_pass}
+                    onChange={(e) => setFormData({ ...formData, requires_exam_pass: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">
+                    {isArabic ? 'يتطلب اجتياز امتحان' : 'Requires passing linked exam'}
+                  </span>
+                </label>
+                {formData.requires_exam_pass && (
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium mb-2">
+                      <FileText className="h-4 w-4 inline mr-1" />
+                      {isArabic ? 'الامتحان المرتبط' : 'Linked Exam'}
+                    </label>
+                    <Select value={formData.linked_exam_id} onValueChange={(val) => setFormData({ ...formData, linked_exam_id: val })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isArabic ? 'اختر امتحان' : 'Select Exam'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {exams.map(exam => (
+                          <SelectItem key={exam.id} value={exam.id}>
+                            {isArabic ? exam.title_ar : exam.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -386,7 +631,7 @@ const ManageLessons = () => {
 
         {/* Lessons List */}
         <div className="bg-card border rounded-xl overflow-hidden">
-          {lessons.length === 0 ? (
+          {filteredLessons.length === 0 ? (
             <div className="p-12 text-center">
               <Video className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
               <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}</h3>
@@ -400,7 +645,7 @@ const ManageLessons = () => {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {lessons.map((lesson, index) => (
+              {filteredLessons.map((lesson, index) => (
                 <div key={lesson.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -414,13 +659,25 @@ const ManageLessons = () => {
                     )}
                     <div>
                       <p className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                         <span>{lesson.duration_minutes || 60} {isArabic ? 'دقيقة' : 'min'}</span>
                         {lesson.video_url && (
                           <span className="flex items-center gap-1 text-red-500">
                             <Youtube className="h-3 w-3" />
                             {isArabic ? 'فيديو' : 'Video'}
                           </span>
+                        )}
+                        {getChapterName(lesson.chapter_id) && (
+                          <Badge variant="outline" className="text-xs">
+                            <Layers className="h-3 w-3 mr-1" />
+                            {getChapterName(lesson.chapter_id)}
+                          </Badge>
+                        )}
+                        {lesson.requires_previous_completion && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Lock className="h-3 w-3 mr-1" />
+                            {isArabic ? 'مقفل' : 'Locked'}
+                          </Badge>
                         )}
                       </div>
                     </div>

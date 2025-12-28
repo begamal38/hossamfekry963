@@ -41,6 +41,50 @@ export type Database = {
         }
         Relationships: []
       }
+      chapters: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          id: string
+          order_index: number | null
+          title: string
+          title_ar: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          order_index?: number | null
+          title: string
+          title_ar: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          order_index?: number | null
+          title?: string
+          title_ar?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_enrollments: {
         Row: {
           activated_at: string | null
@@ -273,6 +317,38 @@ export type Database = {
           },
         ]
       }
+      lesson_completions: {
+        Row: {
+          completed_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+          watch_time_seconds: number | null
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+          watch_time_seconds?: number | null
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+          watch_time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_completions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_questions: {
         Row: {
           created_at: string
@@ -310,44 +386,85 @@ export type Database = {
       }
       lessons: {
         Row: {
+          assistant_notes: string | null
+          assistant_notes_ar: string | null
+          chapter_id: string | null
           course_id: string
           created_at: string
           duration_minutes: number | null
           id: string
+          key_points: Json | null
           lesson_type: string
+          linked_exam_id: string | null
           order_index: number | null
+          requires_exam_pass: boolean | null
+          requires_previous_completion: boolean | null
+          summary: string | null
+          summary_ar: string | null
           title: string
           title_ar: string
           video_url: string | null
         }
         Insert: {
+          assistant_notes?: string | null
+          assistant_notes_ar?: string | null
+          chapter_id?: string | null
           course_id: string
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          key_points?: Json | null
           lesson_type?: string
+          linked_exam_id?: string | null
           order_index?: number | null
+          requires_exam_pass?: boolean | null
+          requires_previous_completion?: boolean | null
+          summary?: string | null
+          summary_ar?: string | null
           title: string
           title_ar: string
           video_url?: string | null
         }
         Update: {
+          assistant_notes?: string | null
+          assistant_notes_ar?: string | null
+          chapter_id?: string | null
           course_id?: string
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          key_points?: Json | null
           lesson_type?: string
+          linked_exam_id?: string | null
           order_index?: number | null
+          requires_exam_pass?: boolean | null
+          requires_previous_completion?: boolean | null
+          summary?: string | null
+          summary_ar?: string | null
           title?: string
           title_ar?: string
           video_url?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "lessons_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lessons_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_linked_exam_id_fkey"
+            columns: ["linked_exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
             referencedColumns: ["id"]
           },
         ]
