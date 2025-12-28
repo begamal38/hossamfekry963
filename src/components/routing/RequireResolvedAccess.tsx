@@ -28,9 +28,11 @@ export function RequireResolvedAccess({
   const { user, loading: authLoading, refreshSession } = useAuth();
   const {
     loading: rolesLoading,
+    hasAttemptedFetch,
     hasRole,
     canAccessDashboard,
     refreshRoles,
+    roles,
   } = useUserRole();
 
   const [timedOut, setTimedOut] = useState(false);
@@ -41,28 +43,66 @@ export function RequireResolvedAccess({
     return () => window.clearTimeout(id);
   }, [location.key, timeoutMs]);
 
-  // Wait for auth to complete, then wait for roles to attempt fetch
-  // FAIL-SAFE: If roles take too long, proceed anyway (don't block users)
-  const isResolved = useMemo(() => {
-    if (authLoading) return false;
-    if (!user) return true; // No user = resolved (will show login prompt if requireAuth)
-    // Wait for role fetch attempt, but don't block indefinitely
-    return !rolesLoading;
-  }, [authLoading, rolesLoading, user]);
+  // STEP 1: Check if authentication is resolved
+  const authResolved = !authLoading;
 
-  // Authorization check - FAIL-SAFE: allow access if role data is missing/loading
+  // STEP 2: Check if roles are resolved (only matters if user is authenticated)
+  // hasAttemptedFetch ensures we don't wait forever for roles
+  const rolesResolved = useMemo(() => {
+    if (!user) return true; // No user = no roles to load
+    // Roles are resolved if: not loading OR we've at least attempted to fetch
+    return !rolesLoading || hasAttemptedFetch;
+  }, [user, rolesLoading, hasAttemptedFetch]);
+
+  // STEP 3: Overall resolution - both auth and roles must be resolved
+  const isFullyResolved = authResolved && rolesResolved;
+
+  // STEP 4: Authorization check - ONLY after fully resolved
+  // FAIL-SAFE: If role data is missing/undefined, ALLOW access (don't block)
   const isAllowed = useMemo(() => {
+    // If not authenticated and auth is required, deny (will show login prompt)
     if (!user) return !requireAuth;
+
     // No predicate means allow all authenticated users
     if (!allow) return true;
-    // Apply predicate, but pass rolesLoading=false since we're resolved
-    // This means the predicate should allow users through if their roles haven't loaded
+
+    // FAIL-SAFE: If roles array is empty/missing after attempted fetch,
+    // allow access and log the issue (don't block user)
+    const rolesMissing = hasAttemptedFetch && roles.length === 0;
+    if (rolesMissing) {
+      console.warn('[Auth] User has no roles after fetch - allowing access as fail-safe');
+      return true;
+    }
+
+    // Apply the predicate - pass rolesLoading=false since we're resolved
     return allow({ hasRole, canAccessDashboard, rolesLoading: false });
-  }, [allow, canAccessDashboard, hasRole, requireAuth, user]);
+  }, [allow, canAccessDashboard, hasRole, requireAuth, user, hasAttemptedFetch, roles]);
+
+  // STEP 5: Determine if we should show Access Denied
+  // Access Denied is ONLY shown when:
+  // - User is authenticated
+  // - Roles are fully resolved
+  // - Authorization check explicitly failed
+  // - User is a student (staff should never see Access Denied)
+  const shouldShowAccessDenied = useMemo(() => {
+    if (!isFullyResolved) return false; // Still loading
+    if (!user) return false; // Not authenticated (will show login prompt)
+    if (isAllowed) return false; // Access is allowed
+    
+    // Only students can be denied access - staff always pass
+    const isStaff = hasRole('admin') || hasRole('assistant_teacher');
+    if (isStaff) {
+      console.warn('[Auth] Staff user would have been denied - allowing as fail-safe');
+      return false;
+    }
+    
+    return true; // Student with explicit access violation
+  }, [isFullyResolved, user, isAllowed, hasRole]);
 
   const redirect = `${location.pathname}${location.search}`;
 
-  if (!isResolved) {
+  // LOADING STATE: Show while auth or roles are still resolving
+  if (!isFullyResolved) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-6">
@@ -100,6 +140,7 @@ export function RequireResolvedAccess({
     );
   }
 
+  // LOGIN PROMPT: Only after auth is resolved and user is not authenticated
   if (requireAuth && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -123,14 +164,15 @@ export function RequireResolvedAccess({
     );
   }
 
-  if (!isAllowed) {
+  // ACCESS DENIED: Only for students with explicit access violations
+  if (shouldShowAccessDenied) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-6 space-y-4">
           <div>
             <h1 className="text-xl font-bold text-foreground">Access denied</h1>
             <p className="text-sm text-muted-foreground">
-              Your account doesn’t have permission to view this page.
+              Your account doesn't have permission to view this page.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
