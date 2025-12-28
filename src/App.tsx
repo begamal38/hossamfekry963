@@ -65,27 +65,17 @@ const App = () => (
                       </RequireResolvedAccess>
                     }
                   />
+                  {/* Public course browsing - no auth required */}
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/course/:courseId" element={<CourseView />} />
+                  <Route path="/course/:courseId/lessons" element={<CourseView />} />
+                  
+                  {/* Lesson view requires auth */}
                   <Route
-                    path="/courses"
+                    path="/lesson/:lessonId"
                     element={
                       <RequireResolvedAccess requireAuth>
-                        <Courses />
-                      </RequireResolvedAccess>
-                    }
-                  />
-                  <Route
-                    path="/course/:courseId"
-                    element={
-                      <RequireResolvedAccess requireAuth>
-                        <CourseView />
-                      </RequireResolvedAccess>
-                    }
-                  />
-                  <Route
-                    path="/course/:courseId/lessons"
-                    element={
-                      <RequireResolvedAccess requireAuth>
-                        <CourseView />
+                        <LessonView />
                       </RequireResolvedAccess>
                     }
                   />

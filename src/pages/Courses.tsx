@@ -106,11 +106,11 @@ const Courses: React.FC = () => {
   const handleEnroll = async (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
     if (!user) {
       toast({
-        title: isArabic ? 'يرجى تسجيل الدخول' : 'Please login',
-        description: isArabic ? 'يجب تسجيل الدخول للاشتراك في الكورس' : 'You need to login to enroll in a course',
-        variant: 'destructive',
+        title: isArabic ? 'يرجى تسجيل الدخول' : 'Please sign in',
+        description: isArabic ? 'يجب تسجيل الدخول للاشتراك في الكورس' : 'You need to sign in to enroll in a course',
       });
-      navigate('/auth');
+      // Redirect to auth with return URL to come back to this course
+      navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
       return;
     }
 
@@ -421,7 +421,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <Play className="w-4 h-4" />
-            {course.lessons_count} {isArabic ? 'درس' : 'lessons'}
+            {course.lessons_count} {isArabic ? 'حصة' : 'sessions'}
           </div>
         </div>
 
