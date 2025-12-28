@@ -164,7 +164,8 @@ export default function CourseView() {
 
   const handleEnroll = async () => {
     if (!user) {
-      navigate('/auth');
+      // Redirect to auth with return URL
+      navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
       return;
     }
 
@@ -331,6 +332,8 @@ export default function CourseView() {
                       isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
                     ) : enrolling ? (
                       isArabic ? 'جاري الاشتراك...' : 'Enrolling...'
+                    ) : !user ? (
+                      <>{isArabic ? 'سجّل دخول للاشتراك' : 'Sign in to Enroll'}</>
                     ) : course.is_free ? (
                       <>{isArabic ? 'اشترك مجاناً' : 'Enroll Free'}</>
                     ) : (
