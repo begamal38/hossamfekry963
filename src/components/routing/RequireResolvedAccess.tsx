@@ -41,17 +41,24 @@ export function RequireResolvedAccess({
     return () => window.clearTimeout(id);
   }, [location.key, timeoutMs]);
 
-  // DEBUG MODE: Consider resolved immediately once auth loading is done
+  // Wait for auth to complete, then wait for roles to attempt fetch
+  // FAIL-SAFE: If roles take too long, proceed anyway (don't block users)
   const isResolved = useMemo(() => {
     if (authLoading) return false;
-    return true; // DEBUG: Skip role loading wait
-  }, [authLoading]);
+    if (!user) return true; // No user = resolved (will show login prompt if requireAuth)
+    // Wait for role fetch attempt, but don't block indefinitely
+    return !rolesLoading;
+  }, [authLoading, rolesLoading, user]);
 
-  // DEBUG MODE: Allow all authenticated users unconditionally
+  // Authorization check - FAIL-SAFE: allow access if role data is missing/loading
   const isAllowed = useMemo(() => {
     if (!user) return !requireAuth;
-    return true; // DEBUG: Skip all permission checks
-  }, [requireAuth, user]);
+    // No predicate means allow all authenticated users
+    if (!allow) return true;
+    // Apply predicate, but pass rolesLoading=false since we're resolved
+    // This means the predicate should allow users through if their roles haven't loaded
+    return allow({ hasRole, canAccessDashboard, rolesLoading: false });
+  }, [allow, canAccessDashboard, hasRole, requireAuth, user]);
 
   const redirect = `${location.pathname}${location.search}`;
 

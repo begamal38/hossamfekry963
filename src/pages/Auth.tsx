@@ -72,9 +72,12 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // DEBUG MODE: Redirect immediately after login without role checks
+  // Redirect after login - wait for roles to load for proper routing
   useEffect(() => {
     if (!user) return;
+    
+    // Wait for role fetch to complete (but hasAttemptedFetch ensures we don't wait forever)
+    if (roleLoading && !hasAttemptedFetch) return;
 
     const redirect = searchParams.get('redirect');
     if (redirect) {
@@ -82,9 +85,10 @@ const Auth = () => {
       return;
     }
 
-    // DEBUG: Always go to dashboard, skip role-based routing
-    navigate('/dashboard', { replace: true });
-  }, [user, navigate, searchParams]);
+    // Route based on role - staff go to assistant dashboard, others to student dashboard
+    const isStaff = isAssistantTeacher() || isAdmin();
+    navigate(isStaff ? '/assistant' : '/dashboard', { replace: true });
+  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
