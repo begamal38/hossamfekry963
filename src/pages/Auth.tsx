@@ -67,12 +67,10 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { canAccessDashboard, loading: roleLoading } = useUserRole();
+  const { canAccessDashboard, isAssistantTeacher, isAdmin, loading: roleLoading } = useUserRole();
   const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const hasAccess = canAccessDashboard();
 
   // Redirect if already logged in - based on role (or explicit redirect)
   useEffect(() => {
@@ -84,8 +82,10 @@ const Auth = () => {
       return;
     }
 
-    navigate(hasAccess ? '/assistant' : '/dashboard');
-  }, [user, roleLoading, hasAccess, navigate, searchParams]);
+    // Check if user is assistant teacher or admin - they go to /assistant
+    const isStaff = isAssistantTeacher() || isAdmin();
+    navigate(isStaff ? '/assistant' : '/dashboard');
+  }, [user, roleLoading, isAssistantTeacher, isAdmin, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
