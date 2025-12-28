@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { canJoinCenterGroup } from '@/lib/academicValidation';
 
 interface CenterGroup {
   id: string;
@@ -28,6 +29,8 @@ interface Student {
   user_id: string;
   full_name: string | null;
   attendance_mode: string;
+  academic_year: string | null;
+  language_track: string | null;
 }
 
 const DAYS_OPTIONS = [
@@ -155,10 +158,10 @@ export default function CenterGroups() {
     setIsManageMembersOpen(true);
 
     try {
-      // Fetch eligible students (center or hybrid)
+      // Fetch eligible students (center or hybrid, matching grade and track)
       const { data: students, error: studentsError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, attendance_mode')
+        .select('user_id, full_name, attendance_mode, academic_year, language_track')
         .in('attendance_mode', ['center', 'hybrid'])
         .eq('academic_year', group.grade)
         .eq('language_track', group.language_track);
@@ -181,6 +184,28 @@ export default function CenterGroups() {
   };
 
   const toggleMember = (studentId: string) => {
+    const student = eligibleStudents.find(s => s.user_id === studentId);
+    if (!student || !selectedGroup) return;
+    
+    // VALIDATION: Verify student can join this group
+    const validation = canJoinCenterGroup(
+      { 
+        academic_year: student.academic_year, 
+        language_track: student.language_track, 
+        attendance_mode: student.attendance_mode 
+      },
+      { grade: selectedGroup.grade, language_track: selectedGroup.language_track }
+    );
+    
+    if (!validation.allowed) {
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'غير مسموح' : 'Not Allowed',
+        description: isArabic ? validation.messageAr : validation.message,
+      });
+      return;
+    }
+    
     setGroupMembers((prev) =>
       prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
     );

@@ -25,7 +25,10 @@ const Settings: React.FC = () => {
   const { isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isStudent } = useUserRole();
+  const { isStudent, isAssistantTeacher, isAdmin } = useUserRole();
+  
+  // Students cannot change grade after initial setup
+  const canChangeGrade = isAssistantTeacher() || isAdmin();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,6 +36,7 @@ const Settings: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [grade, setGrade] = useState('');
+  const [initialGrade, setInitialGrade] = useState(''); // Track initial grade for validation
   const [avatarUrl, setAvatarUrl] = useState('');
   
   // Password change states
@@ -64,6 +68,7 @@ const Settings: React.FC = () => {
           setFullName(data.full_name || '');
           setPhone(data.phone || '');
           setGrade(data.grade || '');
+          setInitialGrade(data.grade || ''); // Store initial grade
           setAvatarUrl(data.avatar_url || '');
         }
       } catch (err) {
@@ -78,6 +83,17 @@ const Settings: React.FC = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    
+    // VALIDATION: Students cannot change grade once set
+    if (isStudent() && initialGrade && grade !== initialGrade) {
+      toast({
+        variant: 'destructive',
+        title: 'غير مسموح',
+        description: 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل. تواصل مع الإدارة للمساعدة.',
+      });
+      setGrade(initialGrade); // Reset to original
+      return;
+    }
     
     setSaving(true);
     try {
@@ -249,18 +265,30 @@ const Settings: React.FC = () => {
               {/* Grade */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
-                <select
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">اختر المرحلة</option>
-                  {GRADE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.labelAr}
-                    </option>
-                  ))}
-                </select>
+                {isStudent() && initialGrade ? (
+                  // Students with set grade see read-only display
+                  <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
+                    {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
+                  </div>
+                ) : (
+                  // Assistants/admins or students without grade can edit
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    disabled={isStudent() && !!initialGrade}
+                  >
+                    <option value="">اختر المرحلة</option>
+                    {GRADE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.labelAr}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {isStudent() && initialGrade && (
+                  <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
+                )}
               </div>
 
               {/* Save Button */}
