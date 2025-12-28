@@ -28,7 +28,7 @@ const FirstLoginWelcome = () => {
       setShow(true);
       closeTimerRef.current = window.setTimeout(() => {
         handleClose();
-      }, 1500);
+      }, 3000); // Extended to 3 seconds for better readability
     });
 
     return () => {
@@ -41,53 +41,50 @@ const FirstLoginWelcome = () => {
   if (!show) return null;
 
   return (
-    <div 
-      className={cn(
-        "fixed top-4 z-[100] pointer-events-none",
-        isRTL ? "right-4" : "left-4"
-      )}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
       <div 
         className={cn(
-          "pointer-events-auto max-w-sm rounded-lg border border-primary/20 bg-card/95 backdrop-blur-sm shadow-lg p-4 transition-all duration-300",
-          isExiting ? "opacity-0 translate-y-[-10px]" : "opacity-100 translate-y-0 animate-fade-in",
+          "pointer-events-auto max-w-md rounded-xl border border-primary/30 bg-card/98 backdrop-blur-md shadow-2xl p-6 transition-all duration-300",
+          isExiting 
+            ? "opacity-0 scale-95" 
+            : "opacity-100 scale-100 animate-scale-in",
           isRTL && "rtl"
         )}
       >
         <button 
           onClick={handleClose}
           className={cn(
-            "absolute top-2 text-muted-foreground hover:text-foreground transition-colors",
-            isRTL ? "left-2" : "right-2"
+            "absolute top-3 text-muted-foreground hover:text-foreground transition-colors",
+            isRTL ? "left-3" : "right-3"
           )}
           aria-label="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
         
-        <div className="flex items-start gap-3">
+        <div className="flex flex-col items-center text-center gap-4">
           {/* Icon */}
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary" />
+          <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center animate-pulse-glow">
+            <Sparkles className="w-7 h-7 text-primary" />
           </div>
           
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div>
             {isRTL ? (
               <>
-                <p className="text-sm font-semibold text-primary">
+                <p className="text-lg font-bold text-primary">
                   <span dir="ltr" className="inline-block">D.M.T</span> المجال في الكيمياء – حسام فكري
                 </p>
-                <p className="text-sm text-foreground mt-1">
+                <p className="text-base text-foreground mt-2">
                   أهلاً بيك في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-primary">
+                <p className="text-lg font-bold text-primary">
                   D.M.T — The Field in Chemistry | Hossam Fekry
                 </p>
-                <p className="text-sm text-foreground mt-1">
+                <p className="text-base text-foreground mt-2">
                   Welcome to Egypt's #1 platform for teaching Chemistry
                 </p>
               </>
