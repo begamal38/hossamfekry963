@@ -64,8 +64,8 @@ export function isLessonReadyForStudents(lesson: {
 
 /**
  * Filter lessons for student visibility
- * - For regular courses: Must belong to a chapter
- * - For free courses: Always visible (no chapter required)
+ * - Lessons are now visible regardless of chapter assignment
+ * - Chapter is organizational, not visibility requirement
  * - For progress calculation, may optionally require video
  */
 export function filterLessonsForStudents<T extends { chapter_id: string | null }>(
@@ -75,12 +75,11 @@ export function filterLessonsForStudents<T extends { chapter_id: string | null }
     isFreeCourse?: boolean;
   } = {}
 ): T[] {
-  const { requireVideo = false, isFreeCourse = false } = options;
+  const { requireVideo = false } = options;
   
   return lessons.filter(lesson => {
-    // Free courses don't require chapter structure
-    // Regular courses must belong to a chapter
-    if (!isFreeCourse && !lesson.chapter_id) return false;
+    // Lessons are visible regardless of chapter assignment
+    // Chapter is for organization only, not visibility
     
     // Optionally require video
     if (requireVideo) {

@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { hasValidVideo } from '@/lib/contentVisibility';
+import { useAuth } from '@/hooks/useAuth';
 
 interface FreeLesson {
   id: string;
@@ -20,19 +21,42 @@ interface FreeLesson {
   courses?: {
     title_ar: string;
     title: string;
+    grade: string;
   };
 }
 
 const FreeLessons: React.FC = () => {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isArabic = language === 'ar';
   const [lessons, setLessons] = useState<FreeLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userGrade, setUserGrade] = useState<string | null>(null);
+
+  // Fetch user profile to get grade if logged in
+  useEffect(() => {
+    const fetchUserGrade = async () => {
+      if (!user) {
+        setUserGrade(null);
+        return;
+      }
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('grade')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setUserGrade(data?.grade || null);
+    };
+    
+    fetchUserGrade();
+  }, [user]);
 
   useEffect(() => {
     fetchFreeLessons();
-  }, []);
+  }, [userGrade, user]);
 
   const fetchFreeLessons = async () => {
     try {
@@ -47,7 +71,8 @@ const FreeLessons: React.FC = () => {
           course_id,
           courses (
             title_ar,
-            title
+            title,
+            grade
           )
         `)
         .eq('is_free_lesson', true)
@@ -56,7 +81,16 @@ const FreeLessons: React.FC = () => {
       if (error) throw error;
       
       // Filter to only show lessons with valid videos
-      const validLessons = (data || []).filter(lesson => hasValidVideo(lesson.video_url));
+      let validLessons = (data || []).filter(lesson => hasValidVideo(lesson.video_url));
+      
+      // If user is logged in, filter by their grade
+      // If not logged in, show ALL free lessons
+      if (user && userGrade) {
+        validLessons = validLessons.filter(lesson => 
+          lesson.courses?.grade === userGrade
+        );
+      }
+      
       setLessons(validLessons);
     } catch (error) {
       console.error('Error fetching free lessons:', error);
