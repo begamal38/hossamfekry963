@@ -67,45 +67,28 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { roles, refreshRoles, isAssistantTeacher, isAdmin, loading: roleLoading } = useUserRole();
+  const { roles, refreshRoles, isAssistantTeacher, isAdmin, loading: roleLoading, hasAttemptedFetch } = useUserRole();
   const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Prevent mis-routing right after login while roles are still resolving.
-  const [roleGraceExpired, setRoleGraceExpired] = useState(false);
-
-  useEffect(() => {
-    setRoleGraceExpired(false);
-    if (!user) return;
-
-    // If we have a user but no roles yet, give it a brief grace window.
-    if (roleLoading || (roles?.length ?? 0) > 0) return;
-
-    // Kick a refresh once, then wait.
-    refreshRoles?.();
-
-    const id = window.setTimeout(() => setRoleGraceExpired(true), 1500);
-    return () => window.clearTimeout(id);
-  }, [user, roleLoading, roles, refreshRoles]);
-
   // Redirect if already logged in - based on role (or explicit redirect)
   useEffect(() => {
     if (!user) return;
-    if (roleLoading) return;
-
-    // If roles are not available yet, wait (up to the grace window) to avoid wrong redirects.
-    if ((roles?.length ?? 0) === 0 && !roleGraceExpired) return;
+    
+    // Wait until roles have been fetched at least once
+    if (roleLoading || !hasAttemptedFetch) return;
 
     const redirect = searchParams.get('redirect');
     if (redirect) {
-      navigate(redirect);
+      navigate(redirect, { replace: true });
       return;
     }
 
+    // Check if user is staff (admin or assistant_teacher)
     const isStaff = isAssistantTeacher() || isAdmin();
-    navigate(isStaff ? '/assistant' : '/dashboard');
-  }, [user, roleLoading, roles, roleGraceExpired, isAssistantTeacher, isAdmin, navigate, searchParams]);
+    navigate(isStaff ? '/assistant' : '/dashboard', { replace: true });
+  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};

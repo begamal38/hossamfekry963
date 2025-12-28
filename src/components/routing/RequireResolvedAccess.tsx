@@ -45,14 +45,16 @@ export function RequireResolvedAccess({
     if (authLoading) return false;
     if (requireAuth && !user) return true; // resolved: unauthenticated
     if (!user) return true; // resolved: no user and auth not required
+    // Consider resolved once roles loading is done - even if roles array is empty (students may have no roles)
     return !rolesLoading;
   }, [authLoading, requireAuth, rolesLoading, user]);
 
   const isAllowed = useMemo(() => {
     if (!user) return !requireAuth;
-    if (!allow) return true;
-    return allow({ hasRole, canAccessDashboard, rolesLoading });
-  }, [allow, canAccessDashboard, hasRole, requireAuth, rolesLoading, user]);
+    if (!allow) return true; // No access predicate means allow all authenticated users
+    // Pass rolesLoading as false since we've already resolved - don't re-block access
+    return allow({ hasRole, canAccessDashboard, rolesLoading: false });
+  }, [allow, canAccessDashboard, hasRole, requireAuth, user]);
 
   const redirect = `${location.pathname}${location.search}`;
 
