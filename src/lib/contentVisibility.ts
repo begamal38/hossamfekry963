@@ -24,6 +24,14 @@ export function isCourseInActiveScope(courseGrade: string): boolean {
 }
 
 /**
+ * Check if a course is in preview mode (visible but not enrollable)
+ * Preview courses are those outside the active scope
+ */
+export function isCoursePreview(courseGrade: string): boolean {
+  return !ACTIVE_SCOPE.grades.includes(courseGrade);
+}
+
+/**
  * Check if a lesson has a valid video URL
  */
 export function hasValidVideo(videoUrl: string | null | undefined): boolean {
@@ -79,6 +87,7 @@ export function filterLessonsForStudents<T extends { chapter_id: string | null }
 
 /**
  * Filter courses for student visibility based on active scope
+ * Now returns ALL courses - preview filtering happens at display level
  */
 export function filterCoursesForStudents<T extends { grade: string }>(
   courses: T[],
@@ -87,16 +96,8 @@ export function filterCoursesForStudents<T extends { grade: string }>(
     userGrade?: string | null; // If set, show only matching grade
   } = {}
 ): T[] {
-  if (options.bypassScope) return courses;
-  
-  return courses.filter(course => {
-    // Must be in active scope
-    if (!isCourseInActiveScope(course.grade)) return false;
-    
-    // If user has a grade set, optionally filter further
-    // (This is handled separately in UI for "Your Grade" section)
-    return true;
-  });
+  // Return all courses - the UI will display preview badges for non-active courses
+  return courses;
 }
 
 /**
