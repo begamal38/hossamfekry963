@@ -25,9 +25,9 @@ export const HeroSection: React.FC = () => {
 
   return (
     <section className="relative min-h-screen pt-20 overflow-hidden bg-gradient-hero">
-      {/* Background Glow Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-pulse-glow animation-delay-200" />
+      {/* Background Glow Effects - Static for performance */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-50 will-change-transform" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/15 rounded-full blur-3xl opacity-40 will-change-transform" />
       
       <div className="container mx-auto px-4 py-16 lg:py-24">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
@@ -96,8 +96,8 @@ export const HeroSection: React.FC = () => {
             {/* Teacher Image */}
             <div className="relative z-10 flex items-center justify-center h-full">
               <div className="relative">
-                {/* Glow effect behind image */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-accent/30 rounded-3xl blur-2xl scale-110" />
+            {/* Glow effect behind image - static */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-xl scale-105 will-change-transform" />
                 
                 <img 
                   src={teacherImage} 

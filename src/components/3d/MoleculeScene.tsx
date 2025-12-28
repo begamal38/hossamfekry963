@@ -1,6 +1,6 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, Sphere, Trail, Stars } from '@react-three/drei';
+import { Float, MeshDistortMaterial, Sphere, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface AtomProps {
@@ -87,11 +87,12 @@ function Bond({ start, end, color = '#5a9fd4' }: BondProps) {
   );
 }
 
-function FloatingParticles() {
+// Simplified particles - no per-frame position updates for better performance
+const FloatingParticles = memo(function FloatingParticles() {
   const particlesRef = useRef<THREE.Points>(null);
   
   const { positions, colors } = useMemo(() => {
-    const count = 150;
+    const count = 80; // Reduced count for performance
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     
@@ -100,7 +101,6 @@ function FloatingParticles() {
       positions[i * 3 + 1] = (Math.random() - 0.5) * 12;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
       
-      // Vary colors between blue and cyan
       const hue = 0.55 + Math.random() * 0.1;
       const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
       colors[i * 3] = color.r;
@@ -110,17 +110,10 @@ function FloatingParticles() {
     return { positions, colors };
   }, []);
 
+  // Simple rotation only - no position updates
   useFrame((state) => {
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.03;
-      particlesRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.02) * 0.15;
-      
-      // Floating effect
-      const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < positions.length / 3; i++) {
-        positions[i * 3 + 1] += Math.sin(state.clock.elapsedTime + i) * 0.001;
-      }
-      particlesRef.current.geometry.attributes.position.needsUpdate = true;
+      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.02;
     }
   });
 
@@ -129,13 +122,13 @@ function FloatingParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={150}
+          count={80}
           array={positions}
           itemSize={3}
         />
         <bufferAttribute
           attach="attributes-color"
-          count={150}
+          count={80}
           array={colors}
           itemSize={3}
         />
@@ -144,15 +137,15 @@ function FloatingParticles() {
         size={0.06}
         vertexColors
         transparent
-        opacity={0.7}
+        opacity={0.6}
         sizeAttenuation
       />
     </points>
   );
-}
+});
 
-// Orbiting electron effect
-function OrbitingElectron({ radius, speed, color }: { radius: number; speed: number; color: string }) {
+// Simplified orbiting electron - no Trail for performance
+const OrbitingElectron = memo(function OrbitingElectron({ radius, speed, color }: { radius: number; speed: number; color: string }) {
   const ref = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
@@ -165,23 +158,16 @@ function OrbitingElectron({ radius, speed, color }: { radius: number; speed: num
   });
 
   return (
-    <Trail
-      width={0.1}
-      length={8}
-      color={color}
-      attenuation={(t) => t * t}
-    >
-      <mesh ref={ref}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={2}
-        />
-      </mesh>
-    </Trail>
+    <mesh ref={ref}>
+      <sphereGeometry args={[0.08, 12, 12]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={1.5}
+      />
+    </mesh>
   );
-}
+});
 
 function Molecule() {
   const groupRef = useRef<THREE.Group>(null);
@@ -288,36 +274,38 @@ function GlowingSphere() {
   );
 }
 
-export default function MoleculeScene() {
+export default memo(function MoleculeScene() {
   return (
-    <div className="absolute inset-0 rounded-3xl overflow-hidden">
+    <div className="absolute inset-0 rounded-3xl overflow-hidden will-change-transform">
       <Canvas
         camera={{ position: [0, 0, 7], fov: 50 }}
         style={{ background: 'transparent' }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]} // Reduced max DPR for performance
+        frameloop="always"
+        gl={{ 
+          antialias: false, // Disable for performance
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true
+        }}
       >
-        {/* Enhanced lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1.3} color="#ffffff" />
-        <pointLight position={[-5, 5, 5]} intensity={1} color="#3b82f6" />
-        <pointLight position={[5, -5, -5]} intensity={0.8} color="#60a5fa" />
-        <pointLight position={[0, 5, 0]} intensity={0.6} color="#93c5fd" />
-        <spotLight position={[0, 10, 0]} intensity={0.6} color="#ffffff" angle={0.5} penumbra={0.5} />
+        {/* Simplified lighting */}
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[10, 10, 5]} intensity={1.2} />
+        <pointLight position={[-5, 5, 5]} intensity={0.8} color="#3b82f6" />
         
-        {/* Background stars for depth */}
-        <Stars radius={50} depth={50} count={300} factor={2} saturation={0.5} fade speed={0.5} />
+        {/* Reduced stars */}
+        <Stars radius={50} depth={50} count={150} factor={2} saturation={0.5} fade speed={0.3} />
         
         <GlowingSphere />
         <FloatingParticles />
         <Molecule />
       </Canvas>
       
-      {/* Enhanced glow overlay */}
+      {/* Static glow overlay - no animations */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute top-1/3 left-1/3 w-48 h-48 bg-accent/25 rounded-full blur-2xl animate-pulse-glow animation-delay-300" />
-        <div className="absolute bottom-1/3 right-1/3 w-40 h-40 bg-primary/15 rounded-full blur-2xl animate-pulse-glow animation-delay-200" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/15 rounded-full blur-3xl opacity-60" />
       </div>
     </div>
   );
-}
+});
