@@ -64,16 +64,23 @@ export function isLessonReadyForStudents(lesson: {
 
 /**
  * Filter lessons for student visibility
- * - Must belong to a chapter
+ * - For regular courses: Must belong to a chapter
+ * - For free courses: Always visible (no chapter required)
  * - For progress calculation, may optionally require video
  */
 export function filterLessonsForStudents<T extends { chapter_id: string | null }>(
   lessons: T[],
-  requireVideo: boolean = false
+  options: {
+    requireVideo?: boolean;
+    isFreeCourse?: boolean;
+  } = {}
 ): T[] {
+  const { requireVideo = false, isFreeCourse = false } = options;
+  
   return lessons.filter(lesson => {
-    // Must belong to a chapter
-    if (!lesson.chapter_id) return false;
+    // Free courses don't require chapter structure
+    // Regular courses must belong to a chapter
+    if (!isFreeCourse && !lesson.chapter_id) return false;
     
     // Optionally require video
     if (requireVideo) {
