@@ -4,6 +4,10 @@ import { useAuth } from './useAuth';
 
 type AppRole = 'admin' | 'assistant_teacher' | 'student';
 
+// Simple in-memory cache to avoid re-fetching roles on every route change (prevents flashing loaders).
+let roleCache: { userId: string; roles: AppRole[]; fetchedAt: number } | null = null;
+const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export const useUserRole = () => {
   const { user, session, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
@@ -16,14 +20,27 @@ export const useUserRole = () => {
     // Don’t query roles until auth is fully initialized.
     if (authLoading) return;
 
-    setLoading(true);
-
     if (!user || !session) {
+      roleCache = null;
       retryCountRef.current = 0;
       setRoles([]);
       setLoading(false);
       return;
     }
+
+    const cachedForUser = roleCache?.userId === user.id ? roleCache : null;
+    const cacheFresh = cachedForUser && Date.now() - cachedForUser.fetchedAt < ROLE_CACHE_TTL_MS;
+
+    // If we have fresh cached roles, use them immediately and don't block UI.
+    if (cacheFresh) {
+      setRoles(cachedForUser.roles);
+      setLoading(false);
+      return;
+    }
+
+    // If we have cached roles but they're stale, don't show a big loader; refresh quietly.
+    const silentRefresh = !!cachedForUser && cachedForUser.roles.length > 0;
+    if (!silentRefresh) setLoading(true);
 
     let keepLoadingForRetry = false;
 
@@ -36,7 +53,9 @@ export const useUserRole = () => {
       if (error) throw error;
 
       retryCountRef.current = 0;
-      setRoles((data || []).map((r) => r.role as AppRole));
+      const nextRoles = (data || []).map((r) => r.role as AppRole);
+      setRoles(nextRoles);
+      roleCache = { userId: user.id, roles: nextRoles, fetchedAt: Date.now() };
     } catch (error) {
       // If the first request fails right after login, retry once after a short delay.
       if (retryCountRef.current < 1) {
@@ -46,8 +65,9 @@ export const useUserRole = () => {
           fetchRoles();
         }, 600);
       } else {
-        console.error('Error fetching roles:', error);
+        console.warn('Role fetch failed (will treat as no roles).');
         setRoles([]);
+        roleCache = { userId: user.id, roles: [], fetchedAt: Date.now() };
       }
     } finally {
       if (!keepLoadingForRetry) setLoading(false);
