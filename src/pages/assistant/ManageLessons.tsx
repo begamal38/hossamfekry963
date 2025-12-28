@@ -339,7 +339,7 @@ const ManageLessons = () => {
               <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
+              <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Sessions'}</h1>
               {selectedCourseName && (
                 <p className="text-muted-foreground text-sm">
                   {isArabic ? selectedCourseName.title_ar : selectedCourseName.title}
@@ -356,7 +356,7 @@ const ManageLessons = () => {
             </Button>
             <Button onClick={() => setShowForm(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              {isArabic ? 'حصة جديدة' : 'New Lesson'}
+              {isArabic ? 'حصة جديدة' : 'New Session'}
             </Button>
           </div>
         </div>
@@ -389,7 +389,7 @@ const ManageLessons = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{isArabic ? 'كل الدروس' : 'All Lessons'}</SelectItem>
+                <SelectItem value="all">{isArabic ? 'كل الحصص' : 'All Sessions'}</SelectItem>
                 {chapters.map(chapter => (
                   <SelectItem key={chapter.id} value={chapter.id}>
                     {isArabic ? chapter.title_ar : chapter.title}
@@ -405,8 +405,8 @@ const ManageLessons = () => {
           <div className="bg-card border rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-lg mb-4">
               {editingLesson 
-                ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson')
-                : (isArabic ? 'حصة جديدة' : 'New Lesson')
+                ? (isArabic ? 'تعديل الحصة' : 'Edit Session')
+                : (isArabic ? 'حصة جديدة' : 'New Session')
               }
             </h3>
             
@@ -416,7 +416,7 @@ const ManageLessons = () => {
                   {isArabic ? 'العنوان (إنجليزي)' : 'Title (English)'}
                 </label>
                 <Input
-                  placeholder="Lesson Title"
+                  placeholder="Session Title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
@@ -458,7 +458,7 @@ const ManageLessons = () => {
             {/* Lesson Type */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'نوع الحصة' : 'Lesson Type'}
+                {isArabic ? 'نوع الحصة' : 'Session Type'}
               </label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -487,7 +487,7 @@ const ManageLessons = () => {
             {/* Duration */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}
+                {isArabic ? 'مدة الحصة (دقيقة)' : 'Session Duration (minutes)'}
               </label>
               <Input
                 type="number"
@@ -516,7 +516,7 @@ const ManageLessons = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">
                   <BookOpen className="h-4 w-4 inline mr-1" />
-                  {isArabic ? 'ملخص الدرس (إنجليزي)' : 'Lesson Summary (English)'}
+                  {isArabic ? 'ملخص الحصة (إنجليزي)' : 'Session Summary (English)'}
                 </label>
                 <Textarea
                   placeholder="Brief summary of the lesson..."
@@ -528,7 +528,7 @@ const ManageLessons = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">
                   <BookOpen className="h-4 w-4 inline mr-1" />
-                  {isArabic ? 'ملخص الدرس (عربي)' : 'Lesson Summary (Arabic)'}
+                  {isArabic ? 'ملخص الحصة (عربي)' : 'Session Summary (Arabic)'}
                 </label>
                 <Textarea
                   placeholder="ملخص مختصر للدرس..."
@@ -582,7 +582,7 @@ const ManageLessons = () => {
                     className="rounded"
                   />
                   <span className="text-sm">
-                    {isArabic ? 'يتطلب إكمال الدرس السابق' : 'Requires previous lesson completion'}
+                    {isArabic ? 'يتطلب إكمال الحصة السابقة' : 'Requires previous session completion'}
                   </span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer">
@@ -638,13 +638,13 @@ const ManageLessons = () => {
           {filteredLessons.length === 0 ? (
             <div className="p-12 text-center">
               <Video className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}</h3>
+              <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No sessions yet'}</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                {isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding your first lesson'}
+                {isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding your first session'}
               </p>
               <Button onClick={() => setShowForm(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                {isArabic ? 'إضافة حصة' : 'Add Lesson'}
+                {isArabic ? 'إضافة حصة' : 'Add Session'}
               </Button>
             </div>
           ) : (

@@ -68,7 +68,7 @@ export const LessonActivityList: React.FC<LessonActivityListProps> = ({
       <div className="text-center py-8">
         <Circle className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
         <p className="text-muted-foreground">
-          {isRTL ? 'لا توجد حصص بعد' : 'No lessons yet'}
+          {isRTL ? 'لا توجد حصص بعد' : 'No sessions yet'}
         </p>
       </div>
     );
@@ -116,7 +116,7 @@ export const LessonActivityList: React.FC<LessonActivityListProps> = ({
                 <h4 className="font-medium text-foreground truncate">{lesson.title}</h4>
                 {lesson.isLastAccessed && (
                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    {isRTL ? 'آخر درس' : 'Last accessed'}
+                    {isRTL ? 'آخر حصة' : 'Last accessed'}
                   </span>
                 )}
               </div>

@@ -221,8 +221,8 @@ const getTopicContent = (lessonTitle: string, lessonTitleAr: string): LessonCont
   // Fallback to generic content based on title
   return {
     intro: {
-      en: `In this lesson, you'll understand the core concepts of ${lessonTitle}. Let's make chemistry simple and clear!`,
-      ar: `في الحصة دي، هتفهم المفاهيم الأساسية لـ ${lessonTitleAr}. خلينا نخلي الكيمياء سهلة وواضحة!`
+        en: `In this session, you'll understand the core concepts of ${lessonTitle}. Let's make chemistry simple and clear!`,
+        ar: `في الحصة دي، هتفهم المفاهيم الأساسية لـ ${lessonTitleAr}. خلينا نخلي الكيمياء سهلة وواضحة!`
     },
     explanation: [
       { en: "First, let's understand the fundamental concept. This is the building block for everything else we'll learn.", ar: "أولاً، خلينا نفهم المفهوم الأساسي. ده اللي هنبني عليه كل حاجة تانية هنتعلمها." },
@@ -234,7 +234,7 @@ const getTopicContent = (lessonTitle: string, lessonTitleAr: string): LessonCont
     ],
     commonMistake: { en: "⚠️ Common Trap: Many students confuse this concept with similar ones. Make sure you understand the key difference!", ar: "⚠️ خطأ شائع: طلاب كتير بيخلطوا المفهوم ده مع مفاهيم شبهه. تأكد إنك فاهم الفرق الأساسي!" },
     summary: { en: "Key takeaways: Remember the core concept, practice the examples, and avoid the common mistake we discussed.", ar: "النقاط الأساسية: افتكر المفهوم الأساسي، تدرب على الأمثلة، وابعد عن الخطأ الشائع اللي اتكلمنا عنه." },
-    closing: { en: "Great job completing this lesson! Your understanding is growing. Keep up the momentum and move to the next lesson.", ar: "ممتاز إنك خلصت الحصة دي! فهمك بيتحسن. كمل الزخم ده وروح للحصة الجاية." }
+    closing: { en: "Great job completing this session! Your understanding is growing. Keep up the momentum and move to the next session.", ar: "ممتاز إنك خلصت الحصة دي! فهمك بيتحسن. كمل الزخم ده وروح للحصة الجاية." }
   };
 };
 
@@ -369,7 +369,7 @@ export default function LessonView() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="container mx-auto px-4 py-8 pt-24 text-center">
-          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'الحصة غير موجودة' : 'Lesson not found'}</h1>
+          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'الحصة غير موجودة' : 'Session not found'}</h1>
           <Button onClick={() => navigate('/courses')}>
             {isArabic ? 'العودة للكورسات' : 'Back to Courses'}
           </Button>
@@ -387,9 +387,9 @@ export default function LessonView() {
         <Navbar />
         <main className="container mx-auto px-4 py-8 pt-24 text-center">
           <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'الحصة مقفولة' : 'Lesson Locked'}</h1>
+          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'الحصة مقفولة' : 'Session Locked'}</h1>
           <p className="text-muted-foreground mb-6">
-            {isArabic ? 'اشترك في الكورس للوصول لهذه الحصة' : 'Enroll in the course to access this lesson'}
+            {isArabic ? 'اشترك في الكورس للوصول لهذه الحصة' : 'Enroll in the course to access this session'}
           </p>
           <Button onClick={() => navigate(`/courses`)}>
             {isArabic ? 'اشترك الآن' : 'Enroll Now'}
@@ -407,7 +407,7 @@ export default function LessonView() {
           <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-4">{isArabic ? 'سجل دخول للمتابعة' : 'Login to Continue'}</h1>
           <p className="text-muted-foreground mb-6">
-            {isArabic ? 'سجل دخول لمشاهدة الحصة ومتابعة تقدمك' : 'Login to watch the lesson and track your progress'}
+            {isArabic ? 'سجل دخول لمشاهدة الحصة ومتابعة تقدمك' : 'Login to watch the session and track your progress'}
           </p>
           <Button onClick={() => navigate('/auth')}>
             {isArabic ? 'تسجيل الدخول' : 'Login'}

@@ -66,7 +66,7 @@ export function PostVideoContent({
         <div className="bg-card border border-border rounded-xl p-6">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
             <BookOpen className="h-5 w-5 text-primary" />
-            {isRTL ? 'ملخص الدرس' : 'Lesson Summary'}
+            {isRTL ? 'ملخص الحصة' : 'Session Summary'}
           </h3>
           <p className="text-muted-foreground leading-relaxed">{displaySummary}</p>
         </div>
@@ -143,7 +143,7 @@ export function PostVideoContent({
         {/* Continue to Next Lesson */}
         {hasNextLesson && onContinueToNext && (
           <Button variant="outline" onClick={onContinueToNext} className="gap-2">
-            {isRTL ? 'الدرس التالي' : 'Next Lesson'}
+            {isRTL ? 'الحصة التالية' : 'Next Session'}
             <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
           </Button>
         )}
