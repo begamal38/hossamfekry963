@@ -128,7 +128,7 @@ export const Navbar: React.FC = () => {
                   <Link to="/auth">{t('nav.login')}</Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link to="/auth">{t('nav.signUp')}</Link>
+                  <Link to="/auth?mode=signup">{t('nav.signUp')}</Link>
                 </Button>
               </>
             )}
@@ -214,7 +214,7 @@ export const Navbar: React.FC = () => {
                       </Link>
                     </Button>
                     <Button className="flex-1" asChild>
-                      <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Link to="/auth?mode=signup" onClick={() => setIsOpen(false)}>
                         {t('nav.signUp')}
                       </Link>
                     </Button>
