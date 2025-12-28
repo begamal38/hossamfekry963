@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
+import GovernorateCheck from "@/components/profile/GovernorateCheck";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
@@ -41,9 +42,10 @@ const App = () => (
       <AuthProvider>
         <ThemeProvider>
           <SessionProtectionProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
+            <GovernorateCheck>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -76,7 +78,8 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
-            </TooltipProvider>
+              </TooltipProvider>
+            </GovernorateCheck>
           </SessionProtectionProvider>
         </ThemeProvider>
       </AuthProvider>

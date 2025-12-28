@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,6 +12,7 @@ import { StudentImport } from '@/components/assistant/StudentImport';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { EGYPTIAN_GOVERNORATES, getGovernorateLabel } from '@/constants/governorates';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ interface Profile {
   grade: string | null;
   academic_year: string | null;
   language_track: string | null;
+  governorate: string | null;
   attendance_mode: AttendanceMode;
   created_at: string;
 }
@@ -89,6 +91,7 @@ export default function Students() {
   const [progressFilter, setProgressFilter] = useState('all');
   const [examFilter, setExamFilter] = useState('all');
   const [attendanceModeFilter, setAttendanceModeFilter] = useState('all');
+  const [governorateFilter, setGovernorateFilter] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -127,7 +130,7 @@ export default function Students() {
       // Fetch profiles only for users with student role (exclude current user)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, phone, grade, academic_year, language_track, attendance_mode, created_at')
+        .select('user_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
         .in('user_id', studentUserIds)
         .neq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -237,8 +240,13 @@ export default function Students() {
       filtered = filtered.filter((s) => s.attendance_mode === attendanceModeFilter);
     }
 
+    // Governorate filter
+    if (governorateFilter !== 'all') {
+      filtered = filtered.filter((s) => s.governorate === governorateFilter);
+    }
+
     setFilteredStudents(filtered);
-  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, attendanceModeFilter, students]);
+  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, attendanceModeFilter, governorateFilter, students]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -247,6 +255,7 @@ export default function Students() {
     setProgressFilter('all');
     setExamFilter('all');
     setAttendanceModeFilter('all');
+    setGovernorateFilter('all');
   };
 
   // Handle opening the mode change dialog
@@ -411,6 +420,8 @@ export default function Students() {
           onExamFilterChange={setExamFilter}
           attendanceModeFilter={attendanceModeFilter}
           onAttendanceModeFilterChange={setAttendanceModeFilter}
+          governorateFilter={governorateFilter}
+          onGovernorateFilterChange={setGovernorateFilter}
           isRTL={isRTL}
           onClearFilters={clearFilters}
         />

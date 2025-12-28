@@ -550,6 +550,7 @@ export type Database = {
           created_at: string
           email: string | null
           full_name: string | null
+          governorate: string | null
           grade: string | null
           is_suspended: boolean
           language_track: string | null
@@ -565,6 +566,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          governorate?: string | null
           grade?: string | null
           is_suspended?: boolean
           language_track?: string | null
@@ -580,6 +582,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          governorate?: string | null
           grade?: string | null
           is_suspended?: boolean
           language_track?: string | null

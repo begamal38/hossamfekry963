@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,14 @@ import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Validation schemas
 const emailSchema = z.string().email('Invalid email address').max(255);
@@ -54,8 +62,9 @@ const Auth = () => {
   const [phone, setPhone] = useState('');
   const [academicYear, setAcademicYear] = useState('');
   const [languageTrack, setLanguageTrack] = useState('');
+  const [governorate, setGovernorate] = useState('');
   const [showGroupConfirmation, setShowGroupConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
@@ -72,7 +81,7 @@ const Auth = () => {
   }, [user, roleLoading, hasAccess, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -103,6 +112,10 @@ const Auth = () => {
 
       if (!languageTrack) {
         newErrors.languageTrack = 'يرجى اختيار نوع التعليم';
+      }
+
+      if (!governorate) {
+        newErrors.governorate = 'يرجى اختيار المحافظة';
       }
     }
     
@@ -198,7 +211,7 @@ const Auth = () => {
           // Redirect will happen automatically via useEffect
         }
       } else {
-        const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack);
+        const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate);
         if (error) {
           if (error.message.includes('already registered')) {
             toast({
@@ -455,6 +468,27 @@ const Auth = () => {
                     ))}
                   </div>
                   {errors.languageTrack && <p className="text-sm text-destructive">{errors.languageTrack}</p>}
+                </div>
+
+                {/* Governorate Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    المحافظة
+                  </label>
+                  <Select value={governorate} onValueChange={setGovernorate}>
+                    <SelectTrigger className={cn(errors.governorate && "border-destructive")}>
+                      <SelectValue placeholder="اختر محافظتك" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EGYPTIAN_GOVERNORATES.map((gov) => (
+                        <SelectItem key={gov.value} value={gov.value}>
+                          {gov.label_ar}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.governorate && <p className="text-sm text-destructive">{errors.governorate}</p>}
                 </div>
 
                 {/* Selected Group Preview */}

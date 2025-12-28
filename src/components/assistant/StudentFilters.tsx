@@ -1,8 +1,9 @@
 import React from 'react';
-import { Search, X, Wifi, Building2, Shuffle } from 'lucide-react';
+import { Search, X, Wifi, Building2, Shuffle, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { EGYPTIAN_GOVERNORATES, getGovernorateLabel } from '@/constants/governorates';
 
 interface StudentFiltersProps {
   searchTerm: string;
@@ -17,6 +18,8 @@ interface StudentFiltersProps {
   onExamFilterChange: (value: string) => void;
   attendanceModeFilter?: string;
   onAttendanceModeFilterChange?: (value: string) => void;
+  governorateFilter?: string;
+  onGovernorateFilterChange?: (value: string) => void;
   isRTL?: boolean;
   onClearFilters?: () => void;
 }
@@ -34,10 +37,12 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
   onExamFilterChange,
   attendanceModeFilter,
   onAttendanceModeFilterChange,
+  governorateFilter,
+  onGovernorateFilterChange,
   isRTL,
   onClearFilters,
 }) => {
-  const hasActiveFilters = academicYearFilter !== 'all' || languageTrackFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all' || (attendanceModeFilter && attendanceModeFilter !== 'all');
+  const hasActiveFilters = academicYearFilter !== 'all' || languageTrackFilter !== 'all' || progressFilter !== 'all' || examFilter !== 'all' || (attendanceModeFilter && attendanceModeFilter !== 'all') || (governorateFilter && governorateFilter !== 'all');
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 mb-6">
@@ -88,6 +93,22 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
               <option value="online">{isRTL ? 'أونلاين' : 'Online'}</option>
               <option value="center">{isRTL ? 'سنتر' : 'Center'}</option>
               <option value="hybrid">{isRTL ? 'هجين' : 'Hybrid'}</option>
+            </select>
+          )}
+
+          {/* Governorate Filter */}
+          {onGovernorateFilterChange && (
+            <select
+              value={governorateFilter || 'all'}
+              onChange={(e) => onGovernorateFilterChange(e.target.value)}
+              className="px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground min-w-[140px]"
+            >
+              <option value="all">{isRTL ? 'كل المحافظات' : 'All Governorates'}</option>
+              {EGYPTIAN_GOVERNORATES.map((gov) => (
+                <option key={gov.value} value={gov.value}>
+                  {isRTL ? gov.label_ar : gov.label_en}
+                </option>
+              ))}
             </select>
           )}
 
@@ -158,6 +179,12 @@ export const StudentFilters: React.FC<StudentFiltersProps> = ({
                   ? (isRTL ? 'سنتر' : 'Center')
                   : (isRTL ? 'هجين' : 'Hybrid')
                 }
+              </span>
+            )}
+            {governorateFilter && governorateFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
+                <MapPin className="h-3 w-3" />
+                {getGovernorateLabel(governorateFilter, isRTL || false)}
               </span>
             )}
           </div>
