@@ -184,7 +184,7 @@ export default function AssistantDashboard() {
             {isRTL ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isRTL ? 'لوحة تحكم المدرس المساعد' : 'Assistant Teacher Dashboard'}
+            {isRTL ? 'المنصة – لوحة تحكم المدرس المساعد' : 'Platform – Assistant Teacher Dashboard'}
           </p>
         </div>
 

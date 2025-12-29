@@ -14,7 +14,7 @@ const HeroFallback: React.FC = () => (
 );
 
 export const HeroSection: React.FC = () => {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   const [showMolecule, setShowMolecule] = useState(false);
 
   // Defer 3D scene loading to avoid blocking critical rendering path
@@ -24,64 +24,17 @@ export const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-[800px] lg:min-h-[900px] pt-20 overflow-hidden bg-gradient-hero">
+    <section className="relative min-h-[700px] lg:min-h-[850px] pt-20 overflow-hidden bg-gradient-hero">
       {/* Background Glow Effects - Static, no animations */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-50" style={{ transform: 'translateZ(0)' }} />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/15 rounded-full blur-3xl opacity-40" style={{ transform: 'translateZ(0)' }} />
       
-      <div className="container mx-auto px-4 py-16 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[600px]">
-          {/* Content */}
-          <div className={`space-y-8 ${isRTL ? 'lg:order-2' : ''}`}>
-            <div className="space-y-4 animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                {t('hero.badge')}
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                {t('hero.headline')}
-              </h1>
-              
-              <p className="text-lg md:text-xl text-muted-foreground max-w-lg">
-                {t('hero.subheadline')}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-200">
-              <Button variant="hero" size="xl" asChild>
-                <Link to="/courses">
-                  {t('hero.browseCourses')}
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </Button>
-              <Button variant="heroOutline" size="xl" asChild>
-                <Link to="/auth?mode=signup">
-                  <Play className="w-5 h-5" />
-                  {t('hero.createAccount')}
-                </Link>
-              </Button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border animate-fade-in-up animation-delay-300">
-              <div>
-                <p className="text-3xl font-bold text-primary">+500</p>
-                <p className="text-sm text-muted-foreground">{t('hero.stats.lessons')}</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-primary">+10K</p>
-                <p className="text-sm text-muted-foreground">{t('hero.stats.students')}</p>
-              </div>
-              <div>
-                <p className="text-3xl font-bold text-primary">95%</p>
-                <p className="text-sm text-muted-foreground">{t('hero.stats.success')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Teacher Image with 3D Scene */}
-          <div className={`relative h-[400px] lg:h-[550px] ${isRTL ? 'lg:order-1' : ''}`} style={{ contain: 'layout size' }}>
+      <div className="container mx-auto px-4 py-8 lg:py-16">
+        {/* Mobile: Image First, Desktop: Side by Side */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          
+          {/* Teacher Image with 3D Scene - FIRST on mobile */}
+          <div className={`relative h-[300px] sm:h-[350px] lg:h-[500px] w-full order-1 lg:order-none ${isRTL ? 'lg:order-1' : ''}`} style={{ contain: 'layout size' }}>
             {/* 3D Background - fixed container */}
             <div className="absolute inset-0 z-0" style={{ contain: 'strict' }}>
               {showMolecule ? (
@@ -104,10 +57,61 @@ export const HeroSection: React.FC = () => {
                   alt="Hossam Fekry - Chemistry Teacher"
                   width={400}
                   height={500}
-                  className="relative rounded-2xl shadow-2xl max-h-[450px] w-auto object-cover border-4 border-background/50"
+                  className="relative rounded-2xl shadow-2xl max-h-[280px] sm:max-h-[320px] lg:max-h-[450px] w-auto object-cover border-4 border-background/50"
                   fetchPriority="high"
                   loading="eager"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Content - SECOND on mobile */}
+          <div className={`space-y-6 lg:space-y-8 order-2 lg:order-none ${isRTL ? 'lg:order-2' : ''}`}>
+            <div className="space-y-4 animate-fade-in-up text-center lg:text-right">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                كيمياء الثانوية العامة
+              </div>
+              
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+                أهلاً بيك أيها الطالب في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة
+              </h1>
+              
+              <p className="text-base md:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0">
+                شرح واضح – تطبيق عملي – اختبارات ذكية
+                <br />
+                <span className="text-primary font-semibold">عربي + لغات</span>
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up animation-delay-200">
+              <Button variant="hero" size="xl" asChild>
+                <Link to="/courses">
+                  تصفح الكورسات
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+              </Button>
+              <Button variant="heroOutline" size="xl" asChild>
+                <Link to="/auth?mode=signup">
+                  <Play className="w-5 h-5" />
+                  إنشاء حساب
+                </Link>
+              </Button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 lg:gap-6 pt-6 lg:pt-8 border-t border-border animate-fade-in-up animation-delay-300">
+              <div className="text-center lg:text-right">
+                <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">فيديو تعليمي</p>
+              </div>
+              <div className="text-center lg:text-right">
+                <p className="text-2xl lg:text-3xl font-bold text-primary">+10K</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">طالب</p>
+              </div>
+              <div className="text-center lg:text-right">
+                <p className="text-2xl lg:text-3xl font-bold text-primary">95%</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">نسبة نجاح</p>
               </div>
             </div>
           </div>
