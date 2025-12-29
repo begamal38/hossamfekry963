@@ -126,46 +126,46 @@ export const CoursesSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="py-20 lg:py-28 bg-muted/30" style={{ contain: 'layout' }}>
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
+    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-muted/30" style={{ contain: 'layout' }}>
+      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 2xl:gap-6 mb-12 2xl:mb-16 3xl:mb-20">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
               {t('courses.title')}
             </h2>
-            <p className="text-muted-foreground max-w-xl">
+            <p className="text-muted-foreground max-w-xl 2xl:max-w-2xl 2xl:text-lg 3xl:text-xl">
               {isArabic 
                 ? 'كورسات الكيمياء للعام الدراسي 2026 - تانية وتالتة ثانوي عربي ولغات'
                 : 'Chemistry courses for 2026 academic year - 2nd and 3rd Secondary Arabic & Languages'
               }
             </p>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full mt-4" />
+            <div className="w-24 h-1 2xl:w-32 bg-gradient-to-r from-primary to-accent rounded-full mt-4 2xl:mt-6" />
           </div>
           
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="2xl:text-lg 2xl:px-6 2xl:py-3" asChild>
             <Link to="/courses">
               {t('courses.viewAll')}
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="w-4 h-4 2xl:w-5 2xl:h-5 ml-2" />
             </Link>
           </Button>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-12 2xl:py-16">
+            <Loader2 className="w-8 h-8 2xl:w-10 2xl:h-10 animate-spin text-primary" />
           </div>
         ) : courses.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
+          <div className="text-center py-12 2xl:py-16">
+            <BookOpen className="w-16 h-16 2xl:w-20 2xl:h-20 text-muted-foreground/40 mx-auto mb-4 2xl:mb-6" />
+            <h3 className="text-lg 2xl:text-xl 3xl:text-2xl font-semibold mb-2">
               {isArabic ? 'الكورسات قريباً' : 'Courses coming soon'}
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground 2xl:text-lg">
               {isArabic ? 'سيتم إضافة كورسات 2026 قريباً' : '2026 courses will be added soon'}
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 2xl:gap-8 3xl:gap-10">
             {courses.map((course, index) => (
               <CourseCard key={course.id} course={course} index={index} />
             ))}
