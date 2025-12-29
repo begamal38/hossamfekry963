@@ -1,62 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Users, Play, ArrowRight } from 'lucide-react';
+import { Clock, Users, Play, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+
+const GRADE_LABELS: Record<string, { ar: string; en: string }> = {
+  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
+  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
+  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
+  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
+};
 
 interface Course {
   id: string;
   title: string;
-  titleAr: string;
-  description: string;
-  descriptionAr: string;
-  duration: string;
-  students: number;
-  lessons: number;
-  isFree: boolean;
-  image: string;
+  title_ar: string;
+  description: string | null;
+  description_ar: string | null;
+  grade: string;
+  is_free: boolean;
+  lessons_count: number;
+  duration_hours: number;
 }
-
-const mockCourses: Course[] = [
-  {
-    id: '1',
-    title: 'Organic Chemistry Fundamentals',
-    titleAr: 'أساسيات الكيمياء العضوية',
-    description: 'Master the basics of organic chemistry with clear explanations and practical examples.',
-    descriptionAr: 'أتقن أساسيات الكيمياء العضوية مع شروحات واضحة وأمثلة عملية.',
-    duration: '12 hours',
-    students: 2500,
-    lessons: 24,
-    isFree: true,
-    image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=300&fit=crop',
-  },
-  {
-    id: '2',
-    title: 'Electrochemistry Complete Course',
-    titleAr: 'دورة الكيمياء الكهربائية الكاملة',
-    description: 'Comprehensive coverage of electrochemistry topics for Thanaweya Amma.',
-    descriptionAr: 'تغطية شاملة لموضوعات الكيمياء الكهربائية للثانوية العامة.',
-    duration: '8 hours',
-    students: 1800,
-    lessons: 16,
-    isFree: false,
-    image: 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=400&h=300&fit=crop',
-  },
-  {
-    id: '3',
-    title: 'Chemical Equilibrium Mastery',
-    titleAr: 'إتقان الاتزان الكيميائي',
-    description: 'Deep dive into chemical equilibrium concepts with problem-solving strategies.',
-    descriptionAr: 'دراسة معمقة لمفاهيم الاتزان الكيميائي مع استراتيجيات حل المسائل.',
-    duration: '6 hours',
-    students: 2100,
-    lessons: 12,
-    isFree: false,
-    image: 'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=400&h=300&fit=crop',
-  },
-];
 
 interface CourseCardProps {
   course: Course;
@@ -65,33 +33,33 @@ interface CourseCardProps {
 
 const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
   const { language, t } = useLanguage();
+  const isArabic = language === 'ar';
   
-  const title = language === 'ar' ? course.titleAr : course.title;
-  const description = language === 'ar' ? course.descriptionAr : course.description;
+  const title = isArabic ? course.title_ar : course.title;
+  const description = isArabic ? course.description_ar : course.description;
+  const gradeLabel = GRADE_LABELS[course.grade];
 
   return (
     <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Image - fixed height, no layout shift */}
-      <div className="relative h-48 overflow-hidden bg-muted">
-        <img 
-          src={course.image} 
-          alt={title}
-          width={400}
-          height={192}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+        <BookOpen className="w-16 h-16 text-primary/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
         
-        {course.isFree && (
+        {course.is_free && (
           <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
             {t('courses.free')}
           </Badge>
         )}
         
+        {gradeLabel && (
+          <Badge className="absolute top-4 right-4 bg-secondary text-secondary-foreground">
+            {isArabic ? gradeLabel.ar : gradeLabel.en}
+          </Badge>
+        )}
+        
         <Link 
-          to={course.isFree ? "/free-lessons" : "/courses"} 
+          to={`/course/${course.id}`} 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
         >
           <Play className="w-6 h-6 text-primary-foreground ml-1" />
@@ -101,28 +69,26 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
       {/* Content */}
       <div className="p-6">
         <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1">{title}</h3>
-        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{description}</p>
+        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+          {description || (isArabic ? 'كورس كيمياء شامل' : 'Comprehensive chemistry course')}
+        </p>
 
         {/* Meta */}
         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            {course.duration}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            {course.students.toLocaleString()}
+            {course.duration_hours || 0} {isArabic ? 'ساعة' : 'hours'}
           </div>
           <div className="flex items-center gap-1">
             <Play className="w-4 h-4" />
-            {course.lessons} lessons
+            {course.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}
           </div>
         </div>
 
         {/* CTA */}
-        <Button variant={course.isFree ? 'default' : 'outline'} className="w-full" asChild>
-          <Link to={course.isFree ? "/free-lessons" : "/auth?mode=signup"}>
-            {course.isFree ? t('courses.preview') : t('courses.enroll')}
+        <Button variant={course.is_free ? 'default' : 'outline'} className="w-full" asChild>
+          <Link to={`/course/${course.id}`}>
+            {course.is_free ? t('courses.preview') : t('courses.enroll')}
           </Link>
         </Button>
       </div>
@@ -131,7 +97,33 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
 };
 
 export const CoursesSection: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isArabic = language === 'ar';
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        // Fetch only primary courses (2026 academic structure)
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours')
+          .eq('is_primary', true)
+          .order('grade', { ascending: true })
+          .limit(4); // Show max 4 courses on home
+
+        if (error) throw error;
+        setCourses(data || []);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   return (
     <section className="py-20 lg:py-28 bg-muted/30" style={{ contain: 'layout' }}>
@@ -141,7 +133,13 @@ export const CoursesSection: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               {t('courses.title')}
             </h2>
-            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full" />
+            <p className="text-muted-foreground max-w-xl">
+              {isArabic 
+                ? 'كورسات الكيمياء للعام الدراسي 2026 - تانية وتالتة ثانوي عربي ولغات'
+                : 'Chemistry courses for 2026 academic year - 2nd and 3rd Secondary Arabic & Languages'
+              }
+            </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full mt-4" />
           </div>
           
           <Button variant="outline" asChild>
@@ -152,11 +150,27 @@ export const CoursesSection: React.FC = () => {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mockCourses.map((course, index) => (
-            <CourseCard key={course.id} course={course} index={index} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="text-center py-12">
+            <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">
+              {isArabic ? 'الكورسات قريباً' : 'Courses coming soon'}
+            </h3>
+            <p className="text-muted-foreground">
+              {isArabic ? 'سيتم إضافة كورسات 2026 قريباً' : '2026 courses will be added soon'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {courses.map((course, index) => (
+              <CourseCard key={course.id} course={course} index={index} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
