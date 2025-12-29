@@ -24,17 +24,17 @@ export const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-[700px] lg:min-h-[850px] pt-20 overflow-hidden bg-gradient-hero">
+    <section className="relative min-h-[700px] lg:min-h-[850px] 2xl:min-h-[950px] 3xl:min-h-[1050px] pt-20 2xl:pt-24 3xl:pt-28 overflow-hidden bg-gradient-hero">
       {/* Background Glow Effects - Static, no animations */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-50" style={{ transform: 'translateZ(0)' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/15 rounded-full blur-3xl opacity-40" style={{ transform: 'translateZ(0)' }} />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 2xl:w-[500px] 2xl:h-[500px] bg-primary/10 rounded-full blur-3xl opacity-50" style={{ transform: 'translateZ(0)' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 2xl:w-[400px] 2xl:h-[400px] bg-accent/15 rounded-full blur-3xl opacity-40" style={{ transform: 'translateZ(0)' }} />
       
-      <div className="container mx-auto px-4 py-8 lg:py-16">
+      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12 py-8 lg:py-16 2xl:py-20 3xl:py-24">
         {/* Mobile: Image First, Desktop: Side by Side */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 2xl:gap-16 3xl:gap-20 items-center">
           
           {/* Teacher Image with 3D Scene - FIRST on mobile */}
-          <div className={`relative h-[300px] sm:h-[350px] lg:h-[500px] w-full order-1 lg:order-none ${isRTL ? 'lg:order-1' : ''}`} style={{ contain: 'layout size' }}>
+          <div className={`relative h-[300px] sm:h-[350px] lg:h-[500px] 2xl:h-[550px] 3xl:h-[650px] w-full order-1 lg:order-none ${isRTL ? 'lg:order-1' : ''}`} style={{ contain: 'layout size' }}>
             {/* 3D Background - fixed container */}
             <div className="absolute inset-0 z-0" style={{ contain: 'strict' }}>
               {showMolecule ? (
@@ -57,7 +57,7 @@ export const HeroSection: React.FC = () => {
                   alt="Hossam Fekry - Chemistry Teacher"
                   width={400}
                   height={500}
-                  className="relative rounded-2xl shadow-2xl max-h-[280px] sm:max-h-[320px] lg:max-h-[450px] w-auto object-cover border-4 border-background/50"
+                  className="relative rounded-2xl shadow-2xl max-h-[280px] sm:max-h-[320px] lg:max-h-[450px] 2xl:max-h-[520px] 3xl:max-h-[600px] w-auto object-cover border-4 border-background/50"
                   fetchPriority="high"
                   loading="eager"
                 />
@@ -66,52 +66,52 @@ export const HeroSection: React.FC = () => {
           </div>
 
           {/* Content - SECOND on mobile */}
-          <div className={`space-y-6 lg:space-y-8 order-2 lg:order-none ${isRTL ? 'lg:order-2' : ''}`}>
-            <div className="space-y-4 animate-fade-in-up text-center lg:text-right">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <div className={`space-y-6 lg:space-y-8 2xl:space-y-10 3xl:space-y-12 order-2 lg:order-none ${isRTL ? 'lg:order-2' : ''}`}>
+            <div className="space-y-4 2xl:space-y-6 animate-fade-in-up text-center lg:text-right">
+              <div className="inline-flex items-center gap-2 px-4 py-2 2xl:px-5 2xl:py-2.5 rounded-full bg-primary/10 text-primary text-sm 2xl:text-base font-medium">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 كيمياء الثانوية العامة
               </div>
               
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-5xl-display 3xl:text-6xl-display font-bold text-foreground leading-tight">
                 أهلاً بيك أيها الطالب في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة
               </h1>
               
-              <p className="text-base md:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0">
+              <p className="text-base md:text-lg 2xl:text-xl 3xl:text-2xl text-muted-foreground max-w-lg 2xl:max-w-xl 3xl:max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 شرح واضح – تطبيق عملي – اختبارات ذكية
                 <br />
                 <span className="text-primary font-semibold">عربي + لغات</span>
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up animation-delay-200">
-              <Button variant="hero" size="xl" asChild>
+            <div className="flex flex-col sm:flex-row gap-4 2xl:gap-6 justify-center lg:justify-start animate-fade-in-up animation-delay-200">
+              <Button variant="hero" size="xl" className="2xl:text-lg 2xl:px-8 2xl:py-4 3xl:text-xl 3xl:px-10 3xl:py-5" asChild>
                 <Link to="/courses">
                   تصفح الكورسات
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-5 h-5 2xl:w-6 2xl:h-6" />
                 </Link>
               </Button>
-              <Button variant="heroOutline" size="xl" asChild>
+              <Button variant="heroOutline" size="xl" className="2xl:text-lg 2xl:px-8 2xl:py-4 3xl:text-xl 3xl:px-10 3xl:py-5" asChild>
                 <Link to="/auth?mode=signup">
-                  <Play className="w-5 h-5" />
+                  <Play className="w-5 h-5 2xl:w-6 2xl:h-6" />
                   إنشاء حساب
                 </Link>
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-6 pt-6 lg:pt-8 border-t border-border animate-fade-in-up animation-delay-300">
+            <div className="grid grid-cols-3 gap-4 lg:gap-6 2xl:gap-8 3xl:gap-10 pt-6 lg:pt-8 2xl:pt-10 border-t border-border animate-fade-in-up animation-delay-300">
               <div className="text-center lg:text-right">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">فيديو تعليمي</p>
+                <p className="text-2xl lg:text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-primary">+500</p>
+                <p className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground">فيديو تعليمي</p>
               </div>
               <div className="text-center lg:text-right">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">+10K</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">طالب</p>
+                <p className="text-2xl lg:text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-primary">+10K</p>
+                <p className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground">طالب</p>
               </div>
               <div className="text-center lg:text-right">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">95%</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">نسبة نجاح</p>
+                <p className="text-2xl lg:text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-primary">95%</p>
+                <p className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg text-muted-foreground">نسبة نجاح</p>
               </div>
             </div>
           </div>

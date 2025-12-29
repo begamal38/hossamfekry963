@@ -11,19 +11,19 @@ export const Footer: React.FC = () => {
       className="border-t border-border mt-16 bg-muted/50 dark:bg-background/80" 
       dir="rtl"
     >
-      <div className="container mx-auto px-6 py-16 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 text-center md:text-right">
+      <div className="container mx-auto px-6 py-16 md:py-20 2xl:py-24 3xl:py-28">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 2xl:gap-16 3xl:gap-20 text-center md:text-right">
           
           {/* Brand Section */}
-          <div className="space-y-5 flex flex-col items-center md:items-start">
+          <div className="space-y-5 2xl:space-y-6 flex flex-col items-center md:items-start">
             <Link to="/" className="inline-block p-2">
               <img 
                 src={logo} 
                 alt="Hossam Fekry" 
-                className="h-20 md:h-24 w-auto object-contain hover:opacity-80 transition-opacity"
+                className="h-20 md:h-24 2xl:h-28 3xl:h-32 w-auto object-contain hover:opacity-80 transition-opacity"
               />
             </Link>
-            <p className="text-sm leading-relaxed font-medium max-w-xs text-muted-foreground">
+            <p className="text-sm 2xl:text-base 3xl:text-lg leading-relaxed font-medium max-w-xs 2xl:max-w-sm text-muted-foreground">
               منصتك الكاملة لفهم الكيمياء بشكل حقيقي
               <br />
               مصممة لطلاب الثانوية العامة.

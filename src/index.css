@@ -224,6 +224,23 @@
   }
 }
 
+/* Large screen enhancements (Classroom / Projector / TV) */
+@media (min-width: 1536px) {
+  html {
+    font-size: 110%;
+  }
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 115%;
+  }
+  
+  .container {
+    max-width: 1600px;
+  }
+}
+
 /* Mobile performance optimizations */
 @media (max-width: 768px) {
   .animate-pulse-glow,

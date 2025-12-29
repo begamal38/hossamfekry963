@@ -7,14 +7,30 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "1rem",
+      padding: {
+        DEFAULT: "1rem",
+        sm: "1.5rem",
+        lg: "2rem",
+        xl: "2.5rem",
+        "2xl": "3rem",
+        "3xl": "4rem",
+      },
       screens: {
         sm: "640px",
         md: "768px",
         lg: "1024px",
         xl: "1280px",
-        "2xl": "1400px",
+        "2xl": "1536px",
+        "3xl": "1920px",
       },
+    },
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+      "3xl": "1920px",
     },
     extend: {
       fontFamily: {
@@ -110,6 +126,19 @@ export default {
       boxShadow: {
         'glow': '0 0 40px hsl(213 100% 71% / 0.4)',
         'glow-sm': '0 0 20px hsl(213 100% 71% / 0.3)',
+      },
+      fontSize: {
+        // Large screen typography scaling
+        '4xl-display': ['2.75rem', { lineHeight: '1.2' }],
+        '5xl-display': ['3.5rem', { lineHeight: '1.15' }],
+        '6xl-display': ['4.5rem', { lineHeight: '1.1' }],
+      },
+      spacing: {
+        // Large screen spacing
+        '18': '4.5rem',
+        '22': '5.5rem',
+        '26': '6.5rem',
+        '30': '7.5rem',
       },
     },
   },

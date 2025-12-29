@@ -46,25 +46,25 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
+        <div className="flex items-center justify-between h-16 2xl:h-20 3xl:h-24">
           {/* Logo */}
           <Link to="/" className="flex items-center px-2 py-1">
             <img 
               src={logo} 
               alt="Hossam Fekry" 
-              className="h-14 md:h-16 w-auto object-contain"
+              className="h-14 md:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 2xl:gap-2 3xl:gap-3">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "px-4 py-2 2xl:px-5 2xl:py-2.5 3xl:px-6 3xl:py-3 rounded-lg text-sm 2xl:text-base 3xl:text-lg font-medium transition-colors",
                   isActive(link.href)
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
