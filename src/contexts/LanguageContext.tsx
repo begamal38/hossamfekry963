@@ -32,12 +32,12 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.controlPanel': 'Control Panel',
 
     // ══════════════════════════════════════════════════════════════════════════
-    // DASHBOARD & PROGRESS
+    // DASHBOARD & PROGRESS (renamed to Platform)
     // ══════════════════════════════════════════════════════════════════════════
-    'dashboard': 'Dashboard',
-    'dashboard.title': 'Dashboard',
-    'dashboard.student': 'Student Dashboard',
-    'dashboard.assistant': 'Assistant Dashboard',
+    'dashboard': 'Platform',
+    'dashboard.title': 'Platform',
+    'dashboard.student': 'Platform',
+    'dashboard.assistant': 'Assistant Platform',
     'dashboard.welcome': 'Welcome',
     'dashboard.yourProgress': 'Your Progress',
     'dashboard.overallProgress': 'Overall Progress',
@@ -346,22 +346,22 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.home': 'الرئيسية',
     'nav.freeLessons': 'حصص مجانية',
     'nav.courses': 'الكورسات',
-    'nav.dashboard': 'لوحة التحكم',
+    'nav.dashboard': 'المنصة',
     'nav.signUp': 'إنشاء حساب',
     'nav.login': 'تسجيل الدخول',
     'nav.logout': 'تسجيل الخروج',
     'nav.campaigns': 'حملاتنا الإعلانية',
     'nav.about': 'عن حسام فكري',
     'nav.settings': 'الإعدادات',
-    'nav.controlPanel': 'لوحة التحكم',
+    'nav.controlPanel': 'المنصة',
 
     // ══════════════════════════════════════════════════════════════════════════
-    // DASHBOARD & PROGRESS
+    // DASHBOARD & PROGRESS (renamed to المنصة)
     // ══════════════════════════════════════════════════════════════════════════
-    'dashboard': 'لوحة التحكم',
-    'dashboard.title': 'لوحة التحكم',
-    'dashboard.student': 'لوحة تحكم الطالب',
-    'dashboard.assistant': 'لوحة تحكم المدرس المساعد',
+    'dashboard': 'المنصة',
+    'dashboard.title': 'المنصة',
+    'dashboard.student': 'المنصة',
+    'dashboard.assistant': 'منصة المدرس المساعد',
     'dashboard.welcome': 'أهلاً بيك',
     'dashboard.yourProgress': 'تقدمك',
     'dashboard.overallProgress': 'التقدم الكلي',

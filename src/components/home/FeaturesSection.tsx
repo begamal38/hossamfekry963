@@ -52,7 +52,7 @@ export const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-background" style={{ contain: 'layout' }}>
+    <section className="py-12 lg:py-20 bg-background" style={{ contain: 'layout' }}>
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">

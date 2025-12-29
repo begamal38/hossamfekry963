@@ -27,10 +27,10 @@ export const Navbar: React.FC = () => {
     { href: '/campaigns', label: t('nav.campaigns') },
     { href: '/about', label: t('nav.about') },
     ...(user && !canAccessDashboard() ? [
-      { href: '/dashboard', label: t('nav.dashboard') },
+      { href: '/dashboard', label: language === 'ar' ? 'المنصة' : 'Platform' },
       { href: '/profile', label: language === 'ar' ? 'ملفي' : 'My Profile' },
     ] : []),
-    ...(canAccessDashboard() ? [{ href: '/assistant', label: t('nav.controlPanel') }] : []),
+    ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'المنصة' : 'Platform' }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -49,11 +49,11 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center px-2 py-1">
             <img 
               src={logo} 
               alt="Hossam Fekry" 
-              className="h-12 w-auto object-contain"
+              className="h-14 md:h-16 w-auto object-contain"
             />
           </Link>
 

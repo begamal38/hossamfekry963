@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RequireResolvedAccess } from "@/components/routing/RequireResolvedAccess";
+import { ScrollToTop } from "@/components/routing/ScrollToTop";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -53,6 +54,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
               <BrowserRouter>
+                <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />

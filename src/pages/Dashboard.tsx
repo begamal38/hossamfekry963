@@ -309,10 +309,10 @@ const Dashboard: React.FC = () => {
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                   {t('dashboard.welcome')} {firstName}! 👋
                 </h1>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <p className="text-muted-foreground">
-                    {t('dashboard.student')}
-                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="text-muted-foreground">
+                      {isArabic ? 'المنصة' : 'Platform'}
+                    </p>
                   {groupLabel && (
                     <Badge variant="secondary" className="text-sm">
                       {groupLabel}
