@@ -288,6 +288,7 @@ export type Database = {
           grade: string
           id: string
           is_free: boolean | null
+          is_primary: boolean
           lessons_count: number | null
           price: number | null
           thumbnail_url: string | null
@@ -303,6 +304,7 @@ export type Database = {
           grade: string
           id?: string
           is_free?: boolean | null
+          is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
           thumbnail_url?: string | null
@@ -318,6 +320,7 @@ export type Database = {
           grade?: string
           id?: string
           is_free?: boolean | null
+          is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
           thumbnail_url?: string | null

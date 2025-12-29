@@ -69,13 +69,15 @@ const FreeLessons: React.FC = () => {
           duration_minutes,
           video_url,
           course_id,
-          courses (
+          courses!inner (
             title_ar,
             title,
-            grade
+            grade,
+            is_primary
           )
         `)
         .eq('is_free_lesson', true)
+        .eq('courses.is_primary', true) // Only from primary courses
         .order('created_at', { ascending: false });
 
       if (error) throw error;

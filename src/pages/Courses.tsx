@@ -33,6 +33,7 @@ interface Course {
   thumbnail_url: string | null;
   price: number;
   is_free: boolean;
+  is_primary: boolean;
   lessons_count: number;
   duration_hours: number;
 }

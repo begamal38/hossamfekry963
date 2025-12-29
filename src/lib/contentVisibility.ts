@@ -91,18 +91,25 @@ export function filterLessonsForStudents<T extends { chapter_id: string | null }
 }
 
 /**
- * Filter courses for student visibility based on active scope
- * Now returns ALL courses - preview filtering happens at display level
+ * Filter courses for student visibility based on is_primary flag
+ * Only primary courses (2026 academic courses) are shown publicly
  */
-export function filterCoursesForStudents<T extends { grade: string }>(
+export function filterCoursesForStudents<T extends { grade: string; is_primary?: boolean }>(
   courses: T[],
   options: {
-    bypassScope?: boolean; // For admins/assistants
+    bypassScope?: boolean; // For admins/assistants - show all courses
     userGrade?: string | null; // If set, show only matching grade
   } = {}
 ): T[] {
-  // Return all courses - the UI will display preview badges for non-active courses
-  return courses;
+  const { bypassScope = false } = options;
+  
+  // Admins/assistants can see all courses
+  if (bypassScope) {
+    return courses;
+  }
+  
+  // For public/students, only show primary courses (2026 academic structure)
+  return courses.filter(course => course.is_primary === true);
 }
 
 /**
