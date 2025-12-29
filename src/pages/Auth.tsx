@@ -23,8 +23,17 @@ import {
 // Validation schemas
 const emailSchema = z.string().email('Invalid email address').max(255);
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(72);
-const nameSchema = z.string().min(2, 'Name must be at least 2 characters').max(100);
-const phoneSchema = z.string().regex(/^(\+?20)?0?1[0125][0-9]{8}$/, 'رقم الموبايل غير صحيح');
+// Quadruple name validation: minimum 4 words
+const nameSchema = z.string()
+  .min(8, 'الاسم قصير جداً')
+  .max(100, 'الاسم طويل جداً')
+  .refine(
+    (name) => name.trim().split(/\s+/).filter(word => word.length > 0).length >= 4,
+    { message: 'يرجى إدخال الاسم الرباعي كاملاً (4 كلمات على الأقل)' }
+  );
+// Egyptian phone: exactly 11 digits starting with 01 followed by 0, 1, 2, or 5
+const phoneSchema = z.string()
+  .regex(/^01[0125][0-9]{8}$/, 'رقم الموبايل غير صحيح - يجب أن يكون 11 رقم');
 
 // Academic year options
 const ACADEMIC_YEAR_OPTIONS = [
@@ -107,13 +116,16 @@ const Auth = () => {
     }
     
     if (!isLogin) {
-      const nameResult = nameSchema.safeParse(fullName);
+      const nameResult = nameSchema.safeParse(fullName.trim());
       if (!nameResult.success) {
         newErrors.name = nameResult.error.errors[0].message;
       }
 
-      if (phone) {
-        const phoneResult = phoneSchema.safeParse(phone);
+      // Phone is REQUIRED for signup
+      if (!phone || phone.trim() === '') {
+        newErrors.phone = 'رقم الموبايل مطلوب';
+      } else {
+        const phoneResult = phoneSchema.safeParse(phone.trim());
         if (!phoneResult.success) {
           newErrors.phone = phoneResult.error.errors[0].message;
         }
@@ -385,12 +397,15 @@ const Auth = () => {
             {/* Full Name - Only for Signup */}
             {!isLogin && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">الاسم بالكامل</label>
+                <label className="text-sm font-medium text-foreground">الاسم الرباعي</label>
+                <p className="text-xs text-muted-foreground mb-1">
+                  ⚠️ يرجى كتابة الاسم بالكامل كما هو في البطاقة (لا يمكن تغييره لاحقاً)
+                </p>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="أدخل اسمك بالكامل"
+                    placeholder="الاسم الأول + الأب + الجد + العائلة"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className={cn("pl-10", errors.name && "border-destructive")}

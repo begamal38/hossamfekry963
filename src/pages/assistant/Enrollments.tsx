@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { ManualEnrollment } from '@/components/assistant/ManualEnrollment';
 
 interface Enrollment {
   id: string;
@@ -239,10 +240,13 @@ const Enrollments = () => {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchEnrollments} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'} ${loading ? 'animate-spin' : ''}`} />
-            {isRTL ? 'تحديث' : 'Refresh'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <ManualEnrollment isArabic={isRTL} onEnrollmentComplete={fetchEnrollments} />
+            <Button variant="outline" size="sm" onClick={fetchEnrollments} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'} ${loading ? 'animate-spin' : ''}`} />
+              {isRTL ? 'تحديث' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

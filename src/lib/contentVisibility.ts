@@ -9,11 +9,10 @@
 
 import { extractYouTubeVideoId } from './youtubeUtils';
 
-// Current active scope for student-facing content
+// Current active scope for student-facing content - 2026 Academic Year
+// All 4 grades are now active
 export const ACTIVE_SCOPE = {
-  grades: ['second_languages'], // Current phase: 2nd Secondary - Languages
-  // Expand this array when activating more grades:
-  // grades: ['second_languages', 'second_arabic', 'third_languages', 'third_arabic']
+  grades: ['second_arabic', 'second_languages', 'third_arabic', 'third_languages'],
 };
 
 /**

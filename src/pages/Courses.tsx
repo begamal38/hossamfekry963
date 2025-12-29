@@ -337,6 +337,7 @@ const Courses: React.FC = () => {
                     t={t}
                     isAssistantOrAdmin={canBypassAcademicRestrictions}
                     isPreview={isCoursePreview(course.grade)}
+                    userGrade={userGrade}
                   />
                 ))}
               </div>
@@ -376,6 +377,7 @@ const Courses: React.FC = () => {
                   t={t}
                   isAssistantOrAdmin={canBypassAcademicRestrictions}
                   isPreview={isCoursePreview(course.grade)}
+                  userGrade={userGrade}
                 />
               ))}
             </div>
@@ -398,6 +400,7 @@ interface CourseCardProps {
   t: (key: string) => string;
   isAssistantOrAdmin?: boolean;
   isPreview?: boolean;
+  userGrade?: string | null;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ 
@@ -409,9 +412,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
   index,
   t,
   isAssistantOrAdmin = false,
-  isPreview = false
+  isPreview = false,
+  userGrade = null
 }) => {
   const gradeInfo = GRADE_OPTIONS[course.grade];
+  // Check if user's grade matches the course grade
+  const isGradeMatch = !userGrade || userGrade === course.grade;
+  const canEnroll = isAssistantOrAdmin || isGradeMatch;
   
   return (
     <div 
@@ -526,6 +533,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
               {isArabic ? 'متابعة التعلم' : 'Continue Learning'}
             </Link>
           </Button>
+        ) : !canEnroll ? (
+          // Grade mismatch: Show disabled button with message
+          <div className="space-y-2">
+            <Button 
+              variant="outline"
+              className="w-full opacity-50 cursor-not-allowed"
+              disabled
+            >
+              {isArabic ? 'غير متاح لمسارك' : 'Not available for your track'}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              {isArabic ? 'هذا الكورس مخصص لمسار دراسي آخر' : 'This course is for a different academic track'}
+            </p>
+          </div>
         ) : (
           // Not enrolled student: Enroll button
           <Button 
