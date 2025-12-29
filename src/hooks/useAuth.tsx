@@ -1,6 +1,25 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// Import cache clear functions (lazy to avoid circular deps)
+const clearAllCaches = () => {
+  try {
+    // Clear role cache
+    const { clearRoleCache } = require('./useUserRole');
+    clearRoleCache?.();
+  } catch { /* ignore */ }
+  try {
+    // Clear profile cache
+    const { clearProfileCache } = require('./useProfile');
+    clearProfileCache?.();
+  } catch { /* ignore */ }
+  try {
+    // Clear enrollments cache
+    const { clearEnrollmentsCache } = require('./useEnrollments');
+    clearEnrollmentsCache?.();
+  } catch { /* ignore */ }
+};
 
 interface AuthContextType {
   user: User | null;
@@ -93,8 +112,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error as Error | null };
   };
 
-  const signOut = async () => {
-    // Clear local state first so UI updates immediately
+  const signOut = useCallback(async () => {
+    // Clear all caches first
+    clearAllCaches();
+
+    // Clear local state so UI updates immediately
     setUser(null);
     setSession(null);
 
@@ -115,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // ignore
     }
-  };
+  }, []);
 
   const refreshSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();

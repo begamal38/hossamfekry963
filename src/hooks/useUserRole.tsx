@@ -8,6 +8,11 @@ type AppRole = 'admin' | 'assistant_teacher' | 'student';
 let roleCache: { userId: string; roles: AppRole[]; fetchedAt: number } | null = null;
 const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
 
+// Export cache clear function for sign out
+export const clearRoleCache = () => {
+  roleCache = null;
+};
+
 export const useUserRole = () => {
   const { user, session, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);

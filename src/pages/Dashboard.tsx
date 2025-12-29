@@ -106,6 +106,7 @@ const Dashboard: React.FC = () => {
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [allExams, setAllExams] = useState<ExamActivity[]>([]);
+  const [recentLessons, setRecentLessons] = useState<LessonActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top on mount
@@ -211,6 +212,40 @@ const Dashboard: React.FC = () => {
             };
           });
           setAllExams(examActivities);
+
+          // Fetch recent lesson attendance for activity list (real data)
+          const { data: attendanceData } = await supabase
+            .from('lesson_attendance')
+            .select(`
+              id,
+              lesson_id,
+              attended_at,
+              lesson:lessons (
+                id,
+                title,
+                title_ar,
+                duration_minutes,
+                course:courses (
+                  title,
+                  title_ar
+                )
+              )
+            `)
+            .eq('user_id', user.id)
+            .order('attended_at', { ascending: false })
+            .limit(5);
+
+          if (attendanceData) {
+            const lessonActs: LessonActivity[] = attendanceData.map((att: any, idx: number) => ({
+              id: att.lesson_id,
+              title: isArabic ? att.lesson?.title_ar : att.lesson?.title,
+              courseName: isArabic ? att.lesson?.course?.title_ar : att.lesson?.course?.title,
+              isCompleted: true,
+              isLastAccessed: idx === 0,
+              timeSpent: att.lesson?.duration_minutes ? `${att.lesson.duration_minutes} min` : undefined,
+            }));
+            setRecentLessons(lessonActs);
+          }
         }
 
       } catch (err) {
@@ -247,17 +282,19 @@ const Dashboard: React.FC = () => {
     ? Math.round((totalLessonsCompleted / totalLessons) * 100) 
     : 0;
 
-  // Mock lesson activity data (would come from real data in production)
-  const lessonActivities: LessonActivity[] = enrolledCourses.slice(0, 5).map((enrollment, index) => ({
-    id: `lesson-${index}`,
-    title: isArabic 
-      ? `الحصة ${enrollment.completed_lessons + 1}` 
-      : `Session ${enrollment.completed_lessons + 1}`,
-    courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
-    isCompleted: false,
-    isLastAccessed: index === 0,
-    timeSpent: index === 0 ? '45 min' : undefined,
-  }));
+  // Use real lesson activity data from attendance records
+  // If no recent lessons, show next lessons to complete from enrolled courses
+  const lessonActivities: LessonActivity[] = recentLessons.length > 0 
+    ? recentLessons 
+    : enrolledCourses.slice(0, 3).map((enrollment, index) => ({
+        id: `next-${index}`,
+        title: isArabic 
+          ? `الحصة ${enrollment.completed_lessons + 1}` 
+          : `Session ${enrollment.completed_lessons + 1}`,
+        courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
+        isCompleted: false,
+        isLastAccessed: false,
+      }));
 
   return (
     <div className="min-h-screen bg-muted/30" dir={isArabic ? 'rtl' : 'ltr'}>
