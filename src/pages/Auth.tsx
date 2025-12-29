@@ -280,6 +280,32 @@ const Auth = () => {
     }
   };
 
+  // Show loading screen when user is authenticated but role is still loading
+  // This prevents the "nothing happens" issue on mobile
+  const isPostLoginLoading = user && (roleLoading || !hasAttemptedFetch);
+
+  if (isPostLoginLoading) {
+    return (
+      <div className={cn("min-h-screen bg-gradient-hero flex items-center justify-center p-4", isRTL && "rtl")}>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-pulse-glow animation-delay-200" />
+        
+        <div className="relative text-center">
+          <img 
+            src={logo} 
+            alt="Hossam Fekry" 
+            className="h-16 w-auto mx-auto mb-6"
+          />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">جاري تحميل حسابك...</h2>
+          <p className="text-muted-foreground">يرجى الانتظار لحظة</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("min-h-screen bg-gradient-hero flex items-center justify-center p-4", isRTL && "rtl")}>
       {/* Background Effects */}
