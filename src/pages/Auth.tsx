@@ -81,26 +81,42 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect after login - wait for roles to FULLY load for proper routing
+  // ROLE-AUTHORITATIVE POST-LOGIN ROUTING
+  // This effect handles redirect ONLY after role is definitively known
   useEffect(() => {
-    // No user = no redirect
+    // No user = no redirect, stay on auth page
     if (!user) return;
 
-    // CRITICAL: Wait until roles are FULLY resolved (not loading AND attempted fetch)
-    // This prevents redirecting before we know the actual role
-    if (roleLoading || !hasAttemptedFetch) return;
+    // CRITICAL: Do NOT redirect until roles are FULLY resolved
+    // Both conditions must be met: not loading AND fetch was attempted
+    if (roleLoading) return;
+    if (!hasAttemptedFetch) return;
 
-    // Handle explicit redirect param first
+    // At this point roles are definitively resolved
+    // Check role explicitly from the roles array for maximum reliability
+    const isStaff = isAssistantTeacher() || isAdmin();
+    
+    // ROLE-BASED ROUTING (strict priority order):
+    // 1. Staff (Assistant/Admin) → /assistant (NEVER /dashboard)
+    // 2. Student → /dashboard
+    // 3. No redirect param processing for staff to prevent wrong routing
+    
+    if (isStaff) {
+      // Staff ALWAYS goes to assistant dashboard, ignore any redirect params
+      navigate('/assistant', { replace: true });
+      return;
+    }
+    
+    // For students, check for explicit redirect param
     const redirect = searchParams.get('redirect');
-    if (redirect) {
+    if (redirect && !redirect.startsWith('/assistant')) {
       navigate(redirect, { replace: true });
       return;
     }
-
-    // Route based on RESOLVED role - staff go to assistant dashboard, students to student dashboard
-    const isStaff = isAssistantTeacher() || isAdmin();
-    navigate(isStaff ? '/assistant' : '/dashboard', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams]);
+    
+    // Default student route
+    navigate('/dashboard', { replace: true });
+  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams, roles]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
