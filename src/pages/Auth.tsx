@@ -117,8 +117,8 @@ const Auth = () => {
       return;
     }
     
-    // Default student route
-    navigate('/dashboard', { replace: true });
+    // Default student route - use /platform
+    navigate('/platform', { replace: true });
   }, [user, roleLoading, hasAttemptedFetch, roles, navigate, searchParams]);
 
   const validateForm = () => {

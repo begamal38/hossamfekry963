@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface FreeLesson {
   id: string;
@@ -29,15 +30,19 @@ const FreeLessons: React.FC = () => {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const isArabic = language === 'ar';
   const [lessons, setLessons] = useState<FreeLesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [userGrade, setUserGrade] = useState<string | null>(null);
 
-  // Fetch user profile to get grade if logged in
+  // Check if user is staff (can see all free lessons)
+  const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
+
+  // Fetch user profile to get grade if logged in (students only)
   useEffect(() => {
     const fetchUserGrade = async () => {
-      if (!user) {
+      if (!user || isStaff) {
         setUserGrade(null);
         return;
       }
@@ -52,11 +57,13 @@ const FreeLessons: React.FC = () => {
     };
     
     fetchUserGrade();
-  }, [user]);
+  }, [user, isStaff]);
 
   useEffect(() => {
+    // Wait for roles to load before fetching
+    if (rolesLoading) return;
     fetchFreeLessons();
-  }, [userGrade, user]);
+  }, [userGrade, user, rolesLoading, isStaff]);
 
   const fetchFreeLessons = async () => {
     try {
@@ -85,13 +92,16 @@ const FreeLessons: React.FC = () => {
       // Filter to only show lessons with valid videos
       let validLessons = (data || []).filter(lesson => hasValidVideo(lesson.video_url));
       
-      // If user is logged in, filter by their grade
-      // If not logged in, show ALL free lessons
-      if (user && userGrade) {
+      // ROLE-BASED FILTERING:
+      // - Staff (admin/assistant): See ALL free lessons (no grade filter)
+      // - Logged-in students: Filter by their grade
+      // - Guests (not logged in): See ALL free lessons
+      if (user && !isStaff && userGrade) {
         validLessons = validLessons.filter(lesson => 
           lesson.courses?.grade === userGrade
         );
       }
+      // If staff or guest: show all (no filtering)
       
       setLessons(validLessons);
     } catch (error) {
