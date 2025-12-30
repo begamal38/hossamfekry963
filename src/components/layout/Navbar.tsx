@@ -12,7 +12,11 @@ import { ScrollLogo } from '@/components/layout/ScrollLogo';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  enableScrollLogo?: boolean;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ enableScrollLogo = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
@@ -49,9 +53,19 @@ export const Navbar: React.FC = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
         <div className="flex items-center justify-between h-16 2xl:h-20 3xl:h-24">
-          {/* Desktop: Scroll-driven logo */}
+          {/* Desktop: Scroll-driven logo only on homepage, static logo elsewhere */}
           <div className="hidden lg:block">
-            <ScrollLogo />
+            {enableScrollLogo ? (
+              <ScrollLogo />
+            ) : (
+              <Link to="/" className="flex items-center px-2 py-1">
+                <img 
+                  src={logo} 
+                  alt="Hossam Fekry" 
+                  className="h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
+                />
+              </Link>
+            )}
           </div>
           
           {/* Mobile: Static logo */}
