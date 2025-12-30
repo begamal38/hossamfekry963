@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { useLessonWatchTime, formatRemainingTime } from '@/hooks/useLessonWatchTime';
@@ -49,7 +50,11 @@ export default function LessonView() {
   const navigate = useNavigate();
   const { language, isRTL } = useLanguage();
   const { user } = useAuth();
+  const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const isArabic = language === 'ar';
+  
+  // Staff (assistants/admins) bypass all access restrictions
+  const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -182,7 +187,8 @@ export default function LessonView() {
   }
 
   // Check if user can access this lesson
-  const canAccess = course?.is_free || isEnrolled;
+  // Staff ALWAYS has access, students need enrollment or free course
+  const canAccess = isStaff || course?.is_free || isEnrolled;
 
   if (!canAccess && user) {
     return (
@@ -428,10 +434,10 @@ export default function LessonView() {
                 </Button>
               ) : (
                 <Button 
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/platform')}
                   className="gap-2"
                 >
-                  {isArabic ? 'للمنصة' : 'To Dashboard'}
+                  {isArabic ? 'للمنصة' : 'To Platform'}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               )}

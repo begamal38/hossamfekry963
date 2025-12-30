@@ -58,6 +58,18 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/assistant-transition" element={<AssistantTransition />} />
+                  {/* Student platform - accessible via /platform or legacy /dashboard */}
+                  <Route
+                    path="/platform"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <Dashboard />
+                      </RequireResolvedAccess>
+                    }
+                  />
                   <Route
                     path="/dashboard"
                     element={
@@ -75,14 +87,6 @@ const App = () => (
                   <Route path="/course/:courseId/lessons" element={<CourseView />} />
                   
                   {/* Lesson view requires auth */}
-                  <Route
-                    path="/lesson/:lessonId"
-                    element={
-                      <RequireResolvedAccess requireAuth>
-                        <LessonView />
-                      </RequireResolvedAccess>
-                    }
-                  />
                   <Route
                     path="/lesson/:lessonId"
                     element={
