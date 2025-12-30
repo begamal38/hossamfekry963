@@ -15,11 +15,16 @@ export const ACTIVE_SCOPE = {
   grades: ['second_arabic', 'second_languages', 'third_arabic', 'third_languages'],
 };
 
+const normalizeGradeKey = (value: string | null | undefined) =>
+  (value ?? '').trim().toLowerCase();
+
+const ACTIVE_SCOPE_GRADES_SET = new Set(ACTIVE_SCOPE.grades.map(normalizeGradeKey));
+
 /**
  * Check if a course is within the active scope for students
  */
 export function isCourseInActiveScope(courseGrade: string): boolean {
-  return ACTIVE_SCOPE.grades.includes(courseGrade);
+  return ACTIVE_SCOPE_GRADES_SET.has(normalizeGradeKey(courseGrade));
 }
 
 /**
@@ -27,7 +32,7 @@ export function isCourseInActiveScope(courseGrade: string): boolean {
  * Preview courses are those outside the active scope
  */
 export function isCoursePreview(courseGrade: string): boolean {
-  return !ACTIVE_SCOPE.grades.includes(courseGrade);
+  return !isCourseInActiveScope(courseGrade);
 }
 
 /**
@@ -91,10 +96,17 @@ export function filterLessonsForStudents<T extends { chapter_id: string | null }
 }
 
 /**
- * Filter courses for student visibility based on is_primary flag
- * Primary courses (2026 academic courses) AND free courses are shown publicly
+ * Filter courses for student visibility.
+ *
+ * Public/Students should be able to browse any course that belongs to the
+ * current academic scope (2026), even if `is_primary` wasn't set correctly.
+ *
+ * - Staff (admins/assistants): can see all courses (bypassScope)
+ * - Everyone else: see courses in ACTIVE_SCOPE OR explicitly free OR explicitly primary
  */
-export function filterCoursesForStudents<T extends { grade: string; is_primary?: boolean; is_free?: boolean }>(
+export function filterCoursesForStudents<
+  T extends { grade: string; is_primary?: boolean; is_free?: boolean }
+>(
   courses: T[],
   options: {
     bypassScope?: boolean; // For admins/assistants - show all courses
@@ -102,16 +114,19 @@ export function filterCoursesForStudents<T extends { grade: string; is_primary?:
   } = {}
 ): T[] {
   const { bypassScope = false } = options;
-  
+
   // Admins/assistants can see all courses
   if (bypassScope) {
     return courses;
   }
-  
-  // For public/students, show:
-  // 1. Primary courses (2026 academic structure)
-  // 2. Free courses (intro/basics courses like "أساسيات الكيمياء")
-  return courses.filter(course => course.is_primary === true || course.is_free === true);
+
+  return courses.filter((course) => {
+    const isFree = course.is_free === true;
+    const isPrimary = course.is_primary === true;
+    const isInScope = isCourseInActiveScope(course.grade);
+
+    return isInScope || isPrimary || isFree;
+  });
 }
 
 /**
