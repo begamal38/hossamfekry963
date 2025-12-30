@@ -248,11 +248,13 @@ const translations: Record<Language, Record<string, string>> = {
     // ══════════════════════════════════════════════════════════════════════════
     // HERO SECTION
     // ══════════════════════════════════════════════════════════════════════════
-    'hero.headline': 'Your complete platform to truly understand Chemistry',
+    'hero.headline': 'Welcome to Egypt\'s #1 Chemistry Platform for Thanaweya Amma',
     'hero.subheadline': 'Clear explanation – practical application – smart testing',
+    'hero.tracks': 'Arabic + Languages',
     'hero.browseCourses': 'Browse Courses',
     'hero.createAccount': 'Create Account',
     'hero.badge': 'Thanaweya Amma Chemistry',
+    'hero.teacherAlt': 'Hossam Fekry - Chemistry Teacher',
     'hero.stats.lessons': 'Video Lessons',
     'hero.stats.students': 'Students',
     'hero.stats.success': 'Success Rate',
@@ -260,13 +262,15 @@ const translations: Record<Language, Record<string, string>> = {
     // ══════════════════════════════════════════════════════════════════════════
     // FEATURES
     // ══════════════════════════════════════════════════════════════════════════
-    'features.title': 'Why This Platform?',
-    'features.understanding.title': 'Understanding, Not Memorization',
-    'features.understanding.desc': 'We focus on building deep conceptual understanding rather than rote memorization.',
-    'features.structured.title': 'Step-by-Step Explanation',
-    'features.structured.desc': 'Complex topics broken down into clear, digestible lessons.',
-    'features.tracking.title': 'Accurate Progress Tracking',
-    'features.tracking.desc': 'Real-time monitoring of your learning journey with detailed analytics.',
+    'features.title': 'Why Hossam Fekry Platform is Different?',
+    'features.understanding.title': 'Real Understanding... Not Memorization',
+    'features.understanding.desc': 'We don\'t just memorize formulas, we understand the concept and apply it to any question.',
+    'features.structured.title': 'Thanaweya-Worthy Explanation',
+    'features.structured.desc': 'The curriculum is smartly divided, and every concept gets its natural time without cramming.',
+    'features.languages.title': 'Arabic & Languages with Equal Quality',
+    'features.languages.desc': 'Professional explanation for both Arabic and Languages track students with the same depth and care.',
+    'features.tracking.title': 'Real Progress Tracking',
+    'features.tracking.desc': 'Know exactly where you stand, what you finished, and what\'s left... without complications.',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
@@ -572,25 +576,29 @@ const translations: Record<Language, Record<string, string>> = {
     // ══════════════════════════════════════════════════════════════════════════
     // HERO SECTION
     // ══════════════════════════════════════════════════════════════════════════
-    'hero.headline': 'منصتك الكاملة لفهم الكيمياء بشكل حقيقي',
-    'hero.subheadline': 'شرح واضح – تطبيق عملي – اختبار ذكي',
+    'hero.headline': 'أهلاً بيك أيها الطالب في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة',
+    'hero.subheadline': 'شرح واضح – تطبيق عملي – اختبارات ذكية',
+    'hero.tracks': 'عربي + لغات',
     'hero.browseCourses': 'تصفح الكورسات',
     'hero.createAccount': 'إنشاء حساب',
     'hero.badge': 'كيمياء الثانوية العامة',
-    'hero.stats.lessons': 'حصة فيديو',
+    'hero.teacherAlt': 'حسام فكري - مدرس الكيمياء',
+    'hero.stats.lessons': 'فيديو تعليمي',
     'hero.stats.students': 'طالب',
-    'hero.stats.success': 'نسبة النجاح',
+    'hero.stats.success': 'نسبة نجاح',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FEATURES
     // ══════════════════════════════════════════════════════════════════════════
-    'features.title': 'ليه المنصة دي؟',
-    'features.understanding.title': 'فهم مش حفظ',
-    'features.understanding.desc': 'بنركز على بناء فهم عميق للمفاهيم بدل الحفظ الأصم.',
-    'features.structured.title': 'شرح خطوة بخطوة',
-    'features.structured.desc': 'موضوعات معقدة مقسمة لحصص واضحة وسهلة الفهم.',
-    'features.tracking.title': 'متابعة دقيقة للتقدم',
-    'features.tracking.desc': 'مراقبة فورية لرحلة تعلمك مع تحليلات مفصلة.',
+    'features.title': 'ليه منصة حسام فكري مختلفة؟',
+    'features.understanding.title': 'فهم بجد… مش حفظ',
+    'features.understanding.desc': 'مش بنحفظ قوانين وخلاص، إحنا بنفهم الفكرة ونعرف نستخدمها في أي سؤال.',
+    'features.structured.title': 'شرح يليق بثانوية عامة',
+    'features.structured.desc': 'المنهج متقسم بذكاء، وكل فكرة ليها وقتها الطبيعي من غير تكديس.',
+    'features.languages.title': 'لغات وعربي بنفس القوة',
+    'features.languages.desc': 'شرح احترافي لطلاب العربي واللغات بنفس العمق ونفس الاهتمام.',
+    'features.tracking.title': 'متابعة حقيقية لتقدمك',
+    'features.tracking.desc': 'عارف أنت واقف فين، خلصت إيه، ولسه فاضلك إيه… من غير تعقيد.',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
