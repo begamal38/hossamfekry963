@@ -111,20 +111,20 @@ export function RequireResolvedAccess({
   // LOADING STATE: Show while auth or roles are still resolving
   if (!isFullyResolved) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="w-full max-w-md p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
             <div className="min-w-0">
-              <p className="font-semibold text-foreground">Loading your account…</p>
-              <p className="text-sm text-muted-foreground">Please wait a moment.</p>
+              <p className="font-semibold text-foreground">جاري تحميل حسابك...</p>
+              <p className="text-sm text-muted-foreground">يرجى الانتظار لحظة</p>
             </div>
           </div>
 
           {timedOut && (
             <div className="mt-5 space-y-3">
               <p className="text-sm text-muted-foreground">
-                This is taking longer than expected.
+                يستغرق الأمر وقتاً أطول من المتوقع
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -134,10 +134,10 @@ export function RequireResolvedAccess({
                     setTimedOut(false);
                   }}
                 >
-                  Retry
+                  إعادة المحاولة
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link to="/">Go to home</Link>
+                  <Link to="/">الرئيسية</Link>
                 </Button>
               </div>
             </div>
@@ -150,20 +150,20 @@ export function RequireResolvedAccess({
   // LOGIN PROMPT: Only after auth is resolved and user is not authenticated
   if (requireAuth && !user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="w-full max-w-md p-6 space-y-4">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Sign in required</h1>
+            <h1 className="text-xl font-bold text-foreground">يجب تسجيل الدخول</h1>
             <p className="text-sm text-muted-foreground">
-              Please sign in to continue.
+              يرجى تسجيل الدخول للمتابعة
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild>
-              <Link to={`/auth?redirect=${encodeURIComponent(redirect)}`}>Sign in</Link>
+              <Link to={`/auth?redirect=${encodeURIComponent(redirect)}`}>تسجيل الدخول</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/">Go to home</Link>
+              <Link to="/">الرئيسية</Link>
             </Button>
           </div>
         </Card>
@@ -174,17 +174,17 @@ export function RequireResolvedAccess({
   // ACCESS DENIED: Only for students with explicit access violations
   if (shouldShowAccessDenied) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="w-full max-w-md p-6 space-y-4">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Access denied</h1>
+            <h1 className="text-xl font-bold text-foreground">غير مصرح بالدخول</h1>
             <p className="text-sm text-muted-foreground">
-              Your account doesn't have permission to view this page.
+              حسابك لا يملك صلاحية الوصول لهذه الصفحة
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild>
-              <Link to="/">Go to home</Link>
+              <Link to="/">الرئيسية</Link>
             </Button>
           </div>
         </Card>
