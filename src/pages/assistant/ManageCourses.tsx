@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -22,6 +22,7 @@ interface Course {
   lessons_count: number | null;
   duration_hours: number | null;
   created_at: string;
+  thumbnail_url: string | null;
 }
 
 const GRADE_OPTIONS = [
@@ -51,7 +52,12 @@ export default function ManageCourses() {
     price: 0,
     is_free: false,
     duration_hours: 0,
+    thumbnail_url: '',
   });
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!roleLoading && !canAccessDashboard()) {
@@ -92,9 +98,74 @@ export default function ManageCourses() {
       price: 0,
       is_free: false,
       duration_hours: 0,
+      thumbnail_url: '',
     });
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
     setEditingCourse(null);
     setShowForm(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: isArabic ? 'خطأ' : 'Error',
+          description: isArabic ? 'حجم الصورة يجب أن يكون أقل من 5 ميجا' : 'Image size must be less than 5MB',
+          variant: 'destructive'
+        });
+        return;
+      }
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadThumbnail = async (courseId: string): Promise<string | null> => {
+    if (!thumbnailFile) return formData.thumbnail_url || null;
+    
+    setUploadingImage(true);
+    try {
+      const fileExt = thumbnailFile.name.split('.').pop();
+      const fileName = `${courseId}-${Date.now()}.${fileExt}`;
+      const filePath = `course-covers/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(filePath, thumbnailFile, { upsert: true });
+        
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('course-thumbnails')
+        .getPublicUrl(filePath);
+        
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      toast({
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في رفع الصورة' : 'Failed to upload image',
+        variant: 'destructive'
+      });
+      return formData.thumbnail_url || null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setFormData({ ...formData, thumbnail_url: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleEdit = (course: Course) => {
@@ -108,7 +179,10 @@ export default function ManageCourses() {
       price: course.price || 0,
       is_free: course.is_free || false,
       duration_hours: course.duration_hours || 0,
+      thumbnail_url: course.thumbnail_url || '',
     });
+    setThumbnailPreview(course.thumbnail_url || null);
+    setThumbnailFile(null);
     setShowForm(true);
   };
 
@@ -124,6 +198,9 @@ export default function ManageCourses() {
 
     try {
       if (editingCourse) {
+        // Upload thumbnail if there's a new file
+        const thumbnailUrl = await uploadThumbnail(editingCourse.id);
+        
         // Update existing course
         const { error } = await supabase
           .from('courses')
@@ -136,6 +213,7 @@ export default function ManageCourses() {
             price: formData.is_free ? 0 : formData.price,
             is_free: formData.is_free,
             duration_hours: formData.duration_hours,
+            thumbnail_url: thumbnailUrl,
           })
           .eq('id', editingCourse.id);
 
@@ -146,8 +224,8 @@ export default function ManageCourses() {
           description: isArabic ? 'تم تحديث الكورس' : 'Course updated successfully'
         });
       } else {
-        // Create new course
-        const { error } = await supabase
+        // Create new course first to get ID
+        const { data: newCourse, error: insertError } = await supabase
           .from('courses')
           .insert({
             title: formData.title,
@@ -159,9 +237,22 @@ export default function ManageCourses() {
             is_free: formData.is_free,
             duration_hours: formData.duration_hours,
             lessons_count: 0,
-          });
+          })
+          .select('id')
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+
+        // Upload thumbnail if there's a file
+        if (thumbnailFile && newCourse) {
+          const thumbnailUrl = await uploadThumbnail(newCourse.id);
+          if (thumbnailUrl) {
+            await supabase
+              .from('courses')
+              .update({ thumbnail_url: thumbnailUrl })
+              .eq('id', newCourse.id);
+          }
+        }
 
         toast({
           title: isArabic ? 'تم بنجاح' : 'Success',
@@ -362,11 +453,65 @@ export default function ManageCourses() {
                   />
                 </div>
               )}
+
+              {/* Course Cover Image */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'صورة غلاف الكورس' : 'Course Cover Image'}
+                </label>
+                <div className="flex items-start gap-4">
+                  {/* Preview */}
+                  {thumbnailPreview ? (
+                    <div className="relative w-40 h-24 rounded-lg overflow-hidden border border-border">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeThumbnail}
+                        className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-40 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer transition-colors bg-muted/50"
+                    >
+                      <ImagePlus className="w-6 h-6 text-muted-foreground mb-1" />
+                      <span className="text-xs text-muted-foreground">
+                        {isArabic ? 'اختر صورة' : 'Choose image'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  
+                  <div className="text-sm text-muted-foreground">
+                    <p>{isArabic ? 'الحجم الأقصى: 5 ميجابايت' : 'Max size: 5MB'}</p>
+                    <p>{isArabic ? 'الأبعاد المثالية: 800×450' : 'Ideal dimensions: 800×450'}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <Button onClick={handleSubmit}>
-                {editingCourse 
+              <Button onClick={handleSubmit} disabled={uploadingImage}>
+                {uploadingImage ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    {isArabic ? 'جاري الرفع...' : 'Uploading...'}
+                  </span>
+                ) : editingCourse 
                   ? (isArabic ? 'تحديث' : 'Update')
                   : (isArabic ? 'إضافة' : 'Add')
                 }
@@ -397,32 +542,43 @@ export default function ManageCourses() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
               <div key={course.id} className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
-                {/* Course Header */}
-                <div className="bg-primary/5 p-4 border-b border-border">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-lg line-clamp-1">
-                        {isArabic ? course.title_ar : course.title}
-                      </h3>
-                      <Badge variant="secondary" className="mt-2 text-xs">
-                        {getGradeLabel(course.grade)}
-                      </Badge>
+                {/* Course Cover Image */}
+                <div className="relative h-36 overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
+                  {course.thumbnail_url ? (
+                    <img 
+                      src={course.thumbnail_url} 
+                      alt={isArabic ? course.title_ar : course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <BookOpen className="w-12 h-12 text-primary/30" />
                     </div>
+                  )}
+                  {/* Badges overlay */}
+                  <div className="absolute top-2 left-2 right-2 flex justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {getGradeLabel(course.grade)}
+                    </Badge>
                     {course.is_free ? (
                       <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                         {isArabic ? 'مجاني' : 'Free'}
                       </Badge>
                     ) : (
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="bg-background/80">
                         {course.price} {isArabic ? 'ج.م' : 'EGP'}
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                {/* Course Body */}
+                {/* Course Content */}
                 <div className="p-4">
-                  <p className="text-muted-foreground text-sm line-clamp-2 mb-4 min-h-[2.5rem]">
+                  <h3 className="font-bold text-lg line-clamp-1 mb-2">
+                    {isArabic ? course.title_ar : course.title}
+                  </h3>
+
+                  <p className="text-muted-foreground text-sm line-clamp-2 mb-3 min-h-[2.5rem]">
                     {isArabic ? (course.description_ar || 'لا يوجد وصف') : (course.description || 'No description')}
                   </p>
 

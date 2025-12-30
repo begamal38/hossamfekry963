@@ -100,13 +100,13 @@ const Auth = () => {
     const isStaff = hasAssistantRole || hasAdminRole;
     
     // ROLE-BASED ROUTING (strict priority order):
-    // 1. Staff (Assistant/Admin) → /assistant (NEVER /dashboard)
-    // 2. Student → /dashboard
+    // 1. Staff (Assistant/Admin) → /assistant-transition (4s countdown then /assistant)
+    // 2. Student → /dashboard (direct, no transition)
     // 3. No redirect param processing for staff to prevent wrong routing
     
     if (isStaff) {
-      // Staff ALWAYS goes to assistant dashboard, ignore any redirect params
-      navigate('/assistant', { replace: true });
+      // Staff goes to transition page which then redirects to assistant dashboard
+      navigate('/assistant-transition', { replace: true });
       return;
     }
     
@@ -248,8 +248,7 @@ const Auth = () => {
             });
           }
         } else {
-          // Welcome toast is handled globally by FirstLoginWelcome on actual SIGNED_IN.
-          // Redirect will happen automatically via useEffect
+          // Redirect will happen automatically via useEffect after roles are loaded
         }
       } else {
         const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate);
@@ -268,7 +267,6 @@ const Auth = () => {
             });
           }
         } else {
-          // Welcome toast is handled globally by FirstLoginWelcome on actual SIGNED_IN.
           // Redirect will happen automatically via useEffect (new users go to student dashboard)
         }
       }
