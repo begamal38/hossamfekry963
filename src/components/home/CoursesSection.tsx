@@ -24,6 +24,7 @@ interface Course {
   is_free: boolean;
   lessons_count: number;
   duration_hours: number;
+  thumbnail_url: string | null;
 }
 
 interface CourseCardProps {
@@ -42,8 +43,18 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
   return (
     <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Image - fixed height, no layout shift */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-        <BookOpen className="w-16 h-16 text-primary/40" />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
+        {course.thumbnail_url ? (
+          <img 
+            src={course.thumbnail_url} 
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <BookOpen className="w-16 h-16 text-primary/40" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
         
         {course.is_free && (
@@ -108,7 +119,7 @@ export const CoursesSection: React.FC = () => {
         // Fetch only primary courses (2026 academic structure)
         const { data, error } = await supabase
           .from('courses')
-          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours')
+          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url')
           .eq('is_primary', true)
           .order('grade', { ascending: true })
           .limit(4); // Show max 4 courses on home
