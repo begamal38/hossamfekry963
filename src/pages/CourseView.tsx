@@ -36,6 +36,7 @@ interface Course {
   price: number;
   lessons_count: number;
   duration_hours: number;
+  thumbnail_url: string | null;
 }
 
 interface Lesson {
@@ -376,9 +377,17 @@ export default function CourseView() {
 
                 {/* Course Image */}
                 <div className="lg:w-80 shrink-0">
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center opacity-75">
-                    <BookOpen className="w-20 h-20 text-primary/50" />
-                  </div>
+                  {course.thumbnail_url ? (
+                    <img 
+                      src={course.thumbnail_url} 
+                      alt={isArabic ? course.title_ar : course.title}
+                      className="w-full aspect-video object-cover rounded-2xl shadow-lg"
+                    />
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center opacity-75">
+                      <BookOpen className="w-20 h-20 text-primary/50" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -527,9 +536,17 @@ export default function CourseView() {
 
               {/* Course Image */}
               <div className="lg:w-80 shrink-0">
-                <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
-                  <BookOpen className="w-20 h-20 text-primary/50" />
-                </div>
+                {course.thumbnail_url ? (
+                  <img 
+                    src={course.thumbnail_url} 
+                    alt={isArabic ? course.title_ar : course.title}
+                    className="w-full aspect-video object-cover rounded-2xl shadow-lg"
+                  />
+                ) : (
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
+                    <BookOpen className="w-20 h-20 text-primary/50" />
+                  </div>
+                )}
               </div>
             </div>
           </div>

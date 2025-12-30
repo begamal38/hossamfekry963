@@ -1,10 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, MessageCircle, CreditCard } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+
+  const openWhatsApp = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    window.open(`https://wa.me/2${cleanPhone}`, '_blank');
+  };
 
   return (
     <footer 
@@ -30,26 +35,30 @@ export const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Contact Information */}
+          {/* Contact & Payment Information */}
           <div className="space-y-5 flex flex-col items-center md:items-start">
             <h4 className="font-bold text-lg text-foreground">
               تواصل معنا
             </h4>
             <div className="space-y-4">
-              <a 
-                href="tel:+201225565645" 
-                className="flex items-center justify-center md:justify-start gap-3 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
-              >
-                <Phone className="w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
-                <span dir="ltr" className="font-medium">01225565645</span>
-              </a>
-              <a 
-                href="tel:+201116218299" 
-                className="flex items-center justify-center md:justify-start gap-3 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
-              >
-                <Phone className="w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
-                <span dir="ltr" className="font-medium">01116218299</span>
-              </a>
+              {/* Phone Numbers - Inline on desktop */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-6">
+                <button 
+                  onClick={() => openWhatsApp('01225565645')}
+                  className="flex items-center gap-2 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
+                >
+                  <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform text-green-500" />
+                  <span dir="ltr" className="font-medium">01225565645</span>
+                </button>
+                <a 
+                  href="tel:+201116218299" 
+                  className="flex items-center gap-2 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
+                >
+                  <Phone className="w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
+                  <span dir="ltr" className="font-medium">01116218299</span>
+                </a>
+              </div>
+              
               <a 
                 href="mailto:contact@hossamfekry.com" 
                 className="flex items-center justify-center md:justify-start gap-3 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
@@ -60,6 +69,24 @@ export const Footer: React.FC = () => {
               <div className="flex items-center justify-center md:justify-start gap-3 text-sm text-muted-foreground">
                 <MapPin className="w-5 h-5 text-primary" />
                 <span className="font-medium">القاهرة – مصر</span>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="pt-4 border-t border-border/50 w-full">
+              <h5 className="font-semibold text-sm text-foreground mb-3">طرق الدفع</h5>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  <span className="font-medium" dir="ltr">InstaPay: hosamfikry@instapay.com</span>
+                </div>
+                <button 
+                  onClick={() => openWhatsApp('01225565645')}
+                  className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground hover:opacity-70 transition-opacity"
+                >
+                  <MessageCircle className="w-4 h-4 text-green-500" />
+                  <span className="font-medium">للدفع عبر واتساب</span>
+                </button>
               </div>
             </div>
           </div>
@@ -90,6 +117,13 @@ export const Footer: React.FC = () => {
                 >
                   <Instagram className="w-6 h-6" />
                 </a>
+                <button
+                  onClick={() => openWhatsApp('01225565645')}
+                  className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md bg-green-500/10 text-green-500"
+                  aria-label="WhatsApp"
+                >
+                  <MessageCircle className="w-6 h-6" />
+                </button>
               </div>
             </div>
 
