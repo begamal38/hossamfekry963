@@ -318,7 +318,7 @@ const About = () => {
 
       {/* Article Modal */}
       <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-4xl max-h-[85vh] p-0 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full">

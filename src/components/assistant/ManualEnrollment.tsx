@@ -213,7 +213,7 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
           {isArabic ? 'تسجيل طالب يدوياً' : 'Manual Enrollment'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isArabic ? 'تسجيل طالب في كورس' : 'Enroll Student in Course'}

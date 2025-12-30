@@ -319,7 +319,7 @@ export default function CenterGroups() {
                 {isArabic ? 'مجموعة جديدة' : 'New Group'}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{isArabic ? 'إنشاء مجموعة جديدة' : 'Create New Group'}</DialogTitle>
               </DialogHeader>

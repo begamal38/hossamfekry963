@@ -563,7 +563,7 @@ export default function Students() {
 
         {/* Attendance Mode Change Dialog */}
         <Dialog open={modeDialogOpen} onOpenChange={setModeDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('mode.change')}</DialogTitle>
               <DialogDescription>
