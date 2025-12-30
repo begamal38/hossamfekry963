@@ -431,7 +431,7 @@ export default function LessonView() {
                   onClick={() => navigate('/dashboard')}
                   className="gap-2"
                 >
-                  {isArabic ? 'للوحة التحكم' : 'To Dashboard'}
+                  {isArabic ? 'للمنصة' : 'To Dashboard'}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               )}

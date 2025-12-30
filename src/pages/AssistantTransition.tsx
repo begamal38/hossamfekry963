@@ -73,7 +73,7 @@ const AssistantTransition = () => {
             جاري تحويلك إلى منصة المدرس المساعد
           </h2>
           <p className="text-muted-foreground">
-            خلال {countdown} ثواني...
+            خلال {countdown} {countdown === 1 ? 'ثانية' : 'ثواني'}...
           </p>
         </div>
         
