@@ -15,7 +15,7 @@ const Index: React.FC = () => {
   }, []);
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar enableScrollLogo={true} />
       <main>
         <HeroSection />
         <FeaturesSection />
