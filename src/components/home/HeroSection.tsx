@@ -1,12 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Play, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { HeroImageSlider } from './HeroImageSlider';
 
 export const HeroSection: React.FC = () => {
   const { t, isRTL } = useLanguage();
+  const { user } = useAuth();
+  const { isAssistantTeacher, isAdmin, loading: roleLoading } = useUserRole();
+
+  // Determine if user is staff (assistant or admin)
+  const isStaff = isAssistantTeacher() || isAdmin();
 
   return (
     <section className="relative min-h-[600px] lg:min-h-[700px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
@@ -46,20 +53,51 @@ export const HeroSection: React.FC = () => {
               </p>
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - Role-aware */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button variant="hero" size="lg" asChild>
-                <Link to="/courses">
-                  {t('hero.browseCourses')}
-                  <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
-                </Link>
-              </Button>
-              <Button variant="heroOutline" size="lg" asChild>
-                <Link to="/auth?mode=signup">
-                  <Play className="w-5 h-5" />
-                  {t('hero.createAccount')}
-                </Link>
-              </Button>
+              {user ? (
+                // Logged in user - show role-appropriate buttons
+                <>
+                  {isStaff ? (
+                    // Staff (Assistant/Admin) - show admin dashboard button
+                    <Button variant="hero" size="lg" asChild>
+                      <Link to="/assistant">
+                        <Settings className="w-5 h-5" />
+                        الدخول إلى منصة الإدارة
+                      </Link>
+                    </Button>
+                  ) : (
+                    // Student - show platform entry button
+                    <Button variant="hero" size="lg" asChild>
+                      <Link to="/platform">
+                        الدخول إلى المنصة
+                        <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
+                      </Link>
+                    </Button>
+                  )}
+                  <Button variant="heroOutline" size="lg" asChild>
+                    <Link to="/courses">
+                      {t('hero.browseCourses')}
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                // Not logged in - show default buttons
+                <>
+                  <Button variant="hero" size="lg" asChild>
+                    <Link to="/courses">
+                      {t('hero.browseCourses')}
+                      <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
+                    </Link>
+                  </Button>
+                  <Button variant="heroOutline" size="lg" asChild>
+                    <Link to="/auth?mode=signup">
+                      <Play className="w-5 h-5" />
+                      {t('hero.createAccount')}
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Stats */}

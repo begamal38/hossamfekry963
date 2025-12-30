@@ -81,45 +81,25 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // ROLE-AUTHORITATIVE POST-LOGIN ROUTING
-  // This effect handles redirect ONLY after role is definitively known
+  // POST-LOGIN ROUTING: ALL users go to home page "/"
+  // No role-based auto-redirects - user chooses where to go
   useEffect(() => {
     // No user = no redirect, stay on auth page
     if (!user) return;
 
-    // CRITICAL: Do NOT redirect until roles are FULLY resolved
-    // Both conditions must be met: not loading AND fetch was attempted
-    if (roleLoading) return;
-    if (!hasAttemptedFetch) return;
-
-    // At this point roles are definitively resolved
-    // Check role DIRECTLY from the roles array for maximum reliability
-    // Do NOT rely on memoized functions that might have stale closures
-    const hasAssistantRole = roles.includes('assistant_teacher');
-    const hasAdminRole = roles.includes('admin');
-    const isStaff = hasAssistantRole || hasAdminRole;
+    // Wait for auth to stabilize (role loading is NOT blocking)
+    // We only need to know the user is authenticated
     
-    // ROLE-BASED ROUTING (strict priority order):
-    // 1. Staff (Assistant/Admin) → /assistant-transition (4s countdown then /assistant)
-    // 2. Student → /dashboard (direct, no transition)
-    // 3. No redirect param processing for staff to prevent wrong routing
-    
-    if (isStaff) {
-      // Staff goes to transition page which then redirects to assistant dashboard
-      navigate('/assistant-transition', { replace: true });
-      return;
-    }
-    
-    // For students, check for explicit redirect param
+    // Check for explicit redirect param first
     const redirect = searchParams.get('redirect');
-    if (redirect && !redirect.startsWith('/assistant')) {
+    if (redirect) {
       navigate(redirect, { replace: true });
       return;
     }
     
-    // Default student route - use /platform
-    navigate('/platform', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, roles, navigate, searchParams]);
+    // ALL users go to home page after login
+    navigate('/', { replace: true });
+  }, [user, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
