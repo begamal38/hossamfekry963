@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
 import logo from '@/assets/logo.png';
@@ -9,40 +9,45 @@ interface ScrollLogoProps {
 
 export const ScrollLogo: React.FC<ScrollLogoProps> = ({ className }) => {
   const { progress, isMobile } = useScrollProgress({
-    scrollDistance: 300,
+    scrollDistance: 350, // Slightly longer scroll for smoother transition
     disableOnMobile: true,
     mobileBreakpoint: 1024,
   });
 
-  const logoRef = useRef<HTMLAnchorElement>(null);
-  const [initialOffset, setInitialOffset] = useState(0);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ 
+    viewportWidth: 0, 
+    logoWidth: 0,
+    navbarLogoX: 0 
+  });
 
-  // Calculate the offset needed to center the logo initially
+  // Calculate positions on mount and resize
   useEffect(() => {
-    const calculateOffset = () => {
+    const calculateDimensions = () => {
       if (!logoRef.current || isMobile) return;
       
+      const viewportWidth = window.innerWidth;
       const logoRect = logoRef.current.getBoundingClientRect();
-      const viewportCenter = window.innerWidth / 2;
-      const logoCenter = logoRect.left + logoRect.width / 2;
       
-      // Calculate how much to translate to center the logo
-      // We need to account for the current transform, so use the natural position
-      const naturalLogoCenter = logoRect.left + logoRect.width / 2;
-      const offsetToCenter = viewportCenter - naturalLogoCenter;
+      // The navbar logo position (where it should end up)
+      // This is the natural position of the logo in the navbar
+      const navbarLogoX = logoRect.left + logoRect.width / 2;
       
-      setInitialOffset(offsetToCenter);
+      setDimensions({
+        viewportWidth,
+        logoWidth: logoRect.width,
+        navbarLogoX
+      });
     };
 
-    // Calculate on mount and resize
-    calculateOffset();
+    calculateDimensions();
     
-    // Recalculate after a brief delay to ensure layout is stable
-    const timeout = setTimeout(calculateOffset, 100);
+    // Recalculate after layout stabilizes
+    const timeout = setTimeout(calculateDimensions, 150);
     
-    window.addEventListener('resize', calculateOffset);
+    window.addEventListener('resize', calculateDimensions);
     return () => {
-      window.removeEventListener('resize', calculateOffset);
+      window.removeEventListener('resize', calculateDimensions);
       clearTimeout(timeout);
     };
   }, [isMobile]);
@@ -60,36 +65,50 @@ export const ScrollLogo: React.FC<ScrollLogoProps> = ({ className }) => {
     );
   }
 
-  // Desktop: scroll-driven logo behavior
-  // Initial state: larger, centered, positioned lower (brand-focused)
-  // Final state: smaller, in navbar position (navigation-focused)
-  
-  const initialScale = 2.2;
+  // Calculate the centered position relative to the navbar position
+  const viewportCenter = dimensions.viewportWidth / 2;
+  const offsetToCenter = viewportCenter - dimensions.navbarLogoX;
+
+  // Animation values with easing
+  // Use easeOutCubic for smooth deceleration
+  const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+  // Scale: starts at 2.5x, ends at 1x
+  const initialScale = 2.5;
   const finalScale = 1;
-  const currentScale = initialScale - (progress * (initialScale - finalScale));
+  const currentScale = initialScale - (easedProgress * (initialScale - finalScale));
   
-  // Vertical translation: starts 80px down, ends at 0
-  const initialTranslateY = 80;
-  const currentTranslateY = initialTranslateY * (1 - progress);
+  // Vertical translation: starts 120px down (into hero), ends at 0 (navbar)
+  const initialTranslateY = 120;
+  const currentTranslateY = initialTranslateY * (1 - easedProgress);
   
-  // Horizontal translation: starts centered, ends at natural position (0)
-  const currentTranslateX = initialOffset * (1 - progress);
+  // Horizontal translation: starts centered, ends at natural navbar position
+  const currentTranslateX = offsetToCenter * (1 - easedProgress);
+
+  // Opacity for smooth fade-in of the brand focal point
+  const logoOpacity = progress < 0.1 ? 1 : 1;
 
   return (
-    <Link 
+    <div 
       ref={logoRef}
-      to="/" 
-      className="flex items-center px-2 py-1 origin-center"
+      className="flex items-center"
       style={{
         transform: `translateX(${currentTranslateX}px) translateY(${currentTranslateY}px) scale(${currentScale})`,
+        transformOrigin: 'center center',
         willChange: 'transform',
+        opacity: logoOpacity,
       }}
     >
-      <img 
-        src={logo} 
-        alt="Hossam Fekry" 
-        className="h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
-      />
-    </Link>
+      <Link 
+        to="/" 
+        className="flex items-center px-2 py-1"
+      >
+        <img 
+          src={logo} 
+          alt="Hossam Fekry" 
+          className="h-14 2xl:h-16 3xl:h-20 w-auto object-contain"
+        />
+      </Link>
+    </div>
   );
 };
