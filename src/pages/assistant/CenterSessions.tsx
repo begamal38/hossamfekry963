@@ -314,7 +314,7 @@ export default function CenterSessions() {
                 {isArabic ? 'جلسة جديدة' : 'New Session'}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{isArabic ? 'إنشاء جلسة جديدة' : 'Create New Session'}</DialogTitle>
               </DialogHeader>

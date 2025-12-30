@@ -92,9 +92,9 @@ export function filterLessonsForStudents<T extends { chapter_id: string | null }
 
 /**
  * Filter courses for student visibility based on is_primary flag
- * Only primary courses (2026 academic courses) are shown publicly
+ * Primary courses (2026 academic courses) AND free courses are shown publicly
  */
-export function filterCoursesForStudents<T extends { grade: string; is_primary?: boolean }>(
+export function filterCoursesForStudents<T extends { grade: string; is_primary?: boolean; is_free?: boolean }>(
   courses: T[],
   options: {
     bypassScope?: boolean; // For admins/assistants - show all courses
@@ -108,8 +108,10 @@ export function filterCoursesForStudents<T extends { grade: string; is_primary?:
     return courses;
   }
   
-  // For public/students, only show primary courses (2026 academic structure)
-  return courses.filter(course => course.is_primary === true);
+  // For public/students, show:
+  // 1. Primary courses (2026 academic structure)
+  // 2. Free courses (intro/basics courses like "أساسيات الكيمياء")
+  return courses.filter(course => course.is_primary === true || course.is_free === true);
 }
 
 /**
