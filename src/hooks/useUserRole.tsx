@@ -62,8 +62,11 @@ export const useUserRole = () => {
 
       retryCountRef.current = 0;
       const nextRoles = (data || []).map((r) => r.role as AppRole);
-      setRoles(nextRoles);
+      
+      // Update cache FIRST to ensure consistency
       roleCache = { userId: user.id, roles: nextRoles, fetchedAt: Date.now() };
+      // Then update state
+      setRoles(nextRoles);
     } catch (error) {
       // If the first request fails right after login, retry once after a short delay.
       if (retryCountRef.current < 1) {

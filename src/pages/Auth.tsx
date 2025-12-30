@@ -93,8 +93,11 @@ const Auth = () => {
     if (!hasAttemptedFetch) return;
 
     // At this point roles are definitively resolved
-    // Check role explicitly from the roles array for maximum reliability
-    const isStaff = isAssistantTeacher() || isAdmin();
+    // Check role DIRECTLY from the roles array for maximum reliability
+    // Do NOT rely on memoized functions that might have stale closures
+    const hasAssistantRole = roles.includes('assistant_teacher');
+    const hasAdminRole = roles.includes('admin');
+    const isStaff = hasAssistantRole || hasAdminRole;
     
     // ROLE-BASED ROUTING (strict priority order):
     // 1. Staff (Assistant/Admin) → /assistant (NEVER /dashboard)
@@ -116,7 +119,7 @@ const Auth = () => {
     
     // Default student route
     navigate('/dashboard', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin, navigate, searchParams, roles]);
+  }, [user, roleLoading, hasAttemptedFetch, roles, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
