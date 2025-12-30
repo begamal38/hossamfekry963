@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HeroSection } from '@/components/home/HeroSection';
-import { HeroLogo } from '@/components/home/HeroLogo';
 import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { CoursesSection } from '@/components/home/CoursesSection';
 import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection';
@@ -14,12 +13,10 @@ const Index: React.FC = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+  
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Logo - centered in hero, animates to header on scroll */}
-      <HeroLogo />
-      
-      <Navbar enableScrollLogo={true} />
+      <Navbar />
       <main>
         <HeroSection />
         <FeaturesSection />

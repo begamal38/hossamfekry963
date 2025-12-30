@@ -8,15 +8,10 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ThemeSelector } from '@/components/theme/ThemeSelector';
-import { ScrollLogo } from '@/components/layout/ScrollLogo';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 
-interface NavbarProps {
-  enableScrollLogo?: boolean;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ enableScrollLogo = false }) => {
+export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
@@ -53,27 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({ enableScrollLogo = false }) => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
         <div className="flex items-center justify-between h-16 2xl:h-20 3xl:h-24">
-          {/* Desktop: Scroll-driven logo only on homepage, static logo elsewhere */}
-          <div className="hidden lg:block">
-            {enableScrollLogo ? (
-              <ScrollLogo />
-            ) : (
-              <Link to="/" className="flex items-center px-2 py-1">
-                <img 
-                  src={logo} 
-                  alt="Hossam Fekry" 
-                  className="h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
-                />
-              </Link>
-            )}
-          </div>
-          
-          {/* Mobile: Static logo */}
-          <Link to="/" className="flex items-center px-2 py-1 lg:hidden">
+          {/* Static logo - same on all pages */}
+          <Link to="/" className="flex items-center px-2 py-1">
             <img 
               src={logo} 
               alt="Hossam Fekry" 
-              className="h-14 w-auto object-contain"
+              className="h-14 lg:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
             />
           </Link>
 
