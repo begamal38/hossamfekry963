@@ -63,14 +63,14 @@ export const HeroSection: React.FC = () => {
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/assistant">
                         <Settings className="w-5 h-5" />
-                        إدارة المنصة
+                        {t('hero.platformManage')}
                       </Link>
                     </Button>
                   ) : (
                     // Student - show platform entry button
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/platform">
-                        الدخول إلى المنصة
+                        {t('hero.enterPlatform')}
                         <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                       </Link>
                     </Button>
