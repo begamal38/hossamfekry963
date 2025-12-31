@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Facebook, Instagram, MessageCircle, CreditCard } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -72,23 +72,6 @@ export const Footer: React.FC = () => {
               </div>
             </div>
 
-            {/* Payment Methods */}
-            <div className="pt-4 border-t border-border/50 w-full">
-              <h5 className="font-semibold text-sm text-foreground mb-3">{isRTL ? 'طرق الدفع' : 'Payment Methods'}</h5>
-              <div className="space-y-2">
-                <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
-                  <CreditCard className="w-4 h-4 text-primary" />
-                  <span className="font-medium" dir="ltr">InstaPay: hosamfikry@instapay.com</span>
-                </div>
-                <button 
-                  onClick={() => openWhatsApp('01225565645')}
-                  className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground hover:opacity-70 transition-opacity"
-                >
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  <span className="font-medium">{isRTL ? 'للدفع عبر واتساب' : 'Pay via WhatsApp'}</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Social Media & Legal */}

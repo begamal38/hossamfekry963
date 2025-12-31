@@ -63,7 +63,7 @@ export const HeroSection: React.FC = () => {
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/assistant">
                         <Settings className="w-5 h-5" />
-                        الدخول إلى منصة الإدارة
+                        إدارة المنصة
                       </Link>
                     </Button>
                   ) : (
