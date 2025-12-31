@@ -2,9 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Instagram, MessageCircle, CreditCard } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const { t, isRTL } = useLanguage();
 
   const openWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -14,7 +16,7 @@ export const Footer: React.FC = () => {
   return (
     <footer 
       className="border-t border-border mt-16 bg-muted/50 dark:bg-background/80" 
-      dir="rtl"
+      dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div className="container mx-auto px-6 py-16 md:py-20 2xl:py-24 3xl:py-28">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 2xl:gap-16 3xl:gap-20 text-center md:text-right">
@@ -29,16 +31,14 @@ export const Footer: React.FC = () => {
               />
             </Link>
             <p className="text-sm 2xl:text-base 3xl:text-lg leading-relaxed font-medium max-w-xs 2xl:max-w-sm text-muted-foreground">
-              منصتك الكاملة لفهم الكيمياء بشكل حقيقي
-              <br />
-              مصممة لطلاب الثانوية العامة.
+              {t('footer.description')}
             </p>
           </div>
 
           {/* Contact & Payment Information */}
           <div className="space-y-5 flex flex-col items-center md:items-start">
             <h4 className="font-bold text-lg text-foreground">
-              تواصل معنا
+              {t('footer.contact')}
             </h4>
             <div className="space-y-4">
               {/* Phone Numbers - Inline on desktop */}
@@ -68,13 +68,13 @@ export const Footer: React.FC = () => {
               </a>
               <div className="flex items-center justify-center md:justify-start gap-3 text-sm text-muted-foreground">
                 <MapPin className="w-5 h-5 text-primary" />
-                <span className="font-medium">القاهرة – مصر</span>
+                <span className="font-medium">{t('footer.location')}</span>
               </div>
             </div>
 
             {/* Payment Methods */}
             <div className="pt-4 border-t border-border/50 w-full">
-              <h5 className="font-semibold text-sm text-foreground mb-3">طرق الدفع</h5>
+              <h5 className="font-semibold text-sm text-foreground mb-3">{isRTL ? 'طرق الدفع' : 'Payment Methods'}</h5>
               <div className="space-y-2">
                 <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
                   <CreditCard className="w-4 h-4 text-primary" />
@@ -85,7 +85,7 @@ export const Footer: React.FC = () => {
                   className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground hover:opacity-70 transition-opacity"
                 >
                   <MessageCircle className="w-4 h-4 text-green-500" />
-                  <span className="font-medium">للدفع عبر واتساب</span>
+                  <span className="font-medium">{isRTL ? 'للدفع عبر واتساب' : 'Pay via WhatsApp'}</span>
                 </button>
               </div>
             </div>
@@ -96,7 +96,7 @@ export const Footer: React.FC = () => {
             {/* Social Media Icons */}
             <div className="space-y-4">
               <h4 className="font-bold text-lg text-center md:text-right text-foreground">
-                تابعنا
+                {isRTL ? 'تابعنا' : 'Follow Us'}
               </h4>
               <div className="flex items-center justify-center md:justify-start gap-4">
                 <a 
@@ -133,13 +133,13 @@ export const Footer: React.FC = () => {
                 to="/terms" 
                 className="block hover:opacity-70 transition-opacity text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                شروط الخدمة
+                {t('footer.terms')}
               </Link>
               <Link 
                 to="/privacy" 
                 className="block hover:opacity-70 transition-opacity text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                سياسة الخصوصية
+                {t('footer.privacy')}
               </Link>
             </div>
           </div>
@@ -148,7 +148,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            Hossam Fekry © {currentYear} — جميع الحقوق محفوظة
+            Hossam Fekry © {currentYear} — {t('footer.rights')}
           </p>
         </div>
       </div>
