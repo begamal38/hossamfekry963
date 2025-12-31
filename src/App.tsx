@@ -39,6 +39,8 @@ import ManageCourses from "./pages/assistant/ManageCourses";
 import SendNotifications from "./pages/assistant/SendNotifications";
 import CenterGroups from "./pages/assistant/CenterGroups";
 import CenterSessions from "./pages/assistant/CenterSessions";
+import ManageExams from "./pages/assistant/ManageExams";
+import TakeExam from "./pages/TakeExam";
 
 const queryClient = new QueryClient();
 
@@ -280,7 +282,27 @@ const App = () => (
                         requireAuth
                         allow={({ canAccessDashboard }) => canAccessDashboard()}
                       >
-                        <CenterSessions />
+                      <CenterSessions />
+                    </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/exams"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <ManageExams />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  {/* Student exam route */}
+                  <Route
+                    path="/exam/:examId"
+                    element={
+                      <RequireResolvedAccess requireAuth>
+                        <TakeExam />
                       </RequireResolvedAccess>
                     }
                   />
