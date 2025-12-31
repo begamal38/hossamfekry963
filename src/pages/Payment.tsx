@@ -190,7 +190,7 @@ const Payment: React.FC = () => {
             {/* Payment Methods */}
             <div className="space-y-4 animate-fade-in-up animation-delay-100">
               <h2 className="text-xl font-bold text-foreground mb-4">
-                {isArabic ? 'طرق الدفع' : 'Payment Methods'}
+                {isArabic ? 'طرق الدفع المتاحة' : 'Available Payment Methods'}
               </h2>
 
               {/* Vodafone Cash */}
@@ -293,7 +293,7 @@ const Payment: React.FC = () => {
                 onClick={handleWhatsAppContact}
               >
                 <MessageCircle className="w-5 h-5" />
-                {isArabic ? 'تواصل على واتساب لتأكيد الدفع' : 'Contact on WhatsApp to confirm payment'}
+                {isArabic ? 'تأكيد الدفع عبر واتساب' : 'Confirm Payment via WhatsApp'}
               </Button>
             </div>
           </div>
