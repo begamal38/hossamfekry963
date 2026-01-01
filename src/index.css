@@ -448,3 +448,82 @@
   box-shadow: var(--shadow-lg);
   border-color: hsl(var(--primary) / 0.3);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCIENTIFIC BACKGROUND ANIMATIONS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Slow molecular orbit - 35 seconds full rotation */
+@keyframes molecular-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-molecular-orbit {
+  animation: molecular-orbit 35s linear infinite;
+  transform-origin: 400px 300px;
+}
+
+/* Slow pulse for hexagon bonds */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+/* Float animation for atoms */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(3px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+/* Floating particles */
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.2);
+    opacity: 0.4;
+  }
+}
+
+.animate-float-particle {
+  animation: float-particle 8s ease-in-out infinite;
+}
+
+.animate-float-particle-delayed {
+  animation: float-particle 10s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-float-particle-slow {
+  animation: float-particle 12s ease-in-out infinite;
+  animation-delay: 4s;
+}

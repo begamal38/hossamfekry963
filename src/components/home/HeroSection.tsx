@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { HeroImageSlider } from './HeroImageSlider';
+import { ScientificBackground } from './ScientificBackground';
 
 export const HeroSection: React.FC = () => {
   const { t, isRTL } = useLanguage();
@@ -17,6 +18,9 @@ export const HeroSection: React.FC = () => {
 
   return (
     <section className="relative min-h-[600px] lg:min-h-[700px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
+      {/* Scientific Background Animation */}
+      <ScientificBackground />
+      
       {/* Background Glow Effects */}
       <div 
         className="absolute top-1/4 left-1/4 w-72 h-72 lg:w-96 lg:h-96 bg-primary/10 rounded-full blur-3xl opacity-50 pointer-events-none" 
@@ -27,23 +31,23 @@ export const HeroSection: React.FC = () => {
       
       <div className="container mx-auto px-4 lg:px-8">
         {/* Mobile: Image first, then text | Desktop: Two columns */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           
           {/* Image Slider - ORDER 1 on mobile, ORDER based on RTL on desktop */}
-          <div className={`w-full max-w-md lg:max-w-none order-1 ${isRTL ? 'lg:order-2' : 'lg:order-1'}`}>
+          <div className={`w-full max-w-md lg:max-w-lg order-1 ${isRTL ? 'lg:order-2' : 'lg:order-1'}`}>
             <HeroImageSlider className="w-full" />
           </div>
 
           {/* Content - ORDER 2 on mobile */}
           <div className={`space-y-6 lg:space-y-8 order-2 ${isRTL ? 'lg:order-1' : 'lg:order-2'}`}>
             {/* Main Headline */}
-            <div className="space-y-4 text-center lg:text-start">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground leading-tight">
+            <div className="space-y-4 lg:space-y-5 text-center lg:text-start">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground leading-relaxed lg:leading-relaxed">
                 {t('hero.headline')}
               </h1>
               
               {/* Sub-headline */}
-              <p className="text-base lg:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0">
+              <p className="text-base lg:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
                 {t('hero.subheadline')}
               </p>
               
@@ -101,7 +105,7 @@ export const HeroSection: React.FC = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-6 pt-6 border-t border-border">
+            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-6 border-t border-border">
               <div className="text-center lg:text-start">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats.lessons')}</p>
