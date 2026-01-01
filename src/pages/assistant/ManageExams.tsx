@@ -212,7 +212,7 @@ export default function ManageExams() {
         .select('*')
         .eq('course_id', selectedCourse);
 
-      if (selectedChapter) {
+      if (selectedChapter && selectedChapter !== 'all') {
         query = query.eq('chapter_id', selectedChapter);
       }
 
@@ -631,7 +631,7 @@ export default function ManageExams() {
                   <SelectValue placeholder={isArabic ? 'كل الأبواب' : 'All Chapters'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{isArabic ? 'كل الأبواب' : 'All Chapters'}</SelectItem>
+                  <SelectItem value="all">{isArabic ? 'كل الأبواب' : 'All Chapters'}</SelectItem>
                   {chapters.map(chapter => (
                     <SelectItem key={chapter.id} value={chapter.id}>
                       {isArabic ? chapter.title_ar : chapter.title}
