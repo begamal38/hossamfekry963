@@ -87,11 +87,14 @@ export const SocialProofSection: React.FC = () => {
         {/* Achievement Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 2xl:gap-6 3xl:gap-8 mb-12 2xl:mb-16 3xl:mb-20">
           {achievements.map((achievement, idx) => (
-            <Card key={idx} className="p-6 2xl:p-8 3xl:p-10 text-center hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 2xl:w-14 2xl:h-14 3xl:w-16 3xl:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 2xl:mb-4">
+            <Card 
+              key={idx} 
+              className="p-6 2xl:p-8 3xl:p-10 text-center hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+            >
+              <div className="w-12 h-12 2xl:w-14 2xl:h-14 3xl:w-16 3xl:h-16 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-3 2xl:mb-4 group-hover:scale-110 transition-transform">
                 <achievement.icon className="w-6 h-6 2xl:w-7 2xl:h-7 3xl:w-8 3xl:h-8 text-primary" />
               </div>
-              <div className="text-2xl md:text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-foreground mb-1 2xl:mb-2">
+              <div className="text-2xl md:text-3xl 2xl:text-4xl 3xl:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-1 2xl:mb-2">
                 {achievement.value}
               </div>
               <p className="text-sm 2xl:text-base 3xl:text-lg text-muted-foreground">
