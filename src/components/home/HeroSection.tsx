@@ -9,7 +9,7 @@ import { HeroImageSlider } from './HeroImageSlider';
 import { Hero3DBackground } from './Hero3DBackground';
 
 export const HeroSection: React.FC = () => {
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const { user } = useAuth();
   const { isAssistantTeacher, isAdmin, loading: roleLoading } = useUserRole();
 
@@ -18,7 +18,7 @@ export const HeroSection: React.FC = () => {
 
   return (
     <section className="relative min-h-[500px] lg:min-h-[600px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
-      {/* 3D Chemistry Background Animation */}
+      {/* 3D Chemistry Background Animation - positioned behind everything */}
       <Hero3DBackground />
       
       {/* Background Glow Effects */}
@@ -29,7 +29,7 @@ export const HeroSection: React.FC = () => {
         className="absolute bottom-1/4 right-1/4 w-64 h-64 lg:w-80 lg:h-80 bg-accent/15 rounded-full blur-3xl opacity-40 pointer-events-none" 
       />
       
-      <div className="container mx-auto px-4 lg:px-8">
+      <div className="container mx-auto px-4 lg:px-8 relative z-10">
         {/* Stack layout: Landscape image on top, text below */}
         <div className="flex flex-col gap-6 lg:gap-10 items-center">
           
@@ -40,24 +40,24 @@ export const HeroSection: React.FC = () => {
 
           {/* Content - Below image */}
           <div className="space-y-5 lg:space-y-6 w-full max-w-3xl">
-            {/* Main Headline - New Copy */}
+            {/* Main Headline - Translated */}
             <div className="space-y-3 lg:space-y-4 text-center">
               <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground leading-relaxed lg:leading-relaxed">
-                Egypt's #1 Chemistry Platform for Thanaweya Amma
+                {t('hero.title')}
               </h1>
               
-              {/* Sub-headline */}
+              {/* Sub-headline - Translated */}
               <p className="text-base lg:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                Clear explanation • Practical application • Smart testing
+                {t('hero.subtitle')}
               </p>
               
-              {/* Highlight - Tracks */}
+              {/* Highlight - Tracks - Translated */}
               <p className="text-lg lg:text-xl font-semibold text-primary">
-                Arabic + Languages
+                {t('hero.accent')}
               </p>
             </div>
 
-            {/* CTA Buttons - Role-aware */}
+            {/* CTA Buttons - Role-aware with proper translations */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {user ? (
                 // Logged in user - show role-appropriate buttons
@@ -67,21 +67,21 @@ export const HeroSection: React.FC = () => {
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/assistant">
                         <Settings className="w-5 h-5" />
-                        إدارة المنصة
+                        {t('hero.cta_admin')}
                       </Link>
                     </Button>
                   ) : (
                     // Student - show platform entry button
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/platform">
-                        دخول المنصة
+                        {t('hero.cta_platform')}
                         <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                       </Link>
                     </Button>
                   )}
                   <Button variant="heroOutline" size="lg" asChild>
                     <Link to="/courses">
-                      تصفح الكورسات
+                      {t('hero.cta_courses')}
                     </Link>
                   </Button>
                 </>
@@ -90,33 +90,33 @@ export const HeroSection: React.FC = () => {
                 <>
                   <Button variant="hero" size="lg" asChild>
                     <Link to="/courses">
-                      تصفح الكورسات
+                      {t('hero.cta_courses')}
                       <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
                     <Link to="/auth?mode=signup">
                       <Play className="w-5 h-5" />
-                      إنشاء حساب
+                      {t('hero.cta_signup')}
                     </Link>
                   </Button>
                 </>
               )}
             </div>
 
-            {/* Stats */}
+            {/* Stats - Translated */}
             <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border max-w-lg mx-auto">
               <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">حصة</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_lessons')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">+10K</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">طالب</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_students')}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">95%</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">نسبة النجاح</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_success')}</p>
               </div>
             </div>
           </div>

@@ -248,6 +248,17 @@ const translations: Record<Language, Record<string, string>> = {
     // ══════════════════════════════════════════════════════════════════════════
     // HERO SECTION
     // ══════════════════════════════════════════════════════════════════════════
+    'hero.title': 'Egypt\'s #1 Chemistry Platform for Thanaweya Amma',
+    'hero.subtitle': 'Clear explanation • Practical application • Smart testing',
+    'hero.accent': 'Arabic + Languages',
+    'hero.cta_courses': 'Browse Courses',
+    'hero.cta_signup': 'Create Account',
+    'hero.cta_admin': 'Platform Management',
+    'hero.cta_platform': 'Enter Platform',
+    'hero.stats_lessons': 'Session',
+    'hero.stats_students': 'Student',
+    'hero.stats_success': 'Success Rate',
+    // Legacy keys for backward compatibility
     'hero.headline': 'Welcome to Egypt\'s #1 Chemistry Platform for Thanaweya Amma',
     'hero.subheadline': 'Clear explanation – practical application – smart testing',
     'hero.tracks': 'Arabic + Languages',
@@ -579,6 +590,17 @@ const translations: Record<Language, Record<string, string>> = {
     // ══════════════════════════════════════════════════════════════════════════
     // HERO SECTION
     // ══════════════════════════════════════════════════════════════════════════
+    'hero.title': 'المنصة رقم 1 في مصر لتعليم الكيمياء لطلاب الثانوية العامة',
+    'hero.subtitle': 'شرح واضح • تطبيق عملي • اختبارات ذكية',
+    'hero.accent': 'عربي + لغات',
+    'hero.cta_courses': 'تصفح الكورسات',
+    'hero.cta_signup': 'إنشاء حساب',
+    'hero.cta_admin': 'إدارة المنصة',
+    'hero.cta_platform': 'دخول المنصة',
+    'hero.stats_lessons': 'حصة',
+    'hero.stats_students': 'طالب',
+    'hero.stats_success': 'نسبة النجاح',
+    // Legacy keys for backward compatibility
     'hero.headline': 'أهلاً بيك أيها الطالب في المنصة رقم 1 في مصر لتعليم الكيمياء للثانوية العامة',
     'hero.subheadline': 'شرح واضح – تطبيق عملي – اختبارات ذكية',
     'hero.tracks': 'عربي + لغات',

@@ -7,10 +7,10 @@ import React from 'react';
  */
 export const Hero3DBackground: React.FC = () => {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-      {/* Main SVG Molecular Structure */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Main SVG Molecular Structure - increased visibility */}
       <svg
-        className="absolute inset-0 w-full h-full opacity-[0.08] dark:opacity-[0.12]"
+        className="absolute inset-0 w-full h-full opacity-[0.15] dark:opacity-[0.20]"
         viewBox="0 0 1000 600"
         preserveAspectRatio="xMidYMid slice"
       >
