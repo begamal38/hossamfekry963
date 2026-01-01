@@ -160,7 +160,7 @@ export default function AssistantDashboard() {
       value: stats.totalExams,
       icon: Award,
       color: 'bg-purple-500/10 text-purple-600',
-      link: '/assistant/grades',
+      link: '/assistant/exams',
     },
     {
       title: isRTL ? 'الحضور الكلي' : 'Total Attendance',
@@ -249,6 +249,12 @@ export default function AssistantDashboard() {
               <Link to="/assistant/grades">
                 <Award className="h-6 w-6" />
                 <span>{isRTL ? 'تسجيل الدرجات' : 'Record Grades'}</span>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
+              <Link to="/assistant/exams">
+                <FileText className="h-6 w-6" />
+                <span>{isRTL ? 'إدارة الامتحانات' : 'Manage Exams'}</span>
               </Link>
             </Button>
             <Button variant="secondary" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/20">
