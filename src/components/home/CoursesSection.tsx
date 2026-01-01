@@ -33,7 +33,7 @@ interface CourseCardProps {
   index: number;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
+const CourseCard = React.memo<CourseCardProps>(({ course, index }) => {
   const { language, t } = useLanguage();
   const isArabic = language === 'ar';
   
@@ -44,14 +44,15 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
   const courseUrl = `/course/${course.slug || course.id}`;
 
   return (
-    <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
+    <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-300 hover:-translate-y-1">
       {/* Image - fixed height, no layout shift */}
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
         {course.thumbnail_url ? (
           <img 
             src={course.thumbnail_url} 
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -61,20 +62,20 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
         
         {course.is_free && (
-          <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
+          <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground shadow-lg">
             {t('courses.free')}
           </Badge>
         )}
         
         {gradeLabel && (
-          <Badge className="absolute top-4 right-4 bg-secondary text-secondary-foreground">
+          <Badge className="absolute top-4 right-4 bg-secondary text-secondary-foreground shadow-sm">
             {isArabic ? gradeLabel.ar : gradeLabel.en}
           </Badge>
         )}
         
         <Link 
           to={courseUrl} 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg scale-90 group-hover:scale-100"
         >
           <Play className="w-6 h-6 text-primary-foreground ml-1" />
         </Link>
@@ -82,7 +83,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
 
       {/* Content */}
       <div className="p-6">
-        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1">{title}</h3>
+        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
           {description || (isArabic ? 'كورس كيمياء شامل' : 'Comprehensive chemistry course')}
         </p>
@@ -100,7 +101,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
         </div>
 
         {/* CTA */}
-        <Button variant={course.is_free ? 'default' : 'outline'} className="w-full" asChild>
+        <Button variant={course.is_free ? 'default' : 'outline'} className="w-full group-hover:shadow-md transition-shadow" asChild>
           <Link to={courseUrl}>
             {course.is_free ? t('courses.preview') : t('courses.enroll')}
           </Link>
@@ -108,7 +109,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
       </div>
     </div>
   );
-};
+});
+
+CourseCard.displayName = 'CourseCard';
 
 export const CoursesSection: React.FC = () => {
   const { t, language } = useLanguage();

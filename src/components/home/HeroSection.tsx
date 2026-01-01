@@ -104,18 +104,18 @@ export const HeroSection: React.FC = () => {
               )}
             </div>
 
-            {/* Stats - Translated */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border max-w-lg mx-auto">
-              <div className="text-center">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
+            {/* Stats - Translated with enhanced styling */}
+            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border/50 max-w-lg mx-auto">
+              <div className="text-center group">
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">+500</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_lessons')}</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">+10K</p>
+              <div className="text-center group">
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">+10K</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_students')}</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl lg:text-3xl font-bold text-primary">95%</p>
+              <div className="text-center group">
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">95%</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_success')}</p>
               </div>
             </div>
