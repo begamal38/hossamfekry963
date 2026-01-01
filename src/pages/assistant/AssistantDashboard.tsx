@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap, Send, MapPin, Calendar } from 'lucide-react';
+import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap, Send, MapPin, Calendar, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -40,6 +40,7 @@ export default function AssistantDashboard() {
     avgExamScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const hasAccess = canAccessDashboard();
 
@@ -126,6 +127,7 @@ export default function AssistantDashboard() {
     );
   }
 
+  // Simplified stats - only essential metrics
   const statCards = [
     {
       title: isRTL ? 'إجمالي الطلاب' : 'Total Students',
@@ -135,11 +137,11 @@ export default function AssistantDashboard() {
       link: '/assistant/students',
     },
     {
-      title: isRTL ? 'الاشتراكات المعلقة' : 'Pending Enrollments',
-      value: stats.pendingEnrollments,
-      icon: Clock,
-      color: 'bg-yellow-500/10 text-yellow-600',
-      link: '/assistant/enrollments',
+      title: isRTL ? 'إجمالي الحصص' : 'Total Lessons',
+      value: stats.totalLessons,
+      icon: BookOpen,
+      color: 'bg-blue-500/10 text-blue-600',
+      link: '/assistant/lessons',
     },
     {
       title: isRTL ? 'الاشتراكات النشطة' : 'Active Enrollments',
@@ -149,25 +151,11 @@ export default function AssistantDashboard() {
       link: '/assistant/enrollments',
     },
     {
-      title: isRTL ? 'إجمالي الحصص' : 'Total Lessons',
-      value: stats.totalLessons,
-      icon: BookOpen,
-      color: 'bg-blue-500/10 text-blue-600',
-      link: '/assistant/lessons',
-    },
-    {
-      title: isRTL ? 'الامتحانات' : 'Exams',
-      value: stats.totalExams,
+      title: isRTL ? 'متوسط درجات الامتحانات' : 'Avg Exam Score',
+      value: `${stats.avgExamScore}%`,
       icon: Award,
       color: 'bg-purple-500/10 text-purple-600',
-      link: '/assistant/exams',
-    },
-    {
-      title: isRTL ? 'الحضور الكلي' : 'Total Attendance',
-      value: stats.totalAttendance,
-      icon: ClipboardList,
-      color: 'bg-accent/10 text-accent',
-      link: '/assistant/attendance',
+      link: '/assistant/reports',
     },
   ];
 
@@ -188,8 +176,8 @@ export default function AssistantDashboard() {
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        {/* Stats Grid - Simplified */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {statCards.map((stat, index) => (
             <Link
               key={index}
@@ -209,79 +197,162 @@ export default function AssistantDashboard() {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-card border border-border rounded-xl p-6">
+        {/* Quick Actions - ONLY Daily Frequent Actions */}
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             {isRTL ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <Button asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/students">
                 <Users className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الطلاب' : 'Manage Students'}</span>
+                <span>{isRTL ? 'الطلاب' : 'Students'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/30 bg-primary/5">
               <Link to="/assistant/courses">
                 <GraduationCap className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الكورسات' : 'Manage Courses'}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/enrollments">
-                <CreditCard className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الاشتراكات' : 'Manage Enrollments'}</span>
+                <span>{isRTL ? 'الكورسات' : 'Courses'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/lessons">
                 <BookOpen className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الحصص' : 'Manage Lessons'}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/attendance">
-                <ClipboardList className="h-6 w-6" />
-                <span>{isRTL ? 'تسجيل الحضور' : 'Record Attendance'}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/grades">
-                <Award className="h-6 w-6" />
-                <span>{isRTL ? 'تسجيل الدرجات' : 'Record Grades'}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/exams">
-                <FileText className="h-6 w-6" />
-                <span>{isRTL ? 'إدارة الامتحانات' : 'Manage Exams'}</span>
-              </Link>
-            </Button>
-            <Button variant="secondary" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/20">
-              <Link to="/assistant/reports">
-                <BarChart3 className="h-6 w-6" />
-                <span>{isRTL ? 'التقارير والإحصائيات' : 'Reports & Stats'}</span>
+                <span>{isRTL ? 'الحصص' : 'Lessons'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-green-500/30 bg-green-500/5">
-              <Link to="/assistant/notifications">
-                <Send className="h-6 w-6 text-green-600" />
-                <span className="text-green-700">{isRTL ? 'إرسال إشعارات' : 'Send Notifications'}</span>
+              <Link to="/assistant/lessons?action=add">
+                <Plus className="h-6 w-6 text-green-600" />
+                <span className="text-green-700">{isRTL ? 'إضافة حصة' : 'Add Lesson'}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-blue-500/30 bg-blue-500/5">
-              <Link to="/assistant/center-groups">
-                <MapPin className="h-6 w-6 text-blue-600" />
-                <span className="text-blue-700">{isRTL ? 'مجموعات السنتر' : 'Center Groups'}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-purple-500/30 bg-purple-500/5">
-              <Link to="/assistant/center-sessions">
-                <Calendar className="h-6 w-6 text-purple-600" />
-                <span className="text-purple-700">{isRTL ? 'جلسات السنتر' : 'Center Sessions'}</span>
+              <Link to="/assistant/notifications">
+                <Send className="h-6 w-6 text-blue-600" />
+                <span className="text-blue-700">{isRTL ? 'إرسال إشعارات' : 'Send Notifications'}</span>
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Advanced Actions - Collapsible */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between text-lg font-semibold text-foreground mb-4"
+          >
+            <span>{isRTL ? 'إجراءات متقدمة' : 'Advanced Actions'}</span>
+            {showAdvanced ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </button>
+          
+          {showAdvanced && (
+            <div className="space-y-6">
+              {/* Content Section */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {isRTL ? 'المحتوى' : 'Content'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/courses">
+                      <GraduationCap className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الكورسات' : 'Courses'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/chapters">
+                      <FileText className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الأبواب' : 'Chapters'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/lessons">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الحصص' : 'Lessons'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/exams">
+                      <Award className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الامتحانات' : 'Exams'}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Students Section */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  {isRTL ? 'الطلاب' : 'Students'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/students">
+                      <Users className="h-4 w-4 mr-2" />
+                      {isRTL ? 'قائمة الطلاب' : 'Student List'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/enrollments">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الاشتراكات' : 'Enrollments'}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Analytics Section */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  {isRTL ? 'التحليلات' : 'Analytics'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/reports">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      {isRTL ? 'التقارير' : 'Reports'}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Center Section */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {isRTL ? 'السنتر' : 'Center'}
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/center-groups">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      {isRTL ? 'المجموعات' : 'Groups'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/center-sessions">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الجلسات' : 'Sessions'}
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
+                    <Link to="/assistant/attendance">
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      {isRTL ? 'الحضور' : 'Attendance'}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
