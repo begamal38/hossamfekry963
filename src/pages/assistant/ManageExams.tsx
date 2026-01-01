@@ -675,29 +675,29 @@ export default function ManageExams() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          عنوان الامتحان *
+                          {isArabic ? 'عنوان الامتحان' : 'Exam Title'} *
                         </label>
                         <Input
                           value={examForm.title_ar}
                           onChange={(e) => setExamForm(prev => ({ ...prev, title_ar: e.target.value }))}
-                          placeholder="مثال: اختبار الباب الأول"
+                          placeholder={isArabic ? "مثال: اختبار الباب الأول" : "e.g., Chapter 1 Test"}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          الباب
+                          {isArabic ? 'الباب' : 'Chapter'}
                         </label>
                         <Select 
                           value={examForm.chapter_id} 
                           onValueChange={(value) => setExamForm(prev => ({ ...prev, chapter_id: value }))}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="اختر الباب (اختياري)" />
+                            <SelectValue placeholder={isArabic ? "اختر الباب (اختياري)" : "Select chapter (optional)"} />
                           </SelectTrigger>
                           <SelectContent>
                             {chapters.map(chapter => (
                               <SelectItem key={chapter.id} value={chapter.id}>
-                                {chapter.title_ar}
+                                {isArabic ? chapter.title_ar : chapter.title}
                               </SelectItem>
                             ))}
                           </SelectContent>

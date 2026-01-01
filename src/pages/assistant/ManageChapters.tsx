@@ -38,11 +38,11 @@ interface Chapter {
 export default function ManageChapters() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const isArabic = language === 'ar';
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-
   const [courses, setCourses] = useState<Course[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -159,8 +159,8 @@ export default function ManageChapters() {
     e.preventDefault();
     if (!selectedCourse || !formData.title_ar.trim()) {
       toast({
-        title: 'خطأ',
-        description: 'يرجى إدخال عنوان الباب',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'يرجى إدخال عنوان الباب' : 'Please enter chapter title',
         variant: 'destructive',
       });
       return;
@@ -182,8 +182,8 @@ export default function ManageChapters() {
         if (error) throw error;
 
         toast({
-          title: 'تم التحديث',
-          description: 'تم تحديث الباب بنجاح',
+          title: isArabic ? 'تم التحديث' : 'Updated',
+          description: isArabic ? 'تم تحديث الباب بنجاح' : 'Chapter updated successfully',
         });
       } else {
         const { error } = await supabase
@@ -196,8 +196,8 @@ export default function ManageChapters() {
         if (error) throw error;
 
         toast({
-          title: 'تمت الإضافة',
-          description: 'تمت إضافة الباب بنجاح',
+          title: isArabic ? 'تمت الإضافة' : 'Added',
+          description: isArabic ? 'تمت إضافة الباب بنجاح' : 'Chapter added successfully',
         });
       }
 
@@ -213,15 +213,15 @@ export default function ManageChapters() {
     } catch (error) {
       console.error('Error saving chapter:', error);
       toast({
-        title: 'خطأ',
-        description: 'حدث خطأ أثناء الحفظ',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'حدث خطأ أثناء الحفظ' : 'Error saving chapter',
         variant: 'destructive',
       });
     }
   };
 
   const handleDelete = async (chapterId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الباب؟')) {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا الباب؟' : 'Are you sure you want to delete this chapter?')) {
       return;
     }
 
@@ -235,14 +235,14 @@ export default function ManageChapters() {
 
       setChapters(chapters.filter(ch => ch.id !== chapterId));
       toast({
-        title: 'تم الحذف',
-        description: 'تم حذف الباب بنجاح',
+        title: isArabic ? 'تم الحذف' : 'Deleted',
+        description: isArabic ? 'تم حذف الباب بنجاح' : 'Chapter deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting chapter:', error);
       toast({
-        title: 'خطأ',
-        description: 'حدث خطأ أثناء الحذف',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'حدث خطأ أثناء الحذف' : 'Error deleting chapter',
         variant: 'destructive',
       });
     }
@@ -257,7 +257,7 @@ export default function ManageChapters() {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-24">
@@ -265,15 +265,15 @@ export default function ManageChapters() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Layers className="h-6 w-6 text-primary" />
-              إدارة الأبواب
+              {isArabic ? 'إدارة الأبواب' : 'Manage Chapters'}
             </h1>
             <p className="text-muted-foreground mt-1">
-              تنظيم الحصص في أبواب
+              {isArabic ? 'تنظيم الحصص في أبواب' : 'Organize lessons into chapters'}
             </p>
           </div>
           <Button onClick={() => { resetForm(); setShowForm(true); }} className="gap-2">
             <Plus className="h-4 w-4" />
-            إضافة باب
+            {isArabic ? 'إضافة باب' : 'Add Chapter'}
           </Button>
         </div>
 
@@ -281,12 +281,12 @@ export default function ManageChapters() {
         <div className="mb-6">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
             <SelectTrigger className="w-full max-w-sm">
-              <SelectValue placeholder="اختر الكورس" />
+              <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
             </SelectTrigger>
             <SelectContent>
               {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
-                  {course.title_ar}
+                  {isArabic ? course.title_ar : course.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -297,27 +297,27 @@ export default function ManageChapters() {
         {showForm && (
           <div className="bg-card border border-border rounded-xl p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">
-              {editingChapter ? 'تعديل الباب' : 'إضافة باب جديد'}
+              {editingChapter ? (isArabic ? 'تعديل الباب' : 'Edit Chapter') : (isArabic ? 'إضافة باب جديد' : 'Add New Chapter')}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">
-                  عنوان الباب <span className="text-destructive">*</span>
+                  {isArabic ? 'عنوان الباب' : 'Chapter Title'} <span className="text-destructive">*</span>
                 </label>
                 <Input
                   value={formData.title_ar}
                   onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
-                  placeholder="مثال: الباب الأول - الكيمياء العضوية"
+                  placeholder={isArabic ? "مثال: الباب الأول - الكيمياء العضوية" : "e.g., Chapter 1 - Organic Chemistry"}
                   required
                   className="text-lg"
                 />
               </div>
               <div className="flex gap-2">
                 <Button type="submit">
-                  {editingChapter ? 'تحديث' : 'إضافة'}
+                  {editingChapter ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة' : 'Add')}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
-                  إلغاء
+                  {isArabic ? 'إلغاء' : 'Cancel'}
                 </Button>
               </div>
             </form>
@@ -333,10 +333,10 @@ export default function ManageChapters() {
           <div className="bg-card border border-border rounded-xl p-12 text-center">
             <Layers className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              لا توجد أبواب
+              {isArabic ? 'لا توجد أبواب' : 'No chapters'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              أضف أبواباً لتنظيم الحصص
+              {isArabic ? 'أضف أبواباً لتنظيم الحصص' : 'Add chapters to organize lessons'}
             </p>
           </div>
         ) : (
@@ -351,12 +351,12 @@ export default function ManageChapters() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-foreground">
-                    {chapter.title_ar}
+                    {isArabic ? chapter.title_ar : chapter.title}
                   </h3>
                 </div>
                 <Badge variant="secondary">
-                  <BookOpen className="h-3 w-3 ml-1" />
-                  {chapter.lessons_count || 0} حصة
+                  <BookOpen className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                  {chapter.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}
                 </Badge>
                 <div className="flex items-center gap-2">
                   <Button
@@ -365,8 +365,8 @@ export default function ManageChapters() {
                     asChild
                   >
                     <Link to={`/assistant/lessons?chapter_id=${chapter.id}&course=${selectedCourse}`}>
-                      الحصص
-                      <ChevronRight className="h-4 w-4 mr-1 rotate-180" />
+                      {isArabic ? 'الحصص' : 'Lessons'}
+                      <ChevronRight className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'ml-1'}`} />
                     </Link>
                   </Button>
                   <Button
