@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
 import { filterCoursesForStudents, ACTIVE_SCOPE, isCoursePreview } from '@/lib/contentVisibility';
+import { SEOHead } from '@/components/seo/SEOHead';
 
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
@@ -262,6 +263,13 @@ const Courses: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead 
+        title="Chemistry Courses – Hossam Fekry Platform"
+        titleAr="كورسات الكيمياء – منصة حسام فكري"
+        description="Browse our comprehensive Chemistry courses for Thanaweya Amma. 2nd and 3rd Secondary - Arabic and Languages tracks."
+        descriptionAr="تصفح كورسات الكيمياء الشاملة للثانوية العامة. تانية وتالتة ثانوي - عربي ولغات."
+        canonical="https://hossamfekry.com/courses"
+      />
       <Navbar />
       
       <main className="pt-24 pb-16">

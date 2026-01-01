@@ -137,11 +137,11 @@ export const CoursesSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-muted/30" style={{ contain: 'layout' }}>
+    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-muted/30" style={{ contain: 'layout' }} aria-labelledby="courses-heading">
       <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 2xl:gap-6 mb-12 2xl:mb-16 3xl:mb-20">
           <div>
-            <h2 className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
+            <h2 id="courses-heading" className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
               {t('courses.title')}
             </h2>
             <p className="text-muted-foreground max-w-xl 2xl:max-w-2xl 2xl:text-lg 3xl:text-xl">

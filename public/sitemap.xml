@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://hossamfekry.com/</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/"/>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Courses Page -->
+  <url>
+    <loc>https://hossamfekry.com/courses</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/courses"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/courses"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- About Page -->
+  <url>
+    <loc>https://hossamfekry.com/about</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/about"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Free Lessons Page -->
+  <url>
+    <loc>https://hossamfekry.com/free-lessons</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/free-lessons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/free-lessons"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Campaigns Page -->
+  <url>
+    <loc>https://hossamfekry.com/campaigns</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/campaigns"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/campaigns"/>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Install Page -->
+  <url>
+    <loc>https://hossamfekry.com/install</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://hossamfekry.com/install"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hossamfekry.com/install"/>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+</urlset>

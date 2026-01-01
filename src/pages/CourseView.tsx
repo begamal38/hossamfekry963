@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
 import { filterLessonsForStudents, hasValidVideo, calculateProgress, isCoursePreview } from '@/lib/contentVisibility';
+import { SEOHead } from '@/components/seo/SEOHead';
 
 interface Course {
   id: string;
@@ -398,8 +399,20 @@ export default function CourseView() {
     );
   }
 
+  // Generate dynamic SEO for this course
+  const courseTitle = isArabic ? course.title_ar : course.title;
+  const courseDescription = isArabic ? course.description_ar : course.description;
+
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <SEOHead 
+        title={`${course.title} – Hossam Fekry Platform`}
+        titleAr={`${course.title_ar} – منصة حسام فكري`}
+        description={course.description || `Chemistry course for ${gradeInfo?.en || 'Thanaweya Amma'} students`}
+        descriptionAr={course.description_ar || `كورس كيمياء لطلاب ${gradeInfo?.ar || 'الثانوية العامة'}`}
+        canonical={`https://hossamfekry.com/course/${courseId}`}
+        ogImage={course.thumbnail_url || '/favicon.jpg'}
+      />
       <Navbar />
 
       <main className="pt-20 pb-16">
