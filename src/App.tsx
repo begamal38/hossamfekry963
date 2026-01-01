@@ -40,6 +40,7 @@ import SendNotifications from "./pages/assistant/SendNotifications";
 import CenterGroups from "./pages/assistant/CenterGroups";
 import CenterSessions from "./pages/assistant/CenterSessions";
 import ManageExams from "./pages/assistant/ManageExams";
+import ExamResults from "./pages/assistant/ExamResults";
 import TakeExam from "./pages/TakeExam";
 
 const queryClient = new QueryClient();
@@ -287,6 +288,17 @@ const App = () => (
                         allow={({ canAccessDashboard }) => canAccessDashboard()}
                       >
                         <ManageExams />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/exam-results/:examId"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <ExamResults />
                       </RequireResolvedAccess>
                     }
                   />

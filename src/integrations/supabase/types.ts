@@ -388,7 +388,9 @@ export type Database = {
           option_c: string
           option_d: string
           order_index: number | null
+          question_image_url: string | null
           question_text: string
+          question_type: Database["public"]["Enums"]["exam_question_type"]
         }
         Insert: {
           correct_option: string
@@ -400,7 +402,9 @@ export type Database = {
           option_c: string
           option_d: string
           order_index?: number | null
+          question_image_url?: string | null
           question_text: string
+          question_type?: Database["public"]["Enums"]["exam_question_type"]
         }
         Update: {
           correct_option?: string
@@ -412,7 +416,9 @@ export type Database = {
           option_c?: string
           option_d?: string
           order_index?: number | null
+          question_image_url?: string | null
           question_text?: string
+          question_type?: Database["public"]["Enums"]["exam_question_type"]
         }
         Relationships: [
           {
@@ -462,33 +468,57 @@ export type Database = {
       exams: {
         Row: {
           chapter_id: string | null
+          closed_at: string | null
           course_id: string
           created_at: string
           exam_date: string | null
           id: string
+          max_attempts: number | null
           max_score: number
+          pass_mark: number
+          published_at: string | null
+          show_results: boolean
+          status: Database["public"]["Enums"]["exam_status"]
+          time_limit_minutes: number | null
           title: string
           title_ar: string
+          updated_at: string
         }
         Insert: {
           chapter_id?: string | null
+          closed_at?: string | null
           course_id: string
           created_at?: string
           exam_date?: string | null
           id?: string
+          max_attempts?: number | null
           max_score?: number
+          pass_mark?: number
+          published_at?: string | null
+          show_results?: boolean
+          status?: Database["public"]["Enums"]["exam_status"]
+          time_limit_minutes?: number | null
           title: string
           title_ar: string
+          updated_at?: string
         }
         Update: {
           chapter_id?: string | null
+          closed_at?: string | null
           course_id?: string
           created_at?: string
           exam_date?: string | null
           id?: string
+          max_attempts?: number | null
           max_score?: number
+          pass_mark?: number
+          published_at?: string | null
+          show_results?: boolean
+          status?: Database["public"]["Enums"]["exam_status"]
+          time_limit_minutes?: number | null
           title?: string
           title_ar?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1101,6 +1131,7 @@ export type Database = {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
       }
+      get_exam_attempts_count: { Args: { exam_uuid: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1113,6 +1144,8 @@ export type Database = {
       app_role: "admin" | "assistant_teacher" | "student"
       attendance_mode: "online" | "center" | "hybrid"
       attendance_type: "center" | "online"
+      exam_question_type: "mcq" | "essay"
+      exam_status: "draft" | "published" | "closed" | "archived"
       notification_target_type:
         | "all"
         | "course"
@@ -1262,6 +1295,8 @@ export const Constants = {
       app_role: ["admin", "assistant_teacher", "student"],
       attendance_mode: ["online", "center", "hybrid"],
       attendance_type: ["center", "online"],
+      exam_question_type: ["mcq", "essay"],
+      exam_status: ["draft", "published", "closed", "archived"],
       notification_target_type: [
         "all",
         "course",
