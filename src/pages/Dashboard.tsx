@@ -266,8 +266,10 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const fullName = profile?.full_name || user?.email?.split('@')[0] || '';
-  const firstName = fullName.split(' ')[0];
+  // Robust name handling with Arabic fallback
+  const fullName = profile?.full_name?.trim() || '';
+  const firstName = fullName.split(' ')[0] || user?.email?.split('@')[0] || '';
+  const hasValidName = firstName && firstName.length > 0;
   const groupLabel = getGroupLabel(profile?.academic_year || null, profile?.language_track || null, isArabic);
 
   // Calculate stats
@@ -307,7 +309,9 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                  {t('dashboard.welcome')} {firstName}! 👋
+                  {hasValidName 
+                    ? (isArabic ? `أهلاً بيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`)
+                    : (isArabic ? 'أهلاً بيك! 👋' : 'Welcome! 👋')}
                 </h1>
                   <div className="flex items-center gap-3 flex-wrap">
                     <p className="text-muted-foreground">
@@ -411,7 +415,7 @@ const Dashboard: React.FC = () => {
                           completedLessons={enrollment.completed_lessons || 0}
                           totalLessons={course.lessons_count || 0}
                           isRTL={isArabic}
-                          onContinue={() => navigate(`/courses`)}
+                          onContinue={() => navigate(`/course/${course.id}`)}
                         />
                       );
                     })}
@@ -429,7 +433,7 @@ const Dashboard: React.FC = () => {
                 <LessonActivityList
                   lessons={lessonActivities}
                   isRTL={isArabic}
-                  onLessonClick={(id) => console.log('Continue lesson:', id)}
+                  onLessonClick={(id) => navigate(`/lesson/${id}`)}
                 />
               </section>
 
@@ -443,8 +447,8 @@ const Dashboard: React.FC = () => {
                 <ExamActivityList
                   exams={allExams}
                   isRTL={isArabic}
-                  onTakeExam={(id) => console.log('Take exam:', id)}
-                  onRetakeExam={(id) => console.log('Retake exam:', id)}
+                  onTakeExam={(id) => navigate(`/exam/${id}`)}
+                  onRetakeExam={(id) => navigate(`/exam/${id}`)}
                 />
               </section>
             </div>

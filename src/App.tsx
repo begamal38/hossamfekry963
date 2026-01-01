@@ -33,7 +33,7 @@ import Enrollments from "./pages/assistant/Enrollments";
 import ManageLessons from "./pages/assistant/ManageLessons";
 import ManageChapters from "./pages/assistant/ManageChapters";
 import RecordAttendance from "./pages/assistant/RecordAttendance";
-import RecordGrades from "./pages/assistant/RecordGrades";
+// RecordGrades removed - grades come ONLY from exams
 import Reports from "./pages/assistant/Reports";
 import ManageCourses from "./pages/assistant/ManageCourses";
 import SendNotifications from "./pages/assistant/SendNotifications";
@@ -225,17 +225,7 @@ const App = () => (
                       </RequireResolvedAccess>
                     }
                   />
-                  <Route
-                    path="/assistant/grades"
-                    element={
-                      <RequireResolvedAccess
-                        requireAuth
-                        allow={({ canAccessDashboard }) => canAccessDashboard()}
-                      >
-                        <RecordGrades />
-                      </RequireResolvedAccess>
-                    }
-                  />
+                  {/* /assistant/grades route removed - grades come ONLY from exams */}
                   <Route
                     path="/assistant/reports"
                     element={

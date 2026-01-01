@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, BookOpen } from 'lucide-react';
+import { Play, BookOpen, Lock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { LessonStatusBadge, LessonStatus } from './LessonStatusBadge';
@@ -24,7 +24,11 @@ export const CourseProgressCard: React.FC<CourseProgressCardProps> = ({
     ? Math.round((completedLessons / totalLessons) * 100) 
     : 0;
 
+  // Check if course has no lessons (content not activated)
+  const hasNoContent = totalLessons === 0;
+
   const getStatus = (): LessonStatus => {
+    if (hasNoContent) return 'not_started';
     if (progressPercent === 100) return 'completed';
     if (progressPercent > 0) return 'in_progress';
     return 'not_started';
@@ -40,7 +44,10 @@ export const CourseProgressCard: React.FC<CourseProgressCardProps> = ({
           <div>
             <h4 className="font-semibold text-foreground line-clamp-1">{title}</h4>
             <p className="text-sm text-muted-foreground">
-              {completedLessons}/{totalLessons} {isRTL ? 'درس' : 'lessons'}
+              {hasNoContent 
+                ? (isRTL ? 'لا توجد حصص' : 'No lessons')
+                : `${completedLessons}/${totalLessons} ${isRTL ? 'درس' : 'lessons'}`
+              }
             </p>
           </div>
         </div>
@@ -55,7 +62,14 @@ export const CourseProgressCard: React.FC<CourseProgressCardProps> = ({
         <Progress value={progressPercent} className="h-2" />
       </div>
       
-      {progressPercent < 100 && (
+      {hasNoContent ? (
+        // No content - show disabled state with explanation
+        <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground bg-muted/50 rounded-lg">
+          <Lock className="w-4 h-4" />
+          {isRTL ? 'المحتوى لم يتم تفعيله بعد' : 'Content not yet activated'}
+        </div>
+      ) : progressPercent < 100 ? (
+        // Has content and not complete - show continue button
         <Button 
           onClick={onContinue} 
           className="w-full gap-2"
@@ -64,10 +78,10 @@ export const CourseProgressCard: React.FC<CourseProgressCardProps> = ({
           <Play className="w-4 h-4" />
           {progressPercent === 0 
             ? (isRTL ? 'ابدأ الآن' : 'Start Now')
-            : (isRTL ? 'متابعة' : 'Continue')
+            : (isRTL ? 'استكمال الكورس' : 'Continue Course')
           }
         </Button>
-      )}
+      ) : null}
     </div>
   );
 };

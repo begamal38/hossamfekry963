@@ -676,6 +676,16 @@ export default function ManageExams() {
                     <CardDescription>
                       {isArabic ? 'املأ البيانات الأساسية للامتحان' : 'Fill in the basic exam details'}
                     </CardDescription>
+                    {/* Guidance Message */}
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-3 flex items-start gap-2">
+                      <span className="text-lg">💡</span>
+                      <p className="text-sm text-muted-foreground">
+                        {isArabic 
+                          ? 'الامتحان لازم يكون مربوط بباب عشان يتحسب في التحليل. اختر الباب المناسب لربط الامتحان.'
+                          : 'Link the exam to a chapter for proper analytics. Select the appropriate chapter to link.'
+                        }
+                      </p>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">

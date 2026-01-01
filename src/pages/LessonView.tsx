@@ -457,6 +457,36 @@ export default function LessonView() {
             )}
           </section>
 
+          {/* Guidance Messages */}
+          {user && hasValidVideo(lesson.video_url) && !completed && (
+            <section className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  💡
+                </div>
+                <div>
+                  {!isCompleteButtonEnabled ? (
+                    <>
+                      <p className="font-medium text-foreground">
+                        {isArabic ? 'كمّل مشاهدة 20 دقيقة عشان تفتح الامتحان' : 'Watch 20 minutes to unlock the exam'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {isArabic 
+                          ? `متبقي ${formatRemainingTime(remainingSeconds)} - اضغط ابدأ واستمر في المشاهدة`
+                          : `${formatRemainingTime(remainingSeconds)} remaining - click Start and keep watching`
+                        }
+                      </p>
+                    </>
+                  ) : (
+                    <p className="font-medium text-green-600">
+                      {isArabic ? 'ممتاز 👏 تقدر تضغط إكمال الحصة دلوقتي!' : 'Great! 👏 You can mark the lesson complete now!'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Completion Section */}
           {user && hasValidVideo(lesson.video_url) && (
             <section className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
@@ -469,11 +499,17 @@ export default function LessonView() {
                     {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done!'}
                   </h3>
                   <p className="text-muted-foreground">
-                    {nextLesson 
-                      ? (isArabic ? 'استمر للحصة التالية' : 'Continue to the next lesson')
-                      : (isArabic ? 'أكملت كل الحصص' : 'You completed all lessons')
-                    }
+                    {isArabic ? 'ممتاز 👏 الامتحان متاح دلوقتي' : 'Great! 👏 The exam is now available'}
                   </p>
+                  {nextLesson && (
+                    <Button 
+                      size="lg"
+                      onClick={() => navigate(`/lesson/${nextLesson.id}`)}
+                      className="mt-2"
+                    >
+                      {isArabic ? 'الحصة التالية' : 'Next Lesson'}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
