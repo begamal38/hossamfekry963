@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, BookOpen, Check, Loader2, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, UserPlus, BookOpen, Check, Loader2, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,14 @@ const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
   'third_arabic': { ar: 'تالتة ثانوي عربي', en: '3rd Secondary - Arabic' },
   'third_languages': { ar: 'تالتة ثانوي لغات', en: '3rd Secondary - Languages' },
+};
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const isValidUUID = (id: string | null | undefined): boolean => {
+  if (!id) return false;
+  return UUID_REGEX.test(id);
 };
 
 interface Student {
@@ -58,21 +66,31 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Fetch courses on mount
+  // Get selected student object from ID
+  const selectedStudent = students.find(s => s.user_id === selectedStudentId) || null;
+
+  // Fetch courses on dialog open
   useEffect(() => {
     const fetchCourses = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('courses')
         .select('id, title, title_ar, grade')
         .order('grade');
       
-      setCourses(data || []);
+      if (error) {
+        console.error('Error fetching courses:', error);
+        return;
+      }
+      
+      // Validate that all courses have valid UUIDs
+      const validCourses = (data || []).filter(c => isValidUUID(c.id));
+      setCourses(validCourses);
     };
 
     if (open) {
@@ -80,17 +98,26 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
     }
   }, [open]);
 
+  // Clear validation error when selections change
+  useEffect(() => {
+    setValidationError(null);
+  }, [selectedStudentId, selectedCourseId]);
+
   // Search students
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!searchTerm.trim()) return;
     
     setSearchLoading(true);
+    setValidationError(null);
+    
     try {
       // First get student user IDs
-      const { data: studentRoles } = await supabase
+      const { data: studentRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('role', 'student');
+
+      if (rolesError) throw rolesError;
 
       const studentUserIds = studentRoles?.map(r => r.user_id) || [];
 
@@ -109,7 +136,10 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
         .limit(10);
 
       if (error) throw error;
-      setStudents(data || []);
+      
+      // Validate that all students have valid UUIDs
+      const validStudents = (data || []).filter(s => isValidUUID(s.user_id));
+      setStudents(validStudents);
     } catch (error) {
       console.error('Error searching students:', error);
       toast({
@@ -120,107 +150,202 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
     } finally {
       setSearchLoading(false);
     }
+  }, [searchTerm, isArabic, toast]);
+
+  // Select student - locks the ID immediately
+  const handleSelectStudent = useCallback((studentId: string) => {
+    if (!isValidUUID(studentId)) {
+      setValidationError(isArabic ? 'معرف الطالب غير صالح' : 'Invalid student ID');
+      return;
+    }
+    setSelectedStudentId(studentId);
+    setValidationError(null);
+  }, [isArabic]);
+
+  // Select course - locks the ID immediately
+  const handleSelectCourse = useCallback((courseId: string) => {
+    if (!isValidUUID(courseId)) {
+      setValidationError(isArabic ? 'معرف الكورس غير صالح' : 'Invalid course ID');
+      return;
+    }
+    setSelectedCourseId(courseId);
+    setValidationError(null);
+  }, [isArabic]);
+
+  // Validate before enrollment
+  const validateEnrollment = (): boolean => {
+    // Check user/assistant is authenticated
+    if (!user?.id) {
+      setValidationError(isArabic ? 'يجب تسجيل الدخول أولاً' : 'You must be logged in');
+      return false;
+    }
+
+    // Check student is selected and valid
+    if (!selectedStudentId) {
+      setValidationError(isArabic ? 'يجب اختيار الطالب' : 'Student not selected');
+      return false;
+    }
+    
+    if (!isValidUUID(selectedStudentId)) {
+      setValidationError(isArabic ? 'معرف الطالب غير صالح' : 'Invalid student ID');
+      return false;
+    }
+
+    // Check course is selected and valid
+    if (!selectedCourseId) {
+      setValidationError(isArabic ? 'يجب اختيار الكورس' : 'Course not selected');
+      return false;
+    }
+    
+    if (!isValidUUID(selectedCourseId)) {
+      setValidationError(isArabic ? 'معرف الكورس غير صالح' : 'Invalid course ID');
+      return false;
+    }
+
+    return true;
   };
 
   // Handle enrollment
   const handleEnroll = async () => {
-    if (!selectedStudent || !selectedCourseId || !user) return;
+    // Frontend validation
+    if (!validateEnrollment()) {
+      return;
+    }
+
+    // TypeScript safety - we've validated these are non-null above
+    const studentId = selectedStudentId!;
+    const courseId = selectedCourseId!;
+    const assistantId = user!.id;
 
     setEnrolling(true);
+    setValidationError(null);
+
     try {
       // Check if already enrolled
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('course_enrollments')
         .select('id, status')
-        .eq('user_id', selectedStudent.user_id)
-        .eq('course_id', selectedCourseId)
+        .eq('user_id', studentId)
+        .eq('course_id', courseId)
         .maybeSingle();
+
+      if (checkError) {
+        throw new Error(isArabic ? 'خطأ في التحقق من الاشتراك' : 'Error checking enrollment');
+      }
 
       if (existing) {
         if (existing.status === 'active') {
-          toast({
-            title: isArabic ? 'مشترك بالفعل' : 'Already enrolled',
-            description: isArabic ? 'هذا الطالب مشترك بالفعل في الكورس' : 'This student is already enrolled in the course',
-          });
+          setValidationError(isArabic ? 'هذا الطالب مشترك بالفعل في الكورس' : 'Student already enrolled');
           setEnrolling(false);
           return;
         }
         
         // Reactivate existing enrollment
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('course_enrollments')
           .update({
             status: 'active',
             activated_at: new Date().toISOString(),
-            activated_by: user.id,
+            activated_by: assistantId,
           })
           .eq('id', existing.id);
 
-        if (error) throw error;
+        if (updateError) {
+          if (updateError.code === '42501') {
+            throw new Error(isArabic ? 'ليس لديك صلاحية لتعديل الاشتراكات' : 'Permission denied');
+          }
+          throw updateError;
+        }
       } else {
-        // Create new enrollment
-        const { error } = await supabase
+        // Create new enrollment with explicit UUID values
+        const { error: insertError } = await supabase
           .from('course_enrollments')
           .insert({
-            user_id: selectedStudent.user_id,
-            course_id: selectedCourseId,
+            user_id: studentId,
+            course_id: courseId,
             status: 'active',
             activated_at: new Date().toISOString(),
-            activated_by: user.id,
+            activated_by: assistantId,
           });
 
-        if (error) throw error;
+        if (insertError) {
+          if (insertError.code === '42501') {
+            throw new Error(isArabic ? 'ليس لديك صلاحية لإضافة اشتراكات' : 'Permission denied');
+          }
+          if (insertError.code === '23503') {
+            throw new Error(isArabic ? 'الطالب أو الكورس غير موجود' : 'Student or course not found');
+          }
+          throw insertError;
+        }
       }
 
+      // Success
+      const studentName = selectedStudent?.full_name || '';
       toast({
         title: isArabic ? 'تم التسجيل بنجاح' : 'Enrollment successful',
         description: isArabic 
-          ? `تم تسجيل ${selectedStudent.full_name} في الكورس`
-          : `${selectedStudent.full_name} has been enrolled in the course`,
+          ? `تم تسجيل ${studentName} في الكورس`
+          : `${studentName} has been enrolled in the course`,
       });
 
       // Reset and close
-      setSelectedStudent(null);
-      setSelectedCourseId('');
-      setSearchTerm('');
-      setStudents([]);
+      resetState();
       setOpen(false);
       onEnrollmentComplete?.();
     } catch (error) {
       console.error('Error enrolling student:', error);
+      const errorMessage = error instanceof Error ? error.message : (isArabic ? 'حدث خطأ أثناء تسجيل الطالب' : 'An error occurred while enrolling the student');
+      
       toast({
         variant: 'destructive',
         title: isArabic ? 'خطأ في التسجيل' : 'Enrollment error',
-        description: isArabic ? 'حدث خطأ أثناء تسجيل الطالب' : 'An error occurred while enrolling the student',
+        description: errorMessage,
       });
     } finally {
       setEnrolling(false);
     }
   };
 
-  const resetState = () => {
-    setSelectedStudent(null);
-    setSelectedCourseId('');
+  const resetState = useCallback(() => {
+    setSelectedStudentId(null);
+    setSelectedCourseId(null);
     setSearchTerm('');
     setStudents([]);
-  };
+    setValidationError(null);
+  }, []);
+
+  const handleOpenChange = useCallback((v: boolean) => {
+    setOpen(v);
+    if (!v) resetState();
+  }, [resetState]);
+
+  // Check if submit should be enabled
+  const canSubmit = Boolean(selectedStudentId && selectedCourseId && !enrolling);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetState(); }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="default" className="gap-2">
           <UserPlus className="w-4 h-4" />
           {isArabic ? 'تسجيل طالب يدوياً' : 'Manual Enrollment'}
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {isArabic ? 'تسجيل طالب في كورس' : 'Enroll Student in Course'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-4 px-1">
+          {/* Validation Error */}
+          {validationError && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
           {/* Step 1: Search Student */}
           <div className="space-y-3">
             <label className="text-sm font-medium">
@@ -244,13 +369,14 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
 
             {/* Search Results */}
             {students.length > 0 && (
-              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
+              <div className="border rounded-lg divide-y max-h-48 overflow-y-auto bg-background">
                 {students.map((student) => (
                   <button
                     key={student.user_id}
-                    onClick={() => setSelectedStudent(student)}
+                    type="button"
+                    onClick={() => handleSelectStudent(student.user_id)}
                     className={`w-full p-3 text-right hover:bg-muted/50 transition-colors ${
-                      selectedStudent?.user_id === student.user_id ? 'bg-primary/10' : ''
+                      selectedStudentId === student.user_id ? 'bg-primary/10' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -260,7 +386,7 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
                           {student.phone || student.email}
                         </p>
                       </div>
-                      {selectedStudent?.user_id === student.user_id && (
+                      {selectedStudentId === student.user_id && (
                         <Check className="w-5 h-5 text-primary" />
                       )}
                     </div>
@@ -292,7 +418,8 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setSelectedStudent(null)}
+                    type="button"
+                    onClick={() => setSelectedStudentId(null)}
                     className="h-6 w-6 p-0"
                   >
                     <X className="w-4 h-4" />
@@ -300,17 +427,25 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
                 </div>
               </div>
 
-              <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                <SelectTrigger>
+              <Select 
+                value={selectedCourseId || ''} 
+                onValueChange={handleSelectCourse}
+              >
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={isArabic ? 'اختر الكورس...' : 'Select course...'} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent 
+                  position="popper" 
+                  side="bottom" 
+                  align="start"
+                  className="max-h-60 overflow-y-auto z-[100]"
+                >
                   {courses.map((course) => (
                     <SelectItem key={course.id} value={course.id}>
                       <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-muted-foreground" />
-                        <span>{isArabic ? course.title_ar : course.title}</span>
-                        <Badge variant="outline" className="text-xs">
+                        <BookOpen className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{isArabic ? course.title_ar : course.title}</span>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {GRADE_OPTIONS[course.grade]?.ar || course.grade}
                         </Badge>
                       </div>
@@ -322,12 +457,13 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
           )}
 
           {/* Step 3: Confirm */}
-          {selectedStudent && selectedCourseId && (
+          {selectedStudent && (
             <div className="pt-4 border-t">
               <Button 
                 onClick={handleEnroll} 
                 className="w-full gap-2" 
-                disabled={enrolling}
+                disabled={!canSubmit}
+                type="button"
               >
                 {enrolling ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -336,6 +472,12 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
                 )}
                 {isArabic ? 'تأكيد التسجيل' : 'Confirm Enrollment'}
               </Button>
+              
+              {!selectedCourseId && (
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  {isArabic ? 'اختر الكورس أولاً للمتابعة' : 'Select a course to continue'}
+                </p>
+              )}
             </div>
           )}
         </div>
