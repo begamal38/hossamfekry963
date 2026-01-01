@@ -278,6 +278,7 @@ const translations: Record<Language, Record<string, string>> = {
     // FOOTER
     // ══════════════════════════════════════════════════════════════════════════
     'footer.contact': 'Contact',
+    'footer.followUs': 'Follow Us',
     'footer.terms': 'Terms of Service',
     'footer.privacy': 'Privacy Policy',
     'footer.rights': 'All rights reserved',
@@ -608,6 +609,7 @@ const translations: Record<Language, Record<string, string>> = {
     // FOOTER
     // ══════════════════════════════════════════════════════════════════════════
     'footer.contact': 'تواصل معانا',
+    'footer.followUs': 'تابعنا',
     'footer.terms': 'شروط الخدمة',
     'footer.privacy': 'سياسة الخصوصية',
     'footer.rights': 'جميع الحقوق محفوظة',

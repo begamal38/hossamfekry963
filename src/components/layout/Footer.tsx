@@ -35,27 +35,27 @@ export const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Contact & Payment Information */}
+          {/* Contact Information - Side by Side Phone Numbers */}
           <div className="space-y-5 flex flex-col items-center md:items-start">
             <h4 className="font-bold text-lg text-foreground">
               {t('footer.contact')}
             </h4>
             <div className="space-y-4">
-              {/* Phone Numbers - Inline on desktop */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-6">
+              {/* Phone Numbers - Side by side */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6">
                 <button 
                   onClick={() => openWhatsApp('01225565645')}
                   className="flex items-center gap-2 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
                 >
                   <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform text-green-500" />
-                  <span dir="ltr" className="font-medium">01225565645</span>
+                  <span dir="ltr" className="font-medium">+201225565645</span>
                 </button>
                 <a 
                   href="tel:+201116218299" 
                   className="flex items-center gap-2 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
                 >
                   <Phone className="w-5 h-5 group-hover:scale-110 transition-transform text-primary" />
-                  <span dir="ltr" className="font-medium">01116218299</span>
+                  <span dir="ltr" className="font-medium">+201116218299</span>
                 </a>
               </div>
               
@@ -71,7 +71,6 @@ export const Footer: React.FC = () => {
                 <span className="font-medium">{t('footer.location')}</span>
               </div>
             </div>
-
           </div>
 
           {/* Social Media & Legal */}
@@ -79,7 +78,7 @@ export const Footer: React.FC = () => {
             {/* Social Media Icons */}
             <div className="space-y-4">
               <h4 className="font-bold text-lg text-center md:text-right text-foreground">
-                {isRTL ? 'تابعنا' : 'Follow Us'}
+                {t('footer.followUs')}
               </h4>
               <div className="flex items-center justify-center md:justify-start gap-4">
                 <a 
