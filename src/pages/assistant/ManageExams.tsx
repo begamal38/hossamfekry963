@@ -121,11 +121,11 @@ export default function ManageExams() {
   const [selectedChapter, setSelectedChapter] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Exam form state
+  // Exam form state - Arabic only
   const [showExamForm, setShowExamForm] = useState(false);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [examForm, setExamForm] = useState({
-    title: '',
+    title_ar: '',
     chapter_id: '',
     pass_mark: 60,
     time_limit_minutes: '',
@@ -262,19 +262,19 @@ export default function ManageExams() {
   };
 
   const handleSaveExam = async () => {
-    if (!examForm.title.trim() || !selectedCourse) {
+    if (!examForm.title_ar.trim() || !selectedCourse) {
       toast({
         variant: 'destructive',
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'يرجى ملء جميع الحقول' : 'Please fill all required fields',
+        title: 'خطأ',
+        description: 'يرجى ملء جميع الحقول',
       });
       return;
     }
 
     try {
       const examData = {
-        title_ar: examForm.title,
-        title: examForm.title,
+        title_ar: examForm.title_ar,
+        title: examForm.title_ar, // Use Arabic as English fallback
         course_id: selectedCourse,
         chapter_id: examForm.chapter_id || null,
         pass_mark: examForm.pass_mark,
@@ -492,7 +492,7 @@ export default function ManageExams() {
     setShowExamForm(false);
     setEditingExam(null);
     setExamForm({
-      title: '',
+      title_ar: '',
       chapter_id: '',
       pass_mark: 60,
       time_limit_minutes: '',
@@ -518,7 +518,7 @@ export default function ManageExams() {
   const startEditExam = (exam: Exam) => {
     setEditingExam(exam);
     setExamForm({
-      title: exam.title_ar,
+      title_ar: exam.title_ar,
       chapter_id: exam.chapter_id || '',
       pass_mark: exam.pass_mark,
       time_limit_minutes: exam.time_limit_minutes?.toString() || '',
@@ -675,29 +675,29 @@ export default function ManageExams() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          {isArabic ? 'عنوان الامتحان' : 'Exam Title'} *
+                          عنوان الامتحان *
                         </label>
                         <Input
-                          value={examForm.title}
-                          onChange={(e) => setExamForm(prev => ({ ...prev, title: e.target.value }))}
-                          placeholder={isArabic ? 'مثال: اختبار الباب الأول' : 'e.g., Chapter 1 Test'}
+                          value={examForm.title_ar}
+                          onChange={(e) => setExamForm(prev => ({ ...prev, title_ar: e.target.value }))}
+                          placeholder="مثال: اختبار الباب الأول"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          {isArabic ? 'الباب' : 'Chapter'} *
+                          الباب
                         </label>
                         <Select 
                           value={examForm.chapter_id} 
                           onValueChange={(value) => setExamForm(prev => ({ ...prev, chapter_id: value }))}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={isArabic ? 'اختر الباب' : 'Select Chapter'} />
+                            <SelectValue placeholder="اختر الباب (اختياري)" />
                           </SelectTrigger>
                           <SelectContent>
                             {chapters.map(chapter => (
                               <SelectItem key={chapter.id} value={chapter.id}>
-                                {isArabic ? chapter.title_ar : chapter.title}
+                                {chapter.title_ar}
                               </SelectItem>
                             ))}
                           </SelectContent>
