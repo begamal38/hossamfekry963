@@ -88,15 +88,8 @@ const App = () => (
                   <Route path="/course/:courseId" element={<CourseView />} />
                   <Route path="/course/:courseId/lessons" element={<CourseView />} />
                   
-                  {/* Lesson view requires auth */}
-                  <Route
-                    path="/lesson/:lessonId"
-                    element={
-                      <RequireResolvedAccess requireAuth>
-                        <LessonView />
-                      </RequireResolvedAccess>
-                    }
-                  />
+                  {/* Lesson view - free lessons accessible without auth */}
+                  <Route path="/lesson/:lessonId" element={<LessonView />} />
 
                   {/* Public routes */}
                   <Route path="/free-lessons" element={<FreeLessons />} />
