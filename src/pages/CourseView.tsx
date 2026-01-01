@@ -38,7 +38,7 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   thumbnail_url: string | null;
-  slug: string | null;
+  slug: string; // Always present (NOT NULL constraint)
 }
 
 interface Lesson {
@@ -193,11 +193,14 @@ export default function CourseView() {
           setAccessBlocked(null);
         }
       }
+      // Use the actual course ID (UUID) for all subsequent queries
+      const actualCourseId = courseData.id;
+      
       // Fetch lessons
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
-        .eq('course_id', courseId)
+        .eq('course_id', actualCourseId)
         .order('order_index');
 
       setLessons(lessonsData || []);
@@ -208,7 +211,7 @@ export default function CourseView() {
           .from('course_enrollments')
           .select('id, status')
           .eq('user_id', user.id)
-          .eq('course_id', courseId)
+          .eq('course_id', actualCourseId)
           .maybeSingle();
 
         setIsEnrolled(!!enrollment);
@@ -251,17 +254,18 @@ export default function CourseView() {
     }
 
     if (!course?.is_free && course?.price > 0) {
-      navigate(`/payment/${courseId}`);
+      navigate(`/payment/${course.id}`);
       return;
     }
 
     setEnrolling(true);
     try {
+      // Use course.id (UUID) not courseId (could be slug)
       const { error } = await supabase
         .from('course_enrollments')
         .insert({
           user_id: user.id,
-          course_id: courseId,
+          course_id: course.id,
           status: 'active'
         });
 
@@ -429,8 +433,7 @@ export default function CourseView() {
   const courseTitle = isArabic ? course.title_ar : course.title;
   const courseDescription = isArabic ? course.description_ar : course.description;
 
-  // Use slug for canonical URL, fallback to ID
-  const courseSlug = course.slug || course.id;
+  // Use slug for canonical URL (always present due to NOT NULL constraint)
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -439,7 +442,7 @@ export default function CourseView() {
         titleAr={`${course.title_ar} – منصة حسام فكري`}
         description={course.description || `Chemistry course for ${gradeInfo?.en || 'Thanaweya Amma'} students`}
         descriptionAr={course.description_ar || `كورس كيمياء لطلاب ${gradeInfo?.ar || 'الثانوية العامة'}`}
-        canonical={`https://hossamfekry.com/course/${courseSlug}`}
+        canonical={`https://hossamfekry.com/course/${course.slug}`}
         ogImage={course.thumbnail_url || '/favicon.jpg'}
       />
       <Navbar />
