@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import teacherImage from '@/assets/teacher.jpg';
+import { SEOHead } from '@/components/seo/SEOHead';
 
 interface PressArticle {
   id: number;
@@ -100,6 +101,13 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <SEOHead 
+        title="About Hossam Fekry – 25 Years of Chemistry Teaching Excellence"
+        titleAr="عن حسام فكري – 25 عام من التميز في تدريس الكيمياء"
+        description="Learn about Mr. Hossam Fekry, Chemistry supervisor with 25 years of experience teaching Thanaweya Amma students."
+        descriptionAr="تعرف على الأستاذ حسام فكري، موجه كيمياء بخبرة 25 عام في تدريس طلاب الثانوية العامة."
+        canonical="https://hossamfekry.com/about"
+      />
       <Navbar />
       
       <main className="pt-24 pb-16">

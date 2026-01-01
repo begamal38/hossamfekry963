@@ -52,10 +52,10 @@ export const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-10 lg:py-16 2xl:py-20 3xl:py-24 bg-background" style={{ contain: 'layout' }}>
+    <section className="py-10 lg:py-16 2xl:py-20 3xl:py-24 bg-background" style={{ contain: 'layout' }} aria-labelledby="features-heading">
       <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
         <div className="text-center mb-10 lg:mb-14 2xl:mb-18">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold text-foreground mb-3 lg:mb-4">
+          <h2 id="features-heading" className="text-2xl md:text-3xl lg:text-4xl 2xl:text-5xl font-bold text-foreground mb-3 lg:mb-4">
             {t('features.title')}
           </h2>
           <div className="w-20 h-1 lg:w-24 2xl:w-32 bg-gradient-to-r from-primary to-accent mx-auto rounded-full" />

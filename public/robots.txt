@@ -1,3 +1,6 @@
+# Hossam Fekry Educational Platform - Robots.txt
+# https://hossamfekry.com
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +15,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /assistant/
+Disallow: /auth
+Disallow: /payment/
+
+# Sitemap
+Sitemap: https://hossamfekry.com/sitemap.xml
