@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
+import { InlineCourseEditor } from '@/components/assistant/InlineCourseEditor';
 
 interface Course {
   id: string;
@@ -43,7 +44,7 @@ export default function ManageCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title_ar: '',
     description_ar: '',
@@ -99,8 +100,16 @@ export default function ManageCourses() {
     });
     setThumbnailFile(null);
     setThumbnailPreview(null);
-    setEditingCourse(null);
     setShowForm(false);
+  };
+
+  const handleInlineEditSave = () => {
+    setEditingCourseId(null);
+    fetchCourses();
+  };
+
+  const handleInlineEditCancel = () => {
+    setEditingCourseId(null);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,60 +174,23 @@ export default function ManageCourses() {
     }
   };
 
-  const handleEdit = (course: Course) => {
-    setEditingCourse(course);
-    setFormData({
-      title_ar: course.title_ar,
-      description_ar: course.description_ar || '',
-      grade: course.grade,
-      price: course.price || 0,
-      is_free: course.is_free || false,
-      duration_hours: course.duration_hours || 0,
-      thumbnail_url: course.thumbnail_url || '',
-    });
-    setThumbnailPreview(course.thumbnail_url || null);
-    setThumbnailFile(null);
-    setShowForm(true);
+  // Toggle inline edit for a specific course
+  const toggleEdit = (courseId: string) => {
+    setEditingCourseId(editingCourseId === courseId ? null : courseId);
   };
 
+  // Handle new course creation only (editing is now inline)
   const handleSubmit = async () => {
     if (!formData.title_ar) {
       toast({
-        title: 'خطأ',
-        description: 'يرجى إدخال عنوان الكورس',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'يرجى إدخال عنوان الكورس' : 'Please enter course title',
         variant: 'destructive'
       });
       return;
     }
 
     try {
-      if (editingCourse) {
-        // Upload thumbnail if there's a new file
-        const thumbnailUrl = await uploadThumbnail(editingCourse.id);
-        
-        // Update existing course - use Arabic for both fields
-        const { error } = await supabase
-          .from('courses')
-          .update({
-            title: formData.title_ar,
-            title_ar: formData.title_ar,
-            description: formData.description_ar || null,
-            description_ar: formData.description_ar || null,
-            grade: formData.grade,
-            price: formData.is_free ? 0 : formData.price,
-            is_free: formData.is_free,
-            duration_hours: formData.duration_hours,
-            thumbnail_url: thumbnailUrl,
-          })
-          .eq('id', editingCourse.id);
-
-        if (error) throw error;
-
-        toast({
-          title: 'تم بنجاح',
-          description: 'تم تحديث الكورس'
-        });
-      } else {
         // Create new course - use Arabic for both fields
         const { data: newCourse, error: insertError } = await supabase
           .from('courses')
@@ -251,10 +223,9 @@ export default function ManageCourses() {
         }
 
         toast({
-          title: 'تم بنجاح',
-          description: 'تم إضافة الكورس'
+          title: isArabic ? 'تم بنجاح' : 'Success',
+          description: isArabic ? 'تم إضافة الكورس' : 'Course added'
         });
-      }
 
       resetForm();
       fetchCourses();
@@ -335,10 +306,7 @@ export default function ManageCourses() {
         {showForm && (
           <div className="bg-card border border-border rounded-xl p-6 mb-8">
             <h3 className="font-semibold text-lg mb-6">
-              {editingCourse 
-                ? (isArabic ? 'تعديل الكورس' : 'Edit Course')
-                : (isArabic ? 'كورس جديد' : 'New Course')
-              }
+              {isArabic ? 'كورس جديد' : 'New Course'}
             </h3>
             
             <div className="space-y-6">
@@ -484,11 +452,9 @@ export default function ManageCourses() {
                 {uploadingImage ? (
                   <span className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    جاري الرفع...
+                    {isArabic ? 'جاري الرفع...' : 'Uploading...'}
                   </span>
-                ) : editingCourse 
-                  ? 'تحديث'
-                  : 'إضافة'
+                ) : (isArabic ? 'إضافة' : 'Add')
                 }
               </Button>
               <Button variant="outline" onClick={resetForm}>
@@ -584,10 +550,19 @@ export default function ManageCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1 gap-2"
-                        onClick={() => handleEdit(course)}
+                        onClick={() => toggleEdit(course.id)}
                       >
-                        <Pencil className="w-4 h-4" />
-                        {isArabic ? 'تعديل' : 'Edit'}
+                        {editingCourseId === course.id ? (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            {isArabic ? 'إغلاق' : 'Close'}
+                          </>
+                        ) : (
+                          <>
+                            <Pencil className="w-4 h-4" />
+                            {isArabic ? 'تعديل' : 'Edit'}
+                          </>
+                        )}
                       </Button>
                       <Button 
                         variant="outline" 
@@ -600,6 +575,15 @@ export default function ManageCourses() {
                     </div>
                   </div>
                 </div>
+                
+                {/* Inline Editor - expands within the card */}
+                {editingCourseId === course.id && (
+                  <InlineCourseEditor
+                    course={course}
+                    onSave={handleInlineEditSave}
+                    onCancel={handleInlineEditCancel}
+                  />
+                )}
               </div>
             ))}
           </div>
