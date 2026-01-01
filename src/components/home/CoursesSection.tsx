@@ -25,6 +25,7 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   thumbnail_url: string | null;
+  slug: string | null;
 }
 
 interface CourseCardProps {
@@ -39,6 +40,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
   const title = isArabic ? course.title_ar : course.title;
   const description = isArabic ? course.description_ar : course.description;
   const gradeLabel = GRADE_LABELS[course.grade];
+  // Use slug for URL, fallback to ID
+  const courseUrl = `/course/${course.slug || course.id}`;
 
   return (
     <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow duration-300">
@@ -70,7 +73,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
         )}
         
         <Link 
-          to={`/course/${course.id}`} 
+          to={courseUrl} 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
         >
           <Play className="w-6 h-6 text-primary-foreground ml-1" />
@@ -98,7 +101,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index }) => {
 
         {/* CTA */}
         <Button variant={course.is_free ? 'default' : 'outline'} className="w-full" asChild>
-          <Link to={`/course/${course.id}`}>
+          <Link to={courseUrl}>
             {course.is_free ? t('courses.preview') : t('courses.enroll')}
           </Link>
         </Button>
@@ -119,7 +122,7 @@ export const CoursesSection: React.FC = () => {
         // Fetch only primary courses (2026 academic structure)
         const { data, error } = await supabase
           .from('courses')
-          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url')
+          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug')
           .eq('is_primary', true)
           .order('grade', { ascending: true })
           .limit(4); // Show max 4 courses on home

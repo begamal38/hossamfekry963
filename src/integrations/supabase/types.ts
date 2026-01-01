@@ -291,6 +291,7 @@ export type Database = {
           is_primary: boolean
           lessons_count: number | null
           price: number | null
+          slug: string | null
           thumbnail_url: string | null
           title: string
           title_ar: string
@@ -307,6 +308,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
+          slug?: string | null
           thumbnail_url?: string | null
           title: string
           title_ar: string
@@ -323,6 +325,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
+          slug?: string | null
           thumbnail_url?: string | null
           title?: string
           title_ar?: string
@@ -1094,6 +1097,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_course_slug: {
+        Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
