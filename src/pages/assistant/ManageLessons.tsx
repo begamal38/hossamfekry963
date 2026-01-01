@@ -377,6 +377,17 @@ const ManageLessons = () => {
               {editingLesson ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson') : (isArabic ? 'حصة جديدة' : 'New Lesson')}
             </h3>
             
+            {/* Guidance Message for Assistant Teacher */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <span className="text-lg">💡</span>
+              <p className="text-sm text-muted-foreground">
+                {isArabic 
+                  ? 'الحصة لازم يكون ليها زمن مشاهدة لأن التقدم مبني على الوقت. أضف رابط اليوتيوب والمدة بالدقائق.'
+                  : 'Lessons need watch time since progress is time-based. Add YouTube URL and duration in minutes.'
+                }
+              </p>
+            </div>
+            
             {/* Arabic Title - Required */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">

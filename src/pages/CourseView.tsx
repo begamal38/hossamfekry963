@@ -678,13 +678,15 @@ export default function CourseView() {
           </div>
 
           {lessons.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-card border rounded-xl">
               <BookOpen className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {isArabic ? 'قريباً' : 'Coming Soon'}
+                {isArabic ? 'لم يتم إضافة حصص بعد' : 'No Lessons Added Yet'}
               </h3>
-              <p className="text-muted-foreground">
-                {isArabic ? 'الحصص هتتضاف قريب' : 'Sessions will be added soon'}
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {isArabic 
+                  ? 'المحتوى لم يتم تفعيله بعد. تابعنا للحصول على التحديثات!'
+                  : 'Content is not yet activated. Follow us for updates!'}
               </p>
             </div>
           )}

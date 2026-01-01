@@ -159,8 +159,10 @@ export default function AssistantDashboard() {
     },
   ];
 
-  const fullName = profile?.full_name || user?.email?.split('@')[0] || '';
-  const firstName = fullName.split(' ')[0];
+  // Robust name handling with Arabic fallback
+  const fullName = profile?.full_name?.trim() || '';
+  const firstName = fullName.split(' ')[0] || user?.email?.split('@')[0] || '';
+  const hasValidName = firstName && firstName.length > 0;
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -169,10 +171,12 @@ export default function AssistantDashboard() {
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
-            {isRTL ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`}
+            {hasValidName 
+              ? (isRTL ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`)
+              : (isRTL ? 'أهلاً بيك! 👋' : 'Welcome! 👋')}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isRTL ? 'المنصة – لوحة تحكم المدرس المساعد' : 'Platform – Assistant Teacher Dashboard'}
+            {isRTL ? 'المنصة – المدرس المساعد' : 'Platform – Assistant Teacher'}
           </p>
         </div>
 
