@@ -182,8 +182,8 @@ const ManageLessons = () => {
   const handleSubmit = async () => {
     if (!formData.title_ar.trim()) {
       toast({
-        title: 'خطأ',
-        description: 'يرجى إدخال عنوان الحصة',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'يرجى إدخال عنوان الحصة' : 'Please enter lesson title',
         variant: 'destructive'
       });
       return;
@@ -192,8 +192,8 @@ const ManageLessons = () => {
     // Validate YouTube URL if provided
     if (formData.video_url && !isValidYouTubeInput(formData.video_url)) {
       toast({
-        title: 'خطأ',
-        description: 'رابط اليوتيوب غير صحيح',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'رابط اليوتيوب غير صحيح' : 'Invalid YouTube URL',
         variant: 'destructive'
       });
       return;
@@ -222,8 +222,8 @@ const ManageLessons = () => {
         if (error) throw error;
 
         toast({
-          title: 'تم بنجاح',
-          description: 'تم تحديث الحصة'
+          title: isArabic ? 'تم بنجاح' : 'Success',
+          description: isArabic ? 'تم تحديث الحصة' : 'Lesson updated successfully'
         });
       } else {
         const { error } = await supabase
@@ -237,8 +237,8 @@ const ManageLessons = () => {
         if (error) throw error;
 
         toast({
-          title: 'تم بنجاح',
-          description: 'تم إضافة الحصة'
+          title: isArabic ? 'تم بنجاح' : 'Success',
+          description: isArabic ? 'تم إضافة الحصة' : 'Lesson added successfully'
         });
       }
 
@@ -247,15 +247,15 @@ const ManageLessons = () => {
     } catch (error) {
       console.error('Error saving lesson:', error);
       toast({
-        title: 'خطأ',
-        description: 'فشل في حفظ الحصة',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في حفظ الحصة' : 'Failed to save lesson',
         variant: 'destructive'
       });
     }
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الحصة؟')) {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذه الحصة؟' : 'Are you sure you want to delete this lesson?')) {
       return;
     }
 
@@ -268,8 +268,8 @@ const ManageLessons = () => {
       if (error) throw error;
 
       toast({
-        title: 'تم بنجاح',
-        description: 'تم حذف الحصة'
+        title: isArabic ? 'تم بنجاح' : 'Success',
+        description: isArabic ? 'تم حذف الحصة' : 'Lesson deleted successfully'
       });
 
       fetchLessons();
@@ -298,19 +298,19 @@ const ManageLessons = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/assistant/courses')}>
-              <ArrowLeft className="h-5 w-5 rotate-180" />
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">إدارة الحصص</h1>
+              <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
               {selectedCourseName && (
-                <p className="text-muted-foreground text-sm">{selectedCourseName.title_ar}</p>
+                <p className="text-muted-foreground text-sm">{isArabic ? selectedCourseName.title_ar : selectedCourseName.title}</p>
               )}
             </div>
           </div>
@@ -318,12 +318,12 @@ const ManageLessons = () => {
             <Button variant="outline" asChild className="gap-2">
               <Link to={`/assistant/chapters?course_id=${selectedCourse}`}>
                 <Layers className="h-4 w-4" />
-                الأبواب
+                {isArabic ? 'الأبواب' : 'Chapters'}
               </Link>
             </Button>
             <Button onClick={() => setShowForm(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              حصة جديدة
+              {isArabic ? 'حصة جديدة' : 'New Lesson'}
             </Button>
           </div>
         </div>
@@ -331,7 +331,7 @@ const ManageLessons = () => {
         {/* Course & Chapter Selectors */}
         <div className="bg-card border rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">اختر الكورس</label>
+            <label className="block text-sm font-medium mb-2">{isArabic ? 'اختر الكورس' : 'Select Course'}</label>
             <Select value={selectedCourse} onValueChange={(val) => {
               setSelectedCourse(val);
               setSelectedChapter('all');
@@ -350,13 +350,13 @@ const ManageLessons = () => {
             </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">تصفية حسب الباب</label>
+            <label className="block text-sm font-medium mb-2">{isArabic ? 'تصفية حسب الباب' : 'Filter by Chapter'}</label>
             <Select value={selectedChapter} onValueChange={setSelectedChapter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل الحصص</SelectItem>
+                <SelectItem value="all">{isArabic ? 'كل الحصص' : 'All Lessons'}</SelectItem>
                 {chapters.map(chapter => (
                   <SelectItem key={chapter.id} value={chapter.id}>
                     {chapter.title_ar}
@@ -371,16 +371,16 @@ const ManageLessons = () => {
         {showForm && (
           <div className="bg-card border rounded-xl p-6 mb-6">
             <h3 className="font-semibold text-lg mb-4">
-              {editingLesson ? 'تعديل الحصة' : 'حصة جديدة'}
+              {editingLesson ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson') : (isArabic ? 'حصة جديدة' : 'New Lesson')}
             </h3>
             
             {/* Arabic Title - Required */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                عنوان الحصة <span className="text-destructive">*</span>
+                {isArabic ? 'عنوان الحصة' : 'Lesson Title'} <span className="text-destructive">*</span>
               </label>
               <Input
-                placeholder="مثال: الباب الأول - الدرس الأول"
+                placeholder={isArabic ? "مثال: الباب الأول - الدرس الأول" : "e.g., Chapter 1 - Lesson 1"}
                 value={formData.title_ar}
                 onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
                 className="text-lg"
@@ -391,17 +391,17 @@ const ManageLessons = () => {
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Youtube className="h-4 w-4 text-red-500" />
-                <label className="text-sm font-medium">رابط اليوتيوب</label>
+                <label className="text-sm font-medium">{isArabic ? 'رابط اليوتيوب' : 'YouTube URL'}</label>
               </div>
               <Input
-                placeholder="الصق رابط اليوتيوب هنا (أي صيغة)"
+                placeholder={isArabic ? "الصق رابط اليوتيوب هنا (أي صيغة)" : "Paste YouTube URL here (any format)"}
                 value={formData.video_url}
                 onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
                 dir="ltr"
                 className="text-left"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                يدعم: روابط المشاهدة، الروابط القصيرة، روابط التضمين
+                {isArabic ? 'يدعم: روابط المشاهدة، الروابط القصيرة، روابط التضمين' : 'Supports: Watch URLs, Short URLs, Embed URLs'}
               </p>
             </div>
 
@@ -409,7 +409,7 @@ const ManageLessons = () => {
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4" />
-                <label className="text-sm font-medium">مدة الحصة (دقيقة)</label>
+                <label className="text-sm font-medium">{isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}</label>
               </div>
               <Input
                 type="number"
@@ -423,18 +423,18 @@ const ManageLessons = () => {
             {/* Chapter Selection - Optional */}
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2">
-                <Layers className="h-4 w-4 inline ml-1" />
-                الباب (اختياري)
+                <Layers className={`h-4 w-4 inline ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                {isArabic ? 'الباب (اختياري)' : 'Chapter (optional)'}
               </label>
               <Select 
                 value={formData.chapter_id || '__none__'} 
                 onValueChange={(val) => setFormData({ ...formData, chapter_id: val === '__none__' ? '' : val })}
               >
                 <SelectTrigger className="max-w-sm">
-                  <SelectValue placeholder="اختر باب" />
+                  <SelectValue placeholder={isArabic ? "اختر باب" : "Select chapter"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">بدون باب</SelectItem>
+                  <SelectItem value="__none__">{isArabic ? 'بدون باب' : 'No chapter'}</SelectItem>
                   {chapters.map(chapter => (
                     <SelectItem key={chapter.id} value={chapter.id}>
                       {chapter.title_ar}
@@ -455,20 +455,20 @@ const ManageLessons = () => {
                 />
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-500" />
-                  <span className="font-medium">حصة مجانية</span>
+                  <span className="font-medium">{isArabic ? 'حصة مجانية' : 'Free Lesson'}</span>
                 </div>
               </label>
-              <p className="text-xs text-muted-foreground mt-1 mr-8">
-                ستظهر هذه الحصة في قسم الحصص المجانية للجميع
+              <p className={`text-xs text-muted-foreground mt-1 ${isRTL ? 'mr-8' : 'ml-8'}`}>
+                {isArabic ? 'ستظهر هذه الحصة في قسم الحصص المجانية للجميع' : 'This lesson will appear in the free lessons section for everyone'}
               </p>
             </div>
 
             <div className="flex gap-2">
               <Button onClick={handleSubmit} size="lg">
-                {editingLesson ? 'تحديث' : 'إضافة الحصة'}
+                {editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson')}
               </Button>
               <Button variant="outline" onClick={resetForm}>
-                إلغاء
+                {isArabic ? 'إلغاء' : 'Cancel'}
               </Button>
             </div>
           </div>
@@ -479,13 +479,13 @@ const ManageLessons = () => {
           {filteredLessons.length === 0 ? (
             <div className="p-12 text-center">
               <Video className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">لا توجد حصص بعد</h3>
+              <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                ابدأ بإضافة أول حصة
+                {isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
               </p>
               <Button onClick={() => setShowForm(true)} size="sm">
-                <Plus className="h-4 w-4 ml-2" />
-                إضافة حصة
+                <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {isArabic ? 'إضافة حصة' : 'Add Lesson'}
               </Button>
             </div>
           ) : (
@@ -499,22 +499,22 @@ const ManageLessons = () => {
                     </div>
                     <Video className="h-5 w-5 text-blue-500" />
                     <div>
-                      <p className="font-medium">{lesson.title_ar}</p>
+                      <p className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</p>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {lesson.duration_minutes || 60} دقيقة
+                          {lesson.duration_minutes || 60} {isArabic ? 'دقيقة' : 'min'}
                         </span>
                         {lesson.video_url && (
                           <span className="flex items-center gap-1 text-red-500">
                             <Youtube className="h-3 w-3" />
-                            فيديو
+                            {isArabic ? 'فيديو' : 'Video'}
                           </span>
                         )}
                         {lesson.is_free_lesson && (
                           <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                            <Gift className="h-3 w-3 ml-1" />
-                            مجانية
+                            <Gift className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                            {isArabic ? 'مجانية' : 'Free'}
                           </Badge>
                         )}
                         {getChapterName(lesson.chapter_id) && (
