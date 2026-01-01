@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.export-students]
 verify_jwt = true
+
+[functions.translate-content]
+verify_jwt = false
