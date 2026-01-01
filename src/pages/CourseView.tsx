@@ -38,6 +38,7 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   thumbnail_url: string | null;
+  slug: string | null;
 }
 
 interface Lesson {
@@ -70,13 +71,16 @@ const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
 };
 
 export default function CourseView() {
-  const { courseId } = useParams();
+  const { courseId } = useParams(); // Can be UUID or slug
   const navigate = useNavigate();
   const { t, language, isRTL } = useLanguage();
   const { user } = useAuth();
   const { loading: rolesLoading, isAdmin, isAssistantTeacher } = useUserRole();
   const { toast } = useToast();
   const isArabic = language === 'ar';
+  
+  // Check if courseId is a UUID or slug
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId || '');
   
   // Determine if user can bypass academic restrictions and enrollment checks
   const canBypassRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
@@ -124,12 +128,34 @@ export default function CourseView() {
 
   const fetchCourseData = async () => {
     try {
-      // Fetch course
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
+      // Fetch course by UUID or slug
+      let courseData;
+      let courseError;
+      
+      if (isUUID) {
+        const result = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', courseId)
+          .single();
+        courseData = result.data;
+        courseError = result.error;
+        
+        // If found by UUID and has slug, redirect to slug URL (301 equivalent)
+        if (courseData?.slug) {
+          navigate(`/course/${courseData.slug}`, { replace: true });
+          return;
+        }
+      } else {
+        // Fetch by slug
+        const result = await supabase
+          .from('courses')
+          .select('*')
+          .eq('slug', courseId)
+          .single();
+        courseData = result.data;
+        courseError = result.error;
+      }
 
       if (courseError) throw courseError;
       setCourse(courseData);
@@ -403,6 +429,9 @@ export default function CourseView() {
   const courseTitle = isArabic ? course.title_ar : course.title;
   const courseDescription = isArabic ? course.description_ar : course.description;
 
+  // Use slug for canonical URL, fallback to ID
+  const courseSlug = course.slug || course.id;
+
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
@@ -410,7 +439,7 @@ export default function CourseView() {
         titleAr={`${course.title_ar} – منصة حسام فكري`}
         description={course.description || `Chemistry course for ${gradeInfo?.en || 'Thanaweya Amma'} students`}
         descriptionAr={course.description_ar || `كورس كيمياء لطلاب ${gradeInfo?.ar || 'الثانوية العامة'}`}
-        canonical={`https://hossamfekry.com/course/${courseId}`}
+        canonical={`https://hossamfekry.com/course/${courseSlug}`}
         ogImage={course.thumbnail_url || '/favicon.jpg'}
       />
       <Navbar />

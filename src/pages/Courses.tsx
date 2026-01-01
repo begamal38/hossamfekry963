@@ -37,6 +37,7 @@ interface Course {
   is_primary: boolean;
   lessons_count: number;
   duration_hours: number;
+  slug: string | null;
 }
 
 interface Enrollment {
@@ -109,16 +110,19 @@ const Courses: React.FC = () => {
     fetchData();
   }, [user]);
 
-  const handleCourseAction = (courseId: string, isFree: boolean, price: number, courseGrade: string) => {
+  const handleCourseAction = (courseId: string, isFree: boolean, price: number, courseGrade: string, slug: string | null) => {
+    // Use slug for navigation, fallback to ID
+    const courseUrl = slug || courseId;
+    
     // Assistant teachers and admins go directly to course management
     if (canBypassAcademicRestrictions) {
-      navigate(`/course/${courseId}`);
+      navigate(`/course/${courseUrl}`);
       return;
     }
 
     // Check if course is in preview mode (not enrollable)
     if (isCoursePreview(courseGrade)) {
-      navigate(`/course/${courseId}`);
+      navigate(`/course/${courseUrl}`);
       return;
     }
 
@@ -128,13 +132,13 @@ const Courses: React.FC = () => {
         title: isArabic ? 'يرجى تسجيل الدخول' : 'Please sign in',
         description: isArabic ? 'يجب تسجيل الدخول للاشتراك في الكورس' : 'You need to sign in to enroll in a course',
       });
-      navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
+      navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseUrl}`)}`);
       return;
     }
 
     // Already enrolled - go to course
     if (isEnrolled(courseId)) {
-      navigate(`/course/${courseId}`);
+      navigate(`/course/${courseUrl}`);
       return;
     }
 
@@ -404,7 +408,7 @@ interface CourseCardProps {
   isArabic: boolean;
   isEnrolled: boolean;
   enrollingId: string | null;
-  onAction: (courseId: string, isFree: boolean, price: number, courseGrade: string) => void;
+  onAction: (courseId: string, isFree: boolean, price: number, courseGrade: string, slug: string | null) => void;
   index: number;
   t: (key: string) => string;
   isAssistantOrAdmin?: boolean;
@@ -428,6 +432,8 @@ const CourseCard: React.FC<CourseCardProps> = ({
   // Check if user's grade matches the course grade
   const isGradeMatch = !userGrade || userGrade === course.grade;
   const canEnroll = isAssistantOrAdmin || isGradeMatch;
+  // Use slug for URL, fallback to ID
+  const courseUrl = `/course/${course.slug || course.id}`;
   
   return (
     <div 
@@ -519,7 +525,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <Button 
             variant="default" 
             className="w-full gap-2"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
           >
             <BookOpen className="w-4 h-4" />
             {isArabic ? 'عرض الكورس' : 'View Course'}
@@ -529,7 +535,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <Button 
             variant="secondary" 
             className="w-full gap-2"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
           >
             <BookOpen className="w-4 h-4" />
             {isArabic ? 'عرض التفاصيل' : 'View Details'}
@@ -537,7 +543,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         ) : isEnrolled ? (
           // Enrolled student: Continue learning
           <Button variant="default" className="w-full gap-2" asChild>
-            <Link to={`/course/${course.id}`}>
+            <Link to={courseUrl}>
               <Play className="w-4 h-4" />
               {isArabic ? 'متابعة التعلم' : 'Continue Learning'}
             </Link>
@@ -561,7 +567,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <Button 
             variant="default"
             className="w-full"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade)}
+            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
             disabled={enrollingId === course.id}
           >
             {enrollingId === course.id ? (
