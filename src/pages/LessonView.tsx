@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -10,7 +10,10 @@ import {
   ChevronRight,
   Lock,
   Youtube,
-  Timer
+  Timer,
+  Layers,
+  LogIn,
+  Gift
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -23,8 +26,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { useLessonWatchTime, formatRemainingTime } from '@/hooks/useLessonWatchTime';
+import { SEOHead } from '@/components/seo/SEOHead';
 
-// Use shared utility
 const getYouTubeVideoId = extractYouTubeVideoId;
 
 interface Lesson {
@@ -32,17 +35,27 @@ interface Lesson {
   title: string;
   title_ar: string;
   course_id: string;
+  chapter_id: string | null;
   order_index: number;
   duration_minutes: number;
   lesson_type: string;
   video_url: string | null;
+  is_free_lesson: boolean;
 }
 
 interface Course {
   id: string;
   title: string;
   title_ar: string;
+  slug: string;
   is_free: boolean;
+}
+
+interface Chapter {
+  id: string;
+  title: string;
+  title_ar: string;
+  order_index: number;
 }
 
 export default function LessonView() {
@@ -53,17 +66,16 @@ export default function LessonView() {
   const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const isArabic = language === 'ar';
   
-  // Staff (assistants/admins) bypass all access restrictions
   const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
   const [courseLessons, setCourseLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Watch time tracking for 20-minute requirement
   const { 
     watchTimeSeconds, 
     isCompleteButtonEnabled, 
@@ -73,7 +85,6 @@ export default function LessonView() {
     pauseWatching 
   } = useLessonWatchTime(lessonId || '');
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [lessonId]);
@@ -86,7 +97,6 @@ export default function LessonView() {
 
   const fetchLesson = async () => {
     try {
-      // Fetch lesson
       const { data: lessonData, error: lessonError } = await supabase
         .from('lessons')
         .select('*')
@@ -96,16 +106,24 @@ export default function LessonView() {
       if (lessonError) throw lessonError;
       setLesson(lessonData);
 
-      // Fetch course
       const { data: courseData } = await supabase
         .from('courses')
-        .select('id, title, title_ar, is_free')
+        .select('id, title, title_ar, slug, is_free')
         .eq('id', lessonData.course_id)
         .single();
 
       setCourse(courseData);
 
-      // Fetch all lessons in course
+      // Fetch chapter if exists
+      if (lessonData.chapter_id) {
+        const { data: chapterData } = await supabase
+          .from('chapters')
+          .select('id, title, title_ar, order_index')
+          .eq('id', lessonData.chapter_id)
+          .single();
+        setChapter(chapterData);
+      }
+
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
@@ -114,7 +132,6 @@ export default function LessonView() {
 
       setCourseLessons(lessonsData || []);
 
-      // Check enrollment
       if (user) {
         const { data: enrollment } = await supabase
           .from('course_enrollments')
@@ -125,7 +142,6 @@ export default function LessonView() {
 
         setIsEnrolled(!!enrollment);
 
-        // Check if already completed
         const { data: attendance } = await supabase
           .from('lesson_attendance')
           .select('id')
@@ -164,6 +180,15 @@ export default function LessonView() {
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < courseLessons.length - 1 ? courseLessons[currentLessonIndex + 1] : null;
 
+  // Generate SEO metadata
+  const seoTitle = isArabic 
+    ? `${lesson?.title_ar || ''} | ${course?.title_ar || ''} | منصة حسام فكري`
+    : `${lesson?.title || lesson?.title_ar || ''} | ${course?.title || course?.title_ar || ''} | Hossam Fekry`;
+  
+  const seoDescription = isArabic
+    ? `شرح مبسط وواضح لـ ${lesson?.title_ar || ''} من كورس ${course?.title_ar || ''} للثانوية العامة مع تطبيق عملي واختبارات ذكية.`
+    : `Understand ${lesson?.title || lesson?.title_ar || ''} clearly with practical explanation for Thanaweya Amma students.`;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -186,41 +211,87 @@ export default function LessonView() {
     );
   }
 
-  // Check if user can access this lesson
-  // Staff ALWAYS has access, students need enrollment or free course
-  const canAccess = isStaff || course?.is_free || isEnrolled;
+  // Access logic: staff always has access, free lessons accessible to all, enrolled users have access
+  const isFreeLesson = lesson.is_free_lesson;
+  const canAccess = isStaff || isFreeLesson || course?.is_free || isEnrolled;
 
+  // Show locked state for paid content when not enrolled
   if (!canAccess && user) {
     return (
       <div className="min-h-screen bg-background">
+        <SEOHead 
+          title={seoTitle}
+          titleAr={seoTitle}
+          description={seoDescription}
+          descriptionAr={seoDescription}
+          noIndex={true}
+        />
         <Navbar />
-        <main className="container mx-auto px-4 py-8 pt-24 text-center">
-          <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'الحصة مقفولة' : 'Session Locked'}</h1>
-          <p className="text-muted-foreground mb-6">
-            {isArabic ? 'اشترك في الكورس للوصول لهذه الحصة' : 'Enroll in the course to access this session'}
-          </p>
-          <Button onClick={() => navigate(`/courses`)}>
-            {isArabic ? 'اشترك الآن' : 'Enroll Now'}
-          </Button>
+        <main className="container mx-auto px-4 py-8 pt-24">
+          <div className="max-w-lg mx-auto text-center">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">{isArabic ? 'الحصة مقفولة' : 'Lesson Locked'}</h1>
+            <p className="text-muted-foreground mb-6">
+              {isArabic 
+                ? 'اشترك في الكورس للوصول لكل الحصص والمحتوى الحصري' 
+                : 'Subscribe to the course to access all lessons and exclusive content'}
+            </p>
+            <div className="bg-card border rounded-xl p-6 mb-6">
+              <h3 className="font-semibold mb-2">{isArabic ? course?.title_ar : course?.title}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {isArabic ? 'محتوى متكامل مع متابعة واختبارات' : 'Complete content with tracking and exams'}
+              </p>
+              <Button 
+                size="lg" 
+                className="w-full"
+                onClick={() => navigate(`/payment/${course?.id}`)}
+              >
+                {isArabic ? 'اشترك الآن' : 'Subscribe Now'}
+              </Button>
+            </div>
+            <Button variant="ghost" onClick={() => navigate(`/course/${course?.slug || course?.id}`)}>
+              {isArabic ? 'تصفح الكورس' : 'Browse Course'}
+            </Button>
+          </div>
         </main>
       </div>
     );
   }
 
-  if (!user) {
+  // Show login prompt for non-authenticated users (but still show free lesson content)
+  if (!user && !isFreeLesson) {
     return (
       <div className="min-h-screen bg-background">
+        <SEOHead 
+          title={seoTitle}
+          titleAr={seoTitle}
+          description={seoDescription}
+          descriptionAr={seoDescription}
+        />
         <Navbar />
-        <main className="container mx-auto px-4 py-8 pt-24 text-center">
-          <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">{isArabic ? 'سجل دخول للمتابعة' : 'Login to Continue'}</h1>
-          <p className="text-muted-foreground mb-6">
-            {isArabic ? 'سجل دخول لمشاهدة الحصة ومتابعة تقدمك' : 'Login to watch the session and track your progress'}
-          </p>
-          <Button onClick={() => navigate('/auth')}>
-            {isArabic ? 'تسجيل الدخول' : 'Login'}
-          </Button>
+        <main className="container mx-auto px-4 py-8 pt-24">
+          <div className="max-w-lg mx-auto text-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <LogIn className="w-10 h-10 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">{isArabic ? 'سجل دخول للمتابعة' : 'Login to Continue'}</h1>
+            <p className="text-muted-foreground mb-6">
+              {isArabic 
+                ? 'سجل دخول لمشاهدة الحصص ومتابعة تقدمك وحل الاختبارات' 
+                : 'Login to watch lessons, track progress, and take exams'}
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button size="lg" onClick={() => navigate('/auth')}>
+                <LogIn className="w-4 h-4 mr-2" />
+                {isArabic ? 'تسجيل الدخول' : 'Login'}
+              </Button>
+              <Button variant="ghost" onClick={() => navigate('/free-lessons')}>
+                {isArabic ? 'شاهد الحصص المجانية' : 'Watch Free Lessons'}
+              </Button>
+            </div>
+          </div>
         </main>
       </div>
     );
@@ -228,90 +299,122 @@ export default function LessonView() {
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      <SEOHead 
+        title={seoTitle}
+        titleAr={seoTitle}
+        description={seoDescription}
+        descriptionAr={seoDescription}
+        canonical={`${window.location.origin}/lesson/${lessonId}`}
+      />
       <Navbar />
 
       <main className="pt-20">
-        {/* Header */}
-        <div className="bg-card border-b">
-          <div className="container mx-auto px-4 py-4">
+        {/* Header with hierarchy */}
+        <header className="bg-card border-b">
+          <div className="container mx-auto px-4 py-4 md:py-6">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-              <Link to="/courses" className="hover:text-primary">
+            <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4" aria-label="Breadcrumb">
+              <Link to="/courses" className="hover:text-primary transition-colors">
                 {isArabic ? 'الكورسات' : 'Courses'}
               </Link>
               <ChevronRight className="w-4 h-4" />
-              <Link to={`/course/${course?.id}`} className="hover:text-primary">
+              <Link to={`/course/${course?.slug || course?.id}`} className="hover:text-primary transition-colors">
                 {isArabic ? course?.title_ar : course?.title}
               </Link>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-foreground">{isArabic ? lesson.title_ar : lesson.title}</span>
-            </div>
+              {chapter && (
+                <>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    {isArabic ? chapter.title_ar : chapter.title}
+                  </span>
+                </>
+              )}
+            </nav>
 
-            {/* Lesson Title & Status */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold">
+            {/* Lesson Title & Meta */}
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3">
                   {isArabic ? lesson.title_ar : lesson.title}
                 </h1>
-                <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
                     {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
                   </span>
+                  {isFreeLesson && (
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <Gift className="w-3 h-3 mr-1" />
+                      {isArabic ? 'مجانية' : 'Free'}
+                    </Badge>
+                  )}
                   {completed && (
-                    <Badge className="bg-green-600">
+                    <Badge className="bg-green-600 text-white">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       {isArabic ? 'مكتملة' : 'Completed'}
                     </Badge>
                   )}
                 </div>
               </div>
+
+              {/* Chapter Info */}
+              {chapter && (
+                <div className="bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                  <span className="text-muted-foreground">{isArabic ? 'الباب:' : 'Chapter:'}</span>
+                  <span className="font-medium mr-2">{isArabic ? chapter.title_ar : chapter.title}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Content */}
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Content Area */}
+        <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
           {/* Video Player Section */}
-          <div className="mb-8">
+          <section className="mb-8" aria-labelledby="video-section-title">
             <div className="flex items-center gap-2 mb-4">
               <Youtube className="w-5 h-5 text-red-500" />
-              <h2 className="font-semibold">{isArabic ? 'فيديو الحصة' : 'Lesson Video'}</h2>
+              <h2 id="video-section-title" className="font-semibold text-lg">
+                {isArabic ? 'فيديو الحصة' : 'Lesson Video'}
+              </h2>
             </div>
+            
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
               <div className="space-y-4">
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
+                {/* Video Container - fixed aspect ratio, no layout shift */}
+                <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-lg" style={{ paddingBottom: '56.25%' }}>
                   <iframe
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(lesson.video_url)}?rel=0&modestbranding=1&enablejsapi=1`}
                     title={isArabic ? lesson.title_ar : lesson.title}
                     className="absolute inset-0 w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    loading="lazy"
                   />
                 </div>
-                {/* Watch time controls */}
-                {!completed && (
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-3">
+
+                {/* Watch time controls - only for logged in non-completed users */}
+                {user && !completed && (
+                  <div className="bg-muted/50 rounded-xl p-4 md:p-5">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <Button
                           variant={isPlaying ? "secondary" : "default"}
                           size="sm"
                           onClick={isPlaying ? pauseWatching : startWatching}
+                          className="gap-2"
                         >
                           {isPlaying ? (
-                            isArabic ? '⏸️ إيقاف مؤقت' : '⏸️ Pause Timer'
+                            <>{isArabic ? '⏸️ إيقاف' : '⏸️ Pause'}</>
                           ) : (
-                            isArabic ? '▶️ ابدأ المشاهدة' : '▶️ Start Watching'
+                            <>{isArabic ? '▶️ ابدأ' : '▶️ Start'}</>
                           )}
                         </Button>
                         <div className="flex items-center gap-2 text-sm">
                           <Timer className="w-4 h-4 text-primary" />
-                          <span className="text-muted-foreground">
-                            {isArabic ? 'وقت المشاهدة:' : 'Watch time:'}{' '}
-                            <span className="font-mono font-semibold text-foreground">
-                              {formatRemainingTime(watchTimeSeconds)}
-                            </span>
+                          <span className="font-mono font-semibold">
+                            {formatRemainingTime(watchTimeSeconds)}
                           </span>
                         </div>
                       </div>
@@ -325,15 +428,15 @@ export default function LessonView() {
                       )}
                     </div>
                     {!isCompleteButtonEnabled && (
-                      <div className="mt-3">
+                      <div className="mt-4">
                         <Progress 
                           value={(watchTimeSeconds / (20 * 60)) * 100} 
                           className="h-2"
                         />
                         <p className="text-xs text-muted-foreground mt-2">
                           {isArabic 
-                            ? 'شاهد 20 دقيقة على الأقل لتتمكن من تسجيل إكمال الحصة'
-                            : 'Watch at least 20 minutes to mark the lesson as complete'
+                            ? 'شاهد 20 دقيقة على الأقل لتسجيل الإكمال'
+                            : 'Watch at least 20 minutes to mark complete'
                           }
                         </p>
                       </div>
@@ -342,7 +445,7 @@ export default function LessonView() {
                 )}
               </div>
             ) : (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center">
+              <div className="relative w-full rounded-xl overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center py-16">
                 <Play className="w-16 h-16 text-muted-foreground/40 mb-4" />
                 <p className="text-muted-foreground font-medium text-lg">
                   {isArabic ? 'المحتوى قيد الإعداد' : 'Content Under Preparation'}
@@ -352,29 +455,32 @@ export default function LessonView() {
                 </p>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Primary Action: Mark Complete - Only show if video is available */}
-          {hasValidVideo(lesson.video_url) ? (
-            <div className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
+          {/* Completion Section */}
+          {user && hasValidVideo(lesson.video_url) && (
+            <section className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
               {completed ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                   </div>
                   <h3 className="text-xl font-bold text-green-600">
-                    {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done! Lesson completed'}
+                    {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done!'}
                   </h3>
                   <p className="text-muted-foreground">
-                    {isArabic ? 'استمر للحصة التالية' : 'Continue to the next lesson'}
+                    {nextLesson 
+                      ? (isArabic ? 'استمر للحصة التالية' : 'Continue to the next lesson')
+                      : (isArabic ? 'أكملت كل الحصص' : 'You completed all lessons')
+                    }
                   </p>
                 </div>
               ) : (
-              <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4">
                   <p className="text-lg text-muted-foreground">
                     {isCompleteButtonEnabled 
-                      ? (isArabic ? 'خلصت مشاهدة الفيديو؟' : 'Finished watching the video?')
-                      : (isArabic ? 'شاهد الفيديو لمدة 20 دقيقة' : 'Watch the video for 20 minutes')
+                      ? (isArabic ? 'خلصت مشاهدة الفيديو؟' : 'Done watching?')
+                      : (isArabic ? 'شاهد الفيديو لمدة 20 دقيقة' : 'Watch for 20 minutes')
                     }
                   </p>
                   <Button 
@@ -384,23 +490,41 @@ export default function LessonView() {
                     disabled={!isCompleteButtonEnabled}
                   >
                     <CheckCircle2 className="w-5 h-5 mr-2" />
-                    {isArabic ? 'خلصت الحصة' : 'Mark as Complete'}
+                    {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
                   </Button>
                   {!isCompleteButtonEnabled && (
                     <p className="text-sm text-muted-foreground">
                       {isArabic 
-                        ? `متبقي ${formatRemainingTime(remainingSeconds)} للتمكن من إكمال الحصة`
-                        : `${formatRemainingTime(remainingSeconds)} remaining to enable completion`
+                        ? `متبقي ${formatRemainingTime(remainingSeconds)}`
+                        : `${formatRemainingTime(remainingSeconds)} remaining`
                       }
                     </p>
                   )}
                 </div>
               )}
-            </div>
-          ) : null}
+            </section>
+          )}
+
+          {/* Login CTA for free lessons when not logged in */}
+          {!user && isFreeLesson && hasValidVideo(lesson.video_url) && (
+            <section className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-8 text-center">
+              <h3 className="font-semibold mb-2">
+                {isArabic ? 'سجل دخول لحفظ تقدمك' : 'Login to save your progress'}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {isArabic 
+                  ? 'أنشئ حساب مجاني لمتابعة تقدمك وحل الاختبارات'
+                  : 'Create a free account to track progress and take exams'}
+              </p>
+              <Button onClick={() => navigate('/auth')}>
+                <LogIn className="w-4 h-4 mr-2" />
+                {isArabic ? 'تسجيل الدخول' : 'Login'}
+              </Button>
+            </section>
+          )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between gap-4">
+          <nav className="flex items-center justify-between gap-4" aria-label="Lesson navigation">
             <div className="flex-1">
               {previousLesson ? (
                 <Button 
@@ -409,18 +533,23 @@ export default function LessonView() {
                   className="gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {isArabic ? 'الحصة السابقة' : 'Previous Lesson'}
+                  <span className="hidden sm:inline">{isArabic ? 'الحصة السابقة' : 'Previous'}</span>
                 </Button>
               ) : (
                 <Button 
                   variant="ghost" 
-                  onClick={() => navigate(`/course/${course?.id}`)}
+                  onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
                   className="gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  {isArabic ? 'العودة للكورس' : 'Back to Course'}
+                  <span className="hidden sm:inline">{isArabic ? 'الكورس' : 'Course'}</span>
                 </Button>
               )}
+            </div>
+
+            {/* Progress indicator */}
+            <div className="text-sm text-muted-foreground hidden md:block">
+              {currentLessonIndex + 1} / {courseLessons.length}
             </div>
 
             <div className="flex-1 flex justify-end">
@@ -429,7 +558,7 @@ export default function LessonView() {
                   onClick={() => navigate(`/lesson/${nextLesson.id}`)}
                   className="gap-2"
                 >
-                  {isArabic ? 'الحصة التالية' : 'Next Lesson'}
+                  <span className="hidden sm:inline">{isArabic ? 'الحصة التالية' : 'Next'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               ) : (
@@ -437,23 +566,23 @@ export default function LessonView() {
                   onClick={() => navigate('/platform')}
                   className="gap-2"
                 >
-                  {isArabic ? 'للمنصة' : 'To Platform'}
+                  <span className="hidden sm:inline">{isArabic ? 'للمنصة' : 'Platform'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               )}
             </div>
-          </div>
+          </nav>
         </div>
 
-        {/* Lesson List Button */}
+        {/* Floating Lesson List Button */}
         <div className="fixed bottom-4 right-4 z-40">
           <Button 
             size="sm" 
             variant="secondary"
-            onClick={() => navigate(`/course/${course?.id}`)}
-            className="shadow-lg"
+            onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
+            className="shadow-lg gap-2"
           >
-            <BookOpen className="w-4 h-4 mr-2" />
+            <BookOpen className="w-4 h-4" />
             {courseLessons.length} {isArabic ? 'حصص' : 'lessons'}
           </Button>
         </div>
