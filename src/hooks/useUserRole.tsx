@@ -98,7 +98,11 @@ export const useUserRole = () => {
   const isAdmin = useCallback(() => hasRole('admin'), [hasRole]);
   const isAssistantTeacher = useCallback(() => hasRole('assistant_teacher'), [hasRole]);
   const isStudent = useCallback(() => hasRole('student'), [hasRole]);
-  const canAccessDashboard = useCallback(() => isAdmin() || isAssistantTeacher(), [isAdmin, isAssistantTeacher]);
+  
+  // UNIFIED: Admin and Assistant Teacher have IDENTICAL permissions
+  // This is the single source of truth for staff access checks
+  const isStaff = useCallback(() => isAdmin() || isAssistantTeacher(), [isAdmin, isAssistantTeacher]);
+  const canAccessDashboard = useCallback(() => isStaff(), [isStaff]);
 
   return {
     roles,
@@ -108,6 +112,7 @@ export const useUserRole = () => {
     isAdmin,
     isAssistantTeacher,
     isStudent,
+    isStaff, // NEW: Unified staff check - use this instead of isAdmin() || isAssistantTeacher()
     canAccessDashboard,
     refreshRoles: fetchRoles,
   };
