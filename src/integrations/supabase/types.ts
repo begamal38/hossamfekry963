@@ -291,7 +291,7 @@ export type Database = {
           is_primary: boolean
           lessons_count: number | null
           price: number | null
-          slug: string | null
+          slug: string
           thumbnail_url: string | null
           title: string
           title_ar: string
@@ -308,7 +308,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
-          slug?: string | null
+          slug: string
           thumbnail_url?: string | null
           title: string
           title_ar: string
@@ -325,7 +325,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
-          slug?: string | null
+          slug?: string
           thumbnail_url?: string | null
           title?: string
           title_ar?: string
