@@ -6,10 +6,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { HeroImageSlider } from './HeroImageSlider';
-import { ScientificBackground } from './ScientificBackground';
+import { Hero3DBackground } from './Hero3DBackground';
 
 export const HeroSection: React.FC = () => {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { isAssistantTeacher, isAdmin, loading: roleLoading } = useUserRole();
 
@@ -17,9 +17,9 @@ export const HeroSection: React.FC = () => {
   const isStaff = isAssistantTeacher() || isAdmin();
 
   return (
-    <section className="relative min-h-[600px] lg:min-h-[700px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
-      {/* Scientific Background Animation */}
-      <ScientificBackground />
+    <section className="relative min-h-[500px] lg:min-h-[600px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
+      {/* 3D Chemistry Background Animation */}
+      <Hero3DBackground />
       
       {/* Background Glow Effects */}
       <div 
@@ -30,35 +30,35 @@ export const HeroSection: React.FC = () => {
       />
       
       <div className="container mx-auto px-4 lg:px-8">
-        {/* Mobile: Image first, then text | Desktop: Two columns */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+        {/* Stack layout: Landscape image on top, text below */}
+        <div className="flex flex-col gap-6 lg:gap-10 items-center">
           
-          {/* Image Slider - ORDER 1 on mobile, ORDER based on RTL on desktop */}
-          <div className={`w-full max-w-md lg:max-w-lg order-1 ${isRTL ? 'lg:order-2' : 'lg:order-1'}`}>
+          {/* Landscape Hero Image Slider */}
+          <div className="w-full max-w-4xl xl:max-w-5xl">
             <HeroImageSlider className="w-full" />
           </div>
 
-          {/* Content - ORDER 2 on mobile */}
-          <div className={`space-y-6 lg:space-y-8 order-2 ${isRTL ? 'lg:order-1' : 'lg:order-2'}`}>
-            {/* Main Headline */}
-            <div className="space-y-4 lg:space-y-5 text-center lg:text-start">
+          {/* Content - Below image */}
+          <div className="space-y-5 lg:space-y-6 w-full max-w-3xl">
+            {/* Main Headline - New Copy */}
+            <div className="space-y-3 lg:space-y-4 text-center">
               <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground leading-relaxed lg:leading-relaxed">
-                {t('hero.headline')}
+                Egypt's #1 Chemistry Platform for Thanaweya Amma
               </h1>
               
               {/* Sub-headline */}
-              <p className="text-base lg:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                {t('hero.subheadline')}
+              <p className="text-base lg:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                Clear explanation • Practical application • Smart testing
               </p>
               
               {/* Highlight - Tracks */}
               <p className="text-lg lg:text-xl font-semibold text-primary">
-                {t('hero.tracks')}
+                Arabic + Languages
               </p>
             </div>
 
             {/* CTA Buttons - Role-aware */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {user ? (
                 // Logged in user - show role-appropriate buttons
                 <>
@@ -67,21 +67,21 @@ export const HeroSection: React.FC = () => {
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/assistant">
                         <Settings className="w-5 h-5" />
-                        {t('hero.platformManage')}
+                        إدارة المنصة
                       </Link>
                     </Button>
                   ) : (
                     // Student - show platform entry button
                     <Button variant="hero" size="lg" asChild>
                       <Link to="/platform">
-                        {t('hero.enterPlatform')}
+                        دخول المنصة
                         <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                       </Link>
                     </Button>
                   )}
                   <Button variant="heroOutline" size="lg" asChild>
                     <Link to="/courses">
-                      {t('hero.browseCourses')}
+                      تصفح الكورسات
                     </Link>
                   </Button>
                 </>
@@ -90,14 +90,14 @@ export const HeroSection: React.FC = () => {
                 <>
                   <Button variant="hero" size="lg" asChild>
                     <Link to="/courses">
-                      {t('hero.browseCourses')}
+                      تصفح الكورسات
                       <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
                     <Link to="/auth?mode=signup">
                       <Play className="w-5 h-5" />
-                      {t('hero.createAccount')}
+                      إنشاء حساب
                     </Link>
                   </Button>
                 </>
@@ -105,18 +105,18 @@ export const HeroSection: React.FC = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-6 border-t border-border">
-              <div className="text-center lg:text-start">
+            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border max-w-lg mx-auto">
+              <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">+500</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats.lessons')}</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">حصة</p>
               </div>
-              <div className="text-center lg:text-start">
+              <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">+10K</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats.students')}</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">طالب</p>
               </div>
-              <div className="text-center lg:text-start">
+              <div className="text-center">
                 <p className="text-2xl lg:text-3xl font-bold text-primary">95%</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats.success')}</p>
+                <p className="text-xs lg:text-sm text-muted-foreground">نسبة النجاح</p>
               </div>
             </div>
           </div>

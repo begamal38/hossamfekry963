@@ -468,6 +468,71 @@
   transform-origin: 400px 300px;
 }
 
+/* 3D Molecule rotation - very slow 60s */
+@keyframes molecule-rotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.animate-molecule-rotate {
+  animation: molecule-rotate 60s linear infinite;
+}
+
+/* Electron orbit - 8s rotation */
+@keyframes electron-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-electron-orbit {
+  animation: electron-orbit 8s linear infinite;
+}
+
+/* Electron orbit reverse */
+@keyframes electron-orbit-reverse {
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-electron-orbit-reverse {
+  animation: electron-orbit-reverse 10s linear infinite;
+}
+
+/* Floating atom drift */
+@keyframes float-atom {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -15px);
+  }
+  50% {
+    transform: translate(-5px, 10px);
+  }
+  75% {
+    transform: translate(15px, 5px);
+  }
+}
+
+.animate-float-atom {
+  animation: float-atom 25s ease-in-out infinite;
+}
+
 /* Slow pulse for hexagon bonds */
 @keyframes pulse-slow {
   0%, 100% {
@@ -526,4 +591,9 @@
 .animate-float-particle-slow {
   animation: float-particle 12s ease-in-out infinite;
   animation-delay: 4s;
+}
+
+/* Radial gradient for vignette effect */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
 }
