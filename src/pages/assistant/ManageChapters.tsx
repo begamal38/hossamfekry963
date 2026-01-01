@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Plus, Edit2, Trash2, BookOpen, ChevronRight, GripVertical, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, BookOpen, ChevronRight, GripVertical, Layers, Loader2 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,6 +40,7 @@ export default function ManageChapters() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { isRTL, language } = useLanguage();
+  const { translateText, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -167,8 +169,11 @@ export default function ManageChapters() {
     }
 
     try {
+      // Auto-translate Arabic title to English
+      const translatedTitle = await translateText(formData.title_ar, 'en');
+      
       const chapterData = {
-        title: formData.title_ar, // Use Arabic as fallback
+        title: translatedTitle || formData.title_ar, // Use translated or fallback
         title_ar: formData.title_ar,
         order_index: formData.order_index,
       };
@@ -313,8 +318,11 @@ export default function ManageChapters() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit">
-                  {editingChapter ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة' : 'Add')}
+                <Button type="submit" disabled={isTranslating}>
+                  {isTranslating && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                  {isTranslating 
+                    ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                    : (editingChapter ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة' : 'Add'))}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   {isArabic ? 'إلغاء' : 'Cancel'}

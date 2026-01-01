@@ -17,7 +17,8 @@ import {
   BarChart3,
   AlertTriangle,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { cn } from '@/lib/utils';
 
 type ExamStatus = 'draft' | 'published' | 'closed' | 'archived';
@@ -112,6 +114,7 @@ export default function ManageExams() {
   const { loading: rolesLoading } = useUserRole();
   const { toast } = useToast();
   const { language } = useLanguage();
+  const { translateText, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -272,9 +275,12 @@ export default function ManageExams() {
     }
 
     try {
+      // Auto-translate Arabic title to English
+      const translatedTitle = await translateText(examForm.title_ar, 'en');
+      
       const examData = {
         title_ar: examForm.title_ar,
-        title: examForm.title_ar, // Use Arabic as English fallback
+        title: translatedTitle || examForm.title_ar, // Use translated or fallback to Arabic
         course_id: selectedCourse,
         chapter_id: examForm.chapter_id || null,
         pass_mark: examForm.pass_mark,
@@ -761,9 +767,15 @@ export default function ManageExams() {
                         <X className="w-4 h-4 me-2" />
                         {isArabic ? 'إلغاء' : 'Cancel'}
                       </Button>
-                      <Button onClick={handleSaveExam}>
-                        <Save className="w-4 h-4 me-2" />
-                        {isArabic ? 'حفظ' : 'Save'}
+                      <Button onClick={handleSaveExam} disabled={isTranslating}>
+                        {isTranslating ? (
+                          <Loader2 className="w-4 h-4 me-2 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4 me-2" />
+                        )}
+                        {isTranslating 
+                          ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                          : (isArabic ? 'حفظ' : 'Save')}
                       </Button>
                     </div>
                   </CardContent>

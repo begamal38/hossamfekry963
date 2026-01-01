@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Trash2, Youtube, Pencil, GripVertical, Layers, Clock, Gift } from 'lucide-react';
+import { ArrowLeft, Plus, Video, Trash2, Youtube, Pencil, GripVertical, Layers, Clock, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { generateYouTubeEmbedUrl, isValidYouTubeInput } from '@/lib/youtubeUtils';
 
 interface Course {
@@ -52,6 +53,7 @@ const ManageLessons = () => {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
+  const { translateText, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -200,11 +202,12 @@ const ManageLessons = () => {
     }
 
     try {
-      // Auto-generate English title from Arabic (can be edited later if needed)
+      // Auto-translate Arabic title to English
+      const translatedTitle = await translateText(formData.title_ar, 'en');
       const embedUrl = formData.video_url ? generateYouTubeEmbedUrl(formData.video_url) : null;
       
       const lessonData = {
-        title: formData.title_ar, // Use Arabic as fallback for English
+        title: translatedTitle || formData.title_ar, // Use translated or fallback to Arabic
         title_ar: formData.title_ar,
         lesson_type: 'online', // All lessons are video-based
         video_url: embedUrl,
@@ -464,8 +467,11 @@ const ManageLessons = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSubmit} size="lg">
-                {editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson')}
+              <Button onClick={handleSubmit} size="lg" disabled={isTranslating}>
+                {isTranslating && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                {isTranslating 
+                  ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                  : (editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson'))}
               </Button>
               <Button variant="outline" onClick={resetForm}>
                 {isArabic ? 'إلغاء' : 'Cancel'}
