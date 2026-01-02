@@ -1,107 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Play, CheckCircle2, Trophy } from 'lucide-react';
+import { FileText, Play, CheckCircle2, Trophy, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 interface ChapterExamSectionProps {
   chapterId: string;
   isArabic: boolean;
-}
-
-interface Exam {
-  id: string;
-  title: string;
-  title_ar: string;
-  max_score: number;
-  questions_count?: number;
-}
-
-interface ExamAttempt {
-  score: number;
-  total_questions: number;
+  // Chapter progress data (passed from parent to avoid duplicate fetches)
+  exam?: {
+    id: string;
+    title: string;
+    title_ar: string;
+  } | null;
+  chapterProgress?: {
+    totalLessons: number;
+    completedLessons: number;
+    isComplete: boolean;
+    progressPercent: number;
+  } | null;
+  examAttempt?: {
+    score: number;
+    total_questions: number;
+  } | null;
+  canAccessExam: boolean;
 }
 
 export const ChapterExamSection: React.FC<ChapterExamSectionProps> = ({
   chapterId,
   isArabic,
+  exam,
+  chapterProgress,
+  examAttempt,
+  canAccessExam,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [exam, setExam] = useState<Exam | null>(null);
-  const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchExam();
-  }, [chapterId, user]);
-
-  const fetchExam = async () => {
-    try {
-      // Fetch exam for this chapter
-      const { data: examData, error: examError } = await supabase
-        .from('exams')
-        .select('*')
-        .eq('chapter_id', chapterId)
-        .maybeSingle();
-
-      if (examError) throw examError;
-      
-      if (!examData) {
-        setLoading(false);
-        return;
-      }
-
-      // Get question count
-      const { count } = await supabase
-        .from('exam_questions')
-        .select('*', { count: 'exact', head: true })
-        .eq('exam_id', examData.id);
-
-      setExam({ ...examData, questions_count: count || 0 });
-
-      // Check for user attempt
-      if (user) {
-        const { data: attemptData } = await supabase
-          .from('exam_attempts')
-          .select('score, total_questions')
-          .eq('exam_id', examData.id)
-          .eq('user_id', user.id)
-          .eq('is_completed', true)
-          .maybeSingle();
-
-        if (attemptData) {
-          setAttempt(attemptData);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching exam:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  // No exam for this chapter
+  if (!exam) {
     return null;
   }
 
-  if (!exam || (exam.questions_count || 0) === 0) {
-    return null;
-  }
-
-  const hasCompleted = !!attempt;
-  const percentage = attempt ? Math.round((attempt.score / attempt.total_questions) * 100) : 0;
+  const hasCompleted = !!examAttempt;
+  const percentage = examAttempt 
+    ? Math.round((examAttempt.score / examAttempt.total_questions) * 100) 
+    : 0;
   const passed = percentage >= 60;
+  const isLocked = !canAccessExam && !hasCompleted;
+
+  // Calculate remaining lessons
+  const remainingLessons = chapterProgress 
+    ? chapterProgress.totalLessons - chapterProgress.completedLessons 
+    : 0;
 
   return (
     <Card className={cn(
       "border-2 transition-all",
       hasCompleted 
         ? passed ? "border-green-500/30 bg-green-500/5" : "border-amber-500/30 bg-amber-500/5"
+        : isLocked
+        ? "border-muted bg-muted/20"
         : "border-primary/30 bg-primary/5"
     )}>
       <CardContent className="py-5">
@@ -111,54 +72,91 @@ export const ChapterExamSection: React.FC<ChapterExamSectionProps> = ({
               "w-12 h-12 rounded-full flex items-center justify-center",
               hasCompleted 
                 ? passed ? "bg-green-500/10" : "bg-amber-500/10"
+                : isLocked
+                ? "bg-muted"
                 : "bg-primary/10"
             )}>
               {hasCompleted ? (
                 passed ? <Trophy className="w-6 h-6 text-green-500" /> : <FileText className="w-6 h-6 text-amber-500" />
+              ) : isLocked ? (
+                <Lock className="w-6 h-6 text-muted-foreground" />
               ) : (
                 <FileText className="w-6 h-6 text-primary" />
               )}
             </div>
             <div>
               <h4 className="font-semibold flex items-center gap-2">
-                {isArabic ? 'اختبار الباب' : 'Chapter Exam'}
+                {isArabic ? 'امتحان الباب' : 'Chapter Exam'}
                 {hasCompleted && (
                   <Badge className={passed ? "bg-green-500" : "bg-amber-500"}>
-                    {attempt?.score}/{attempt?.total_questions}
+                    {examAttempt?.score}/{examAttempt?.total_questions}
                   </Badge>
                 )}
               </h4>
               <p className="text-sm text-muted-foreground">
-                {exam.questions_count} {isArabic ? 'سؤال' : 'questions'}
+                {isArabic ? exam.title_ar : exam.title}
                 {hasCompleted && ` • ${percentage}%`}
               </p>
             </div>
           </div>
 
-          <Button
-            onClick={() => navigate(`/exam/${exam.id}`)}
-            variant={hasCompleted ? "outline" : "default"}
-            className="gap-2"
-          >
-            {hasCompleted ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                {isArabic ? 'عرض النتيجة' : 'View Result'}
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4" />
-                {isArabic ? 'ابدأ الاختبار' : 'Start Exam'}
-              </>
-            )}
-          </Button>
+          {/* Exam Button - State driven by chapter completion */}
+          {hasCompleted ? (
+            <Button
+              onClick={() => navigate(`/exam/${exam.id}`)}
+              variant="outline"
+              className="gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {isArabic ? 'تم حل الامتحان ✓' : 'Exam Completed ✓'}
+            </Button>
+          ) : isLocked ? (
+            <Button
+              disabled
+              variant="outline"
+              className="gap-2 opacity-60 cursor-not-allowed"
+            >
+              <Lock className="w-4 h-4" />
+              {isArabic ? 'مقفول' : 'Locked'}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => navigate(`/exam/${exam.id}`)}
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              {isArabic ? 'ابدأ امتحان الباب' : 'Start Chapter Exam'}
+            </Button>
+          )}
         </div>
 
-        {!hasCompleted && (
+        {/* Progress indicator when locked */}
+        {isLocked && chapterProgress && (
+          <div className="mt-4 pt-4 border-t border-muted">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">
+                {isArabic ? 'تقدم الباب' : 'Chapter Progress'}
+              </span>
+              <span className="font-medium">
+                {chapterProgress.completedLessons}/{chapterProgress.totalLessons}
+              </span>
+            </div>
+            <Progress value={chapterProgress.progressPercent} className="h-2 mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {isArabic 
+                ? `كمّل ${remainingLessons} ${remainingLessons === 1 ? 'حصة' : 'حصص'} علشان يفتح الامتحان`
+                : `Complete ${remainingLessons} more ${remainingLessons === 1 ? 'lesson' : 'lessons'} to unlock the exam`
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Guidance for available exam */}
+        {!hasCompleted && !isLocked && (
           <p className="text-sm text-muted-foreground mt-3 pt-3 border-t">
             {isArabic 
-              ? 'الاختبار ده عشان تتأكد إنك فاهم الباب كويس 👌'
-              : 'This exam is to make sure you understand the chapter well 👌'
+              ? 'خلصت كل حصص الباب ✅ — ابدأ الامتحان دلوقتي'
+              : 'All chapter lessons completed ✅ — Start the exam now'
             }
           </p>
         )}

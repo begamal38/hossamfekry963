@@ -9,7 +9,8 @@ import {
   Users,
   Lock,
   Unlock,
-  FileVideo
+  FileVideo,
+  Layers
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -20,11 +21,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useChapterProgress } from '@/hooks/useChapterProgress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
 import { filterLessonsForStudents, hasValidVideo, calculateProgress, isCoursePreview } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { ChapterExamSection } from '@/components/course/ChapterExamSection';
 
 interface Course {
   id: string;
@@ -57,6 +60,8 @@ interface Chapter {
   title: string;
   title_ar: string;
   order_index: number;
+  description?: string | null;
+  description_ar?: string | null;
 }
 
 interface Attendance {
@@ -96,11 +101,39 @@ export default function CourseView() {
   const [userProfile, setUserProfile] = useState<{ grade: string | null; academic_year: string | null; language_track: string | null } | null>(null);
   const [accessBlocked, setAccessBlocked] = useState<{ blocked: boolean; message: string } | null>(null);
 
+  // Chapter progress hook - for chapter-level exam unlocking
+  const {
+    chapterProgress,
+    chapterExams,
+    examAttempts,
+    canAccessChapterExam,
+    getChapterProgress,
+  } = useChapterProgress(course?.id || '');
+
   // Filter lessons for student view (show all lessons, chapter is organizational only)
   const visibleLessons = useMemo(() => {
     // All lessons are visible now - chapter is for organization, not visibility
     return lessons;
   }, [lessons]);
+
+  // Group lessons by chapter for organized display
+  const lessonsByChapter = useMemo(() => {
+    const grouped: Record<string, Lesson[]> = { uncategorized: [] };
+    
+    chapters.forEach(chapter => {
+      grouped[chapter.id] = [];
+    });
+    
+    visibleLessons.forEach(lesson => {
+      if (lesson.chapter_id && grouped[lesson.chapter_id]) {
+        grouped[lesson.chapter_id].push(lesson);
+      } else {
+        grouped.uncategorized.push(lesson);
+      }
+    });
+    
+    return grouped;
+  }, [visibleLessons, chapters]);
 
   // Calculate progress based on lessons with valid videos only
   const progressData = useMemo(() => {
@@ -204,6 +237,15 @@ export default function CourseView() {
         .order('order_index');
 
       setLessons(lessonsData || []);
+
+      // Fetch chapters for this course
+      const { data: chaptersData } = await supabase
+        .from('chapters')
+        .select('*')
+        .eq('course_id', actualCourseId)
+        .order('order_index');
+
+      setChapters(chaptersData || []);
 
       // Check enrollment and attendance
       if (user) {
@@ -618,85 +660,268 @@ export default function CourseView() {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-6">
               <p className="text-sm text-muted-foreground">
                 {isArabic 
-                  ? '💡 ابدأ من أول حصة واكمل بالترتيب — كل حصة تفتح اللي بعدها'
-                  : '💡 Start from the first lesson and complete in order — each lesson unlocks the next'
+                  ? '💡 كمّل كل حصص الباب علشان يفتح الامتحان'
+                  : '💡 Complete all chapter lessons to unlock the chapter exam'
                 }
               </p>
             </div>
           )}
 
-          <div className="space-y-3">
-            {visibleLessons.map((lesson, index) => {
-              const completed = isLessonCompleted(lesson.id);
-              const canAccess = canAccessLesson(index);
-              const hasVideo = hasValidVideo(lesson.video_url);
+          {/* Chapter-grouped lessons with exam sections */}
+          <div className="space-y-8">
+            {chapters.length > 0 ? (
+              <>
+                {chapters.map((chapter, chapterIndex) => {
+                  const chapterLessons = lessonsByChapter[chapter.id] || [];
+                  const chapterProgressData = getChapterProgress(chapter.id);
+                  const chapterExam = chapterExams[chapter.id];
+                  const chapterExamAttempt = examAttempts[chapter.id];
+                  const canAccessExam = canAccessChapterExam(chapter.id);
 
-              return (
-                <div
-                  key={lesson.id}
-                  className={cn(
-                    "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
-                    canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
-                  )}
-                  onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
-                >
-                  {/* Lesson Number */}
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
-                    completed 
-                      ? "bg-green-500 text-white" 
-                      : canAccess && hasVideo
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {completed ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
-                  </div>
+                  if (chapterLessons.length === 0) return null;
 
-                  {/* Lesson Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">
-                        {isArabic ? lesson.title_ar : lesson.title}
-                      </h3>
-                      {!hasVideo && (
-                        <Badge variant="secondary" className="text-xs shrink-0">
-                          <FileVideo className="w-3 h-3 mr-1" />
-                          {isArabic ? 'قيد الإعداد' : 'Coming Soon'}
-                        </Badge>
+                  return (
+                    <div key={chapter.id} className="space-y-4">
+                      {/* Chapter Header */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Layers className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold">
+                            {isArabic ? `الباب ${chapterIndex + 1}: ${chapter.title_ar}` : `Chapter ${chapterIndex + 1}: ${chapter.title}`}
+                          </h3>
+                          {chapterProgressData && (
+                            <p className="text-sm text-muted-foreground">
+                              {chapterProgressData.completedLessons}/{chapterProgressData.totalLessons} {isArabic ? 'حصة مكتملة' : 'lessons completed'}
+                              {chapterProgressData.isComplete && (
+                                <CheckCircle2 className="w-4 h-4 text-green-500 inline-block mx-1" />
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Chapter Lessons */}
+                      <div className="space-y-3 mr-6">
+                        {chapterLessons.map((lesson, index) => {
+                          const completed = isLessonCompleted(lesson.id);
+                          const canAccess = canAccessLesson(index);
+                          const hasVideo = hasValidVideo(lesson.video_url);
+
+                          return (
+                            <div
+                              key={lesson.id}
+                              className={cn(
+                                "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
+                                canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
+                              )}
+                              onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                            >
+                              {/* Lesson Number */}
+                              <div className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                                completed 
+                                  ? "bg-green-500 text-white" 
+                                  : canAccess && hasVideo
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-muted text-muted-foreground"
+                              )}>
+                                {completed ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
+                              </div>
+
+                              {/* Lesson Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold truncate">
+                                    {isArabic ? lesson.title_ar : lesson.title}
+                                  </h3>
+                                  {!hasVideo && (
+                                    <Badge variant="secondary" className="text-xs shrink-0">
+                                      <FileVideo className="w-3 h-3 mr-1" />
+                                      {isArabic ? 'قيد الإعداد' : 'Coming Soon'}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Action */}
+                              <div className="shrink-0">
+                                {!hasVideo ? (
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    {isArabic ? 'قريباً' : 'Soon'}
+                                  </Badge>
+                                ) : canAccess ? (
+                                  <Button size="sm" variant={completed ? "secondary" : "default"}>
+                                    {completed ? (
+                                      <>{isArabic ? 'مراجعة' : 'Review'}</>
+                                    ) : (
+                                      <>
+                                        <Play className="w-4 h-4 mr-1" />
+                                        {isArabic ? 'ابدأ' : 'Start'}
+                                      </>
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <Lock className="w-5 h-5 text-muted-foreground" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Chapter Exam Section */}
+                      {chapterExam && (
+                        <div className="mr-6">
+                          <ChapterExamSection
+                            chapterId={chapter.id}
+                            isArabic={isArabic}
+                            exam={chapterExam}
+                            chapterProgress={chapterProgressData}
+                            examAttempt={chapterExamAttempt}
+                            canAccessExam={canAccessExam}
+                          />
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
-                      </span>
+                  );
+                })}
+
+                {/* Uncategorized lessons (lessons without chapter) */}
+                {lessonsByChapter.uncategorized.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-bold">
+                      {isArabic ? 'حصص إضافية' : 'Additional Lessons'}
+                    </h3>
+                    <div className="space-y-3">
+                      {lessonsByChapter.uncategorized.map((lesson, index) => {
+                        const completed = isLessonCompleted(lesson.id);
+                        const canAccess = canAccessLesson(index);
+                        const hasVideo = hasValidVideo(lesson.video_url);
+
+                        return (
+                          <div
+                            key={lesson.id}
+                            className={cn(
+                              "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
+                              canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
+                            )}
+                            onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                          >
+                            <div className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                              completed 
+                                ? "bg-green-500 text-white" 
+                                : canAccess && hasVideo
+                                ? "bg-primary/10 text-primary"
+                                : "bg-muted text-muted-foreground"
+                            )}>
+                              {completed ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold truncate">
+                                {isArabic ? lesson.title_ar : lesson.title}
+                              </h3>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="shrink-0">
+                              {!hasVideo ? (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  {isArabic ? 'قريباً' : 'Soon'}
+                                </Badge>
+                              ) : canAccess ? (
+                                <Button size="sm" variant={completed ? "secondary" : "default"}>
+                                  {completed ? (isArabic ? 'مراجعة' : 'Review') : (
+                                    <>
+                                      <Play className="w-4 h-4 mr-1" />
+                                      {isArabic ? 'ابدأ' : 'Start'}
+                                    </>
+                                  )}
+                                </Button>
+                              ) : (
+                                <Lock className="w-5 h-5 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
+                )}
+              </>
+            ) : (
+              /* Fallback: Show lessons without chapter grouping */
+              <div className="space-y-3">
+                {visibleLessons.map((lesson, index) => {
+                  const completed = isLessonCompleted(lesson.id);
+                  const canAccess = canAccessLesson(index);
+                  const hasVideo = hasValidVideo(lesson.video_url);
 
-                  {/* Action */}
-                  <div className="shrink-0">
-                    {!hasVideo ? (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        {isArabic ? 'قريباً' : 'Soon'}
-                      </Badge>
-                    ) : canAccess ? (
-                      <Button size="sm" variant={completed ? "secondary" : "default"}>
-                        {completed ? (
-                          <>{isArabic ? 'مراجعة' : 'Review'}</>
+                  return (
+                    <div
+                      key={lesson.id}
+                      className={cn(
+                        "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
+                        canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
+                      )}
+                      onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                        completed 
+                          ? "bg-green-500 text-white" 
+                          : canAccess && hasVideo
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        {completed ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">
+                          {isArabic ? lesson.title_ar : lesson.title}
+                        </h3>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        {!hasVideo ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {isArabic ? 'قريباً' : 'Soon'}
+                          </Badge>
+                        ) : canAccess ? (
+                          <Button size="sm" variant={completed ? "secondary" : "default"}>
+                            {completed ? (isArabic ? 'مراجعة' : 'Review') : (
+                              <>
+                                <Play className="w-4 h-4 mr-1" />
+                                {isArabic ? 'ابدأ' : 'Start'}
+                              </>
+                            )}
+                          </Button>
                         ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-1" />
-                            {isArabic ? 'ابدأ' : 'Start'}
-                          </>
+                          <Lock className="w-5 h-5 text-muted-foreground" />
                         )}
-                      </Button>
-                    ) : (
-                      <Lock className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {lessons.length === 0 && (
