@@ -271,6 +271,76 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stats.lessons': 'Video Lessons',
     'hero.stats.students': 'Students',
     'hero.stats.success': 'Success Rate',
+    'hero.startLearning': 'Start Learning',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // NAV EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'nav.platform': 'Platform',
+    'nav.myProfile': 'My Profile',
+    'nav.assistantPlatform': 'Assistant Platform',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STUDENT DASHBOARD EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'dashboard.welcomeMessage': 'Welcome',
+    'dashboard.startWithCourse': 'Start with a course for your level',
+    'dashboard.chooseFirstCourse': 'Choose your first course and start learning with us',
+    'dashboard.progressExcellent': 'Excellent! You completed everything',
+    'dashboard.progressAlmostDone': 'Almost there! Just a little more to finish the course',
+    'dashboard.progressKeepGoing': 'Keep going! You are making great progress',
+    'dashboard.progressJustStarted': 'Good start! Continue to build momentum',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ASSISTANT DASHBOARD EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'assistant.totalStudents': 'Total Students',
+    'assistant.totalLessons': 'Total Lessons',
+    'assistant.activeEnrollments': 'Active Enrollments',
+    'assistant.avgExamScore': 'Avg Exam Score',
+    'assistant.quickActions': 'Quick Actions',
+    'assistant.advancedActions': 'Advanced Actions',
+    'assistant.students': 'Students',
+    'assistant.courses': 'Courses',
+    'assistant.lessons': 'Lessons',
+    'assistant.addLesson': 'Add Lesson',
+    'assistant.sendNotifications': 'Send Notifications',
+    'assistant.content': 'Content',
+    'assistant.chapters': 'Chapters',
+    'assistant.exams': 'Exams',
+    'assistant.studentList': 'Student List',
+    'assistant.enrollments': 'Enrollments',
+    'assistant.analytics': 'Analytics',
+    'assistant.reports': 'Reports',
+    'assistant.center': 'Center',
+    'assistant.groups': 'Groups',
+    'assistant.sessions': 'Sessions',
+    'assistant.attendance': 'Attendance',
+    'assistant.platformSubtitle': 'Platform – Assistant Teacher',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // COURSE/LESSON EXTRAS  
+    // ══════════════════════════════════════════════════════════════════════════
+    'course.subscribeToUnlock': 'Subscribe to the course to unlock content and start learning',
+    'course.comingSoon': 'Coming Soon',
+    'lesson.markCompleted': 'Mark Lesson as Completed',
+    'lesson.startExam': 'Start Exam',
+    'lesson.nextLesson': 'Next Lesson',
+    'lesson.watchProgress': 'Complete 20 minutes to count your progress',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // EXAM EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'exam.instructions': 'Exam Instructions',
+    'exam.questionsCount': 'Questions',
+    'exam.timeLimit': 'Time Limit',
+    'exam.minutes': 'minutes',
+    'exam.rules': 'Read each question carefully before answering',
+    'exam.submit': 'Submit Exam',
+    'exam.resultPassed': 'Congratulations! You passed the exam',
+    'exam.resultFailed': 'You can try again to improve your score',
+    'exam.retake': 'Retake Exam',
+    'exam.continueToNext': 'Continue to Next',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FEATURES
@@ -613,6 +683,76 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stats.lessons': 'فيديو تعليمي',
     'hero.stats.students': 'طالب',
     'hero.stats.success': 'نسبة نجاح',
+    'hero.startLearning': 'ابدأ التعلم',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // NAV EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'nav.platform': 'المنصة',
+    'nav.myProfile': 'ملفي',
+    'nav.assistantPlatform': 'منصة المدرس المساعد',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STUDENT DASHBOARD EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'dashboard.welcomeMessage': 'أهلاً بيك',
+    'dashboard.startWithCourse': 'ابدأ بكورس مناسب لمرحلتك',
+    'dashboard.chooseFirstCourse': 'اختر كورسك الأول وابدأ رحلة التعلم معانا',
+    'dashboard.progressExcellent': 'ممتاز 👏 خلصت كل حاجة',
+    'dashboard.progressAlmostDone': 'قربت تخلص! كمان شوية بس',
+    'dashboard.progressKeepGoing': 'شغل ممتاز! كمل كده',
+    'dashboard.progressJustStarted': 'بداية حلوة! كمل عشان تكسب الزخم',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ASSISTANT DASHBOARD EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'assistant.totalStudents': 'إجمالي الطلاب',
+    'assistant.totalLessons': 'إجمالي الحصص',
+    'assistant.activeEnrollments': 'الاشتراكات النشطة',
+    'assistant.avgExamScore': 'متوسط درجات الامتحانات',
+    'assistant.quickActions': 'إجراءات سريعة',
+    'assistant.advancedActions': 'إجراءات متقدمة',
+    'assistant.students': 'الطلاب',
+    'assistant.courses': 'الكورسات',
+    'assistant.lessons': 'الحصص',
+    'assistant.addLesson': 'إضافة حصة',
+    'assistant.sendNotifications': 'إرسال إشعارات',
+    'assistant.content': 'المحتوى',
+    'assistant.chapters': 'الأبواب',
+    'assistant.exams': 'الامتحانات',
+    'assistant.studentList': 'قائمة الطلاب',
+    'assistant.enrollments': 'الاشتراكات',
+    'assistant.analytics': 'التحليلات',
+    'assistant.reports': 'التقارير',
+    'assistant.center': 'السنتر',
+    'assistant.groups': 'المجموعات',
+    'assistant.sessions': 'الجلسات',
+    'assistant.attendance': 'الحضور',
+    'assistant.platformSubtitle': 'المنصة – المدرس المساعد',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // COURSE/LESSON EXTRAS  
+    // ══════════════════════════════════════════════════════════════════════════
+    'course.subscribeToUnlock': 'اشترك في الكورس لفتح المحتوى والبدء في التعلم',
+    'course.comingSoon': 'قريباً',
+    'lesson.markCompleted': 'خلصت الحصة',
+    'lesson.startExam': 'ابدأ الامتحان',
+    'lesson.nextLesson': 'انتقل للحصة التالية',
+    'lesson.watchProgress': 'كمّل 20 دقيقة عشان يتحسب التقدم',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // EXAM EXTRAS
+    // ══════════════════════════════════════════════════════════════════════════
+    'exam.instructions': 'تعليمات الاختبار',
+    'exam.questionsCount': 'عدد الأسئلة',
+    'exam.timeLimit': 'الوقت المحدد',
+    'exam.minutes': 'دقيقة',
+    'exam.rules': 'اقرأ كل سؤال بعناية قبل الإجابة',
+    'exam.submit': 'تسليم الامتحان',
+    'exam.resultPassed': 'مبروك! اجتزت الامتحان بنجاح',
+    'exam.resultFailed': 'ممكن تحاول تاني عشان تحسن درجتك',
+    'exam.retake': 'إعادة الامتحان',
+    'exam.continueToNext': 'انتقل للتالي',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FEATURES

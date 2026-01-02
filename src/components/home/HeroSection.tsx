@@ -91,12 +91,12 @@ export const HeroSection: React.FC = () => {
                   <Button variant="hero" size="lg" asChild>
                     <Link to="/auth?mode=signup">
                       <Play className="w-5 h-5" />
-                      {isRTL ? 'ابدأ التعلم' : 'Start Learning'}
+                      {t('hero.startLearning')}
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
                     <Link to="/courses">
-                      {isRTL ? 'تصفح الكورسات' : 'Browse Courses'}
+                      {t('hero.cta_courses')}
                       <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>

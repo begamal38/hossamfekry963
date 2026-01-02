@@ -310,12 +310,12 @@ const Dashboard: React.FC = () => {
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                   {hasValidName 
-                    ? (isArabic ? `أهلاً بيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`)
-                    : (isArabic ? 'أهلاً بيك! 👋' : 'Welcome! 👋')}
+                    ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
+                    : `${t('dashboard.welcomeMessage')}! 👋`}
                 </h1>
                   <div className="flex items-center gap-3 flex-wrap">
                     <p className="text-muted-foreground">
-                      {isArabic ? 'المنصة' : 'Platform'}
+                      {t('nav.platform')}
                     </p>
                   {groupLabel && (
                     <Badge variant="secondary" className="text-sm">
@@ -391,14 +391,14 @@ const Dashboard: React.FC = () => {
                   <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {isArabic ? 'ابدأ بكورس مناسب لمرحلتك' : 'Start with a course for your level'}
+                      {t('dashboard.startWithCourse')}
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      {isArabic ? 'اختر كورسك الأول وابدأ رحلة التعلم معانا' : 'Choose your first course and start learning with us'}
+                      {t('dashboard.chooseFirstCourse')}
                     </p>
                     <Button asChild>
                       <Link to="/courses">
-                        {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
+                        {t('dashboard.browseCourses')}
                       </Link>
                     </Button>
                   </div>
@@ -460,14 +460,14 @@ const Dashboard: React.FC = () => {
                 <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 p-4">
                   <p className="text-sm font-medium text-foreground">
                     {overallProgress >= 100 
-                      ? (isArabic ? '🎉 ممتاز! خلّصت كل الحصص' : '🎉 Excellent! You completed all lessons')
+                      ? `🎉 ${t('dashboard.progressExcellent')}`
                       : overallProgress >= 75 
-                      ? (isArabic ? '🔥 شغل رائع! قربت تخلّص' : '🔥 Great work! Almost there')
+                      ? `🔥 ${t('dashboard.progressAlmostDone')}`
                       : overallProgress >= 50 
-                      ? (isArabic ? '👏 أحسنت! نص الطريق اتقطع' : '👏 Well done! Halfway there')
+                      ? `👏 ${t('dashboard.progressKeepGoing')}`
                       : overallProgress >= 25 
-                      ? (isArabic ? '💪 استمر! بداية قوية' : '💪 Keep going! Strong start')
-                      : (isArabic ? '🚀 ابدأ رحلتك — كل حصة خطوة للأمام' : '🚀 Start your journey — every lesson is progress')
+                      ? `💪 ${t('dashboard.progressJustStarted')}`
+                      : `🚀 ${t('dashboard.continueJourney')}`
                     }
                   </p>
                 </div>
@@ -499,7 +499,7 @@ const Dashboard: React.FC = () => {
               {/* Profile Card */}
               <div className="bg-card rounded-xl border border-border p-6">
                 <h3 className="font-semibold text-foreground mb-4">
-                  {isArabic ? 'معلومات الحساب' : 'Account Info'}
+                  {t('dashboard.accountInfo')}
                 </h3>
                 
                 <div className="space-y-4">

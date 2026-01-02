@@ -27,10 +27,10 @@ export const Navbar: React.FC = () => {
     { href: '/campaigns', label: t('nav.campaigns') },
     { href: '/about', label: t('nav.about') },
     ...(user && !canAccessDashboard() ? [
-      { href: '/platform', label: language === 'ar' ? 'المنصة' : 'Platform' },
-      { href: '/profile', label: language === 'ar' ? 'ملفي' : 'My Profile' },
+      { href: '/platform', label: t('nav.platform') },
+      { href: '/profile', label: t('nav.myProfile') },
     ] : []),
-    ...(canAccessDashboard() ? [{ href: '/assistant', label: language === 'ar' ? 'المنصة' : 'Platform' }] : []),
+    ...(canAccessDashboard() ? [{ href: '/assistant', label: t('nav.platform') }] : []),
   ];
 
   const isActive = (path: string) => location.pathname === path;
