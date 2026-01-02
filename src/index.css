@@ -215,6 +215,75 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   AMBIENT BREATHING UI - Global Living Effect
+   Single rhythm, 8s cycle, extremely subtle
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes ambient-breathe {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 0 transparent,
+      inset 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 
+      0 0 30px -10px hsl(var(--primary) / 0.06),
+      inset 0 0 20px -10px hsl(var(--primary) / 0.03);
+  }
+}
+
+@keyframes ambient-breathe-border {
+  0%, 100% {
+    border-color: hsl(var(--border));
+  }
+  50% {
+    border-color: hsl(var(--primary) / 0.15);
+  }
+}
+
+@keyframes ambient-breathe-icon {
+  0%, 100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.15));
+  }
+}
+
+/* Dark mode enhanced breathing - soft white/blue glow */
+.dark {
+  --ambient-glow-color: 209 80% 75%;
+}
+
+:root {
+  --ambient-glow-color: 209 56% 46%;
+}
+
+/* Base breathing class - apply to containers */
+.ambient-breathe {
+  animation: ambient-breathe 8s ease-in-out infinite;
+}
+
+/* Border breathing variant */
+.ambient-breathe-border {
+  animation: ambient-breathe-border 8s ease-in-out infinite;
+}
+
+/* Icon/indicator breathing */
+.ambient-breathe-icon {
+  animation: ambient-breathe-icon 8s ease-in-out infinite;
+}
+
+/* Combined effect for cards */
+.ambient-card {
+  animation: 
+    ambient-breathe 8s ease-in-out infinite,
+    ambient-breathe-border 8s ease-in-out infinite;
+}
+
 /* Reduced motion for accessibility and performance */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -245,7 +314,11 @@
 @media (max-width: 768px) {
   .animate-pulse-glow,
   .animate-float,
-  .animate-bounce-subtle {
+  .animate-bounce-subtle,
+  .ambient-breathe,
+  .ambient-breathe-border,
+  .ambient-breathe-icon,
+  .ambient-card {
     animation: none;
   }
   
