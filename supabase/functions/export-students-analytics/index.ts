@@ -229,15 +229,19 @@ serve(async (req) => {
     const studentUserIds = (studentRoles || []).map(r => r.user_id);
     
     if (studentUserIds.length === 0) {
+      console.log('No students found, returning empty data');
       return new Response(
         JSON.stringify({ 
           success: true, 
           data: { overview: [], atRisk: [], topPerformers: [] },
-          summary: { total: 0, atRisk: 0, topPerformers: 0, inactive: 0 }
+          summary: { total: 0, atRisk: 0, topPerformers: 0, inactive: 0, avgEngagement: 0, avgExamScore: 0 },
+          generatedAt: new Date().toISOString(),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log(`Found ${studentUserIds.length} students, fetching data...`);
 
     // Fetch all required data in parallel
     const [
@@ -273,6 +277,18 @@ serve(async (req) => {
         .in('student_id', studentUserIds),
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
     ]);
+
+    console.log('Data fetch results:', {
+      profiles: profilesResult.data?.length ?? 0,
+      profilesError: profilesResult.error?.message,
+      enrollments: enrollmentsResult.data?.length ?? 0,
+      lessons: lessonsResult.data?.length ?? 0,
+      completions: lessonCompletionsResult.data?.length ?? 0,
+      exams: examsResult.data?.length ?? 0,
+      attempts: examAttemptsResult.data?.length ?? 0,
+      attendance: centerAttendanceResult.data?.length ?? 0,
+      authUsers: authUsersResult.data?.users?.length ?? 0,
+    });
 
     const profiles = profilesResult.data || [];
     const enrollments = enrollmentsResult.data || [];
