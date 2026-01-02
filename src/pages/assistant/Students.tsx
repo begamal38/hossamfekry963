@@ -326,10 +326,48 @@ export default function Students() {
     try {
       const { data, error } = await supabase.functions.invoke('export-students');
       
-      if (error) throw error;
+      if (error) {
+        // Parse error response for specific messages
+        let errorMessage = isRTL ? 'حدث خطأ أثناء تصدير البيانات' : 'An error occurred while exporting data';
+        let errorTitle = isRTL ? 'خطأ في التصدير' : 'Export Error';
+        
+        if (error.message) {
+          try {
+            const errorData = JSON.parse(error.message);
+            if (errorData.error === 'PERMISSION_DENIED') {
+              errorTitle = isRTL ? 'صلاحيات غير كافية' : 'Permission Denied';
+              errorMessage = errorData.message || errorMessage;
+            } else if (errorData.error === 'NO_AUTH' || errorData.error === 'AUTH_FAILED') {
+              errorTitle = isRTL ? 'يجب تسجيل الدخول' : 'Authentication Required';
+              errorMessage = errorData.message || errorMessage;
+            } else if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch {
+            // Not JSON, use default message
+          }
+        }
+        
+        toast({
+          variant: 'destructive',
+          title: errorTitle,
+          description: errorMessage,
+        });
+        return;
+      }
+
+      // Handle empty or non-string data
+      if (!data) {
+        toast({
+          title: isRTL ? 'لا توجد بيانات' : 'No Data',
+          description: isRTL ? 'لا يوجد طلاب للتصدير' : 'No students to export',
+        });
+        return;
+      }
 
       // Create blob and download
-      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const csvData = typeof data === 'string' ? data : JSON.stringify(data);
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -348,7 +386,7 @@ export default function Students() {
       toast({
         variant: 'destructive',
         title: isRTL ? 'خطأ في التصدير' : 'Export Error',
-        description: isRTL ? 'حدث خطأ أثناء تصدير البيانات' : 'An error occurred while exporting data',
+        description: isRTL ? 'حدث خطأ غير متوقع أثناء التصدير' : 'An unexpected error occurred while exporting',
       });
     } finally {
       setExporting(false);
