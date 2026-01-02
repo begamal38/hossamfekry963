@@ -13,7 +13,9 @@ import {
   Timer,
   Layers,
   LogIn,
-  Gift
+  Gift,
+  FileQuestion,
+  AlertCircle
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { useLessonWatchTime, formatRemainingTime } from '@/hooks/useLessonWatchTime';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { toast } from 'sonner';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
 
@@ -58,6 +61,13 @@ interface Chapter {
   order_index: number;
 }
 
+interface LinkedExam {
+  id: string;
+  title: string;
+  title_ar: string;
+  status: string;
+}
+
 export default function LessonView() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
@@ -72,9 +82,11 @@ export default function LessonView() {
   const [course, setCourse] = useState<Course | null>(null);
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [courseLessons, setCourseLessons] = useState<Lesson[]>([]);
+  const [linkedExam, setLinkedExam] = useState<LinkedExam | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [completionSaving, setCompletionSaving] = useState(false);
 
   const { 
     watchTimeSeconds, 
@@ -124,6 +136,18 @@ export default function LessonView() {
         setChapter(chapterData);
       }
 
+      // Fetch linked exam if exists
+      if (lessonData.linked_exam_id) {
+        const { data: examData } = await supabase
+          .from('exams')
+          .select('id, title, title_ar, status')
+          .eq('id', lessonData.linked_exam_id)
+          .single();
+        if (examData && examData.status === 'published') {
+          setLinkedExam(examData);
+        }
+      }
+
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
@@ -159,20 +183,35 @@ export default function LessonView() {
   };
 
   const handleComplete = async () => {
-    if (!user || !lesson) return;
+    if (!user || !lesson || completionSaving) return;
 
+    setCompletionSaving(true);
     try {
+      // Insert into lesson_completions for progress tracking
+      await supabase
+        .from('lesson_completions')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lesson.id,
+          watch_time_seconds: watchTimeSeconds
+        }, { onConflict: 'user_id,lesson_id' });
+
+      // Also record attendance
       await supabase
         .from('lesson_attendance')
-        .insert({
+        .upsert({
           user_id: user.id,
           lesson_id: lesson.id,
           attendance_type: 'online'
-        });
+        }, { onConflict: 'user_id,lesson_id' });
 
       setCompleted(true);
+      toast.success(isArabic ? '✔️ تم تسجيل إكمال الحصة بنجاح' : '✔️ Lesson completed successfully');
     } catch (error) {
       console.error('Error marking lesson complete:', error);
+      toast.error(isArabic ? 'حدث خطأ، حاول مرة أخرى' : 'An error occurred, please try again');
+    } finally {
+      setCompletionSaving(false);
     }
   };
 
@@ -381,160 +420,179 @@ export default function LessonView() {
             </div>
             
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
-              <div className="space-y-4">
-                {/* Video Container - fixed aspect ratio, no layout shift */}
-                <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-lg" style={{ paddingBottom: '56.25%' }}>
-                  <iframe
-                    src={`https://www.youtube.com/embed/${getYouTubeVideoId(lesson.video_url)}?rel=0&modestbranding=1&enablejsapi=1`}
-                    title={isArabic ? lesson.title_ar : lesson.title}
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Watch time controls - only for logged in non-completed users */}
-                {user && !completed && (
-                  <div className="bg-muted/50 rounded-xl p-4 md:p-5">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <Button
-                          variant={isPlaying ? "secondary" : "default"}
-                          size="sm"
-                          onClick={isPlaying ? pauseWatching : startWatching}
-                          className="gap-2"
-                        >
-                          {isPlaying ? (
-                            <>{isArabic ? '⏸️ إيقاف' : '⏸️ Pause'}</>
-                          ) : (
-                            <>{isArabic ? '▶️ ابدأ' : '▶️ Start'}</>
-                          )}
-                        </Button>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Timer className="w-4 h-4 text-primary" />
-                          <span className="font-mono font-semibold">
-                            {formatRemainingTime(watchTimeSeconds)}
-                          </span>
-                        </div>
-                      </div>
-                      {!isCompleteButtonEnabled && (
-                        <div className="text-sm text-muted-foreground">
-                          {isArabic ? 'متبقي:' : 'Remaining:'}{' '}
-                          <span className="font-mono font-semibold text-primary">
-                            {formatRemainingTime(remainingSeconds)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {!isCompleteButtonEnabled && (
-                      <div className="mt-4">
-                        <Progress 
-                          value={(watchTimeSeconds / (20 * 60)) * 100} 
-                          className="h-2"
-                        />
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {isArabic 
-                            ? 'شاهد 20 دقيقة على الأقل لتسجيل الإكمال'
-                            : 'Watch at least 20 minutes to mark complete'
-                          }
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              /* Video Container - fixed 16:9 aspect ratio, lazy loaded */
+              <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-lg" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYouTubeVideoId(lesson.video_url)}?rel=0&modestbranding=1`}
+                  title={isArabic ? lesson.title_ar : lesson.title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  loading="lazy"
+                />
               </div>
             ) : (
+              /* Empty/Error State */
               <div className="relative w-full rounded-xl overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center py-16">
-                <Play className="w-16 h-16 text-muted-foreground/40 mb-4" />
+                <AlertCircle className="w-16 h-16 text-muted-foreground/40 mb-4" />
                 <p className="text-muted-foreground font-medium text-lg">
-                  {isArabic ? 'المحتوى قيد الإعداد' : 'Content Under Preparation'}
+                  {isArabic ? 'فيديو الحصة غير متاح حاليًا' : 'Lesson video not available'}
                 </p>
-                <p className="text-muted-foreground/60 text-sm mt-2">
-                  {isArabic ? 'سيتم إضافة الفيديو قريباً' : 'Video will be added soon'}
+                <p className="text-muted-foreground/60 text-sm mt-2 text-center px-4">
+                  {isArabic ? 'سيتم إضافة الفيديو قريباً — يمكنك متابعة الحصص الأخرى' : 'Video will be added soon — you can continue with other lessons'}
                 </p>
               </div>
             )}
           </section>
 
-          {/* Guidance Messages */}
+          {/* Subtle Guidance - shown once */}
           {user && hasValidVideo(lesson.video_url) && !completed && (
-            <section className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  💡
+            <section className="bg-muted/30 rounded-lg p-3 mb-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                {isArabic 
+                  ? 'شاهد الحصة بهدوء — التقدم محسوب تلقائيًا • مفيش داعي تكمّل الفيديو كله مرة واحدة'
+                  : 'Watch at your own pace — progress is tracked automatically'}
+              </p>
+            </section>
+          )}
+
+          {/* Progress & Watch Controls */}
+          {user && hasValidVideo(lesson.video_url) && !completed && (
+            <section className="bg-card border rounded-xl p-4 md:p-5 mb-6">
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <Timer className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">
+                    {isArabic ? 'تقدم المشاهدة' : 'Watch Progress'}
+                  </h3>
                 </div>
-                <div>
-                  {!isCompleteButtonEnabled ? (
-                    <>
-                      <p className="font-medium text-foreground">
-                        {isArabic ? 'كمّل مشاهدة 20 دقيقة عشان تفتح الامتحان' : 'Watch 20 minutes to unlock the exam'}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {isArabic 
-                          ? `متبقي ${formatRemainingTime(remainingSeconds)} - اضغط ابدأ واستمر في المشاهدة`
-                          : `${formatRemainingTime(remainingSeconds)} remaining - click Start and keep watching`
-                        }
-                      </p>
-                    </>
+                
+                {/* Play/Pause Button */}
+                <Button
+                  variant={isPlaying ? "secondary" : "default"}
+                  size="sm"
+                  onClick={isPlaying ? pauseWatching : startWatching}
+                  className="gap-2"
+                >
+                  {isPlaying ? (
+                    <>{isArabic ? '⏸️ إيقاف مؤقت' : '⏸️ Pause'}</>
                   ) : (
-                    <p className="font-medium text-green-600">
-                      {isArabic ? 'ممتاز 👏 تقدر تضغط إكمال الحصة دلوقتي!' : 'Great! 👏 You can mark the lesson complete now!'}
-                    </p>
+                    <>{isArabic ? '▶️ ابدأ التتبع' : '▶️ Start Tracking'}</>
+                  )}
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <Progress 
+                  value={(watchTimeSeconds / (20 * 60)) * 100} 
+                  className="h-3"
+                />
+                
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-mono font-bold text-lg text-primary">
+                        {formatRemainingTime(watchTimeSeconds)}
+                      </span>
+                      <span className="text-muted-foreground">/ 20:00</span>
+                    </div>
+                    {isPlaying && (
+                      <span className="flex items-center gap-1 text-xs text-green-600 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        {isArabic ? 'جاري التتبع' : 'Tracking'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {!isCompleteButtonEnabled ? (
+                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg">
+                      <AlertCircle className="w-4 h-4" />
+                      {isArabic 
+                        ? `متبقي ${formatRemainingTime(remainingSeconds)}`
+                        : `${formatRemainingTime(remainingSeconds)} remaining`
+                      }
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/30 px-3 py-1.5 rounded-lg">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {isArabic ? 'جاهز للإكمال!' : 'Ready to complete!'}
+                    </div>
                   )}
                 </div>
               </div>
             </section>
           )}
 
-          {/* Completion Section */}
+          {/* Action Buttons Section */}
           {user && hasValidVideo(lesson.video_url) && (
-            <section className="bg-card border rounded-2xl p-6 md:p-8 mb-8 text-center">
+            <section className="bg-card border rounded-2xl p-6 md:p-8 mb-6">
               {completed ? (
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                   </div>
                   <h3 className="text-xl font-bold text-green-600">
-                    {isArabic ? 'أحسنت! خلصت الحصة' : 'Well done!'}
+                    {isArabic ? 'تم إكمال الحصة' : 'Lesson Completed'}
                   </h3>
-                  <p className="text-muted-foreground">
-                    {isArabic ? 'ممتاز 👏 الامتحان متاح دلوقتي' : 'Great! 👏 The exam is now available'}
-                  </p>
+                  
+                  {/* Exam Button - only show if exam exists and lesson is completed */}
+                  {linkedExam && (
+                    <div className="w-full max-w-sm mt-2">
+                      <Button 
+                        size="lg"
+                        onClick={() => navigate(`/exam/${linkedExam.id}`)}
+                        className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
+                      >
+                        <FileQuestion className="w-5 h-5 mr-2" />
+                        {isArabic ? 'ابدأ الامتحان' : 'Start Exam'}
+                      </Button>
+                    </div>
+                  )}
+                  
                   {nextLesson && (
                     <Button 
+                      variant={linkedExam ? "outline" : "default"}
                       size="lg"
                       onClick={() => navigate(`/lesson/${nextLesson.id}`)}
-                      className="mt-2"
                     >
                       {isArabic ? 'الحصة التالية' : 'Next Lesson'}
+                      <ArrowRight className="w-4 h-4 mr-2" />
                     </Button>
                   )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
-                  <p className="text-lg text-muted-foreground">
-                    {isCompleteButtonEnabled 
-                      ? (isArabic ? 'خلصت مشاهدة الفيديو؟' : 'Done watching?')
-                      : (isArabic ? 'شاهد الفيديو لمدة 20 دقيقة' : 'Watch for 20 minutes')
-                    }
-                  </p>
+                  {/* Completion Button */}
                   <Button 
                     size="lg" 
                     onClick={handleComplete} 
-                    className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50"
-                    disabled={!isCompleteButtonEnabled}
+                    className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!isCompleteButtonEnabled || completionSaving}
                   >
-                    <CheckCircle2 className="w-5 h-5 mr-2" />
-                    {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
+                    {completionSaving ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                    ) : (
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                    )}
+                    {completed 
+                      ? (isArabic ? 'تم إكمال الحصة' : 'Lesson Completed')
+                      : (isArabic ? 'خلصت الحصة' : 'Mark Complete')
+                    }
                   </Button>
-                  {!isCompleteButtonEnabled && (
-                    <p className="text-sm text-muted-foreground">
-                      {isArabic 
-                        ? `متبقي ${formatRemainingTime(remainingSeconds)}`
-                        : `${formatRemainingTime(remainingSeconds)} remaining`
-                      }
-                    </p>
+                  
+                  {/* Exam Button - disabled state with reason */}
+                  {linkedExam && (
+                    <div className="w-full max-w-sm">
+                      <Button 
+                        size="lg"
+                        disabled
+                        className="w-full opacity-50 cursor-not-allowed py-6"
+                        variant="outline"
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        {isArabic ? 'أكمل الحصة لفتح الامتحان' : 'Complete lesson to unlock exam'}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
