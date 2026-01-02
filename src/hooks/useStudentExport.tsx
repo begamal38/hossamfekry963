@@ -227,9 +227,12 @@ export function useStudentExport() {
     setProgress(isRTL ? 'جاري جلب البيانات...' : 'Fetching data...');
 
     try {
+      console.log('Calling export-students-analytics...');
       const { data, error } = await supabase.functions.invoke('export-students-analytics');
+      console.log('Export response:', { data, error });
 
       if (error) {
+        console.error('Export error details:', error);
         let errorMessage = isRTL ? 'حدث خطأ أثناء التصدير' : 'Export error occurred';
         let errorTitle = isRTL ? 'خطأ في التصدير' : 'Export Error';
 
