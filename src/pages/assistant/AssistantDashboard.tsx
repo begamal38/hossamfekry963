@@ -26,7 +26,7 @@ interface Profile {
 export default function AssistantDashboard() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
-  const { isRTL } = useLanguage();
+  const { isRTL, t } = useLanguage();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<Stats>({
@@ -130,28 +130,28 @@ export default function AssistantDashboard() {
   // Simplified stats - only essential metrics
   const statCards = [
     {
-      title: isRTL ? 'إجمالي الطلاب' : 'Total Students',
+      title: t('assistant.totalStudents'),
       value: stats.totalStudents,
       icon: Users,
       color: 'bg-primary/10 text-primary',
       link: '/assistant/students',
     },
     {
-      title: isRTL ? 'إجمالي الحصص' : 'Total Lessons',
+      title: t('assistant.totalLessons'),
       value: stats.totalLessons,
       icon: BookOpen,
       color: 'bg-blue-500/10 text-blue-600',
       link: '/assistant/lessons',
     },
     {
-      title: isRTL ? 'الاشتراكات النشطة' : 'Active Enrollments',
+      title: t('assistant.activeEnrollments'),
       value: stats.activeEnrollments,
       icon: CheckCircle,
       color: 'bg-green-500/10 text-green-600',
       link: '/assistant/enrollments',
     },
     {
-      title: isRTL ? 'متوسط درجات الامتحانات' : 'Avg Exam Score',
+      title: t('assistant.avgExamScore'),
       value: `${stats.avgExamScore}%`,
       icon: Award,
       color: 'bg-purple-500/10 text-purple-600',
@@ -172,11 +172,11 @@ export default function AssistantDashboard() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
             {hasValidName 
-              ? (isRTL ? `ازيك يا ${firstName}! 👋` : `Welcome ${firstName}! 👋`)
-              : (isRTL ? 'أهلاً بيك! 👋' : 'Welcome! 👋')}
+              ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
+              : `${t('dashboard.welcomeMessage')}! 👋`}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isRTL ? 'المنصة – المدرس المساعد' : 'Platform – Assistant Teacher'}
+            {t('assistant.platformSubtitle')}
           </p>
         </div>
 
@@ -204,37 +204,37 @@ export default function AssistantDashboard() {
         {/* Quick Actions - ONLY Daily Frequent Actions */}
         <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
-            {isRTL ? 'إجراءات سريعة' : 'Quick Actions'}
+            {t('assistant.quickActions')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <Button asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/students">
                 <Users className="h-6 w-6" />
-                <span>{isRTL ? 'الطلاب' : 'Students'}</span>
+                <span>{t('assistant.students')}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/30 bg-primary/5">
               <Link to="/assistant/courses">
                 <GraduationCap className="h-6 w-6" />
-                <span>{isRTL ? 'الكورسات' : 'Courses'}</span>
+                <span>{t('assistant.courses')}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
               <Link to="/assistant/lessons">
                 <BookOpen className="h-6 w-6" />
-                <span>{isRTL ? 'الحصص' : 'Lessons'}</span>
+                <span>{t('assistant.lessons')}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-green-500/30 bg-green-500/5">
               <Link to="/assistant/lessons?action=add">
                 <Plus className="h-6 w-6 text-green-600" />
-                <span className="text-green-700">{isRTL ? 'إضافة حصة' : 'Add Lesson'}</span>
+                <span className="text-green-700">{t('assistant.addLesson')}</span>
               </Link>
             </Button>
             <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-blue-500/30 bg-blue-500/5">
               <Link to="/assistant/notifications">
                 <Send className="h-6 w-6 text-blue-600" />
-                <span className="text-blue-700">{isRTL ? 'إرسال إشعارات' : 'Send Notifications'}</span>
+                <span className="text-blue-700">{t('assistant.sendNotifications')}</span>
               </Link>
             </Button>
           </div>
@@ -246,7 +246,7 @@ export default function AssistantDashboard() {
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="w-full flex items-center justify-between text-lg font-semibold text-foreground mb-4"
           >
-            <span>{isRTL ? 'إجراءات متقدمة' : 'Advanced Actions'}</span>
+            <span>{t('assistant.advancedActions')}</span>
             {showAdvanced ? (
               <ChevronUp className="h-5 w-5 text-muted-foreground" />
             ) : (
@@ -260,31 +260,31 @@ export default function AssistantDashboard() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  {isRTL ? 'المحتوى' : 'Content'}
+                  {t('assistant.content')}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/courses">
                       <GraduationCap className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الكورسات' : 'Courses'}
+                      {t('assistant.courses')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/chapters">
                       <FileText className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الأبواب' : 'Chapters'}
+                      {t('assistant.chapters')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/lessons">
                       <BookOpen className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الحصص' : 'Lessons'}
+                      {t('assistant.lessons')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/exams">
                       <Award className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الامتحانات' : 'Exams'}
+                      {t('assistant.exams')}
                     </Link>
                   </Button>
                 </div>
@@ -294,19 +294,19 @@ export default function AssistantDashboard() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  {isRTL ? 'الطلاب' : 'Students'}
+                  {t('assistant.students')}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/students">
                       <Users className="h-4 w-4 mr-2" />
-                      {isRTL ? 'قائمة الطلاب' : 'Student List'}
+                      {t('assistant.studentList')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/enrollments">
                       <CreditCard className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الاشتراكات' : 'Enrollments'}
+                      {t('assistant.enrollments')}
                     </Link>
                   </Button>
                 </div>
@@ -316,13 +316,13 @@ export default function AssistantDashboard() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
-                  {isRTL ? 'التحليلات' : 'Analytics'}
+                  {t('assistant.analytics')}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/reports">
                       <BarChart3 className="h-4 w-4 mr-2" />
-                      {isRTL ? 'التقارير' : 'Reports'}
+                      {t('assistant.reports')}
                     </Link>
                   </Button>
                 </div>
@@ -332,25 +332,25 @@ export default function AssistantDashboard() {
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  {isRTL ? 'السنتر' : 'Center'}
+                  {t('assistant.center')}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/center-groups">
                       <MapPin className="h-4 w-4 mr-2" />
-                      {isRTL ? 'المجموعات' : 'Groups'}
+                      {t('assistant.groups')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/center-sessions">
                       <Calendar className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الجلسات' : 'Sessions'}
+                      {t('assistant.sessions')}
                     </Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild className="justify-start h-10">
                     <Link to="/assistant/attendance">
                       <ClipboardList className="h-4 w-4 mr-2" />
-                      {isRTL ? 'الحضور' : 'Attendance'}
+                      {t('assistant.attendance')}
                     </Link>
                   </Button>
                 </div>
