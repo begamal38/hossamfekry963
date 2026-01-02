@@ -80,34 +80,50 @@ const HEADERS_AR = {
   engagement_score: 'درجة التفاعل',
 };
 
-const HEADERS_EN = {
-  full_name: 'Name',
-  phone: 'Phone',
-  email: 'Email',
-  academic_year: 'Academic Year',
-  language_track: 'Language Track',
-  attendance_mode: 'Attendance Mode',
-  governorate: 'Governorate',
-  created_at: 'Registration Date',
-  total_enrollments: 'Total Enrollments',
-  active_courses: 'Active Courses',
-  total_lessons_completed: 'Lessons Completed',
-  avg_lesson_completion_rate: 'Lesson Completion %',
-  last_lesson_date: 'Last Lesson Date',
-  days_since_last_activity: 'Days Inactive',
-  total_exams_taken: 'Exams Taken',
-  avg_exam_score: 'Avg Exam Score %',
-  highest_exam_score: 'Highest Score %',
-  lowest_exam_score: 'Lowest Score %',
-  exams_passed: 'Exams Passed',
-  exams_failed: 'Exams Failed',
-  pass_rate: 'Pass Rate %',
-  center_sessions_attended: 'Center Sessions',
-  center_attendance_rate: 'Center Attendance %',
-  performance_level: 'Performance Level',
-  risk_reason: 'Risk Reason',
-  engagement_score: 'Engagement Score',
+type ParsedExportError = {
+  status?: number;
+  code?: string;
+  message?: string;
+  details?: string;
 };
+
+function parseInvokeError(err: unknown): ParsedExportError {
+  const anyErr = err as any;
+  const status: number | undefined = anyErr?.context?.status ?? anyErr?.status;
+  const body = anyErr?.context?.body;
+
+  let parsed: any = null;
+
+  if (body) {
+    if (typeof body === 'string') {
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        // ignore
+      }
+    } else if (typeof body === 'object') {
+      parsed = body;
+    }
+  }
+
+  if (!parsed && typeof anyErr?.message === 'string') {
+    const match = anyErr.message.match(/\{[\s\S]*\}/);
+    if (match?.[0]) {
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return {
+    status,
+    code: parsed?.error,
+    message: parsed?.message,
+    details: parsed?.details,
+  };
+}
 
 export function useStudentExport() {
   const [exporting, setExporting] = useState(false);
@@ -115,10 +131,40 @@ export function useStudentExport() {
   const { toast } = useToast();
   const { isRTL } = useLanguage();
 
-  const headers = isRTL ? HEADERS_AR : HEADERS_EN;
+  // Arabic-first (UI must not show English)
+  const headers = HEADERS_AR;
+
+  const emptyStudentRow = () => ({
+    [headers.full_name]: '',
+    [headers.phone]: '',
+    [headers.email]: '',
+    [headers.academic_year]: '',
+    [headers.language_track]: '',
+    [headers.attendance_mode]: '',
+    [headers.governorate]: '',
+    [headers.created_at]: '',
+    [headers.total_enrollments]: '',
+    [headers.active_courses]: '',
+    [headers.total_lessons_completed]: '',
+    [headers.avg_lesson_completion_rate]: '',
+    [headers.last_lesson_date]: '',
+    [headers.days_since_last_activity]: '',
+    [headers.total_exams_taken]: '',
+    [headers.avg_exam_score]: '',
+    [headers.highest_exam_score]: '',
+    [headers.lowest_exam_score]: '',
+    [headers.exams_passed]: '',
+    [headers.exams_failed]: '',
+    [headers.pass_rate]: '',
+    [headers.center_sessions_attended]: '',
+    [headers.center_attendance_rate]: '',
+    [headers.performance_level]: '',
+    [headers.risk_reason]: '',
+    [headers.engagement_score]: '',
+  });
 
   const transformToRows = (students: StudentAnalytics[]) => {
-    return students.map(student => ({
+    return students.map((student) => ({
       [headers.full_name]: student.full_name || '',
       [headers.phone]: student.phone || '',
       [headers.email]: student.email || '',
@@ -127,79 +173,65 @@ export function useStudentExport() {
       [headers.attendance_mode]: student.attendance_mode || '',
       [headers.governorate]: student.governorate || '',
       [headers.created_at]: student.created_at || '',
-      [headers.total_enrollments]: student.total_enrollments,
-      [headers.active_courses]: student.active_courses,
-      [headers.total_lessons_completed]: student.total_lessons_completed,
-      [headers.avg_lesson_completion_rate]: student.avg_lesson_completion_rate,
+      [headers.total_enrollments]: student.total_enrollments ?? 0,
+      [headers.active_courses]: student.active_courses ?? 0,
+      [headers.total_lessons_completed]: student.total_lessons_completed ?? 0,
+      [headers.avg_lesson_completion_rate]: student.avg_lesson_completion_rate ?? 0,
       [headers.last_lesson_date]: student.last_lesson_date || '',
       [headers.days_since_last_activity]: student.days_since_last_activity ?? '',
-      [headers.total_exams_taken]: student.total_exams_taken,
-      [headers.avg_exam_score]: student.avg_exam_score,
-      [headers.highest_exam_score]: student.highest_exam_score,
-      [headers.lowest_exam_score]: student.lowest_exam_score,
-      [headers.exams_passed]: student.exams_passed,
-      [headers.exams_failed]: student.exams_failed,
-      [headers.pass_rate]: student.pass_rate,
-      [headers.center_sessions_attended]: student.center_sessions_attended,
-      [headers.center_attendance_rate]: student.center_attendance_rate,
-      [headers.performance_level]: student.performance_level,
+      [headers.total_exams_taken]: student.total_exams_taken ?? 0,
+      [headers.avg_exam_score]: student.avg_exam_score ?? 0,
+      [headers.highest_exam_score]: student.highest_exam_score ?? 0,
+      [headers.lowest_exam_score]: student.lowest_exam_score ?? 0,
+      [headers.exams_passed]: student.exams_passed ?? 0,
+      [headers.exams_failed]: student.exams_failed ?? 0,
+      [headers.pass_rate]: student.pass_rate ?? 0,
+      [headers.center_sessions_attended]: student.center_sessions_attended ?? 0,
+      [headers.center_attendance_rate]: student.center_attendance_rate ?? 0,
+      [headers.performance_level]: student.performance_level || '',
       [headers.risk_reason]: student.risk_reason || '',
-      [headers.engagement_score]: student.engagement_score,
+      [headers.engagement_score]: student.engagement_score ?? 0,
     }));
   };
 
   const createSummarySheet = (summary: ExportSummary) => {
-    const labels = isRTL
-      ? {
-          total: 'إجمالي الطلاب',
-          atRisk: 'طلاب يحتاجون متابعة',
-          topPerformers: 'طلاب متميزين',
-          inactive: 'طلاب غير نشطين',
-          avgEngagement: 'متوسط التفاعل',
-          avgExamScore: 'متوسط الدرجات',
-        }
-      : {
-          total: 'Total Students',
-          atRisk: 'At-Risk Students',
-          topPerformers: 'Top Performers',
-          inactive: 'Inactive Students',
-          avgEngagement: 'Avg Engagement',
-          avgExamScore: 'Avg Exam Score',
-        };
+    const labels = {
+      total: 'إجمالي الطلاب',
+      atRisk: 'طلاب يحتاجون متابعة',
+      topPerformers: 'طلاب متميزين',
+      inactive: 'طلاب غير نشطين',
+      avgEngagement: 'متوسط التفاعل',
+      avgExamScore: 'متوسط الدرجات',
+    };
 
     return [
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.total, [isRTL ? 'القيمة' : 'Value']: summary.total },
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.atRisk, [isRTL ? 'القيمة' : 'Value']: summary.atRisk },
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.topPerformers, [isRTL ? 'القيمة' : 'Value']: summary.topPerformers },
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.inactive, [isRTL ? 'القيمة' : 'Value']: summary.inactive },
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.avgEngagement, [isRTL ? 'القيمة' : 'Value']: `${summary.avgEngagement}%` },
-      { [isRTL ? 'المؤشر' : 'Metric']: labels.avgExamScore, [isRTL ? 'القيمة' : 'Value']: `${summary.avgExamScore}%` },
+      { ['المؤشر']: labels.total, ['القيمة']: summary.total },
+      { ['المؤشر']: labels.atRisk, ['القيمة']: summary.atRisk },
+      { ['المؤشر']: labels.topPerformers, ['القيمة']: summary.topPerformers },
+      { ['المؤشر']: labels.inactive, ['القيمة']: summary.inactive },
+      { ['المؤشر']: labels.avgEngagement, ['القيمة']: `${summary.avgEngagement}%` },
+      { ['المؤشر']: labels.avgExamScore, ['القيمة']: `${summary.avgExamScore}%` },
     ];
   };
 
   const exportToExcel = (data: ExportData, summary: ExportSummary) => {
     const wb = XLSX.utils.book_new();
 
-    // Summary sheet
     const summarySheet = XLSX.utils.json_to_sheet(createSummarySheet(summary));
-    XLSX.utils.book_append_sheet(wb, summarySheet, isRTL ? 'ملخص' : 'Summary');
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'ملخص');
 
-    // Overview sheet
-    const overviewData = transformToRows(data.overview);
-    const overviewSheet = XLSX.utils.json_to_sheet(overviewData.length > 0 ? overviewData : [{}]);
-    XLSX.utils.book_append_sheet(wb, overviewSheet, isRTL ? 'جميع الطلاب' : 'All Students');
+    const overviewRows = transformToRows(data.overview);
+    const overviewSheet = XLSX.utils.json_to_sheet(overviewRows.length > 0 ? overviewRows : [emptyStudentRow()]);
+    XLSX.utils.book_append_sheet(wb, overviewSheet, 'جميع الطلاب');
 
-    // At-Risk sheet
-    const atRiskData = transformToRows(data.atRisk);
-    const atRiskSheet = XLSX.utils.json_to_sheet(atRiskData.length > 0 ? atRiskData : [{}]);
-    XLSX.utils.book_append_sheet(wb, atRiskSheet, isRTL ? 'يحتاجون متابعة' : 'At-Risk');
+    const atRiskRows = transformToRows(data.atRisk);
+    const atRiskSheet = XLSX.utils.json_to_sheet(atRiskRows.length > 0 ? atRiskRows : [emptyStudentRow()]);
+    XLSX.utils.book_append_sheet(wb, atRiskSheet, 'يحتاجون متابعة');
 
-    // Top Performers sheet
-    const topData = transformToRows(data.topPerformers);
-    const topSheet = XLSX.utils.json_to_sheet(topData.length > 0 ? topData : [{}]);
-    XLSX.utils.book_append_sheet(wb, topSheet, isRTL ? 'متميزين' : 'Top Performers');
+    const topRows = transformToRows(data.topPerformers);
+    const topSheet = XLSX.utils.json_to_sheet(topRows.length > 0 ? topRows : [emptyStudentRow()]);
+    XLSX.utils.book_append_sheet(wb, topSheet, 'متميزين');
 
-    // Generate file
     const fileName = `students_analytics_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
@@ -207,12 +239,13 @@ export function useStudentExport() {
   const exportToCSV = (data: ExportData, summary: ExportSummary) => {
     const wb = XLSX.utils.book_new();
 
-    // Create combined sheet for CSV
+    const overviewRows = transformToRows(data.overview);
+
     const allData = [
       ...createSummarySheet(summary),
-      {}, // Empty row
-      { [isRTL ? 'المؤشر' : 'Metric']: isRTL ? '--- جميع الطلاب ---' : '--- All Students ---' },
-      ...transformToRows(data.overview),
+      {},
+      { ['المؤشر']: '--- جميع الطلاب ---' },
+      ...(overviewRows.length > 0 ? overviewRows : [emptyStudentRow()]),
     ];
 
     const sheet = XLSX.utils.json_to_sheet(allData);
@@ -224,34 +257,44 @@ export function useStudentExport() {
 
   const exportStudents = async (format: ExportFormat = 'xlsx') => {
     setExporting(true);
-    setProgress(isRTL ? 'جاري جلب البيانات...' : 'Fetching data...');
+    setProgress('جاري تجهيز التصدير...');
 
     try {
       const { data, error } = await supabase.functions.invoke('export-students-analytics');
 
       if (error) {
-        let errorMessage = isRTL ? 'حدث خطأ أثناء التصدير' : 'Export error occurred';
-        let errorTitle = isRTL ? 'خطأ في التصدير' : 'Export Error';
+        console.error('Export invoke error:', error);
+        const parsed = parseInvokeError(error);
 
-        try {
-          const errorData = typeof error.message === 'string' ? JSON.parse(error.message) : error;
-          if (errorData.error === 'PERMISSION_DENIED') {
-            errorTitle = isRTL ? 'صلاحيات غير كافية' : 'Permission Denied';
-            errorMessage = errorData.message || errorMessage;
-          } else if (errorData.error === 'NO_AUTH' || errorData.error === 'AUTH_FAILED') {
-            errorTitle = isRTL ? 'يجب تسجيل الدخول' : 'Authentication Required';
-            errorMessage = errorData.message || errorMessage;
-          } else if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch {
-          // Use default message
+        let title = 'خطأ في التصدير';
+        let description = 'حصل خطأ أثناء التصدير';
+
+        if (parsed.code === 'PERMISSION_DENIED') {
+          title = 'صلاحيات غير كافية';
+          description = parsed.message || 'ليس لديك صلاحية التصدير';
+        } else if (parsed.code === 'NO_AUTH' || parsed.code === 'AUTH_FAILED') {
+          title = 'لازم تسجل دخول';
+          description = parsed.message || 'يجب تسجيل الدخول للتصدير';
+        } else if (parsed.code === 'DATA_FETCH_ERROR') {
+          title = 'مشكلة في البيانات';
+          description = parsed.message || 'فشل جلب بيانات الطلاب';
+        } else if (parsed.code === 'CONFIG_ERROR') {
+          title = 'مشكلة في إعدادات الخادم';
+          description = parsed.message || 'خطأ في إعدادات الخادم';
+        } else if (parsed.code === 'SERVER_ERROR') {
+          title = 'خطأ في الخادم';
+          description = parsed.message || 'حدث خطأ في الخادم أثناء التصدير';
+        } else if (parsed.status === 404) {
+          title = 'الخدمة غير متاحة';
+          description = 'خدمة التصدير غير متاحة حالياً';
+        } else if (parsed.message) {
+          description = parsed.message;
         }
 
         toast({
           variant: 'destructive',
-          title: errorTitle,
-          description: errorMessage,
+          title,
+          description,
         });
         return;
       }
@@ -259,13 +302,13 @@ export function useStudentExport() {
       if (!data || !data.success) {
         toast({
           variant: 'destructive',
-          title: isRTL ? 'خطأ في البيانات' : 'Data Error',
-          description: isRTL ? 'لم يتم استلام بيانات صحيحة' : 'Invalid data received',
+          title: 'خطأ في البيانات',
+          description: 'لم يتم استلام بيانات صحيحة',
         });
         return;
       }
 
-      setProgress(isRTL ? 'جاري إنشاء الملف...' : 'Generating file...');
+      setProgress('جاري إنشاء الملف...');
 
       const exportData: ExportData = data.data;
       const summary: ExportSummary = data.summary;
@@ -277,17 +320,15 @@ export function useStudentExport() {
       }
 
       toast({
-        title: isRTL ? 'تم التصدير بنجاح' : 'Export Successful',
-        description: isRTL
-          ? `تم تصدير بيانات ${summary.total} طالب`
-          : `Exported data for ${summary.total} students`,
+        title: 'تم التصدير بنجاح',
+        description: `تم تصدير بيانات ${summary.total} طالب`,
       });
-    } catch (error) {
-      console.error('Export error:', error);
+    } catch (err) {
+      console.error('Export error:', err);
       toast({
         variant: 'destructive',
-        title: isRTL ? 'خطأ غير متوقع' : 'Unexpected Error',
-        description: isRTL ? 'حدث خطأ أثناء التصدير' : 'An error occurred during export',
+        title: 'خطأ غير متوقع',
+        description: 'حدث خطأ أثناء التصدير',
       });
     } finally {
       setExporting(false);
