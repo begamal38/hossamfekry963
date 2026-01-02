@@ -533,27 +533,37 @@ export default function CourseView() {
                     </div>
                   </div>
                 ) : !isEnrolled ? (
-                  // Student not enrolled - Show enroll button
-                  <Button 
-                    size="lg" 
-                    onClick={handleEnroll}
-                    disabled={enrolling || accessBlocked?.blocked}
-                    className="gap-2"
-                  >
-                    {accessBlocked?.blocked ? (
-                      isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
-                    ) : enrolling ? (
-                      isArabic ? 'جاري الاشتراك...' : 'Enrolling...'
-                    ) : !user ? (
-                      <>{isArabic ? 'سجّل دخول للاشتراك' : 'Sign in to Enroll'}</>
-                    ) : course.is_free ? (
-                      <>{isArabic ? 'اشترك مجاناً' : 'Enroll Free'}</>
-                    ) : (
-                      <>
-                        {isArabic ? 'اشترك الآن' : 'Enroll Now'} - {course.price} {isArabic ? 'ج.م' : 'EGP'}
-                      </>
-                    )}
-                  </Button>
+                  // Student not enrolled - Show enroll button with clear guidance
+                  <div className="space-y-3">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                      <p className="text-sm text-amber-700 dark:text-amber-400">
+                        {isArabic 
+                          ? '📌 اشترك في الكورس لفتح المحتوى والبدء في التعلم'
+                          : '📌 Enroll in this course to unlock content and start learning'
+                        }
+                      </p>
+                    </div>
+                    <Button 
+                      size="lg" 
+                      onClick={handleEnroll}
+                      disabled={enrolling || accessBlocked?.blocked}
+                      className="gap-2 w-full sm:w-auto"
+                    >
+                      {accessBlocked?.blocked ? (
+                        isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
+                      ) : enrolling ? (
+                        isArabic ? 'جاري الاشتراك...' : 'Enrolling...'
+                      ) : !user ? (
+                        <>{isArabic ? 'سجّل دخول للاشتراك' : 'Sign in to Enroll'}</>
+                      ) : course.is_free ? (
+                        <>{isArabic ? 'اشترك مجاناً' : 'Enroll Free'}</>
+                      ) : (
+                        <>
+                          {isArabic ? 'اشترك الآن' : 'Enroll Now'} - {course.price} {isArabic ? 'ج.م' : 'EGP'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   // Student enrolled - Show progress
                   <div className="space-y-3">
@@ -599,9 +609,21 @@ export default function CourseView() {
 
         {/* Lessons List */}
         <div className="container mx-auto px-4 py-8">
-          <h2 className="text-2xl font-bold mb-6">
+          <h2 className="text-2xl font-bold mb-4">
             {isArabic ? 'محتوى الكورس' : 'Course Content'}
           </h2>
+
+          {/* Guidance for students */}
+          {isEnrolled && visibleLessons.length > 0 && (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-6">
+              <p className="text-sm text-muted-foreground">
+                {isArabic 
+                  ? '💡 ابدأ من أول حصة واكمل بالترتيب — كل حصة تفتح اللي بعدها'
+                  : '💡 Start from the first lesson and complete in order — each lesson unlocks the next'
+                }
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             {visibleLessons.map((lesson, index) => {

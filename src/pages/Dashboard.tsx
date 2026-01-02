@@ -391,14 +391,14 @@ const Dashboard: React.FC = () => {
                   <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {t('courses.noEnrolled')}
+                      {isArabic ? 'ابدأ بكورس مناسب لمرحلتك' : 'Start with a course for your level'}
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      {t('courses.browseAvailable')}
+                      {isArabic ? 'اختر كورسك الأول وابدأ رحلة التعلم معانا' : 'Choose your first course and start learning with us'}
                     </p>
                     <Button asChild>
                       <Link to="/courses">
-                        {t('dashboard.browseCourses')}
+                        {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
                       </Link>
                     </Button>
                   </div>
@@ -455,6 +455,24 @@ const Dashboard: React.FC = () => {
 
             {/* Sidebar - 1 column */}
             <div className="space-y-6">
+              {/* Motivational Progress Message */}
+              {enrolledCourses.length > 0 && (
+                <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 p-4">
+                  <p className="text-sm font-medium text-foreground">
+                    {overallProgress >= 100 
+                      ? (isArabic ? '🎉 ممتاز! خلّصت كل الحصص' : '🎉 Excellent! You completed all lessons')
+                      : overallProgress >= 75 
+                      ? (isArabic ? '🔥 شغل رائع! قربت تخلّص' : '🔥 Great work! Almost there')
+                      : overallProgress >= 50 
+                      ? (isArabic ? '👏 أحسنت! نص الطريق اتقطع' : '👏 Well done! Halfway there')
+                      : overallProgress >= 25 
+                      ? (isArabic ? '💪 استمر! بداية قوية' : '💪 Keep going! Strong start')
+                      : (isArabic ? '🚀 ابدأ رحلتك — كل حصة خطوة للأمام' : '🚀 Start your journey — every lesson is progress')
+                    }
+                  </p>
+                </div>
+              )}
+
               {/* Overall Progress */}
               <OverallProgressCard
                 progressPercent={overallProgress}

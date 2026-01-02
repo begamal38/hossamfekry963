@@ -270,12 +270,23 @@ export default function TakeExam() {
                   {percentage}%
                 </p>
 
-                <p className="text-muted-foreground mb-8">
-                  {passed
-                    ? (isArabic ? 'فاهم الباب كويس، استمر!' : 'You understand this chapter well!')
-                    : (isArabic ? 'راجع الحصص تاني وحاول من جديد' : 'Review the lessons and try again')
-                  }
-                </p>
+                <div className="mb-8 space-y-2">
+                  <p className={cn(
+                    "text-lg font-semibold",
+                    passed ? "text-green-600" : "text-amber-600"
+                  )}>
+                    {passed
+                      ? (isArabic ? '✅ اجتزت الاختبار بنجاح!' : '✅ You passed the exam!')
+                      : (isArabic ? '⚠️ لم تجتز — حاول مرة تانية' : '⚠️ Did not pass — try again')
+                    }
+                  </p>
+                  <p className="text-muted-foreground">
+                    {passed
+                      ? (isArabic ? 'ممتاز 👏 كمّل للباب التالي' : 'Excellent! Continue to the next chapter')
+                      : (isArabic ? 'راجع الحصص وحاول من جديد' : 'Review the lessons and try again')
+                    }
+                  </p>
+                </div>
 
                 <div className="space-y-3">
                   <Button 
@@ -351,15 +362,35 @@ export default function TakeExam() {
             <Progress value={progress} className="h-2" />
           </div>
 
-          {/* Guidance */}
+          {/* Exam Rules & Guidance */}
           <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardContent className="py-3">
-              <p className="text-sm text-muted-foreground text-center">
-                {isArabic 
-                  ? 'الاختبار ده عشان تتأكد إنك فاهم الباب كويس 👌'
-                  : 'This exam is to make sure you understand the chapter well 👌'
-                }
-              </p>
+            <CardContent className="py-4">
+              <h3 className="text-sm font-semibold mb-2 text-center">
+                {isArabic ? '📋 تعليمات الاختبار' : '📋 Exam Instructions'}
+              </h3>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p className="flex items-center gap-2">
+                  <span className="text-primary">•</span>
+                  {isArabic 
+                    ? `عدد الأسئلة: ${questions.length} سؤال`
+                    : `Questions: ${questions.length}`
+                  }
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-primary">•</span>
+                  {isArabic 
+                    ? 'اختر إجابة واحدة لكل سؤال'
+                    : 'Select one answer per question'
+                  }
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-primary">•</span>
+                  {isArabic 
+                    ? 'النتيجة تظهر فوراً بعد التسليم'
+                    : 'Results shown immediately after submission'
+                  }
+                </p>
+              </div>
             </CardContent>
           </Card>
 

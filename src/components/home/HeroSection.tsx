@@ -86,18 +86,18 @@ export const HeroSection: React.FC = () => {
                   </Button>
                 </>
               ) : (
-                // Not logged in - show default buttons
+                // Not logged in - show clear CTAs
                 <>
                   <Button variant="hero" size="lg" asChild>
-                    <Link to="/courses">
-                      {t('hero.cta_courses')}
-                      <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
+                    <Link to="/auth?mode=signup">
+                      <Play className="w-5 h-5" />
+                      {isRTL ? 'ابدأ التعلم' : 'Start Learning'}
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
-                    <Link to="/auth?mode=signup">
-                      <Play className="w-5 h-5" />
-                      {t('hero.cta_signup')}
+                    <Link to="/courses">
+                      {isRTL ? 'تصفح الكورسات' : 'Browse Courses'}
+                      <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>
                 </>
