@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Lock,
   Youtube,
-  Timer,
   Layers,
   LogIn,
   Gift,
@@ -20,14 +19,12 @@ import {
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
-import { useLessonWatchTime, formatRemainingTime } from '@/hooks/useLessonWatchTime';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { toast } from 'sonner';
 
@@ -87,15 +84,6 @@ export default function LessonView() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [completionSaving, setCompletionSaving] = useState(false);
-
-  const { 
-    watchTimeSeconds, 
-    isCompleteButtonEnabled, 
-    remainingSeconds, 
-    isPlaying,
-    startWatching, 
-    pauseWatching 
-  } = useLessonWatchTime(lessonId || '');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -187,14 +175,17 @@ export default function LessonView() {
 
     setCompletionSaving(true);
     try {
-      // Insert into lesson_completions for progress tracking
-      await supabase
+      // System-driven completion: Write real record to database
+      // Source: manual_confirm - student explicitly clicked "خلصت الحصة"
+      const { error: completionError } = await supabase
         .from('lesson_completions')
         .upsert({
           user_id: user.id,
           lesson_id: lesson.id,
-          watch_time_seconds: watchTimeSeconds
+          completed_at: new Date().toISOString()
         }, { onConflict: 'user_id,lesson_id' });
+      
+      if (completionError) throw completionError;
 
       // Also record attendance
       await supabase
@@ -445,81 +436,14 @@ export default function LessonView() {
             )}
           </section>
 
-          {/* Subtle Guidance - shown once */}
+          {/* Guidance Text - System-driven completion */}
           {user && hasValidVideo(lesson.video_url) && !completed && (
-            <section className="bg-muted/30 rounded-lg p-3 mb-6 text-center">
+            <section className="bg-muted/30 border border-muted rounded-lg p-4 mb-6 text-center">
               <p className="text-sm text-muted-foreground">
                 {isArabic 
-                  ? 'شاهد الحصة بهدوء — التقدم محسوب تلقائيًا • مفيش داعي تكمّل الفيديو كله مرة واحدة'
-                  : 'Watch at your own pace — progress is tracked automatically'}
+                  ? 'اضغط بعد ما تخلص مشاهدة الحصة بالكامل'
+                  : 'Click after you finish watching the lesson completely'}
               </p>
-            </section>
-          )}
-
-          {/* Progress & Watch Controls */}
-          {user && hasValidVideo(lesson.video_url) && !completed && (
-            <section className="bg-card border rounded-xl p-4 md:p-5 mb-6">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">
-                    {isArabic ? 'تقدم المشاهدة' : 'Watch Progress'}
-                  </h3>
-                </div>
-                
-                {/* Play/Pause Button */}
-                <Button
-                  variant={isPlaying ? "secondary" : "default"}
-                  size="sm"
-                  onClick={isPlaying ? pauseWatching : startWatching}
-                  className="gap-2"
-                >
-                  {isPlaying ? (
-                    <>{isArabic ? '⏸️ إيقاف مؤقت' : '⏸️ Pause'}</>
-                  ) : (
-                    <>{isArabic ? '▶️ ابدأ التتبع' : '▶️ Start Tracking'}</>
-                  )}
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <Progress 
-                  value={(watchTimeSeconds / (20 * 60)) * 100} 
-                  className="h-3"
-                />
-                
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-mono font-bold text-lg text-primary">
-                        {formatRemainingTime(watchTimeSeconds)}
-                      </span>
-                      <span className="text-muted-foreground">/ 20:00</span>
-                    </div>
-                    {isPlaying && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-green-500" />
-                        {isArabic ? 'جاري التتبع' : 'Tracking'}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {!isCompleteButtonEnabled ? (
-                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-lg">
-                      <AlertCircle className="w-4 h-4" />
-                      {isArabic 
-                        ? `متبقي ${formatRemainingTime(remainingSeconds)}`
-                        : `${formatRemainingTime(remainingSeconds)} remaining`
-                      }
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/30 px-3 py-1.5 rounded-lg">
-                      <CheckCircle2 className="w-4 h-4" />
-                      {isArabic ? 'جاهز للإكمال!' : 'Ready to complete!'}
-                    </div>
-                  )}
-                </div>
-              </div>
             </section>
           )}
 
@@ -562,22 +486,19 @@ export default function LessonView() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
-                  {/* Completion Button */}
+                  {/* System-driven completion button - always enabled */}
                   <Button 
                     size="lg" 
                     onClick={handleComplete} 
                     className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!isCompleteButtonEnabled || completionSaving}
+                    disabled={completionSaving}
                   >
                     {completionSaving ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
                     ) : (
                       <CheckCircle2 className="w-5 h-5 mr-2" />
                     )}
-                    {completed 
-                      ? (isArabic ? 'تم إكمال الحصة' : 'Lesson Completed')
-                      : (isArabic ? 'خلصت الحصة' : 'Mark Complete')
-                    }
+                    {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
                   </Button>
                   
                   {/* Exam Button - disabled state with reason */}
