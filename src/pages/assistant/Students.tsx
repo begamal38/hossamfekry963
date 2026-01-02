@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, MapPin } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, MapPin, FileSpreadsheet, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,6 +12,7 @@ import { StudentImport } from '@/components/assistant/StudentImport';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useStudentExport } from '@/hooks/useStudentExport';
 import { EGYPTIAN_GOVERNORATES, getGovernorateLabel } from '@/constants/governorates';
 import {
   Dialog,
@@ -21,6 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { Database } from '@/integrations/supabase/types';
 
 type AttendanceMode = Database['public']['Enums']['attendance_mode'];
@@ -73,7 +80,9 @@ export default function Students() {
   const [students, setStudents] = useState<EnrichedStudent[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<EnrichedStudent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
+  
+  // Use the new analytics export hook
+  const { exportStudents, exporting, progress: exportProgress } = useStudentExport();
   
   // Attendance mode dialog state
   const [modeDialogOpen, setModeDialogOpen] = useState(false);
@@ -321,77 +330,6 @@ export default function Students() {
     }
   };
 
-  const handleExport = async () => {
-    setExporting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('export-students');
-      
-      if (error) {
-        // Parse error response for specific messages
-        let errorMessage = isRTL ? 'حدث خطأ أثناء تصدير البيانات' : 'An error occurred while exporting data';
-        let errorTitle = isRTL ? 'خطأ في التصدير' : 'Export Error';
-        
-        if (error.message) {
-          try {
-            const errorData = JSON.parse(error.message);
-            if (errorData.error === 'PERMISSION_DENIED') {
-              errorTitle = isRTL ? 'صلاحيات غير كافية' : 'Permission Denied';
-              errorMessage = errorData.message || errorMessage;
-            } else if (errorData.error === 'NO_AUTH' || errorData.error === 'AUTH_FAILED') {
-              errorTitle = isRTL ? 'يجب تسجيل الدخول' : 'Authentication Required';
-              errorMessage = errorData.message || errorMessage;
-            } else if (errorData.message) {
-              errorMessage = errorData.message;
-            }
-          } catch {
-            // Not JSON, use default message
-          }
-        }
-        
-        toast({
-          variant: 'destructive',
-          title: errorTitle,
-          description: errorMessage,
-        });
-        return;
-      }
-
-      // Handle empty or non-string data
-      if (!data) {
-        toast({
-          title: isRTL ? 'لا توجد بيانات' : 'No Data',
-          description: isRTL ? 'لا يوجد طلاب للتصدير' : 'No students to export',
-        });
-        return;
-      }
-
-      // Create blob and download
-      const csvData = typeof data === 'string' ? data : JSON.stringify(data);
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast({
-        title: isRTL ? 'تم التصدير بنجاح' : 'Export Successful',
-        description: isRTL ? 'تم تحميل ملف بيانات الطلاب' : 'Students data file downloaded',
-      });
-    } catch (error) {
-      console.error('Export error:', error);
-      toast({
-        variant: 'destructive',
-        title: isRTL ? 'خطأ في التصدير' : 'Export Error',
-        description: isRTL ? 'حدث خطأ غير متوقع أثناء التصدير' : 'An unexpected error occurred while exporting',
-      });
-    } finally {
-      setExporting(false);
-    }
-  };
 
   if (authLoading || roleLoading) {
     return (
@@ -430,17 +368,30 @@ export default function Students() {
               <Upload className="h-4 w-4" />
               {isRTL ? 'استيراد طلاب' : 'Import Students'}
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleExport} 
-              disabled={exporting}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              {exporting 
-                ? (isRTL ? 'جاري التصدير...' : 'Exporting...') 
-                : (isRTL ? 'تصدير البيانات' : 'Export Data')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  disabled={exporting}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {exporting 
+                    ? (exportProgress || (isRTL ? 'جاري التصدير...' : 'Exporting...'))
+                    : (isRTL ? 'تصدير التحليلات' : 'Export Analytics')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+                <DropdownMenuItem onClick={() => exportStudents('xlsx')} className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  {isRTL ? 'Excel (متعدد الأوراق)' : 'Excel (Multi-sheet)'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportStudents('csv')} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  {isRTL ? 'CSV (ملف واحد)' : 'CSV (Single file)'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
