@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Building, Award, 
   Mail, Globe, MapPin, Layers, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
-  Clock, Plus, Trash2, Edit2
+  Clock, Plus, Trash2, Edit2, Copy, Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,6 +135,24 @@ export default function StudentDetails() {
   const [resetProgressDialogOpen, setResetProgressDialogOpen] = useState(false);
   const [selectedCourseForReset, setSelectedCourseForReset] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyStudentLink = async () => {
+    const shortUrl = `${window.location.origin}/assistant/students/${studentId}`;
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+      toast({
+        title: isArabic ? 'تم نسخ الرابط!' : 'Link copied!',
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'فشل نسخ الرابط' : 'Failed to copy link',
+      });
+    }
+  };
 
   useEffect(() => {
     if (!roleLoading && !canAccessDashboard()) {
@@ -575,11 +593,23 @@ export default function StudentDetails() {
       <div className="pt-20 px-4 pb-12">
         <div className="container mx-auto max-w-5xl">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant/students')}>
-              <ArrowRight className={`h-5 w-5 ${isArabic ? '' : 'rotate-180'}`} />
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/assistant/students')}>
+                <ArrowRight className={`h-5 w-5 ${isArabic ? '' : 'rotate-180'}`} />
+              </Button>
+              <h1 className="text-2xl font-bold">{isArabic ? 'ملف الطالب' : 'Student Profile'}</h1>
+            </div>
+            {/* Copy Link Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyStudentLink}
+              className="gap-2"
+            >
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              {copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ الرابط' : 'Copy Link')}
             </Button>
-            <h1 className="text-2xl font-bold">{isArabic ? 'ملف الطالب' : 'Student Profile'}</h1>
           </div>
 
           {/* Student Info Card */}

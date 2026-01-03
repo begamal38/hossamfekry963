@@ -14,7 +14,9 @@ import {
   LogIn,
   Gift,
   FileQuestion,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  Check
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -89,6 +91,19 @@ export default function LessonView() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [completionSaving, setCompletionSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyLessonLink = async () => {
+    const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+      toast.success(isArabic ? 'تم نسخ الرابط!' : 'Link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(isArabic ? 'فشل نسخ الرابط' : 'Failed to copy link');
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -390,6 +405,15 @@ export default function LessonView() {
                       {isArabic ? 'مكتملة' : 'Completed'}
                     </Badge>
                   )}
+                  {/* Copy Link Button */}
+                  <button
+                    onClick={copyLessonLink}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    title={isArabic ? 'نسخ الرابط' : 'Copy link'}
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    <span className="hidden sm:inline">{copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ الرابط' : 'Copy link')}</span>
+                  </button>
                 </div>
               </div>
 
