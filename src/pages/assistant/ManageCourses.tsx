@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -10,6 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { InlineCourseEditor } from '@/components/assistant/InlineCourseEditor';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { cn } from '@/lib/utils';
 
 interface Course {
@@ -40,6 +41,7 @@ export default function ManageCourses() {
   const { language, isRTL } = useLanguage();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
+  const { translateMultiple, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
 
   const [courses, setCourses] = useState<Course[]>([]);
@@ -192,13 +194,20 @@ export default function ManageCourses() {
     }
 
     try {
-        // Create new course - use Arabic for both fields
+        // Auto-translate Arabic to English
+        const textsToTranslate: Record<string, string> = {};
+        if (formData.title_ar) textsToTranslate.title = formData.title_ar;
+        if (formData.description_ar) textsToTranslate.description = formData.description_ar;
+        
+        const translations = await translateMultiple(textsToTranslate, 'en');
+        
+        // Create new course with translated English fields
         const { data: newCourse, error: insertError } = await supabase
           .from('courses')
           .insert({
-            title: formData.title_ar,
+            title: translations.title || formData.title_ar,
             title_ar: formData.title_ar,
-            description: formData.description_ar || null,
+            description: translations.description || formData.description_ar || null,
             description_ar: formData.description_ar || null,
             grade: formData.grade,
             price: formData.is_free ? 0 : formData.price,
@@ -449,11 +458,13 @@ export default function ManageCourses() {
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <Button onClick={handleSubmit} disabled={uploadingImage}>
-                {uploadingImage ? (
+              <Button onClick={handleSubmit} disabled={uploadingImage || isTranslating}>
+                {uploadingImage || isTranslating ? (
                   <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    {isArabic ? 'جاري الرفع...' : 'Uploading...'}
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {isTranslating 
+                      ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                      : (isArabic ? 'جاري الرفع...' : 'Uploading...')}
                   </span>
                 ) : (isArabic ? 'إضافة' : 'Add')
                 }

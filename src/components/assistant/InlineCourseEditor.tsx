@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 
 interface Course {
   id: string;
@@ -36,6 +37,7 @@ const GRADE_OPTIONS = [
 export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEditorProps) {
   const { language, isRTL } = useLanguage();
   const { toast } = useToast();
+  const { translateMultiple, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,12 +122,19 @@ export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEdi
     try {
       const thumbnailUrl = await uploadThumbnail();
       
+      // Auto-translate Arabic to English
+      const textsToTranslate: Record<string, string> = {};
+      if (formData.title_ar) textsToTranslate.title = formData.title_ar;
+      if (formData.description_ar) textsToTranslate.description = formData.description_ar;
+      
+      const translations = await translateMultiple(textsToTranslate, 'en');
+      
       const { error } = await supabase
         .from('courses')
         .update({
-          title: formData.title_ar,
+          title: translations.title || formData.title_ar,
           title_ar: formData.title_ar,
-          description: formData.description_ar || null,
+          description: translations.description || formData.description_ar || null,
           description_ar: formData.description_ar || null,
           grade: formData.grade,
           price: formData.is_free ? 0 : formData.price,
@@ -285,11 +294,13 @@ export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEdi
 
       {/* Action buttons */}
       <div className="flex gap-2 pt-2">
-        <Button onClick={handleSubmit} disabled={saving} size="sm" className="flex-1">
-          {saving ? (
+        <Button onClick={handleSubmit} disabled={saving || isTranslating} size="sm" className="flex-1">
+          {saving || isTranslating ? (
             <span className="flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin" />
-              {isArabic ? 'جاري الحفظ...' : 'Saving...'}
+              {isTranslating 
+                ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                : (isArabic ? 'جاري الحفظ...' : 'Saving...')}
             </span>
           ) : (
             isArabic ? 'حفظ التغييرات' : 'Save Changes'
