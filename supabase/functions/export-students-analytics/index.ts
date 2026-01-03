@@ -222,7 +222,10 @@ serve(async (req) => {
     console.log('Export students analytics request received');
 
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
+      console.error('No authorization header found');
       return new Response(
         JSON.stringify({ error: 'NO_AUTH', message: 'يجب تسجيل الدخول للتصدير', message_en: 'Authentication required for export' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

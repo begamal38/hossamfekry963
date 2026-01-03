@@ -172,6 +172,7 @@ function parseInvokeError(err: unknown): ParsedExportError {
 
   let parsed: Record<string, unknown> | null = null;
 
+  // Try to parse body from context
   if (body) {
     if (typeof body === 'string') {
       try {
@@ -184,6 +185,7 @@ function parseInvokeError(err: unknown): ParsedExportError {
     }
   }
 
+  // Try to extract error from message
   if (!parsed && typeof anyErr?.message === 'string') {
     const match = anyErr.message.match(/\{[\s\S]*\}/);
     if (match?.[0]) {
@@ -198,14 +200,27 @@ function parseInvokeError(err: unknown): ParsedExportError {
   // Map error codes
   let code: ExportErrorCode = 'UNKNOWN';
   const rawCode = parsed?.error as string | undefined;
-  if (rawCode && rawCode in ERROR_MESSAGES) {
-    code = rawCode as ExportErrorCode;
+  
+  if (rawCode) {
+    // Map known error codes
+    const codeMap: Record<string, ExportErrorCode> = {
+      'NO_AUTH': 'NO_AUTH',
+      'AUTH_FAILED': 'AUTH_FAILED',
+      'PERMISSION_DENIED': 'NO_PERMISSION',
+      'PERMISSION_CHECK_FAILED': 'PERMISSION_CHECK_FAILED',
+      'DATA_FETCH_ERROR': 'DATA_FETCH_ERROR',
+      'CONFIG_ERROR': 'CONFIG_ERROR',
+      'SERVER_ERROR': 'SERVER_ERROR',
+    };
+    code = codeMap[rawCode] || 'UNKNOWN';
   } else if (status === 403) {
     code = 'NO_PERMISSION';
   } else if (status === 401) {
     code = 'NO_AUTH';
   } else if (status === 404) {
     code = 'EXPORT_FAILED';
+  } else if (status && status >= 500) {
+    code = 'SERVER_ERROR';
   }
 
   return {
