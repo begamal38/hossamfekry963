@@ -113,6 +113,7 @@ export default function LessonView() {
   const focusModeRef = useRef<FocusModeHandle>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const ytApiReadyPromiseRef = useRef<Promise<void> | null>(null);
   const { saveFocusSession } = useFocusSessionPersistence();
 
   const copyLessonLink = async () => {
@@ -261,31 +262,9 @@ export default function LessonView() {
     }
   };
 
-  // Initialize YouTube Player API
-  const initYouTubePlayer = useCallback((videoId: string) => {
-    // If API is already ready
-    if (window.YT && window.YT.Player) {
-      createPlayer(videoId);
-      return;
-    }
-
-    // Ensure script is loaded only once
-    const existingScript = document.getElementById('youtube-iframe-api');
-    if (!existingScript) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-iframe-api';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScript = document.getElementsByTagName('script')[0];
-      firstScript?.parentNode?.insertBefore(tag, firstScript);
-    }
-
-    // Wait until API is ready
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayer(videoId);
-    };
-  }, []);
-
   const createPlayer = useCallback((videoId: string) => {
+    if (!window.YT || !window.YT.Player) return;
+
     if (playerRef.current) {
       try {
         playerRef.current.destroy();
@@ -294,14 +273,17 @@ export default function LessonView() {
       }
       playerRef.current = null;
     }
-    
+
     const containerId = 'youtube-player-container';
     const container = playerContainerRef.current;
     if (!container) return;
-    
+
+    // YouTube expects an empty container
+    container.innerHTML = '';
+
     // Set ID for YouTube API
     container.id = containerId;
-    
+
     try {
       playerRef.current = new window.YT.Player(containerId, {
         videoId,
@@ -314,7 +296,7 @@ export default function LessonView() {
         },
         events: {
           onReady: () => {
-            console.log('YouTube player ready');
+            // ready
           },
           onStateChange: (event: any) => {
             switch (event.data) {
@@ -339,6 +321,58 @@ export default function LessonView() {
       console.error('Error creating YouTube player:', error);
     }
   }, []);
+
+  const ensureYouTubeIframeApiReady = useCallback((): Promise<void> => {
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (ytApiReadyPromiseRef.current) return ytApiReadyPromiseRef.current;
+
+    ytApiReadyPromiseRef.current = new Promise<void>((resolve) => {
+      const existingScript = document.getElementById('youtube-iframe-api');
+      if (!existingScript) {
+        const tag = document.createElement('script');
+        tag.id = 'youtube-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+
+      // Chain any previous handler (avoid clobbering)
+      const prevReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        try {
+          prevReady?.();
+        } finally {
+          resolve();
+        }
+      };
+
+      // Fallback: in case the ready callback was missed
+      const startedAt = Date.now();
+      const t = window.setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          window.clearInterval(t);
+          resolve();
+          return;
+        }
+        if (Date.now() - startedAt > 6000) {
+          window.clearInterval(t);
+          resolve();
+        }
+      }, 50);
+    });
+
+    return ytApiReadyPromiseRef.current;
+  }, []);
+
+  // Initialize YouTube Player API
+  const initYouTubePlayer = useCallback(
+    (videoId: string) => {
+      ensureYouTubeIframeApiReady().then(() => {
+        // Wait a frame to ensure the container is mounted & sized
+        requestAnimationFrame(() => createPlayer(videoId));
+      });
+    },
+    [ensureYouTubeIframeApiReady, createPlayer]
+  );
 
   // Initialize player when lesson changes (video must ALWAYS be playable)
   // Focus tracking is still gated by whether FocusModeIndicator is rendered.
