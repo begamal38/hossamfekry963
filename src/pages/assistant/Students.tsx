@@ -82,7 +82,7 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   
   // Use the new analytics export hook
-  const { exportStudents, exporting, progress: exportProgress } = useStudentExport();
+  const { exportStudents, exporting, progress: exportProgress, canExport, roleLoading: exportRoleLoading } = useStudentExport();
   
   // Attendance mode dialog state
   const [modeDialogOpen, setModeDialogOpen] = useState(false);
@@ -368,30 +368,34 @@ export default function Students() {
               <Upload className="h-4 w-4" />
               {isRTL ? 'استيراد طلاب' : 'Import Students'}
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  disabled={exporting}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {exporting 
-                    ? (exportProgress || (isRTL ? 'جاري التصدير...' : 'Exporting...'))
-                    : (isRTL ? 'تصدير التحليلات' : 'Export Analytics')}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
-                <DropdownMenuItem onClick={() => exportStudents('xlsx')} className="gap-2">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  {isRTL ? 'Excel (متعدد الأوراق)' : 'Excel (Multi-sheet)'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportStudents('csv')} className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  {isRTL ? 'CSV (ملف واحد)' : 'CSV (Single file)'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Only show export button if user has permission */}
+            {!exportRoleLoading && canExport() && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    disabled={exporting || students.length === 0}
+                    className="gap-2"
+                    title={students.length === 0 ? (isRTL ? 'لا يوجد طلاب للتصدير' : 'No students to export') : undefined}
+                  >
+                    <Download className="h-4 w-4" />
+                    {exporting 
+                      ? (exportProgress || (isRTL ? 'جاري التصدير...' : 'Exporting...'))
+                      : (isRTL ? 'تصدير التحليلات' : 'Export Analytics')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+                  <DropdownMenuItem onClick={() => exportStudents('xlsx')} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {isRTL ? 'Excel (متعدد الأوراق)' : 'Excel (Multi-sheet)'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportStudents('csv')} className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    {isRTL ? 'CSV (ملف واحد)' : 'CSV (Single file)'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 

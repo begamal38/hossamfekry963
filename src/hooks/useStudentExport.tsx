@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import * as XLSX from 'xlsx';
 
 interface StudentAnalytics {
@@ -51,6 +52,82 @@ interface ExportSummary {
 
 type ExportFormat = 'xlsx' | 'csv';
 
+// Error codes for structured error handling
+export type ExportErrorCode = 
+  | 'NO_DATA'
+  | 'NO_PERMISSION'
+  | 'NO_AUTH'
+  | 'AUTH_FAILED'
+  | 'EXPORT_FAILED'
+  | 'DATA_FETCH_ERROR'
+  | 'CONFIG_ERROR'
+  | 'SERVER_ERROR'
+  | 'PERMISSION_DENIED'
+  | 'PERMISSION_CHECK_FAILED'
+  | 'UNKNOWN';
+
+// i18n error messages
+const ERROR_MESSAGES: Record<ExportErrorCode, { ar: string; en: string }> = {
+  NO_DATA: {
+    ar: 'لا يوجد طلاب للتصدير',
+    en: 'No students available to export',
+  },
+  NO_PERMISSION: {
+    ar: 'ليس لديك صلاحية التصدير',
+    en: 'You do not have permission to export',
+  },
+  NO_AUTH: {
+    ar: 'يجب تسجيل الدخول للتصدير',
+    en: 'You must log in to export',
+  },
+  AUTH_FAILED: {
+    ar: 'فشل التحقق من الهوية',
+    en: 'Authentication verification failed',
+  },
+  EXPORT_FAILED: {
+    ar: 'فشل التصدير. يرجى المحاولة مرة أخرى',
+    en: 'Export failed. Please try again',
+  },
+  DATA_FETCH_ERROR: {
+    ar: 'فشل جلب بيانات الطلاب',
+    en: 'Failed to fetch student data',
+  },
+  CONFIG_ERROR: {
+    ar: 'خطأ في إعدادات الخادم',
+    en: 'Server configuration error',
+  },
+  SERVER_ERROR: {
+    ar: 'حدث خطأ في الخادم أثناء التصدير',
+    en: 'Server error during export',
+  },
+  PERMISSION_DENIED: {
+    ar: 'ليس لديك صلاحية التصدير',
+    en: 'You do not have permission to export',
+  },
+  PERMISSION_CHECK_FAILED: {
+    ar: 'فشل التحقق من الصلاحيات',
+    en: 'Permission check failed',
+  },
+  UNKNOWN: {
+    ar: 'حدث خطأ غير متوقع',
+    en: 'An unexpected error occurred',
+  },
+};
+
+const ERROR_TITLES: Record<ExportErrorCode, { ar: string; en: string }> = {
+  NO_DATA: { ar: 'لا توجد بيانات', en: 'No Data' },
+  NO_PERMISSION: { ar: 'صلاحيات غير كافية', en: 'Insufficient Permissions' },
+  NO_AUTH: { ar: 'يجب تسجيل الدخول', en: 'Login Required' },
+  AUTH_FAILED: { ar: 'فشل التحقق', en: 'Verification Failed' },
+  EXPORT_FAILED: { ar: 'فشل التصدير', en: 'Export Failed' },
+  DATA_FETCH_ERROR: { ar: 'مشكلة في البيانات', en: 'Data Error' },
+  CONFIG_ERROR: { ar: 'خطأ في الإعدادات', en: 'Configuration Error' },
+  SERVER_ERROR: { ar: 'خطأ في الخادم', en: 'Server Error' },
+  PERMISSION_DENIED: { ar: 'صلاحيات غير كافية', en: 'Insufficient Permissions' },
+  PERMISSION_CHECK_FAILED: { ar: 'خطأ في الصلاحيات', en: 'Permission Error' },
+  UNKNOWN: { ar: 'خطأ غير متوقع', en: 'Unexpected Error' },
+};
+
 const HEADERS_AR = {
   full_name: 'الاسم',
   phone: 'رقم الهاتف',
@@ -82,17 +159,18 @@ const HEADERS_AR = {
 
 type ParsedExportError = {
   status?: number;
-  code?: string;
+  code?: ExportErrorCode;
   message?: string;
   details?: string;
 };
 
 function parseInvokeError(err: unknown): ParsedExportError {
-  const anyErr = err as any;
-  const status: number | undefined = anyErr?.context?.status ?? anyErr?.status;
-  const body = anyErr?.context?.body;
+  const anyErr = err as Record<string, unknown>;
+  const context = anyErr?.context as Record<string, unknown> | undefined;
+  const status: number | undefined = (context?.status as number) ?? (anyErr?.status as number);
+  const body = context?.body;
 
-  let parsed: any = null;
+  let parsed: Record<string, unknown> | null = null;
 
   if (body) {
     if (typeof body === 'string') {
@@ -102,7 +180,7 @@ function parseInvokeError(err: unknown): ParsedExportError {
         // ignore
       }
     } else if (typeof body === 'object') {
-      parsed = body;
+      parsed = body as Record<string, unknown>;
     }
   }
 
@@ -117,11 +195,24 @@ function parseInvokeError(err: unknown): ParsedExportError {
     }
   }
 
+  // Map error codes
+  let code: ExportErrorCode = 'UNKNOWN';
+  const rawCode = parsed?.error as string | undefined;
+  if (rawCode && rawCode in ERROR_MESSAGES) {
+    code = rawCode as ExportErrorCode;
+  } else if (status === 403) {
+    code = 'NO_PERMISSION';
+  } else if (status === 401) {
+    code = 'NO_AUTH';
+  } else if (status === 404) {
+    code = 'EXPORT_FAILED';
+  }
+
   return {
     status,
-    code: parsed?.error,
-    message: parsed?.message,
-    details: parsed?.details,
+    code,
+    message: parsed?.message as string | undefined,
+    details: parsed?.details as string | undefined,
   };
 }
 
@@ -130,9 +221,24 @@ export function useStudentExport() {
   const [progress, setProgress] = useState<string | null>(null);
   const { toast } = useToast();
   const { isRTL } = useLanguage();
+  const { canAccessDashboard, loading: roleLoading } = useUserRole();
+
+  // Check if user has export permission
+  const canExport = useCallback(() => {
+    return !roleLoading && canAccessDashboard();
+  }, [roleLoading, canAccessDashboard]);
 
   // Arabic-first (UI must not show English)
   const headers = HEADERS_AR;
+
+  const getErrorMessage = useCallback((code: ExportErrorCode): { title: string; description: string } => {
+    const messages = ERROR_MESSAGES[code] || ERROR_MESSAGES.UNKNOWN;
+    const titles = ERROR_TITLES[code] || ERROR_TITLES.UNKNOWN;
+    return {
+      title: isRTL ? titles.ar : titles.en,
+      description: isRTL ? messages.ar : messages.en,
+    };
+  }, [isRTL]);
 
   const emptyStudentRow = () => ({
     [headers.full_name]: '',
@@ -256,8 +362,19 @@ export function useStudentExport() {
   };
 
   const exportStudents = async (format: ExportFormat = 'xlsx') => {
+    // Pre-check permissions before making API call
+    if (!canExport()) {
+      const { title, description } = getErrorMessage('NO_PERMISSION');
+      toast({
+        variant: 'destructive',
+        title,
+        description,
+      });
+      return;
+    }
+
     setExporting(true);
-    setProgress('جاري تجهيز التصدير...');
+    setProgress(isRTL ? 'جاري تجهيز التصدير...' : 'Preparing export...');
 
     try {
       const { data, error } = await supabase.functions.invoke('export-students-analytics');
@@ -265,31 +382,7 @@ export function useStudentExport() {
       if (error) {
         console.error('Export invoke error:', error);
         const parsed = parseInvokeError(error);
-
-        let title = 'خطأ في التصدير';
-        let description = 'حصل خطأ أثناء التصدير';
-
-        if (parsed.code === 'PERMISSION_DENIED') {
-          title = 'صلاحيات غير كافية';
-          description = parsed.message || 'ليس لديك صلاحية التصدير';
-        } else if (parsed.code === 'NO_AUTH' || parsed.code === 'AUTH_FAILED') {
-          title = 'لازم تسجل دخول';
-          description = parsed.message || 'يجب تسجيل الدخول للتصدير';
-        } else if (parsed.code === 'DATA_FETCH_ERROR') {
-          title = 'مشكلة في البيانات';
-          description = parsed.message || 'فشل جلب بيانات الطلاب';
-        } else if (parsed.code === 'CONFIG_ERROR') {
-          title = 'مشكلة في إعدادات الخادم';
-          description = parsed.message || 'خطأ في إعدادات الخادم';
-        } else if (parsed.code === 'SERVER_ERROR') {
-          title = 'خطأ في الخادم';
-          description = parsed.message || 'حدث خطأ في الخادم أثناء التصدير';
-        } else if (parsed.status === 404) {
-          title = 'الخدمة غير متاحة';
-          description = 'خدمة التصدير غير متاحة حالياً';
-        } else if (parsed.message) {
-          description = parsed.message;
-        }
+        const { title, description } = getErrorMessage(parsed.code || 'EXPORT_FAILED');
 
         toast({
           variant: 'destructive',
@@ -300,18 +393,30 @@ export function useStudentExport() {
       }
 
       if (!data || !data.success) {
+        const { title, description } = getErrorMessage('EXPORT_FAILED');
         toast({
           variant: 'destructive',
-          title: 'خطأ في البيانات',
-          description: 'لم يتم استلام بيانات صحيحة',
+          title,
+          description,
         });
         return;
       }
 
-      setProgress('جاري إنشاء الملف...');
-
+      // Check for NO_DATA case
       const exportData: ExportData = data.data;
       const summary: ExportSummary = data.summary;
+
+      if (summary.total === 0) {
+        const { title, description } = getErrorMessage('NO_DATA');
+        toast({
+          variant: 'destructive',
+          title,
+          description,
+        });
+        return;
+      }
+
+      setProgress(isRTL ? 'جاري إنشاء الملف...' : 'Creating file...');
 
       if (format === 'xlsx') {
         exportToExcel(exportData, summary);
@@ -320,15 +425,18 @@ export function useStudentExport() {
       }
 
       toast({
-        title: 'تم التصدير بنجاح',
-        description: `تم تصدير بيانات ${summary.total} طالب`,
+        title: isRTL ? 'تم التصدير بنجاح' : 'Export Successful',
+        description: isRTL 
+          ? `تم تصدير بيانات ${summary.total} طالب`
+          : `Exported data for ${summary.total} students`,
       });
     } catch (err) {
       console.error('Export error:', err);
+      const { title, description } = getErrorMessage('UNKNOWN');
       toast({
         variant: 'destructive',
-        title: 'خطأ غير متوقع',
-        description: 'حدث خطأ أثناء التصدير',
+        title,
+        description,
       });
     } finally {
       setExporting(false);
@@ -340,5 +448,7 @@ export function useStudentExport() {
     exportStudents,
     exporting,
     progress,
+    canExport,
+    roleLoading,
   };
 }
