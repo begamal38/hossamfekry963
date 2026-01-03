@@ -5,6 +5,7 @@ interface FocusSession {
   pauseTime?: number;
   totalFocusedTime: number;
   interruptions: number;
+  completedSegments: number;
 }
 
 interface FocusModeState {
@@ -12,36 +13,81 @@ interface FocusModeState {
   isPaused: boolean;
   status: 'active' | 'paused' | 'resumed' | 'idle';
   session: FocusSession | null;
+  currentSegmentProgress: number; // 0-100% of current 20-min segment
 }
 
+const SEGMENT_DURATION_MS = 20 * 60 * 1000; // 20 minutes
+
+// Egyptian Arabic motivational messages
 const FOCUS_MESSAGES_AR = [
-  'وضع التركيز مفعّل',
-  'أنت منخرط تماماً',
-  'التعلم جاري',
-  'استمر، أنت تبلي بلاءً حسناً',
-  'تركيزك ممتاز',
+  'مكمل صح 👌 ركز شوية كمان',
+  'أداءك ثابت، كمل 👏',
+  'إنت ماشي تمام 💪',
+  'شغل جامد، استمر كده',
+  'تركيزك رائع النهاردة ⭐',
+  'خطوة خطوة للنجاح 🎯',
+  'أنت بتتقدم، كمل!',
+  'الثبات هو السر 🔥',
 ];
 
 const FOCUS_MESSAGES_EN = [
-  'Focus mode active',
-  'You\'re fully engaged',
-  'Learning in progress',
-  'Keep going, you\'re doing great',
-  'Excellent focus',
+  'You\'re doing great! Keep going 👌',
+  'Steady progress! Continue 👏',
+  'You\'re on track 💪',
+  'Excellent work, stay focused',
+  'Your focus is impressive ⭐',
+  'Step by step to success 🎯',
+  'You\'re making progress!',
+  'Consistency is key 🔥',
 ];
 
-export const useFocusMode = (isLessonActive: boolean = false) => {
+const SEGMENT_COMPLETE_AR = '20 دقيقة تركيز اتحسبت 💪';
+const SEGMENT_COMPLETE_EN = '20 minutes of focus completed 💪';
+
+export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string) => {
   const [state, setState] = useState<FocusModeState>({
     isActive: false,
     isPaused: false,
     status: 'idle',
     session: null,
+    currentSegmentProgress: 0,
   });
   
   const [currentMessage, setCurrentMessage] = useState<string | null>(null);
   const messageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIndexRef = useRef(-1);
   const sessionRef = useRef<FocusSession | null>(null);
+  const segmentIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Show a message with auto-hide
+  const showMessage = useCallback((message: string, duration: number = 3000) => {
+    if (messageTimeoutRef.current) {
+      clearTimeout(messageTimeoutRef.current);
+    }
+    setCurrentMessage(message);
+    messageTimeoutRef.current = setTimeout(() => {
+      setCurrentMessage(null);
+    }, duration);
+  }, []);
+
+  // Show random motivational message
+  const showRandomMessage = useCallback((isArabic: boolean) => {
+    const messages = isArabic ? FOCUS_MESSAGES_AR : FOCUS_MESSAGES_EN;
+    let newIndex: number;
+    
+    do {
+      newIndex = Math.floor(Math.random() * messages.length);
+    } while (newIndex === lastMessageIndexRef.current && messages.length > 1);
+    
+    lastMessageIndexRef.current = newIndex;
+    showMessage(messages[newIndex], 3500);
+  }, [showMessage]);
+
+  // Show segment completion message
+  const showSegmentComplete = useCallback((isArabic: boolean) => {
+    showMessage(isArabic ? SEGMENT_COMPLETE_AR : SEGMENT_COMPLETE_EN, 4000);
+  }, [showMessage]);
 
   // Start focus session
   const startFocus = useCallback(() => {
@@ -49,6 +95,7 @@ export const useFocusMode = (isLessonActive: boolean = false) => {
       startTime: Date.now(),
       totalFocusedTime: 0,
       interruptions: 0,
+      completedSegments: 0,
     };
     sessionRef.current = session;
     setState({
@@ -56,10 +103,11 @@ export const useFocusMode = (isLessonActive: boolean = false) => {
       isPaused: false,
       status: 'active',
       session,
+      currentSegmentProgress: 0,
     });
   }, []);
 
-  // Pause focus (tab hidden)
+  // Pause focus (tab hidden or left page)
   const pauseFocus = useCallback(() => {
     if (sessionRef.current && !sessionRef.current.pauseTime) {
       const now = Date.now();
@@ -99,15 +147,15 @@ export const useFocusMode = (isLessonActive: boolean = false) => {
   // End focus session
   const endFocus = useCallback(() => {
     if (sessionRef.current) {
-      // Calculate final time if not paused
       if (!sessionRef.current.pauseTime) {
         sessionRef.current.totalFocusedTime += Date.now() - sessionRef.current.startTime;
       }
       
-      // Could store analytics here in the future
       console.log('Focus session ended:', {
         totalMinutes: Math.round(sessionRef.current.totalFocusedTime / 60000),
         interruptions: sessionRef.current.interruptions,
+        completedSegments: sessionRef.current.completedSegments,
+        lessonId,
       });
     }
     
@@ -117,30 +165,45 @@ export const useFocusMode = (isLessonActive: boolean = false) => {
       isPaused: false,
       status: 'idle',
       session: null,
+      currentSegmentProgress: 0,
     });
-  }, []);
+  }, [lessonId]);
 
-  // Show random message occasionally
-  const showRandomMessage = useCallback((isArabic: boolean) => {
-    const messages = isArabic ? FOCUS_MESSAGES_AR : FOCUS_MESSAGES_EN;
-    let newIndex: number;
-    
-    // Avoid repeating the same message
-    do {
-      newIndex = Math.floor(Math.random() * messages.length);
-    } while (newIndex === lastMessageIndexRef.current && messages.length > 1);
-    
-    lastMessageIndexRef.current = newIndex;
-    setCurrentMessage(messages[newIndex]);
-    
-    // Clear message after 2 seconds
-    if (messageTimeoutRef.current) {
-      clearTimeout(messageTimeoutRef.current);
+  // Track 20-minute segments and update progress
+  useEffect(() => {
+    if (state.isActive && !state.isPaused) {
+      segmentIntervalRef.current = setInterval(() => {
+        if (sessionRef.current && !sessionRef.current.pauseTime) {
+          const currentSessionTime = Date.now() - sessionRef.current.startTime;
+          const totalTime = sessionRef.current.totalFocusedTime + currentSessionTime;
+          
+          // Calculate progress within current segment
+          const timeInCurrentSegment = totalTime % SEGMENT_DURATION_MS;
+          const progress = (timeInCurrentSegment / SEGMENT_DURATION_MS) * 100;
+          
+          // Check if we completed a new segment
+          const totalSegments = Math.floor(totalTime / SEGMENT_DURATION_MS);
+          if (totalSegments > sessionRef.current.completedSegments) {
+            sessionRef.current.completedSegments = totalSegments;
+            // Use Arabic by default for this platform
+            showSegmentComplete(true);
+          }
+          
+          setState(prev => ({
+            ...prev,
+            currentSegmentProgress: progress,
+            session: { ...sessionRef.current! },
+          }));
+        }
+      }, 1000); // Update every second for smooth progress
+
+      return () => {
+        if (segmentIntervalRef.current) {
+          clearInterval(segmentIntervalRef.current);
+        }
+      };
     }
-    messageTimeoutRef.current = setTimeout(() => {
-      setCurrentMessage(null);
-    }, 2500);
-  }, []);
+  }, [state.isActive, state.isPaused, showSegmentComplete]);
 
   // Handle visibility change
   useEffect(() => {
@@ -173,17 +236,41 @@ export const useFocusMode = (isLessonActive: boolean = false) => {
       if (messageTimeoutRef.current) {
         clearTimeout(messageTimeoutRef.current);
       }
+      if (segmentIntervalRef.current) {
+        clearInterval(segmentIntervalRef.current);
+      }
+      if (messageIntervalRef.current) {
+        clearInterval(messageIntervalRef.current);
+      }
       endFocus();
     };
   }, [endFocus]);
+
+  // Get focus stats
+  const getFocusStats = useCallback(() => {
+    if (!sessionRef.current) return null;
+    
+    let totalTime = sessionRef.current.totalFocusedTime;
+    if (!sessionRef.current.pauseTime) {
+      totalTime += Date.now() - sessionRef.current.startTime;
+    }
+    
+    return {
+      totalMinutes: Math.floor(totalTime / 60000),
+      completedSegments: sessionRef.current.completedSegments,
+      interruptions: sessionRef.current.interruptions,
+    };
+  }, []);
 
   return {
     ...state,
     currentMessage,
     showRandomMessage,
+    showSegmentComplete,
     startFocus,
     pauseFocus,
     resumeFocus,
     endFocus,
+    getFocusStats,
   };
 };

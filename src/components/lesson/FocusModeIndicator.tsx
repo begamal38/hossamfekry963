@@ -2,16 +2,18 @@ import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFocusMode } from '@/hooks/useFocusMode';
-import { Eye, Pause, Play } from 'lucide-react';
+import { Eye, Pause, Timer } from 'lucide-react';
 
 interface FocusModeIndicatorProps {
   isLessonActive: boolean;
+  lessonId?: string;
   className?: string;
   showMessages?: boolean;
 }
 
 export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
   isLessonActive,
+  lessonId,
   className,
   showMessages = true,
 }) => {
@@ -22,33 +24,41 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
     isPaused,
     status,
     currentMessage,
+    currentSegmentProgress,
     showRandomMessage,
-  } = useFocusMode(isLessonActive);
+    getFocusStats,
+  } = useFocusMode(isLessonActive, lessonId);
   
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageTimeRef = useRef<number>(0);
 
-  // Show random messages periodically (every 45-90 seconds)
+  // Show random messages at random intervals (6-10 minutes)
   useEffect(() => {
     if (isActive && !isPaused && showMessages) {
-      // Show initial message after 10 seconds
+      // Show initial message after 30 seconds
       const initialTimeout = setTimeout(() => {
         showRandomMessage(isArabic);
-      }, 10000);
+        lastMessageTimeRef.current = Date.now();
+      }, 30000);
 
-      // Then show messages at random intervals (45-90 seconds)
-      messageIntervalRef.current = setInterval(() => {
-        const randomDelay = Math.random() * 45000 + 45000; // 45-90 seconds
-        setTimeout(() => {
+      // Then show messages at random intervals (6-10 minutes = 360000-600000ms)
+      const scheduleNextMessage = () => {
+        const randomDelay = Math.random() * (600000 - 360000) + 360000; // 6-10 minutes
+        return setTimeout(() => {
           if (!document.hidden) {
             showRandomMessage(isArabic);
+            lastMessageTimeRef.current = Date.now();
           }
+          messageIntervalRef.current = scheduleNextMessage();
         }, randomDelay);
-      }, 60000);
+      };
+
+      messageIntervalRef.current = scheduleNextMessage();
 
       return () => {
         clearTimeout(initialTimeout);
         if (messageIntervalRef.current) {
-          clearInterval(messageIntervalRef.current);
+          clearTimeout(messageIntervalRef.current);
         }
       };
     }
@@ -56,38 +66,41 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
 
   if (!isActive) return null;
 
+  const stats = getFocusStats();
   const StatusIcon = isPaused ? Pause : Eye;
   
   const statusLabels = {
-    active: isArabic ? 'تركيز' : 'Focus',
-    paused: isArabic ? 'متوقف' : 'Paused',
-    resumed: isArabic ? 'عدت!' : 'Welcome back!',
+    active: isArabic ? 'وضع التركيز' : 'Focus Mode',
+    paused: isArabic ? 'متوقف مؤقتاً' : 'Paused',
+    resumed: isArabic ? 'رجعت! 👋' : 'Welcome back! 👋',
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative flex items-center gap-3", className)}>
       {/* Main indicator */}
       <div 
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-full",
-          "bg-card/80 backdrop-blur-sm border shadow-sm",
-          "transition-all duration-500",
-          isPaused ? "border-muted opacity-60" : "border-primary/20"
+          "flex items-center gap-2.5 px-3.5 py-2 rounded-full",
+          "bg-card/90 backdrop-blur-md border shadow-lg",
+          "transition-all duration-700 ease-out",
+          isPaused 
+            ? "border-muted/50 opacity-70" 
+            : "border-primary/30 shadow-primary/10"
         )}
       >
         {/* Breathing indicator dot */}
-        <span className="relative flex">
+        <span className="relative flex items-center justify-center">
           {!isPaused && (
             <span 
               className={cn(
-                "absolute inline-flex h-3 w-3 rounded-full",
-                "bg-primary/40 animate-[focus-breathe_7s_ease-in-out_infinite]"
+                "absolute inline-flex h-4 w-4 rounded-full",
+                "bg-primary/30 animate-[focus-breathe_7s_ease-in-out_infinite]"
               )}
             />
           )}
           <span 
             className={cn(
-              "relative inline-flex h-3 w-3 rounded-full",
+              "relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500",
               isPaused ? "bg-muted-foreground/50" : "bg-primary"
             )}
           />
@@ -95,33 +108,57 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
 
         {/* Status text */}
         <span className={cn(
-          "text-xs font-medium",
+          "text-sm font-medium transition-colors duration-300",
           isPaused ? "text-muted-foreground" : "text-foreground"
         )}>
           {statusLabels[status === 'idle' ? 'active' : status]}
         </span>
 
+        {/* Segment progress bar */}
+        {!isPaused && (
+          <div className="w-12 h-1.5 bg-muted/50 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary/70 rounded-full transition-all duration-1000 ease-linear"
+              style={{ width: `${currentSegmentProgress}%` }}
+            />
+          </div>
+        )}
+
         {/* Icon */}
         <StatusIcon className={cn(
-          "w-3.5 h-3.5",
-          isPaused ? "text-muted-foreground" : "text-primary"
+          "w-4 h-4 transition-all duration-300",
+          isPaused ? "text-muted-foreground" : "text-primary",
+          !isPaused && "animate-[subtle-pulse_4s_ease-in-out_infinite]"
         )} />
       </div>
+
+      {/* Stats badge */}
+      {stats && stats.totalMinutes > 0 && !isPaused && (
+        <div className={cn(
+          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full",
+          "bg-primary/10 border border-primary/20",
+          "text-xs font-medium text-primary",
+          "animate-fade-in"
+        )}>
+          <Timer className="w-3 h-3" />
+          <span>{stats.totalMinutes} {isArabic ? 'د' : 'm'}</span>
+        </div>
+      )}
 
       {/* Floating message */}
       {currentMessage && (
         <div 
           className={cn(
-            "absolute top-full left-1/2 -translate-x-1/2 mt-2",
-            "px-3 py-1.5 rounded-lg",
-            "bg-primary/10 border border-primary/20",
-            "text-xs font-medium text-primary",
-            "whitespace-nowrap",
-            "animate-fade-in-up",
-            "pointer-events-none"
+            "absolute top-full right-0 mt-3",
+            "px-4 py-2.5 rounded-xl",
+            "bg-gradient-to-r from-primary/15 to-primary/5",
+            "border border-primary/20",
+            "text-sm font-medium text-foreground",
+            "whitespace-nowrap shadow-lg",
+            "animate-fade-in-up"
           )}
           style={{
-            animation: 'fade-in-up 0.3s ease-out, fade-out 0.3s ease-in 2s forwards'
+            animation: 'fade-in-up 0.4s ease-out, fade-out 0.4s ease-in 3s forwards'
           }}
         >
           {currentMessage}

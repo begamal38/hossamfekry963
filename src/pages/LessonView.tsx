@@ -436,6 +436,7 @@ export default function LessonView() {
               {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
                 <FocusModeIndicator 
                   isLessonActive={true} 
+                  lessonId={lesson.id}
                   showMessages={true}
                 />
               )}
