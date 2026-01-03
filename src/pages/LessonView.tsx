@@ -505,17 +505,6 @@ export default function LessonView() {
                       </Button>
                     </div>
                   )}
-                  
-                  {nextLesson && (
-                    <Button 
-                      variant={linkedExam ? "outline" : "default"}
-                      size="lg"
-                      onClick={() => navigate(`/lesson/${nextLesson.id}`)}
-                    >
-                      {isArabic ? 'الحصة التالية' : 'Next Lesson'}
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                    </Button>
-                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
