@@ -1,7 +1,7 @@
 project_id = "yqtogmjwkcmeufiwwhba"
 
 [functions.send-notification-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.export-students]
 verify_jwt = true
