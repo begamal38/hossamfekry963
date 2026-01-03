@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -261,30 +261,6 @@ export default function LessonView() {
     }
   };
 
-  // Initialize YouTube Player API
-  const initYouTubePlayer = useCallback((videoId: string) => {
-    // If API is already ready
-    if (window.YT && window.YT.Player) {
-      createPlayer(videoId);
-      return;
-    }
-
-    // Ensure script is loaded only once
-    const existingScript = document.getElementById('youtube-iframe-api');
-    if (!existingScript) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-iframe-api';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScript = document.getElementsByTagName('script')[0];
-      firstScript?.parentNode?.insertBefore(tag, firstScript);
-    }
-
-    // Wait until API is ready
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayer(videoId);
-    };
-  }, []);
-
   const createPlayer = useCallback((videoId: string) => {
     if (playerRef.current) {
       try {
@@ -294,14 +270,14 @@ export default function LessonView() {
       }
       playerRef.current = null;
     }
-    
+
     const containerId = 'youtube-player-container';
     const container = playerContainerRef.current;
     if (!container) return;
-    
+
     // Set ID for YouTube API
     container.id = containerId;
-    
+
     try {
       playerRef.current = new window.YT.Player(containerId, {
         videoId,
@@ -319,6 +295,7 @@ export default function LessonView() {
           onStateChange: (event: any) => {
             switch (event.data) {
               case YT_PLAYING:
+                // Lesson started ONLY when the user actually presses play
                 focusModeRef.current?.onVideoPlay();
                 break;
               case YT_PAUSED:
@@ -340,15 +317,51 @@ export default function LessonView() {
     }
   }, []);
 
-  // Initialize player when lesson changes (video must ALWAYS be playable)
-  // Focus tracking is still gated by whether FocusModeIndicator is rendered.
-  useEffect(() => {
-    if (lesson?.video_url) {
-      const videoId = getYouTubeVideoId(lesson.video_url);
-      if (videoId) {
-        initYouTubePlayer(videoId);
-      }
+  // Initialize YouTube Player API
+  const initYouTubePlayer = useCallback((videoId: string) => {
+    // If API is already ready
+    if (window.YT && window.YT.Player) {
+      createPlayer(videoId);
+      return;
     }
+
+    // Ensure script is loaded only once
+    const existingScript = document.getElementById('youtube-iframe-api') as HTMLScriptElement | null;
+    if (!existingScript) {
+      // IMPORTANT: define callback BEFORE inserting script to avoid missing it on fast loads
+      window.onYouTubeIframeAPIReady = () => {
+        createPlayer(videoId);
+      };
+
+      const tag = document.createElement('script');
+      tag.id = 'youtube-iframe-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScript = document.getElementsByTagName('script')[0];
+      firstScript?.parentNode?.insertBefore(tag, firstScript);
+      return;
+    }
+
+    // Script exists but API not ready yet → wait for global ready
+    window.onYouTubeIframeAPIReady = () => {
+      createPlayer(videoId);
+    };
+  }, [createPlayer]);
+
+  const videoId = useMemo(() => {
+    const url = lesson?.video_url;
+    return url ? getYouTubeVideoId(url) : null;
+  }, [lesson?.video_url]);
+
+  // Initialize player as soon as BOTH:
+  // - lesson video is known
+  // - video container is mounted (loading spinner is gone)
+  // Never auto-play, never start focus here.
+  useEffect(() => {
+    if (loading) return;
+    if (!videoId) return;
+    if (!playerContainerRef.current) return;
+
+    initYouTubePlayer(videoId);
 
     return () => {
       if (playerRef.current) {
@@ -360,7 +373,7 @@ export default function LessonView() {
         playerRef.current = null;
       }
     };
-  }, [lesson?.video_url, initYouTubePlayer]);
+  }, [loading, videoId, initYouTubePlayer]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
