@@ -8,9 +8,9 @@ import React from 'react';
 export const Hero3DBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Main SVG Molecular Structure - increased visibility */}
+      {/* Main SVG Molecular Structure - enhanced with ambient breathing */}
       <svg
-        className="absolute inset-0 w-full h-full opacity-[0.15] dark:opacity-[0.20]"
+        className="absolute inset-0 w-full h-full opacity-[0.18] dark:opacity-[0.25]"
         viewBox="0 0 1000 600"
         preserveAspectRatio="xMidYMid slice"
       >
@@ -41,8 +41,8 @@ export const Hero3DBackground: React.FC = () => {
           <ellipse id="orbitPath" cx="0" cy="0" rx="80" ry="30" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.5" opacity="0.3" />
         </defs>
 
-        {/* Main Molecule Group - Slow rotation */}
-        <g className="animate-molecule-rotate" style={{ transformOrigin: '500px 300px' }}>
+        {/* Main Molecule Group - Slow rotation with ambient breathing */}
+        <g className="animate-molecule-rotate" style={{ transformOrigin: '500px 300px', animationDuration: '45s' }}>
           
           {/* Central benzene ring structure */}
           <g transform="translate(500, 300)">
@@ -109,25 +109,35 @@ export const Hero3DBackground: React.FC = () => {
           <line x1="439" y1="335" x2="280" y2="405" stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.25" strokeDasharray="6 4" />
         </g>
 
-        {/* Orbiting electrons - independent animation */}
+        {/* Orbiting electrons - independent animation with ambient sync */}
         <g className="animate-electron-orbit" style={{ transformOrigin: '500px 300px' }}>
           <circle cx="580" cy="300" r="4" fill="hsl(var(--primary))" opacity="0.8">
-            <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.8;0.5;0.8" dur="7.5s" repeatCount="indefinite" />
+            <animate attributeName="r" values="4;5;4" dur="7.5s" repeatCount="indefinite" />
           </circle>
         </g>
         
         <g className="animate-electron-orbit-reverse" style={{ transformOrigin: '500px 300px' }}>
           <circle cx="420" cy="300" r="3" fill="hsl(var(--accent))" opacity="0.7">
-            <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2.5s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.7;0.4;0.7" dur="7.5s" repeatCount="indefinite" begin="2s" />
+            <animate attributeName="r" values="3;4;3" dur="7.5s" repeatCount="indefinite" begin="2s" />
           </circle>
         </g>
 
-        {/* Floating atoms - subtle drift */}
+        {/* Floating atoms - ambient breathing drift */}
         <g className="animate-float-atom">
-          <circle cx="150" cy="150" r="5" fill="hsl(var(--primary))" opacity="0.4" />
-          <circle cx="850" cy="450" r="4" fill="hsl(var(--accent))" opacity="0.3" />
-          <circle cx="900" cy="120" r="6" fill="hsl(var(--primary))" opacity="0.35" />
-          <circle cx="80" cy="400" r="5" fill="hsl(var(--accent))" opacity="0.4" />
+          <circle cx="150" cy="150" r="5" fill="hsl(var(--primary))">
+            <animate attributeName="opacity" values="0.3;0.5;0.3" dur="7.5s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="850" cy="450" r="4" fill="hsl(var(--accent))">
+            <animate attributeName="opacity" values="0.25;0.4;0.25" dur="7.5s" repeatCount="indefinite" begin="1.5s" />
+          </circle>
+          <circle cx="900" cy="120" r="6" fill="hsl(var(--primary))">
+            <animate attributeName="opacity" values="0.3;0.45;0.3" dur="7.5s" repeatCount="indefinite" begin="3s" />
+          </circle>
+          <circle cx="80" cy="400" r="5" fill="hsl(var(--accent))">
+            <animate attributeName="opacity" values="0.35;0.5;0.35" dur="7.5s" repeatCount="indefinite" begin="4.5s" />
+          </circle>
         </g>
       </svg>
 

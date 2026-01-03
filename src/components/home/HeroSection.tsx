@@ -21,12 +21,12 @@ export const HeroSection: React.FC = () => {
       {/* 3D Chemistry Background Animation - positioned behind everything */}
       <Hero3DBackground />
       
-      {/* Background Glow Effects */}
+      {/* Ambient Glow Effects - with breathing animation */}
       <div 
-        className="absolute top-1/4 left-1/4 w-72 h-72 lg:w-96 lg:h-96 bg-primary/10 rounded-full blur-3xl opacity-50 pointer-events-none" 
+        className="absolute top-1/4 left-1/4 w-72 h-72 lg:w-96 lg:h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none ambient-hero-glow" 
       />
       <div 
-        className="absolute bottom-1/4 right-1/4 w-64 h-64 lg:w-80 lg:h-80 bg-accent/15 rounded-full blur-3xl opacity-40 pointer-events-none" 
+        className="absolute bottom-1/4 right-1/4 w-64 h-64 lg:w-80 lg:h-80 bg-accent/15 rounded-full blur-3xl pointer-events-none ambient-hero-glow ambient-delay-2" 
       />
       
       <div className="container mx-auto px-4 lg:px-8 relative z-10">
@@ -104,18 +104,18 @@ export const HeroSection: React.FC = () => {
               )}
             </div>
 
-            {/* Stats - Translated with enhanced styling */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border/50 max-w-lg mx-auto">
+            {/* Stats - with ambient pulse effect */}
+            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border/50 max-w-lg mx-auto ambient-breathe-border">
               <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">+500</p>
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse">+500</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_lessons')}</p>
               </div>
               <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">+10K</p>
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse ambient-delay-1">+10K</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_students')}</p>
               </div>
               <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">95%</p>
+                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse ambient-delay-2">95%</p>
                 <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_success')}</p>
               </div>
             </div>
