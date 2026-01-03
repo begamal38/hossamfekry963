@@ -53,6 +53,8 @@ export const Navbar: React.FC = () => {
             <img 
               src={logo} 
               alt="Hossam Fekry" 
+              width={96}
+              height={96}
               className="h-14 lg:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
             />
           </Link>
