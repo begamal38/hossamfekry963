@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -29,10 +29,16 @@ import { useShortId } from '@/hooks/useShortId';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { FocusModeIndicator } from '@/components/lesson/FocusModeIndicator';
+import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
 import { toast } from 'sonner';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
+
+// YouTube Player States
+const YT_PLAYING = 1;
+const YT_PAUSED = 2;
+const YT_ENDED = 0;
+const YT_BUFFERING = 3;
 
 interface Lesson {
   id: string;
@@ -70,6 +76,14 @@ interface LinkedExam {
   status: string;
 }
 
+// Extend window for YouTube API
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export default function LessonView() {
   const { lessonId: lessonIdParam } = useParams();
   const navigate = useNavigate();
@@ -93,6 +107,11 @@ export default function LessonView() {
   const [completed, setCompleted] = useState(false);
   const [completionSaving, setCompletionSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Focus Mode refs
+  const focusModeRef = useRef<FocusModeHandle>(null);
+  const playerRef = useRef<any>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -196,6 +215,9 @@ export default function LessonView() {
 
     setCompletionSaving(true);
     try {
+      // Stop Focus Mode immediately when lesson is marked complete
+      focusModeRef.current?.onLessonComplete();
+      
       // System-driven completion: Write real record to database
       // Source: manual_confirm - student explicitly clicked "خلصت الحصة"
       const { error: completionError } = await supabase
@@ -226,6 +248,70 @@ export default function LessonView() {
       setCompletionSaving(false);
     }
   };
+
+  // Initialize YouTube Player API
+  const initYouTubePlayer = useCallback((videoId: string) => {
+    if (!window.YT) {
+      // Load YouTube IFrame API
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScript = document.getElementsByTagName('script')[0];
+      firstScript.parentNode?.insertBefore(tag, firstScript);
+      
+      window.onYouTubeIframeAPIReady = () => {
+        createPlayer(videoId);
+      };
+    } else {
+      createPlayer(videoId);
+    }
+  }, []);
+
+  const createPlayer = useCallback((videoId: string) => {
+    if (playerRef.current) {
+      playerRef.current.destroy();
+    }
+    
+    playerRef.current = new window.YT.Player(playerContainerRef.current, {
+      videoId,
+      playerVars: {
+        rel: 0,
+        modestbranding: 1,
+      },
+      events: {
+        onStateChange: (event: any) => {
+          switch (event.data) {
+            case YT_PLAYING:
+              focusModeRef.current?.onVideoPlay();
+              break;
+            case YT_PAUSED:
+            case YT_BUFFERING:
+              focusModeRef.current?.onVideoPause();
+              break;
+            case YT_ENDED:
+              focusModeRef.current?.onVideoEnd();
+              break;
+          }
+        },
+      },
+    });
+  }, []);
+
+  // Initialize player when lesson changes
+  useEffect(() => {
+    if (lesson?.video_url && user && !completed) {
+      const videoId = getYouTubeVideoId(lesson.video_url);
+      if (videoId) {
+        initYouTubePlayer(videoId);
+      }
+    }
+    
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [lesson?.video_url, user, completed, initYouTubePlayer]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
@@ -432,10 +518,10 @@ export default function LessonView() {
                 </h2>
               </div>
               
-              {/* Focus Mode Indicator - only for authenticated users watching video */}
-              {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
+              {/* Focus Mode Indicator - controlled by video state via ref */}
+              {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && !completed && (
                 <FocusModeIndicator 
-                  isLessonActive={true} 
+                  ref={focusModeRef}
                   lessonId={lesson.id}
                   showMessages={true}
                 />
@@ -443,15 +529,11 @@ export default function LessonView() {
             </div>
             
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
-              /* Video Container - fixed 16:9 aspect ratio, lazy loaded */
+              /* Video Container - YouTube IFrame API Player */
               <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-lg" style={{ paddingBottom: '56.25%' }}>
-                <iframe
-                  src={`https://www.youtube.com/embed/${getYouTubeVideoId(lesson.video_url)}?rel=0&modestbranding=1`}
-                  title={isArabic ? lesson.title_ar : lesson.title}
+                <div 
+                  ref={playerContainerRef}
                   className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  loading="lazy"
                 />
               </div>
             ) : (

@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+// Explicit Focus Mode States
+export type FocusState = 'FOCUS_IDLE' | 'FOCUS_ACTIVE' | 'FOCUS_PAUSED' | 'FOCUS_COMPLETED';
+
 interface FocusSession {
   startTime: number;
-  pauseTime?: number;
   totalFocusedTime: number;
   interruptions: number;
   completedSegments: number;
 }
 
 interface FocusModeState {
-  isActive: boolean;
-  isPaused: boolean;
-  status: 'active' | 'paused' | 'resumed' | 'idle';
+  focusState: FocusState;
   session: FocusSession | null;
   currentSegmentProgress: number; // 0-100% of current 20-min segment
 }
@@ -44,11 +44,9 @@ const FOCUS_MESSAGES_EN = [
 const SEGMENT_COMPLETE_AR = '20 دقيقة تركيز اتحسبت 💪';
 const SEGMENT_COMPLETE_EN = '20 minutes of focus completed 💪';
 
-export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string) => {
+export const useFocusMode = (lessonId?: string) => {
   const [state, setState] = useState<FocusModeState>({
-    isActive: false,
-    isPaused: false,
-    status: 'idle',
+    focusState: 'FOCUS_IDLE',
     session: null,
     currentSegmentProgress: 0,
   });
@@ -58,7 +56,8 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
   const lastMessageIndexRef = useRef(-1);
   const sessionRef = useRef<FocusSession | null>(null);
   const segmentIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const activeStartTimeRef = useRef<number | null>(null);
+  const isCompletedRef = useRef(false);
 
   // Show a message with auto-hide
   const showMessage = useCallback((message: string, duration: number = 3000) => {
@@ -89,8 +88,25 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
     showMessage(isArabic ? SEGMENT_COMPLETE_AR : SEGMENT_COMPLETE_EN, 4000);
   }, [showMessage]);
 
-  // Start focus session
+  // START: When video starts playing
   const startFocus = useCallback(() => {
+    // Cannot restart if already completed
+    if (isCompletedRef.current) return;
+    
+    // If already active, do nothing
+    if (state.focusState === 'FOCUS_ACTIVE') return;
+    
+    // If resuming from pause, just update state
+    if (state.focusState === 'FOCUS_PAUSED' && sessionRef.current) {
+      activeStartTimeRef.current = Date.now();
+      setState(prev => ({
+        ...prev,
+        focusState: 'FOCUS_ACTIVE',
+      }));
+      return;
+    }
+    
+    // Fresh start
     const session: FocusSession = {
       startTime: Date.now(),
       totalFocusedTime: 0,
@@ -98,84 +114,83 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
       completedSegments: 0,
     };
     sessionRef.current = session;
+    activeStartTimeRef.current = Date.now();
+    isCompletedRef.current = false;
+    
     setState({
-      isActive: true,
-      isPaused: false,
-      status: 'active',
+      focusState: 'FOCUS_ACTIVE',
       session,
       currentSegmentProgress: 0,
     });
-  }, []);
+  }, [state.focusState]);
 
-  // Pause focus (tab hidden or left page)
+  // PAUSE: When video is paused or buffering
   const pauseFocus = useCallback(() => {
-    if (sessionRef.current && !sessionRef.current.pauseTime) {
-      const now = Date.now();
-      sessionRef.current.totalFocusedTime += now - sessionRef.current.startTime;
-      sessionRef.current.pauseTime = now;
-      sessionRef.current.interruptions += 1;
-      
-      setState(prev => ({
-        ...prev,
-        isPaused: true,
-        status: 'paused',
-        session: { ...sessionRef.current! },
-      }));
+    if (state.focusState !== 'FOCUS_ACTIVE' || !sessionRef.current) return;
+    
+    // Accumulate time since last active start
+    if (activeStartTimeRef.current) {
+      sessionRef.current.totalFocusedTime += Date.now() - activeStartTimeRef.current;
+      activeStartTimeRef.current = null;
     }
-  }, []);
+    sessionRef.current.interruptions += 1;
+    
+    setState(prev => ({
+      ...prev,
+      focusState: 'FOCUS_PAUSED',
+      session: { ...sessionRef.current! },
+    }));
+  }, [state.focusState]);
 
-  // Resume focus (tab visible again)
-  const resumeFocus = useCallback(() => {
-    if (sessionRef.current?.pauseTime) {
-      sessionRef.current.startTime = Date.now();
-      sessionRef.current.pauseTime = undefined;
-      
-      setState(prev => ({
-        ...prev,
-        isPaused: false,
-        status: 'resumed',
-        session: { ...sessionRef.current! },
-      }));
-
-      // Reset to active after brief "resumed" state
-      setTimeout(() => {
-        setState(prev => ({ ...prev, status: 'active' }));
-      }, 2000);
+  // COMPLETE: When lesson is marked complete or video ends
+  const completeFocus = useCallback(() => {
+    // Save final session data
+    if (sessionRef.current && activeStartTimeRef.current) {
+      sessionRef.current.totalFocusedTime += Date.now() - activeStartTimeRef.current;
     }
-  }, []);
-
-  // End focus session
-  const endFocus = useCallback(() => {
-    if (sessionRef.current) {
-      if (!sessionRef.current.pauseTime) {
-        sessionRef.current.totalFocusedTime += Date.now() - sessionRef.current.startTime;
-      }
-      
-      console.log('Focus session ended:', {
-        totalMinutes: Math.round(sessionRef.current.totalFocusedTime / 60000),
-        interruptions: sessionRef.current.interruptions,
-        completedSegments: sessionRef.current.completedSegments,
+    
+    const finalSession = sessionRef.current;
+    
+    if (finalSession) {
+      console.log('Focus session completed:', {
+        totalMinutes: Math.round(finalSession.totalFocusedTime / 60000),
+        interruptions: finalSession.interruptions,
+        completedSegments: finalSession.completedSegments,
         lessonId,
       });
     }
     
-    sessionRef.current = null;
+    // Mark as completed - prevents restart
+    isCompletedRef.current = true;
+    activeStartTimeRef.current = null;
+    
     setState({
-      isActive: false,
-      isPaused: false,
-      status: 'idle',
-      session: null,
+      focusState: 'FOCUS_COMPLETED',
+      session: finalSession,
       currentSegmentProgress: 0,
     });
   }, [lessonId]);
 
-  // Track 20-minute segments and update progress
+  // RESET: Allow restart from beginning (e.g., replay)
+  const resetFocus = useCallback(() => {
+    sessionRef.current = null;
+    activeStartTimeRef.current = null;
+    isCompletedRef.current = false;
+    
+    setState({
+      focusState: 'FOCUS_IDLE',
+      session: null,
+      currentSegmentProgress: 0,
+    });
+  }, []);
+
+  // Track 20-minute segments - ONLY when FOCUS_ACTIVE
   useEffect(() => {
-    if (state.isActive && !state.isPaused) {
+    if (state.focusState === 'FOCUS_ACTIVE') {
       segmentIntervalRef.current = setInterval(() => {
-        if (sessionRef.current && !sessionRef.current.pauseTime) {
-          const currentSessionTime = Date.now() - sessionRef.current.startTime;
-          const totalTime = sessionRef.current.totalFocusedTime + currentSessionTime;
+        if (sessionRef.current && activeStartTimeRef.current) {
+          const currentActiveTime = Date.now() - activeStartTimeRef.current;
+          const totalTime = sessionRef.current.totalFocusedTime + currentActiveTime;
           
           // Calculate progress within current segment
           const timeInCurrentSegment = totalTime % SEGMENT_DURATION_MS;
@@ -193,40 +208,21 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
             session: { ...sessionRef.current! },
           }));
         }
-      }, 1000); // Update every second for smooth progress
+      }, 1000);
 
       return () => {
         if (segmentIntervalRef.current) {
           clearInterval(segmentIntervalRef.current);
         }
       };
-    }
-  }, [state.isActive, state.isPaused, showSegmentComplete]);
-
-  // Handle visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        pauseFocus();
-      } else if (state.isActive) {
-        resumeFocus();
+    } else {
+      // Clear interval when not active
+      if (segmentIntervalRef.current) {
+        clearInterval(segmentIntervalRef.current);
+        segmentIntervalRef.current = null;
       }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [state.isActive, pauseFocus, resumeFocus]);
-
-  // Auto-start when lesson becomes active
-  useEffect(() => {
-    if (isLessonActive && !state.isActive) {
-      startFocus();
-    } else if (!isLessonActive && state.isActive) {
-      endFocus();
     }
-  }, [isLessonActive, state.isActive, startFocus, endFocus]);
+  }, [state.focusState]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -237,20 +233,16 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
       if (segmentIntervalRef.current) {
         clearInterval(segmentIntervalRef.current);
       }
-      if (messageIntervalRef.current) {
-        clearInterval(messageIntervalRef.current);
-      }
-      endFocus();
     };
-  }, [endFocus]);
+  }, []);
 
   // Get focus stats
   const getFocusStats = useCallback(() => {
     if (!sessionRef.current) return null;
     
     let totalTime = sessionRef.current.totalFocusedTime;
-    if (!sessionRef.current.pauseTime) {
-      totalTime += Date.now() - sessionRef.current.startTime;
+    if (activeStartTimeRef.current && state.focusState === 'FOCUS_ACTIVE') {
+      totalTime += Date.now() - activeStartTimeRef.current;
     }
     
     return {
@@ -258,17 +250,25 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
       completedSegments: sessionRef.current.completedSegments,
       interruptions: sessionRef.current.interruptions,
     };
-  }, []);
+  }, [state.focusState]);
 
   return {
-    ...state,
+    focusState: state.focusState,
+    session: state.session,
+    currentSegmentProgress: state.currentSegmentProgress,
     currentMessage,
-    showRandomMessage,
-    showSegmentComplete,
+    // State checks
+    isActive: state.focusState === 'FOCUS_ACTIVE',
+    isPaused: state.focusState === 'FOCUS_PAUSED',
+    isCompleted: state.focusState === 'FOCUS_COMPLETED',
+    isIdle: state.focusState === 'FOCUS_IDLE',
+    // Actions
     startFocus,
     pauseFocus,
-    resumeFocus,
-    endFocus,
+    completeFocus,
+    resetFocus,
+    showRandomMessage,
+    showSegmentComplete,
     getFocusStats,
   };
 };
