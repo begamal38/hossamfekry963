@@ -68,7 +68,7 @@ serve(async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Hossam Fekry Platform <notifications@resend.dev>",
+          from: "منصة حسام فكري <notifications@hossamfekry.com>",
           to: [test_email],
           subject: `${title} | ${title_ar}`,
           html: `
@@ -218,7 +218,7 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Hossam Fekry Platform <notifications@resend.dev>",
+            from: "منصة حسام فكري <notifications@hossamfekry.com>",
             to: [email],
             subject: `${title} | ${title_ar}`,
             html: `
