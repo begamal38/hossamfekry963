@@ -20,9 +20,12 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
         <img
           src={teacherImage}
           alt="حسام فكري - مدرس الكيمياء"
+          width={1920}
+          height={1080}
           className="w-full h-full object-cover object-top transform group-hover:scale-105 transition-transform duration-700 ease-out"
           loading="eager"
           fetchPriority="high"
+          decoding="async"
         />
       </div>
 
