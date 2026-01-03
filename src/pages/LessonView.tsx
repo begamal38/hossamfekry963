@@ -261,31 +261,13 @@ export default function LessonView() {
     }
   };
 
-  // Initialize YouTube Player API
-  const initYouTubePlayer = useCallback((videoId: string) => {
-    // If API is already ready
-    if (window.YT && window.YT.Player) {
-      createPlayer(videoId);
-      return;
-    }
-
-    // Ensure script is loaded only once
-    const existingScript = document.getElementById('youtube-iframe-api');
-    if (!existingScript) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-iframe-api';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScript = document.getElementsByTagName('script')[0];
-      firstScript?.parentNode?.insertBefore(tag, firstScript);
-    }
-
-    // Wait until API is ready
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayer(videoId);
-    };
-  }, []);
+  // Store pending video ID for when API becomes ready
+  const pendingVideoIdRef = useRef<string | null>(null);
 
   const createPlayer = useCallback((videoId: string) => {
+    // Clear pending since we're creating now
+    pendingVideoIdRef.current = null;
+    
     if (playerRef.current) {
       try {
         playerRef.current.destroy();
@@ -297,7 +279,10 @@ export default function LessonView() {
     
     const containerId = 'youtube-player-container';
     const container = playerContainerRef.current;
-    if (!container) return;
+    if (!container) {
+      console.warn('YouTube container not found');
+      return;
+    }
     
     // Set ID for YouTube API
     container.id = containerId;
@@ -339,6 +324,49 @@ export default function LessonView() {
       console.error('Error creating YouTube player:', error);
     }
   }, []);
+
+  // Initialize YouTube Player API
+  const initYouTubePlayer = useCallback((videoId: string) => {
+    // Store video ID in ref so we can access it when API is ready
+    pendingVideoIdRef.current = videoId;
+    
+    // If API is already ready, create player immediately
+    if (window.YT && window.YT.Player) {
+      createPlayer(videoId);
+      return;
+    }
+
+    // Ensure script is loaded only once
+    const existingScript = document.getElementById('youtube-iframe-api');
+    if (!existingScript) {
+      const tag = document.createElement('script');
+      tag.id = 'youtube-iframe-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScript = document.getElementsByTagName('script')[0];
+      firstScript?.parentNode?.insertBefore(tag, firstScript);
+    }
+
+    // Set up global callback - use arrow function to capture current ref
+    const originalCallback = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      if (originalCallback) originalCallback();
+      // Use the ref value which will be current
+      if (pendingVideoIdRef.current) {
+        createPlayer(pendingVideoIdRef.current);
+      }
+    };
+    
+    // Also poll in case callback was already fired
+    const checkReady = setInterval(() => {
+      if (window.YT && window.YT.Player && pendingVideoIdRef.current) {
+        clearInterval(checkReady);
+        createPlayer(pendingVideoIdRef.current);
+      }
+    }, 100);
+    
+    // Clear interval after 10 seconds to prevent memory leak
+    setTimeout(() => clearInterval(checkReady), 10000);
+  }, [createPlayer]);
 
   // Initialize player when lesson changes (video must ALWAYS be playable)
   // Focus tracking is still gated by whether FocusModeIndicator is rendered.
