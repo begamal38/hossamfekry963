@@ -7,15 +7,111 @@ const corsHeaders = {
 };
 
 interface NotificationEmailRequest {
-  notification_id: string;
-  target_type: "all" | "course" | "lesson" | "user" | "grade" | "attendance_mode";
+  notification_id?: string;
+  target_type?: "all" | "course" | "lesson" | "user" | "grade" | "attendance_mode";
   target_value?: string;
   title: string;
   title_ar: string;
   message: string;
   message_ar: string;
   type: string;
+  // For direct student targeting
+  student_ids?: string[];
+  course_id?: string;
 }
+
+const EMAIL_FROM = "Hossam Fekry Platform <FollowUp@hossamfekry.com>";
+
+const generateEmailHtml = (title: string, title_ar: string, message: string, message_ar: string) => `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title_ar}</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background-color: #f5f5f5; 
+      direction: rtl;
+    }
+    .container { 
+      max-width: 600px; 
+      margin: 20px auto; 
+      background: white; 
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header { 
+      background: linear-gradient(135deg, #3173B8, #1e5a9e); 
+      color: white; 
+      padding: 30px 20px; 
+      text-align: center; 
+    }
+    .header h1 { 
+      margin: 0; 
+      font-size: 26px; 
+      font-weight: bold;
+    }
+    .content { 
+      padding: 30px; 
+    }
+    .message-box { 
+      direction: rtl; 
+      text-align: right; 
+      padding: 25px; 
+      background: #f8fafc; 
+      border-radius: 10px;
+      border-right: 4px solid #3173B8;
+    }
+    .message-box h2 { 
+      color: #3173B8; 
+      margin: 0 0 15px 0;
+      font-size: 22px;
+    }
+    .message-box p { 
+      line-height: 1.8; 
+      color: #334155; 
+      margin: 0;
+      font-size: 16px;
+    }
+    .footer { 
+      background: #e2e8f0; 
+      padding: 20px; 
+      text-align: center; 
+      font-size: 13px; 
+      color: #64748b; 
+    }
+    .footer p { margin: 5px 0; }
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>منصة حسام فكري التعليمية</h1>
+    </div>
+    <div class="content">
+      <div class="message-box">
+        <h2>${title_ar}</h2>
+        <p>${message_ar}</p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Hossam Fekry Educational Platform</p>
+      <p>هذا إشعار تلقائي - لا ترد على هذا البريد</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
 
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -45,6 +141,7 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const requestData = await req.json();
     const { 
       notification_id,
       target_type, 
@@ -54,8 +151,17 @@ serve(async (req: Request): Promise<Response> => {
       message, 
       message_ar,
       type,
-      test_email // For testing: send directly to this email
-    }: NotificationEmailRequest & { test_email?: string } = await req.json();
+      student_ids,
+      course_id,
+      test_email
+    } = requestData;
+
+    console.log(`[send-notification-email] Request received:`, {
+      target_type,
+      target_value,
+      student_ids_count: student_ids?.length,
+      has_test_email: !!test_email
+    });
 
     // Direct test mode - send to specific email without database lookup
     if (test_email) {
@@ -68,44 +174,10 @@ serve(async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "منصة حسام فكري <notifications@hossamfekry.com>",
+          from: EMAIL_FROM,
           to: [test_email],
-          subject: `${title} | ${title_ar}`,
-          html: `
-            <!DOCTYPE html>
-            <html dir="rtl">
-            <head>
-              <meta charset="UTF-8">
-              <style>
-                body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
-                .container { max-width: 600px; margin: 0 auto; background: white; }
-                .header { background: #3173B8; color: white; padding: 20px; text-align: center; }
-                .content { padding: 30px; }
-                .message-ar { direction: rtl; text-align: right; margin-bottom: 20px; padding: 20px; background: #f8fafc; border-radius: 8px; }
-                .footer { background: #e2e8f0; padding: 15px; text-align: center; font-size: 12px; color: #64748b; }
-                h1 { margin: 0; font-size: 24px; }
-                h2 { color: #3173B8; margin-top: 0; }
-                p { line-height: 1.6; color: #334155; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>منصة حسام فكري التعليمية</h1>
-                </div>
-                <div class="content">
-                  <div class="message-ar">
-                    <h2>${title_ar}</h2>
-                    <p>${message_ar}</p>
-                  </div>
-                </div>
-                <div class="footer">
-                  <p>Hossam Fekry Educational Platform</p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
+          subject: title_ar,
+          html: generateEmailHtml(title, title_ar, message, message_ar),
         }),
       });
 
@@ -126,67 +198,71 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Processing email notification: ${notification_id}, target: ${target_type}`);
-
     // Get target users based on targeting
     let userIds: string[] = [];
 
-    // First, get all assistant teachers and admins to exclude them
-    const { data: staffRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .in("role", ["assistant_teacher", "admin"]);
-    
-    const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
-
-    if (target_type === "all") {
-      // Get all student users (excluding staff)
-      const { data: studentRoles } = await supabase
+    // If direct student_ids provided (from SendNotifications for individual targeting)
+    if (student_ids && student_ids.length > 0) {
+      userIds = student_ids;
+      console.log(`[send-notification-email] Using provided student_ids: ${userIds.length} students`);
+    } else {
+      // First, get all assistant teachers and admins to exclude them
+      const { data: staffRoles } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "student");
+        .in("role", ["assistant_teacher", "admin"]);
       
-      userIds = (studentRoles || [])
-        .map(r => r.user_id)
-        .filter(id => !staffUserIds.has(id));
-    } else if (target_type === "user" && target_value) {
-      // Only include if not staff
-      if (!staffUserIds.has(target_value)) {
-        userIds = [target_value];
+      const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
+
+      if (target_type === "all") {
+        // Get all student users (excluding staff)
+        const { data: studentRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "student");
+        
+        userIds = (studentRoles || [])
+          .map(r => r.user_id)
+          .filter(id => !staffUserIds.has(id));
+      } else if (target_type === "user" && target_value) {
+        // Only include if not staff
+        if (!staffUserIds.has(target_value)) {
+          userIds = [target_value];
+        }
+      } else if (target_type === "course" && (target_value || course_id)) {
+        // Get users enrolled in the course (excluding staff)
+        const { data: enrollments } = await supabase
+          .from("course_enrollments")
+          .select("user_id")
+          .eq("course_id", target_value || course_id);
+        
+        userIds = (enrollments || [])
+          .map(e => e.user_id)
+          .filter(id => !staffUserIds.has(id));
+      } else if (target_type === "grade" && target_value) {
+        // Get users in specific grade (excluding staff)
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("grade", target_value);
+        
+        userIds = (profiles || [])
+          .map(p => p.user_id)
+          .filter(id => !staffUserIds.has(id));
+      } else if (target_type === "attendance_mode" && target_value) {
+        // Get users with specific attendance mode (excluding staff)
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("attendance_mode", target_value);
+        
+        userIds = (profiles || [])
+          .map(p => p.user_id)
+          .filter(id => !staffUserIds.has(id));
       }
-    } else if (target_type === "course" && target_value) {
-      // Get users enrolled in the course (excluding staff)
-      const { data: enrollments } = await supabase
-        .from("course_enrollments")
-        .select("user_id")
-        .eq("course_id", target_value);
-      
-      userIds = (enrollments || [])
-        .map(e => e.user_id)
-        .filter(id => !staffUserIds.has(id));
-    } else if (target_type === "grade" && target_value) {
-      // Get users in specific grade (excluding staff)
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("grade", target_value);
-      
-      userIds = (profiles || [])
-        .map(p => p.user_id)
-        .filter(id => !staffUserIds.has(id));
-    } else if (target_type === "attendance_mode" && target_value) {
-      // Get users with specific attendance mode (excluding staff)
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("attendance_mode", target_value);
-      
-      userIds = (profiles || [])
-        .map(p => p.user_id)
-        .filter(id => !staffUserIds.has(id));
     }
 
-    console.log(`[send-notification-email] Found ${userIds.length} students (excluded ${staffUserIds.size} staff members)`);
+    console.log(`[send-notification-email] Total target students: ${userIds.length}`);
 
     if (userIds.length === 0) {
       console.log("No target users found for notification");
@@ -199,22 +275,45 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get user emails from auth.users (using service role)
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
-    
-    if (authError) {
-      console.error("Error fetching users:", authError);
-      throw authError;
+    // Get user emails from profiles table (has email column)
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, email, full_name")
+      .in("user_id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
     }
 
-    const targetEmails = authData.users
-      .filter(user => userIds.includes(user.id) && user.email)
-      .map(user => ({
-        email: user.email!,
-        name: user.user_metadata?.full_name || "Student"
-      }));
+    // Create a map of user_id to email from profiles
+    const profileEmailMap = new Map<string, { email: string; name: string }>();
+    (profiles || []).forEach(p => {
+      if (p.email) {
+        profileEmailMap.set(p.user_id, { email: p.email, name: p.full_name || "طالب" });
+      }
+    });
 
-    console.log(`Found ${targetEmails.length} email addresses to notify`);
+    // For any users not in profiles or without email, try auth.users
+    const usersWithoutEmail = userIds.filter(id => !profileEmailMap.has(id));
+    
+    if (usersWithoutEmail.length > 0) {
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (!authError && authData) {
+        authData.users
+          .filter(user => usersWithoutEmail.includes(user.id) && user.email)
+          .forEach(user => {
+            profileEmailMap.set(user.id, {
+              email: user.email!,
+              name: user.user_metadata?.full_name || "طالب"
+            });
+          });
+      }
+    }
+
+    const targetEmails = Array.from(profileEmailMap.values());
+
+    console.log(`[send-notification-email] Found ${targetEmails.length} email addresses to notify`);
 
     if (targetEmails.length === 0) {
       return new Response(
@@ -229,6 +328,7 @@ serve(async (req: Request): Promise<Response> => {
     // Send emails using Resend
     let emailsSent = 0;
     const errors: string[] = [];
+    const emailHtml = generateEmailHtml(title, title_ar, message, message_ar);
 
     for (const { email, name } of targetEmails) {
       try {
@@ -239,69 +339,29 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "منصة حسام فكري <notifications@hossamfekry.com>",
+            from: EMAIL_FROM,
             to: [email],
-            subject: `${title} | ${title_ar}`,
-            html: `
-              <!DOCTYPE html>
-              <html dir="rtl">
-              <head>
-                <meta charset="UTF-8">
-                <style>
-                  body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
-                  .container { max-width: 600px; margin: 0 auto; background: white; }
-                  .header { background: #3173B8; color: white; padding: 20px; text-align: center; }
-                  .content { padding: 30px; }
-                  .message-ar { direction: rtl; text-align: right; margin-bottom: 20px; padding: 20px; background: #f8fafc; border-radius: 8px; }
-                  .message-en { direction: ltr; text-align: left; padding: 20px; background: #f1f5f9; border-radius: 8px; }
-                  .footer { background: #e2e8f0; padding: 15px; text-align: center; font-size: 12px; color: #64748b; }
-                  h1 { margin: 0; font-size: 24px; }
-                  h2 { color: #3173B8; margin-top: 0; }
-                  p { line-height: 1.6; color: #334155; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1>منصة حسام فكري التعليمية</h1>
-                  </div>
-                  <div class="content">
-                    <div class="message-ar">
-                      <h2>${title_ar}</h2>
-                      <p>${message_ar}</p>
-                    </div>
-                    <div class="message-en">
-                      <h2>${title}</h2>
-                      <p>${message}</p>
-                    </div>
-                  </div>
-                  <div class="footer">
-                    <p>Hossam Fekry Educational Platform</p>
-                    <p>This is an automated notification. Please do not reply to this email.</p>
-                  </div>
-                </div>
-              </body>
-              </html>
-            `,
+            subject: title_ar,
+            html: emailHtml,
           }),
         });
 
         if (response.ok) {
           emailsSent++;
-          console.log(`Email sent successfully to ${email}`);
+          console.log(`[send-notification-email] Email sent successfully to ${email}`);
         } else {
           const errorData = await response.json();
-          console.error(`Failed to send email to ${email}:`, errorData);
+          console.error(`[send-notification-email] Failed to send email to ${email}:`, errorData);
           errors.push(`${email}: ${errorData.message || 'Unknown error'}`);
         }
       } catch (emailError: unknown) {
         const errMsg = emailError instanceof Error ? emailError.message : 'Unknown error';
-        console.error(`Error sending email to ${email}:`, emailError);
+        console.error(`[send-notification-email] Error sending email to ${email}:`, emailError);
         errors.push(`${email}: ${errMsg}`);
       }
     }
 
-    console.log(`Email notification complete: ${emailsSent}/${targetEmails.length} emails sent`);
+    console.log(`[send-notification-email] Complete: ${emailsSent}/${targetEmails.length} emails sent`);
 
     return new Response(
       JSON.stringify({ 
@@ -317,7 +377,7 @@ serve(async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error("Error in send-notification-email function:", error);
+    console.error("[send-notification-email] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

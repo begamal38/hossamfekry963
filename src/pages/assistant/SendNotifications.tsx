@@ -333,6 +333,56 @@ export default function SendNotifications() {
     return isArabic ? labels[mode]?.ar : labels[mode]?.en || mode;
   };
 
+  const sendEmailNotifications = async (
+    studentIds: string[],
+    targetType: string,
+    targetValue?: string
+  ) => {
+    try {
+      console.log('[SendNotifications] Sending email notifications...');
+      
+      const emailPayload: any = {
+        title: titleEn,
+        title_ar: titleAr,
+        message: messageEn,
+        message_ar: messageAr,
+        type: notificationType,
+      };
+
+      // If targeting specific students, send their IDs directly
+      if (studentIds.length > 0) {
+        emailPayload.student_ids = studentIds;
+      } else {
+        emailPayload.target_type = targetType;
+        emailPayload.target_value = targetValue;
+        if (selectedCourse) {
+          emailPayload.course_id = selectedCourse;
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-notification-email', {
+        body: emailPayload
+      });
+
+      if (error) {
+        console.error('[SendNotifications] Email function error:', error);
+      } else {
+        console.log('[SendNotifications] Email result:', data);
+        if (data?.emails_sent > 0) {
+          toast({
+            title: isArabic ? 'تم إرسال البريد' : 'Emails Sent',
+            description: isArabic 
+              ? `تم إرسال ${data.emails_sent} بريد إلكتروني`
+              : `${data.emails_sent} emails sent successfully`,
+          });
+        }
+      }
+    } catch (emailError) {
+      // Email failure should not block the notification
+      console.error('[SendNotifications] Email sending failed:', emailError);
+    }
+  };
+
   const handleSend = async () => {
     if (!titleEn || !titleAr || !messageEn || !messageAr) {
       toast({
@@ -383,6 +433,9 @@ export default function SendNotifications() {
         const { error } = await supabase.from('notifications').insert(notifications);
         if (error) throw error;
 
+        // Send email notifications to selected students (non-blocking)
+        sendEmailNotifications(selectedStudents, 'user');
+
         toast({
           title: isArabic ? 'تم الإرسال' : 'Sent',
           description: isArabic 
@@ -401,21 +454,32 @@ export default function SendNotifications() {
           sender_id: user?.id,
         };
 
+        let emailTargetType = targetType;
+        let emailTargetValue: string | undefined;
+
         if (targetType === 'course' && selectedCourse) {
           notification.target_id = selectedCourse;
           notification.course_id = selectedCourse;
+          emailTargetValue = selectedCourse;
         } else if (targetType === 'lesson' && selectedLesson) {
           notification.target_id = selectedLesson;
           notification.lesson_id = selectedLesson;
           notification.course_id = selectedCourse;
+          emailTargetType = 'course';
+          emailTargetValue = selectedCourse;
         } else if (targetType === 'grade') {
           notification.target_value = selectedGrade;
+          emailTargetValue = selectedGrade;
         } else if (targetType === 'attendance_mode') {
           notification.target_value = selectedAttendanceMode;
+          emailTargetValue = selectedAttendanceMode;
         }
 
         const { error } = await supabase.from('notifications').insert(notification);
         if (error) throw error;
+
+        // Send email notifications (non-blocking)
+        sendEmailNotifications([], emailTargetType, emailTargetValue);
 
         toast({
           title: isArabic ? 'تم الإرسال' : 'Sent',
