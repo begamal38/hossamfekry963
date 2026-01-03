@@ -5,15 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Multiple Invidious instances for fallback
-const INVIDIOUS_INSTANCES = [
-  'https://vid.puffyan.us',
-  'https://invidious.snopyta.org',
-  'https://yewtu.be',
-  'https://invidious.kavin.rocks',
-  'https://inv.riverside.rocks',
-];
-
 /**
  * Extract YouTube video ID from various URL formats
  */
@@ -40,94 +31,61 @@ function extractVideoId(input: string): string | null {
 }
 
 /**
- * Try to get video info from Invidious API (provides duration directly)
+ * Parse ISO 8601 duration (PT1H2M3S) to minutes
  */
-async function fetchFromInvidious(videoId: string): Promise<{ duration_minutes: number; title?: string } | null> {
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=lengthSeconds,title`;
-      console.log('[youtube-metadata] Trying Invidious instance:', instance);
-      
-      const response = await fetch(apiUrl, {
-        headers: {
-          'Accept': 'application/json',
-        },
-        signal: AbortSignal.timeout(5000), // 5 second timeout per instance
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.lengthSeconds) {
-          const durationMinutes = Math.ceil(data.lengthSeconds / 60);
-          console.log('[youtube-metadata] Got duration from Invidious:', durationMinutes, 'minutes');
-          return {
-            duration_minutes: durationMinutes,
-            title: data.title,
-          };
-        }
-      }
-    } catch (err) {
-      console.log('[youtube-metadata] Invidious instance failed:', instance);
-    }
-  }
-  return null;
+function parseISO8601Duration(duration: string): number {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1] || '0', 10);
+  const minutes = parseInt(match[2] || '0', 10);
+  const seconds = parseInt(match[3] || '0', 10);
+  
+  return Math.ceil(hours * 60 + minutes + seconds / 60);
 }
 
 /**
- * Try to scrape duration from YouTube page directly
+ * Fetch video metadata from YouTube Data API v3 (official, reliable)
  */
-async function scrapeYouTubePage(videoId: string): Promise<number | null> {
+async function fetchFromYouTubeAPI(videoId: string): Promise<{ duration_minutes: number; title?: string } | null> {
+  const apiKey = Deno.env.get('YOUTUBE_API_KEY');
+  
+  if (!apiKey) {
+    console.log('[youtube-metadata] YOUTUBE_API_KEY not configured');
+    return null;
+  }
+  
   try {
-    const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    console.log('[youtube-metadata] Scraping YouTube page...');
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails,snippet&key=${apiKey}`;
+    console.log('[youtube-metadata] Fetching from YouTube Data API...');
     
-    const pageResponse = await fetch(pageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-      signal: AbortSignal.timeout(8000),
+    const response = await fetch(apiUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(10000),
     });
     
-    if (pageResponse.ok) {
-      const pageHtml = await pageResponse.text();
+    if (response.ok) {
+      const data = await response.json();
       
-      // Try multiple patterns to find duration
-      // Pattern 1: "lengthSeconds":"XXX"
-      const lengthMatch = pageHtml.match(/"lengthSeconds"\s*:\s*"?(\d+)"?/);
-      if (lengthMatch) {
-        const seconds = parseInt(lengthMatch[1], 10);
-        const minutes = Math.ceil(seconds / 60);
-        console.log('[youtube-metadata] Scraped duration (lengthSeconds):', minutes, 'minutes');
-        return minutes;
+      if (data.items && data.items.length > 0) {
+        const item = data.items[0];
+        const duration = item.contentDetails?.duration;
+        const title = item.snippet?.title;
+        
+        if (duration) {
+          const durationMinutes = parseISO8601Duration(duration);
+          console.log('[youtube-metadata] Got duration from YouTube API:', durationMinutes, 'minutes');
+          return { duration_minutes: durationMinutes, title };
+        }
       }
-      
-      // Pattern 2: approxDurationMs
-      const durationMsMatch = pageHtml.match(/"approxDurationMs"\s*:\s*"?(\d+)"?/);
-      if (durationMsMatch) {
-        const ms = parseInt(durationMsMatch[1], 10);
-        const minutes = Math.ceil(ms / 60000);
-        console.log('[youtube-metadata] Scraped duration (approxDurationMs):', minutes, 'minutes');
-        return minutes;
-      }
-      
-      // Pattern 3: duration in ISO 8601 format (PT1H2M3S)
-      const isoMatch = pageHtml.match(/"duration"\s*:\s*"PT(\d+H)?(\d+M)?(\d+S)?"/);
-      if (isoMatch) {
-        const hours = isoMatch[1] ? parseInt(isoMatch[1], 10) : 0;
-        const mins = isoMatch[2] ? parseInt(isoMatch[2], 10) : 0;
-        const secs = isoMatch[3] ? parseInt(isoMatch[3], 10) : 0;
-        const minutes = Math.ceil(hours * 60 + mins + secs / 60);
-        console.log('[youtube-metadata] Scraped duration (ISO):', minutes, 'minutes');
-        return minutes;
-      }
-      
-      console.log('[youtube-metadata] Could not find duration in page HTML');
+    } else {
+      const errorText = await response.text();
+      console.error('[youtube-metadata] YouTube API error:', response.status, errorText);
     }
   } catch (err) {
-    console.log('[youtube-metadata] YouTube page scraping failed');
+    console.error('[youtube-metadata] YouTube API fetch failed:', err);
   }
+  
   return null;
 }
 
@@ -184,19 +142,18 @@ serve(async (req) => {
 
     console.log('[youtube-metadata] Extracted video ID:', videoId);
 
-    // Fetch data from multiple sources in parallel for speed
-    const [invidiousResult, oEmbedResult, scrapedDuration] = await Promise.all([
-      fetchFromInvidious(videoId),
+    // Fetch data from YouTube Data API (primary) and oEmbed (for extra info)
+    const [youtubeResult, oEmbedResult] = await Promise.all([
+      fetchFromYouTubeAPI(videoId),
       fetchOEmbed(videoId),
-      scrapeYouTubePage(videoId),
     ]);
 
     // Build result with best available data
     const result = {
       video_id: videoId,
-      title: invidiousResult?.title || oEmbedResult?.title || null,
+      title: youtubeResult?.title || oEmbedResult?.title || null,
       thumbnail_url: oEmbedResult?.thumbnail_url || null,
-      duration_minutes: invidiousResult?.duration_minutes || scrapedDuration || 60,
+      duration_minutes: youtubeResult?.duration_minutes || 60,
       author_name: oEmbedResult?.author_name || null,
     };
 

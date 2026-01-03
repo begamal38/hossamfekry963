@@ -26,63 +26,49 @@ function extractVideoId(input: string): string | null {
   return null;
 }
 
-async function fetchDurationFromYT(videoId: string): Promise<number | null> {
-  // Try scraping YouTube with different patterns
+/**
+ * Parse ISO 8601 duration (PT1H2M3S) to minutes
+ */
+function parseISO8601Duration(duration: string): number {
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1] || '0', 10);
+  const minutes = parseInt(match[2] || '0', 10);
+  const seconds = parseInt(match[3] || '0', 10);
+  
+  return Math.ceil(hours * 60 + minutes + seconds / 60);
+}
+
+/**
+ * Fetch duration from YouTube Data API v3 (official, reliable)
+ */
+async function fetchDurationFromYT(videoId: string, apiKey: string): Promise<number | null> {
   try {
-    const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    console.log(`[bulk-update] Fetching: ${pageUrl}`);
+    const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails&key=${apiKey}`;
     
-    const response = await fetch(pageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache',
-      },
+    const response = await fetch(apiUrl, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(10000),
     });
     
     if (response.ok) {
-      const html = await response.text();
+      const data = await response.json();
       
-      // Pattern 1: lengthSeconds in ytInitialPlayerResponse
-      let match = html.match(/"lengthSeconds"\s*:\s*"(\d+)"/);
-      if (match) {
-        const seconds = parseInt(match[1], 10);
-        console.log(`[bulk-update] Found lengthSeconds: ${seconds}s = ${Math.ceil(seconds/60)}min`);
-        return Math.ceil(seconds / 60);
+      if (data.items && data.items.length > 0) {
+        const duration = data.items[0].contentDetails?.duration;
+        if (duration) {
+          const minutes = parseISO8601Duration(duration);
+          console.log(`[bulk-update] Got duration for ${videoId}: ${minutes} min`);
+          return minutes;
+        }
       }
-      
-      // Pattern 2: approxDurationMs
-      match = html.match(/"approxDurationMs"\s*:\s*"(\d+)"/);
-      if (match) {
-        const ms = parseInt(match[1], 10);
-        console.log(`[bulk-update] Found approxDurationMs: ${ms}ms = ${Math.ceil(ms/60000)}min`);
-        return Math.ceil(ms / 60000);
-      }
-      
-      // Pattern 3: duration in microformat
-      match = html.match(/"duration"\s*:\s*"PT(\d+)M(\d+)?S?"/);
-      if (match) {
-        const mins = parseInt(match[1] || '0', 10);
-        const secs = parseInt(match[2] || '0', 10);
-        console.log(`[bulk-update] Found ISO duration: ${mins}m ${secs}s`);
-        return mins + (secs > 0 ? 1 : 0);
-      }
-      
-      // Pattern 4: videoDuration
-      match = html.match(/videoDuration['":\s]+(\d+)/);
-      if (match) {
-        const seconds = parseInt(match[1], 10);
-        console.log(`[bulk-update] Found videoDuration: ${seconds}s`);
-        return Math.ceil(seconds / 60);
-      }
-      
-      console.log(`[bulk-update] No duration pattern found in HTML (length: ${html.length})`);
     } else {
-      console.log(`[bulk-update] YouTube returned status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[bulk-update] YouTube API error:', response.status, errorText);
     }
   } catch (err) {
-    console.log(`[bulk-update] Fetch error: ${err}`);
+    console.error('[bulk-update] YouTube API fetch failed:', err);
   }
   
   return null;
@@ -94,6 +80,14 @@ serve(async (req) => {
   }
 
   try {
+    const apiKey = Deno.env.get('YOUTUBE_API_KEY');
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'YOUTUBE_API_KEY not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -132,7 +126,7 @@ serve(async (req) => {
 
       console.log(`[bulk-update] Processing: ${lesson.title_ar} (${videoId})`);
       
-      const duration = await fetchDurationFromYT(videoId);
+      const duration = await fetchDurationFromYT(videoId, apiKey);
       
       if (duration && duration !== lesson.duration_minutes) {
         const { error: updateError } = await supabase
