@@ -29,6 +29,7 @@ import { useShortId } from '@/hooks/useShortId';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { FocusModeIndicator } from '@/components/lesson/FocusModeIndicator';
 import { toast } from 'sonner';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
@@ -423,11 +424,21 @@ export default function LessonView() {
         <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
           {/* Video Player Section */}
           <section className="mb-8" aria-labelledby="video-section-title">
-            <div className="flex items-center gap-2 mb-4">
-              <Youtube className="w-5 h-5 text-red-500" />
-              <h2 id="video-section-title" className="font-semibold text-lg">
-                {isArabic ? 'فيديو الحصة' : 'Lesson Video'}
-              </h2>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <Youtube className="w-5 h-5 text-red-500" />
+                <h2 id="video-section-title" className="font-semibold text-lg">
+                  {isArabic ? 'فيديو الحصة' : 'Lesson Video'}
+                </h2>
+              </div>
+              
+              {/* Focus Mode Indicator - only for authenticated users watching video */}
+              {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
+                <FocusModeIndicator 
+                  isLessonActive={true} 
+                  showMessages={true}
+                />
+              )}
             </div>
             
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
