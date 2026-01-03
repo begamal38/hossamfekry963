@@ -260,7 +260,7 @@ serve(async (req) => {
       );
     }
 
-    // Check permissions
+    // Check permissions - admin OR assistant with explicit export flag
     const { data: roles, error: rolesError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -283,7 +283,34 @@ serve(async (req) => {
     }
 
     const isAdmin = roles.some(r => r.role === 'admin');
-    console.log(`User role: ${isAdmin ? 'admin' : 'assistant_teacher'}`);
+    const isAssistant = roles.some(r => r.role === 'assistant_teacher');
+
+    // If assistant teacher, check explicit export permission
+    if (!isAdmin && isAssistant) {
+      const { data: perm, error: permError } = await supabaseAdmin
+        .from('assistant_teacher_permissions')
+        .select('can_export_students')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (permError) {
+        console.error('Permission check error:', permError.message);
+        return new Response(
+          JSON.stringify({ error: 'PERMISSION_CHECK_FAILED', message: 'فشل التحقق من صلاحية التصدير', message_en: 'Export permission check failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!perm || !perm.can_export_students) {
+        console.log('Assistant teacher does not have export permission');
+        return new Response(
+          JSON.stringify({ error: 'PERMISSION_DENIED', message: 'ليس لديك صلاحية التصدير', message_en: 'You do not have export permissions' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    console.log(`User role: ${isAdmin ? 'admin' : 'assistant_teacher'}, export allowed`);
 
     // Get student user IDs
     const { data: studentRoles, error: studentRolesError } = await supabaseAdmin
