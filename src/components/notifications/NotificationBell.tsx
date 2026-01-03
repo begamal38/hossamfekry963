@@ -45,12 +45,39 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
     if (!user) return;
 
     try {
+      // Fetch user's profile to get grade and attendance_mode
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('grade, attendance_mode')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Fetch user's course enrollments
+      const { data: enrollments } = await supabase
+        .from('course_enrollments')
+        .select('course_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      const enrolledCourseIds = (enrollments || []).map(e => e.course_id);
+
       // Get all notifications
       const { data: notifications, error: notifError } = await supabase
         .from('notifications')
-        .select('id');
+        .select('id, target_type, target_id, target_value, course_id');
 
       if (notifError) throw notifError;
+
+      // Filter notifications based on targeting
+      const relevantNotifications = (notifications || []).filter(n => {
+        if (n.target_type === 'user') return n.target_id === user.id;
+        if (n.target_type === 'all') return true;
+        if (n.target_type === 'course' && n.course_id) return enrolledCourseIds.includes(n.course_id);
+        if (n.target_type === 'lesson' && n.course_id) return enrolledCourseIds.includes(n.course_id);
+        if (n.target_type === 'grade' && n.target_value) return profile?.grade === n.target_value;
+        if (n.target_type === 'attendance_mode' && n.target_value) return profile?.attendance_mode === n.target_value;
+        return false;
+      });
 
       // Get user's read notifications
       const { data: reads, error: readsError } = await supabase
@@ -61,7 +88,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       if (readsError) throw readsError;
 
       const readIds = new Set((reads || []).map(r => r.notification_id));
-      const unread = (notifications || []).filter(n => !readIds.has(n.id)).length;
+      const unread = relevantNotifications.filter(n => !readIds.has(n.id)).length;
 
       setUnreadCount(unread);
     } catch (error) {
