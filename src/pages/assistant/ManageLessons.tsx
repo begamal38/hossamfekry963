@@ -446,33 +446,25 @@ const ManageLessons = () => {
               </p>
             </div>
 
-            {/* Duration - Auto or Manual */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="h-4 w-4" />
-                <label className="text-sm font-medium">{isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}</label>
-                {formData.video_url && isValidYouTubeInput(formData.video_url) && (
-                  <Badge variant="secondary" className="text-xs">
-                    {isArabic ? 'تلقائي' : 'Auto'}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
+            {/* Duration - Only show when NO valid YouTube URL (manual fallback) */}
+            {(!formData.video_url || !isValidYouTubeInput(formData.video_url)) && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4" />
+                  <label className="text-sm font-medium">{isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}</label>
+                </div>
                 <Input
                   type="number"
                   min="1"
                   value={formData.duration_minutes}
                   onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
                   className="max-w-[150px]"
-                  disabled={isFetchingMetadata}
                 />
-                {formData.video_url && isValidYouTubeInput(formData.video_url) && (
-                  <span className="text-xs text-muted-foreground">
-                    {isArabic ? '(سيتم تحديثها تلقائياً عند الحفظ)' : '(Will be auto-updated on save)'}
-                  </span>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {isArabic ? 'أضف رابط يوتيوب لاستخراج المدة تلقائياً' : 'Add YouTube URL to auto-extract duration'}
+                </p>
               </div>
-            </div>
+            )}
 
             {/* Chapter Selection - Optional */}
             <div className="mb-6">
