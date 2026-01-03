@@ -92,10 +92,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all lessons with video URLs
+    // Fetch all lessons with video URLs, grouped by course
     const { data: lessons, error: fetchError } = await supabase
       .from('lessons')
-      .select('id, title_ar, video_url, duration_minutes')
+      .select('id, title_ar, video_url, duration_minutes, course_id')
       .not('video_url', 'is', null);
 
     if (fetchError) {
@@ -176,10 +176,61 @@ serve(async (req) => {
       }
 
       // Delay between requests
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 100));
     }
 
-    console.log(`[bulk-update] Complete: ${updated} updated, ${skipped} skipped, ${failed} failed`);
+    console.log(`[bulk-update] Lesson updates complete: ${updated} updated, ${skipped} skipped, ${failed} failed`);
+
+    // Now update course duration_hours based on sum of lesson durations
+    console.log('[bulk-update] Updating course duration_hours...');
+    
+    // Get all lessons grouped by course to calculate total minutes
+    const { data: allLessons, error: allLessonsError } = await supabase
+      .from('lessons')
+      .select('course_id, duration_minutes');
+
+    if (allLessonsError) {
+      console.error('[bulk-update] Failed to fetch lessons for course totals:', allLessonsError.message);
+    } else {
+      // Group lessons by course_id and sum durations
+      const courseTotals: Record<string, number> = {};
+      for (const lesson of allLessons || []) {
+        if (!lesson.course_id) continue;
+        courseTotals[lesson.course_id] = (courseTotals[lesson.course_id] || 0) + (lesson.duration_minutes || 0);
+      }
+
+      // Update each course's duration_hours (rounded up to nearest hour)
+      const courseUpdates: { course_id: string; total_minutes: number; duration_hours: number; status: string }[] = [];
+      
+      for (const [courseId, totalMinutes] of Object.entries(courseTotals)) {
+        const durationHours = Math.ceil(totalMinutes / 60);
+        
+        const { error: courseUpdateError } = await supabase
+          .from('courses')
+          .update({ duration_hours: durationHours })
+          .eq('id', courseId);
+
+        if (courseUpdateError) {
+          console.error(`[bulk-update] Failed to update course ${courseId}:`, courseUpdateError.message);
+          courseUpdates.push({ course_id: courseId, total_minutes: totalMinutes, duration_hours: durationHours, status: 'failed' });
+        } else {
+          console.log(`[bulk-update] Updated course ${courseId}: ${totalMinutes} min -> ${durationHours} hours`);
+          courseUpdates.push({ course_id: courseId, total_minutes: totalMinutes, duration_hours: durationHours, status: 'updated' });
+        }
+      }
+
+      console.log(`[bulk-update] Course updates complete: ${courseUpdates.length} courses`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          summary: { total_lessons: lessons?.length || 0, lessons_updated: updated, lessons_skipped: skipped, lessons_failed: failed, courses_updated: courseUpdates.length },
+          lesson_results: results,
+          course_updates: courseUpdates,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({
