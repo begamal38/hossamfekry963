@@ -15,6 +15,8 @@ export const ScrollLogo: React.FC<ScrollLogoProps> = ({ className }) => {
       <img 
         src={logo} 
         alt="Hossam Fekry" 
+        width={80}
+        height={80}
         className="h-14 2xl:h-16 3xl:h-20 w-auto object-contain"
       />
     </Link>

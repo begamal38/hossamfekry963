@@ -27,6 +27,8 @@ export const Footer: React.FC = () => {
               <img 
                 src={logo} 
                 alt="Hossam Fekry" 
+                width={128}
+                height={128}
                 className="h-20 md:h-24 2xl:h-28 3xl:h-32 w-auto object-contain hover:opacity-80 transition-opacity"
               />
             </Link>
