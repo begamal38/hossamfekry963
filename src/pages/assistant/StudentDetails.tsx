@@ -33,6 +33,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { useCourseActivitySummary, CourseActivitySummary } from '@/hooks/useCourseActivitySummary';
 import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivitySummaryCard';
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
+import { AISuggestionCard } from '@/components/assistant/AISuggestionCard';
 
 interface StudentProfile {
   user_id: string;
@@ -1061,6 +1062,14 @@ export default function StudentDetails() {
           </DialogHeader>
           {selectedSummary && (
             <div className="space-y-4">
+              <AISuggestionCard 
+                summary={selectedSummary}
+                examAttempts={examResults.length}
+                avgExamScore={examResults.length > 0 
+                  ? Math.round(examResults.reduce((sum, r) => sum + (r.score / r.exam.max_score) * 100, 0) / examResults.length)
+                  : undefined
+                }
+              />
               <CourseActivitySummaryCard summary={selectedSummary} />
               <ActivityGuidePanel />
             </div>
