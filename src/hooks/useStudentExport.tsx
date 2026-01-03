@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -234,14 +234,62 @@ function parseInvokeError(err: unknown): ParsedExportError {
 export function useStudentExport() {
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
+  const [hasExportPermission, setHasExportPermission] = useState<boolean | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState(true);
   const { toast } = useToast();
   const { isRTL } = useLanguage();
-  const { canAccessDashboard, loading: roleLoading } = useUserRole();
+  const { canAccessDashboard, isAdmin, isAssistantTeacher, loading: roleLoading } = useUserRole();
+
+  // Check explicit export permission for assistant teachers
+  useEffect(() => {
+    const checkPermission = async () => {
+      // Admins always have export permission
+      if (isAdmin()) {
+        setHasExportPermission(true);
+        setPermissionLoading(false);
+        return;
+      }
+      
+      // Non-staff don't have permission
+      if (!canAccessDashboard()) {
+        setHasExportPermission(false);
+        setPermissionLoading(false);
+        return;
+      }
+
+      // Assistant teachers need explicit permission
+      if (isAssistantTeacher()) {
+        try {
+          const { data, error } = await supabase
+            .from('assistant_teacher_permissions')
+            .select('can_export_students')
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error checking export permission:', error);
+            setHasExportPermission(false);
+          } else {
+            setHasExportPermission(data?.can_export_students === true);
+          }
+        } catch (err) {
+          console.error('Export permission check failed:', err);
+          setHasExportPermission(false);
+        }
+      } else {
+        setHasExportPermission(false);
+      }
+      setPermissionLoading(false);
+    };
+
+    if (!roleLoading) {
+      checkPermission();
+    }
+  }, [roleLoading, isAdmin, isAssistantTeacher, canAccessDashboard]);
 
   // Check if user has export permission
   const canExport = useCallback(() => {
-    return !roleLoading && canAccessDashboard();
-  }, [roleLoading, canAccessDashboard]);
+    return !roleLoading && !permissionLoading && hasExportPermission === true;
+  }, [roleLoading, permissionLoading, hasExportPermission]);
 
   // Arabic-first (UI must not show English)
   const headers = HEADERS_AR;
@@ -464,6 +512,6 @@ export function useStudentExport() {
     exporting,
     progress,
     canExport,
-    roleLoading,
+    roleLoading: roleLoading || permissionLoading,
   };
 }
