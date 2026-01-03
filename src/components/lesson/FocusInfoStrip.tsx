@@ -19,7 +19,7 @@ export const FocusInfoStrip: React.FC<FocusInfoStripProps> = ({ className }) => 
   const features = [
     {
       icon: Target,
-      label: isArabic ? 'Focus Mode ذكي' : 'Smart Focus Mode',
+      label: isArabic ? 'وضع تركيز ذكي' : 'Smart Focus Mode',
     },
     {
       icon: Timer,

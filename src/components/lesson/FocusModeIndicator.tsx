@@ -208,7 +208,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         )}>
           {isPaused 
             ? (isArabic ? 'متوقف' : 'Paused')
-            : (isArabic ? 'Focus Mode: ON' : 'Focus Mode: ON')
+            : (isArabic ? 'وضع التركيز: مفعّل' : 'Focus Mode: ON')
           }
         </span>
 
