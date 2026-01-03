@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Multiple Invidious instances for fallback
+const INVIDIOUS_INSTANCES = [
+  'https://vid.puffyan.us',
+  'https://invidious.snopyta.org',
+  'https://yewtu.be',
+  'https://invidious.kavin.rocks',
+  'https://inv.riverside.rocks',
+];
+
 /**
  * Extract YouTube video ID from various URL formats
  */
@@ -31,22 +40,117 @@ function extractVideoId(input: string): string | null {
 }
 
 /**
- * Parse ISO 8601 duration (PT1H2M3S) to minutes
+ * Try to get video info from Invidious API (provides duration directly)
  */
-function parseDuration(duration: string): number {
-  if (!duration) return 60; // Default fallback
-  
-  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-  if (!match) return 60;
-  
-  const hours = parseInt(match[1] || '0', 10);
-  const minutes = parseInt(match[2] || '0', 10);
-  const seconds = parseInt(match[3] || '0', 10);
-  
-  // Calculate total minutes, rounding up if there are remaining seconds
-  const totalMinutes = hours * 60 + minutes + (seconds > 0 ? 1 : 0);
-  
-  return totalMinutes || 60; // Minimum 1 minute, default 60 if parsing fails
+async function fetchFromInvidious(videoId: string): Promise<{ duration_minutes: number; title?: string } | null> {
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=lengthSeconds,title`;
+      console.log('[youtube-metadata] Trying Invidious instance:', instance);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000), // 5 second timeout per instance
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.lengthSeconds) {
+          const durationMinutes = Math.ceil(data.lengthSeconds / 60);
+          console.log('[youtube-metadata] Got duration from Invidious:', durationMinutes, 'minutes');
+          return {
+            duration_minutes: durationMinutes,
+            title: data.title,
+          };
+        }
+      }
+    } catch (err) {
+      console.log('[youtube-metadata] Invidious instance failed:', instance);
+    }
+  }
+  return null;
+}
+
+/**
+ * Try to scrape duration from YouTube page directly
+ */
+async function scrapeYouTubePage(videoId: string): Promise<number | null> {
+  try {
+    const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    console.log('[youtube-metadata] Scraping YouTube page...');
+    
+    const pageResponse = await fetch(pageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    
+    if (pageResponse.ok) {
+      const pageHtml = await pageResponse.text();
+      
+      // Try multiple patterns to find duration
+      // Pattern 1: "lengthSeconds":"XXX"
+      const lengthMatch = pageHtml.match(/"lengthSeconds"\s*:\s*"?(\d+)"?/);
+      if (lengthMatch) {
+        const seconds = parseInt(lengthMatch[1], 10);
+        const minutes = Math.ceil(seconds / 60);
+        console.log('[youtube-metadata] Scraped duration (lengthSeconds):', minutes, 'minutes');
+        return minutes;
+      }
+      
+      // Pattern 2: approxDurationMs
+      const durationMsMatch = pageHtml.match(/"approxDurationMs"\s*:\s*"?(\d+)"?/);
+      if (durationMsMatch) {
+        const ms = parseInt(durationMsMatch[1], 10);
+        const minutes = Math.ceil(ms / 60000);
+        console.log('[youtube-metadata] Scraped duration (approxDurationMs):', minutes, 'minutes');
+        return minutes;
+      }
+      
+      // Pattern 3: duration in ISO 8601 format (PT1H2M3S)
+      const isoMatch = pageHtml.match(/"duration"\s*:\s*"PT(\d+H)?(\d+M)?(\d+S)?"/);
+      if (isoMatch) {
+        const hours = isoMatch[1] ? parseInt(isoMatch[1], 10) : 0;
+        const mins = isoMatch[2] ? parseInt(isoMatch[2], 10) : 0;
+        const secs = isoMatch[3] ? parseInt(isoMatch[3], 10) : 0;
+        const minutes = Math.ceil(hours * 60 + mins + secs / 60);
+        console.log('[youtube-metadata] Scraped duration (ISO):', minutes, 'minutes');
+        return minutes;
+      }
+      
+      console.log('[youtube-metadata] Could not find duration in page HTML');
+    }
+  } catch (err) {
+    console.log('[youtube-metadata] YouTube page scraping failed');
+  }
+  return null;
+}
+
+/**
+ * Get video info from oEmbed (title and thumbnail, no duration)
+ */
+async function fetchOEmbed(videoId: string): Promise<{ title?: string; thumbnail_url?: string; author_name?: string } | null> {
+  try {
+    const oEmbedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    const response = await fetch(oEmbedUrl, { signal: AbortSignal.timeout(5000) });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        title: data.title,
+        thumbnail_url: data.thumbnail_url,
+        author_name: data.author_name,
+      };
+    }
+  } catch (err) {
+    console.log('[youtube-metadata] oEmbed fetch failed');
+  }
+  return null;
 }
 
 serve(async (req) => {
@@ -80,83 +184,26 @@ serve(async (req) => {
 
     console.log('[youtube-metadata] Extracted video ID:', videoId);
 
-    // Try oEmbed first (no API key required)
-    try {
-      const oEmbedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
-      console.log('[youtube-metadata] Fetching oEmbed data');
-      
-      const oEmbedResponse = await fetch(oEmbedUrl);
-      
-      if (oEmbedResponse.ok) {
-        const oEmbedData = await oEmbedResponse.json();
-        console.log('[youtube-metadata] oEmbed data received:', oEmbedData.title);
-        
-        // oEmbed doesn't provide duration, so we'll try to get it from the page
-        // For now, return default duration with video info
-        const result = {
-          video_id: videoId,
-          title: oEmbedData.title || null,
-          thumbnail_url: oEmbedData.thumbnail_url || null,
-          duration_minutes: 60, // Default - oEmbed doesn't provide duration
-          author_name: oEmbedData.author_name || null,
-        };
+    // Fetch data from multiple sources in parallel for speed
+    const [invidiousResult, oEmbedResult, scrapedDuration] = await Promise.all([
+      fetchFromInvidious(videoId),
+      fetchOEmbed(videoId),
+      scrapeYouTubePage(videoId),
+    ]);
 
-        // Try to fetch actual duration from YouTube page (scraping fallback)
-        try {
-          const pageUrl = `https://www.youtube.com/watch?v=${videoId}`;
-          const pageResponse = await fetch(pageUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-          
-          if (pageResponse.ok) {
-            const pageHtml = await pageResponse.text();
-            
-            // Try to find duration in the page
-            // Look for "lengthSeconds":"XXX" pattern
-            const lengthMatch = pageHtml.match(/"lengthSeconds":"(\d+)"/);
-            if (lengthMatch) {
-              const seconds = parseInt(lengthMatch[1], 10);
-              result.duration_minutes = Math.ceil(seconds / 60);
-              console.log('[youtube-metadata] Extracted duration from page:', result.duration_minutes, 'minutes');
-            }
-            
-            // Alternative: look for approxDurationMs
-            if (!lengthMatch) {
-              const durationMsMatch = pageHtml.match(/"approxDurationMs":"(\d+)"/);
-              if (durationMsMatch) {
-                const ms = parseInt(durationMsMatch[1], 10);
-                result.duration_minutes = Math.ceil(ms / 60000);
-                console.log('[youtube-metadata] Extracted duration from approxDurationMs:', result.duration_minutes, 'minutes');
-              }
-            }
-          }
-        } catch (scrapeError: unknown) {
-          const errMsg = scrapeError instanceof Error ? scrapeError.message : 'Unknown error';
-          console.log('[youtube-metadata] Page scraping failed, using default duration:', errMsg);
-        }
+    // Build result with best available data
+    const result = {
+      video_id: videoId,
+      title: invidiousResult?.title || oEmbedResult?.title || null,
+      thumbnail_url: oEmbedResult?.thumbnail_url || null,
+      duration_minutes: invidiousResult?.duration_minutes || scrapedDuration || 60,
+      author_name: oEmbedResult?.author_name || null,
+    };
 
-        console.log('[youtube-metadata] Final result:', result);
-        
-        return new Response(
-          JSON.stringify(result),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (oEmbedError: unknown) {
-      const errMsg = oEmbedError instanceof Error ? oEmbedError.message : 'Unknown error';
-      console.log('[youtube-metadata] oEmbed fetch failed:', errMsg);
-    }
-
-    // Fallback response
-    console.log('[youtube-metadata] Using fallback response with default duration');
+    console.log('[youtube-metadata] Final result:', JSON.stringify(result));
+    
     return new Response(
-      JSON.stringify({
-        video_id: videoId,
-        duration_minutes: 60,
-        error: 'Could not fetch video metadata'
-      }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
