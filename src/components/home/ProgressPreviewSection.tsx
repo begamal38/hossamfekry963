@@ -93,7 +93,7 @@ export const ProgressPreviewSection: React.FC = () => {
               </div>
             </div>
             
-            <Progress value={60} className="h-3 2xl:h-4" />
+            <Progress value={60} className="h-3 2xl:h-4" aria-label={isRTL ? 'التقدم الكلي في الكورس' : 'Overall course progress'} />
             
             <div className="flex justify-between mt-3 2xl:mt-4 text-sm 2xl:text-base text-muted-foreground">
               <span>{isRTL ? '18 درس مكتمل' : '18 lessons completed'}</span>
