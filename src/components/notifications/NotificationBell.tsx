@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ interface NotificationBellProps {
   className?: string;
 }
 
-export const NotificationBell: React.FC<NotificationBellProps> = ({ className }) => {
+export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellProps>(({ className }, ref) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -133,17 +133,20 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
 
   return (
     <Button
+      ref={ref}
       variant="ghost"
       size="icon"
-      className={cn("relative", className)}
+      className={cn("relative ripple-container", className)}
       onClick={() => navigate('/notifications')}
     >
-      <Bell className={cn("h-5 w-5", unreadCount > 0 && "animate-pulse")} />
+      <Bell className={cn("h-5 w-5 transition-transform", unreadCount > 0 && "text-primary")} />
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center animate-bounce">
-          {unreadCount > 9 ? '9+' : unreadCount}
+        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+          <span className="animate-fade-in-up">{unreadCount > 9 ? '9+' : unreadCount}</span>
         </span>
       )}
     </Button>
   );
-};
+});
+
+NotificationBell.displayName = 'NotificationBell';

@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
+import { SystemFeedbackProvider } from "@/components/ui/SystemFeedback";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
 import Index from "./pages/Index";
 
@@ -64,6 +65,7 @@ const App = () => (
           <SessionProtectionProvider>
             <GovernorateCheck>
               <TooltipProvider>
+                <SystemFeedbackProvider>
                 <Toaster />
                 <Sonner />
               <BrowserRouter>
@@ -318,6 +320,7 @@ const App = () => (
                 </Routes>
                 </Suspense>
               </BrowserRouter>
+              </SystemFeedbackProvider>
               </TooltipProvider>
             </GovernorateCheck>
           </SessionProtectionProvider>
