@@ -12,7 +12,8 @@ import {
   MessageSquare,
   ArrowLeft,
   Check,
-  ChevronRight
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,70 @@ interface Notification {
   exam_id: string | null;
   isRead: boolean;
 }
+
+// Helper to derive action URL from notification data
+const getActionUrl = (notification: Notification): string => {
+  // Lesson notifications
+  if (notification.lesson_id) {
+    return `/lessons/${notification.lesson_id}`;
+  }
+  
+  // Exam notifications
+  if (notification.exam_id) {
+    return `/exams/${notification.exam_id}`;
+  }
+  
+  // Course notifications
+  if (notification.course_id) {
+    return `/courses/${notification.course_id}`;
+  }
+  
+  // Default to dashboard
+  return '/dashboard';
+};
+
+// Helper to get action label based on notification type
+const getActionLabel = (type: NotificationType, isArabic: boolean): string => {
+  switch (type) {
+    case 'lesson_available':
+    case 'lesson_reminder':
+      return isArabic ? 'شاهد الحصة' : 'Watch Lesson';
+    case 'exam_available':
+    case 'exam_reminder':
+      return isArabic ? 'ابدأ الامتحان' : 'Start Exam';
+    case 'exam_completed':
+      return isArabic ? 'شوف النتيجة' : 'View Results';
+    case 'course_announcement':
+      return isArabic ? 'افتح الكورس' : 'Open Course';
+    case 'attendance_center':
+    case 'attendance_online':
+    case 'attendance_followup':
+      return isArabic ? 'شوف التفاصيل' : 'View Details';
+    default:
+      return isArabic ? 'افتح' : 'Open';
+  }
+};
+
+// Helper to detect if text is primarily Arabic
+const isArabicText = (text: string): boolean => {
+  const arabicPattern = /[\u0600-\u06FF]/;
+  const arabicChars = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const latinChars = (text.match(/[a-zA-Z]/g) || []).length;
+  return arabicChars > latinChars;
+};
+
+// Helper to truncate message with line break support
+const truncateMessage = (message: string, maxLines: number = 3): { text: string; isTruncated: boolean } => {
+  const lines = message.split(/\n|\r\n/);
+  if (lines.length <= maxLines) {
+    const fullText = lines.join('\n');
+    if (fullText.length <= 150) {
+      return { text: fullText, isTruncated: false };
+    }
+    return { text: fullText.substring(0, 150) + '...', isTruncated: true };
+  }
+  return { text: lines.slice(0, maxLines).join('\n') + '...', isTruncated: true };
+};
 
 const NOTIFICATION_CONFIG: Record<NotificationType, {
   icon: typeof Bell;
@@ -356,13 +421,27 @@ export default function Notifications() {
             notifications.map(notification => {
               const config = NOTIFICATION_CONFIG[notification.type];
               const Icon = config.icon;
+              const actionUrl = getActionUrl(notification);
+              const actionLabel = getActionLabel(notification.type, isArabic);
+              const message = isArabic ? notification.message_ar : notification.message;
+              const { text: truncatedMessage, isTruncated } = truncateMessage(message);
+              const messageIsArabic = isArabicText(message);
+
+              const handleClick = async () => {
+                // Mark as read if unread
+                if (!notification.isRead) {
+                  await markAsRead(notification.id);
+                }
+                // Navigate to action URL
+                navigate(actionUrl);
+              };
 
               return (
                 <div
                   key={notification.id}
-                  onClick={() => !notification.isRead && markAsRead(notification.id)}
+                  onClick={handleClick}
                   className={cn(
-                    "bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md",
+                    "bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group",
                     !notification.isRead && "border-primary/30 bg-primary/5"
                   )}
                 >
@@ -377,27 +456,59 @@ export default function Notifications() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className={cn("text-xs", config.color)}>
-                              {isArabic ? config.labelAr : config.labelEn}
-                            </Badge>
-                            {!notification.isRead && (
-                              <span className="w-2 h-2 rounded-full bg-primary" />
-                            )}
-                          </div>
-                          <h4 className="font-semibold text-foreground">
-                            {isArabic ? notification.title_ar : notification.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {isArabic ? notification.message_ar : notification.message}
-                          </p>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className={cn("text-xs", config.color)}>
+                            {isArabic ? config.labelAr : config.labelEn}
+                          </Badge>
+                          {!notification.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                          )}
                         </div>
-
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(notification.created_at)}
                         </span>
+                      </div>
+
+                      {/* Title - Bold */}
+                      <h4 className="font-bold text-foreground text-base mb-2">
+                        {isArabic ? notification.title_ar : notification.title}
+                      </h4>
+
+                      {/* Message Body - with proper line breaks and RTL support */}
+                      <div 
+                        className={cn(
+                          "text-sm text-muted-foreground leading-relaxed whitespace-pre-line",
+                          messageIsArabic && "text-right"
+                        )}
+                        dir={messageIsArabic ? 'rtl' : 'ltr'}
+                      >
+                        {truncatedMessage}
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="mt-3 flex items-center justify-between">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className={cn(
+                            "gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors",
+                            isRTL && "flex-row-reverse"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClick();
+                          }}
+                        >
+                          {actionLabel}
+                          <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
+                        </Button>
+
+                        {isTruncated && (
+                          <span className="text-xs text-muted-foreground">
+                            {isArabic ? 'اضغط للمزيد' : 'Tap for more'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
