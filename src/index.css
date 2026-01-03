@@ -224,10 +224,24 @@
 :root {
   --ambient-cycle: 7.5s;
   --ambient-glow-color: 209 56% 46%;
+  --ambient-glow-intensity: 0.08;
+  --ambient-glow-inner: 0.04;
+  --ambient-border-intensity: 0.2;
+  --ambient-icon-glow: 0.2;
+  --ambient-hero-min: 0.4;
+  --ambient-hero-max: 0.6;
+  --ambient-stat-glow: 0.3;
 }
 
 .dark {
-  --ambient-glow-color: 209 80% 75%;
+  --ambient-glow-color: 209 85% 70%;
+  --ambient-glow-intensity: 0.18;
+  --ambient-glow-inner: 0.1;
+  --ambient-border-intensity: 0.4;
+  --ambient-icon-glow: 0.4;
+  --ambient-hero-min: 0.5;
+  --ambient-hero-max: 0.75;
+  --ambient-stat-glow: 0.5;
 }
 
 /* Core ambient breathing - subtle shadow pulse */
@@ -239,8 +253,8 @@
   }
   50% {
     box-shadow: 
-      0 0 40px -15px hsl(var(--ambient-glow-color) / 0.08),
-      inset 0 0 30px -15px hsl(var(--ambient-glow-color) / 0.04);
+      0 0 50px -15px hsl(var(--ambient-glow-color) / var(--ambient-glow-intensity)),
+      inset 0 0 35px -15px hsl(var(--ambient-glow-color) / var(--ambient-glow-inner));
   }
 }
 
@@ -251,9 +265,14 @@
     transform: scale(1);
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.55;
     transform: scale(1.02);
   }
+}
+
+/* Dark mode enhanced background glow */
+.dark .ambient-glow-bg {
+  filter: brightness(1.2);
 }
 
 /* Border color pulse */
@@ -262,7 +281,7 @@
     border-color: hsl(var(--border));
   }
   50% {
-    border-color: hsl(var(--primary) / 0.2);
+    border-color: hsl(var(--primary) / var(--ambient-border-intensity));
   }
 }
 
@@ -273,19 +292,19 @@
     filter: drop-shadow(0 0 0 transparent);
   }
   50% {
-    opacity: 0.9;
-    filter: drop-shadow(0 0 10px hsl(var(--ambient-glow-color) / 0.2));
+    opacity: 1;
+    filter: drop-shadow(0 0 12px hsl(var(--ambient-glow-color) / var(--ambient-icon-glow)));
   }
 }
 
 /* Hero section specific - deeper ambient effect */
 @keyframes ambient-hero-glow {
   0%, 100% {
-    opacity: 0.4;
+    opacity: var(--ambient-hero-min);
     filter: blur(60px);
   }
   50% {
-    opacity: 0.6;
+    opacity: var(--ambient-hero-max);
     filter: blur(70px);
   }
 }
@@ -296,13 +315,32 @@
     text-shadow: 0 0 0 transparent;
   }
   50% {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+    text-shadow: 0 0 25px hsl(var(--primary) / var(--ambient-stat-glow));
+  }
+}
+
+/* Dark mode card glow enhancement */
+@keyframes ambient-card-dark {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 0 transparent,
+      0 4px 20px -5px hsl(0 0% 0% / 0.4);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px -10px hsl(var(--ambient-glow-color) / 0.25),
+      0 4px 25px -5px hsl(0 0% 0% / 0.5);
   }
 }
 
 /* Base breathing class */
 .ambient-breathe {
   animation: ambient-breathe var(--ambient-cycle) ease-in-out infinite;
+}
+
+/* Dark mode uses enhanced card animation */
+.dark .ambient-breathe {
+  animation: ambient-card-dark var(--ambient-cycle) ease-in-out infinite;
 }
 
 /* Background glow variant */
@@ -334,6 +372,13 @@
 .ambient-card {
   animation: 
     ambient-breathe var(--ambient-cycle) ease-in-out infinite,
+    ambient-breathe-border var(--ambient-cycle) ease-in-out infinite;
+}
+
+/* Dark mode card enhancement */
+.dark .ambient-card {
+  animation: 
+    ambient-card-dark var(--ambient-cycle) ease-in-out infinite,
     ambient-breathe-border var(--ambient-cycle) ease-in-out infinite;
 }
 
