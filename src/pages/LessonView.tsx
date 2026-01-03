@@ -31,7 +31,6 @@ import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
 import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
-import { LessonSummary } from '@/components/lesson/LessonSummary';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 
@@ -631,17 +630,6 @@ export default function LessonView() {
               </Button>
             </div>
           </section>
-
-          {/* AI-Generated Lesson Summary */}
-          {lesson.video_url && (
-            <LessonSummary
-              lessonId={lesson.id}
-              videoUrl={lesson.video_url}
-              lessonTitle={lesson.title_ar || lesson.title}
-              isStaff={isStaff}
-              className="mb-6"
-            />
-          )}
 
           {/* Guidance Text - System-driven completion */}
           {user && hasValidVideo(lesson.video_url) && !completed && (
