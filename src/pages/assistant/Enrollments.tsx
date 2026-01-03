@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CheckCircle, XCircle, ArrowLeft, User, BookOpen, RefreshCw } from 'lucide-react';
+import { Search, CheckCircle, XCircle, ArrowLeft, User, BookOpen, RefreshCw, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { ManualEnrollment } from '@/components/assistant/ManualEnrollment';
+import { useCourseActivitySummary } from '@/hooks/useCourseActivitySummary';
 
 interface Enrollment {
   id: string;
@@ -44,6 +45,7 @@ const Enrollments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [updating, setUpdating] = useState<string | null>(null);
+  const { calculateAndFreezeSummary, loading: summaryLoading } = useCourseActivitySummary();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -156,7 +158,7 @@ const Enrollments = () => {
     setFilteredEnrollments(filtered);
   }, [searchTerm, statusFilter, enrollments]);
 
-  const updateEnrollmentStatus = async (enrollmentId: string, newStatus: string) => {
+  const updateEnrollmentStatus = async (enrollmentId: string, newStatus: string, enrollment?: Enrollment) => {
     if (!user) return;
     setUpdating(enrollmentId);
 
@@ -168,6 +170,15 @@ const Enrollments = () => {
         updateData.activated_at = new Date().toISOString();
       }
 
+      // If expiring/ending course access, freeze the activity summary
+      if (newStatus === 'expired' && enrollment) {
+        await calculateAndFreezeSummary({
+          userId: enrollment.user_id,
+          courseId: enrollment.course_id,
+          frozenBy: user.id,
+        });
+      }
+
       const { error } = await supabase
         .from('course_enrollments')
         .update(updateData)
@@ -177,7 +188,9 @@ const Enrollments = () => {
 
       toast({
         title: isRTL ? 'تم التحديث' : 'Updated',
-        description: isRTL ? 'تم تحديث حالة الاشتراك بنجاح' : 'Enrollment status updated successfully',
+        description: newStatus === 'expired' 
+          ? (isRTL ? 'تم إنهاء الاشتراك وحفظ ملخص النشاط' : 'Enrollment ended and activity summary saved')
+          : (isRTL ? 'تم تحديث حالة الاشتراك بنجاح' : 'Enrollment status updated successfully'),
       });
 
       // Update local state instead of refetching
@@ -374,15 +387,15 @@ const Enrollments = () => {
                             <Button
                               size="sm"
                               variant="destructive"
-                              onClick={() => updateEnrollmentStatus(enrollment.id, 'expired')}
-                              disabled={updating === enrollment.id}
+                              onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
+                              disabled={updating === enrollment.id || summaryLoading}
                             >
-                              {updating === enrollment.id ? (
+                              {(updating === enrollment.id || summaryLoading) ? (
                                 <RefreshCw className="h-4 w-4 animate-spin" />
                               ) : (
                                 <>
                                   <XCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
-                                  {isRTL ? 'إلغاء' : 'Cancel'}
+                                  {isRTL ? 'إنهاء' : 'End'}
                                 </>
                               )}
                             </Button>

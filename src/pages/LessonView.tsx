@@ -30,6 +30,7 @@ import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
+import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
@@ -108,10 +109,11 @@ export default function LessonView() {
   const [completionSaving, setCompletionSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  // Focus Mode refs
+  // Focus Mode refs and persistence
   const focusModeRef = useRef<FocusModeHandle>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const { saveFocusSession } = useFocusSessionPersistence();
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -217,6 +219,16 @@ export default function LessonView() {
     try {
       // Stop Focus Mode immediately when lesson is marked complete
       focusModeRef.current?.onLessonComplete();
+      
+      // Save focus session data to database
+      const sessionData = focusModeRef.current?.getSessionData();
+      if (sessionData && lesson.course_id) {
+        await saveFocusSession(user.id, {
+          lessonId: lesson.id,
+          courseId: lesson.course_id,
+          ...sessionData,
+        });
+      }
       
       // System-driven completion: Write real record to database
       // Source: manual_confirm - student explicitly clicked "خلصت الحصة"

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Building, Award, 
   Mail, Globe, MapPin, Layers, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
-  Clock, Plus, Trash2, Edit2, Copy, Check
+  Clock, Plus, Trash2, Edit2, Copy, Check, Gauge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,8 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Navbar } from '@/components/layout/Navbar';
+import { useCourseActivitySummary, CourseActivitySummary } from '@/hooks/useCourseActivitySummary';
+import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivitySummaryCard';
 
 interface StudentProfile {
   user_id: string;
@@ -123,6 +125,8 @@ export default function StudentDetails() {
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [notes, setNotes] = useState<StudentNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activitySummaries, setActivitySummaries] = useState<Map<string, CourseActivitySummary>>(new Map());
+  const { getSummary } = useCourseActivitySummary();
 
   // Action dialogs
   const [modeDialogOpen, setModeDialogOpen] = useState(false);
@@ -136,6 +140,8 @@ export default function StudentDetails() {
   const [selectedCourseForReset, setSelectedCourseForReset] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
+  const [selectedSummary, setSelectedSummary] = useState<CourseActivitySummary | null>(null);
 
   const copyStudentLink = async () => {
     const shortUrl = `${window.location.origin}/assistant/students/${studentId}`;
@@ -240,6 +246,17 @@ export default function StudentDetails() {
         course: e.courses as any
       }));
       setEnrollments(formattedEnrollments);
+
+      // Fetch activity summaries for expired enrollments
+      const expiredEnrollments = formattedEnrollments.filter(e => e.status === 'expired');
+      const summariesMap = new Map<string, CourseActivitySummary>();
+      for (const enrollment of expiredEnrollments) {
+        const summary = await getSummary(targetUserId, enrollment.course_id);
+        if (summary) {
+          summariesMap.set(enrollment.course_id, summary);
+        }
+      }
+      setActivitySummaries(summariesMap);
 
       // Fetch attendance stats
       const { data: attendanceData, error: attendanceError } = await supabase
@@ -773,6 +790,22 @@ export default function StudentDetails() {
                         </span>
                       </div>
                       <Progress value={enrollment.progress || 0} className="mt-2 h-2" />
+                      
+                      {/* Activity Summary Button for expired enrollments */}
+                      {enrollment.status === 'expired' && activitySummaries.has(enrollment.course_id) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 w-full gap-2"
+                          onClick={() => {
+                            setSelectedSummary(activitySummaries.get(enrollment.course_id)!);
+                            setSummaryDialogOpen(true);
+                          }}
+                        >
+                          <Gauge className="h-4 w-4" />
+                          {isArabic ? 'ملخص النشاط' : 'Activity Summary'}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1006,6 +1039,31 @@ export default function StudentDetails() {
               disabled={actionLoading || !selectedCourseForReset}
             >
               {actionLoading ? (isArabic ? 'جاري إعادة التعيين...' : 'Resetting...') : (isArabic ? 'إعادة تعيين' : 'Reset')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activity Summary Dialog */}
+      <Dialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gauge className="h-5 w-5 text-primary" />
+              {isArabic ? 'ملخص نشاط الطالب' : 'Student Activity Summary'}
+            </DialogTitle>
+            <DialogDescription>
+              {isArabic 
+                ? 'ملخص مجمد لنشاط الطالب عند انتهاء الاشتراك'
+                : 'Frozen summary of student activity when course ended'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSummary && (
+            <CourseActivitySummaryCard summary={selectedSummary} />
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSummaryDialogOpen(false)}>
+              {isArabic ? 'إغلاق' : 'Close'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -256,6 +256,83 @@ export type Database = {
           },
         ]
       }
+      course_activity_summaries: {
+        Row: {
+          avg_session_gap_hours: number | null
+          chapters_accessed: number
+          consistency_score: string
+          course_id: string
+          coverage_label: string
+          coverage_percentage: number
+          created_at: string
+          engagement_score: string
+          frozen_at: string
+          frozen_by: string
+          id: string
+          learning_days: number
+          lessons_accessed: number
+          lessons_completed: number
+          total_active_minutes: number
+          total_chapters: number
+          total_focus_sessions: number
+          total_lessons: number
+          total_paused_minutes: number
+          user_id: string
+        }
+        Insert: {
+          avg_session_gap_hours?: number | null
+          chapters_accessed?: number
+          consistency_score: string
+          course_id: string
+          coverage_label: string
+          coverage_percentage: number
+          created_at?: string
+          engagement_score: string
+          frozen_at?: string
+          frozen_by: string
+          id?: string
+          learning_days?: number
+          lessons_accessed?: number
+          lessons_completed?: number
+          total_active_minutes?: number
+          total_chapters?: number
+          total_focus_sessions?: number
+          total_lessons?: number
+          total_paused_minutes?: number
+          user_id: string
+        }
+        Update: {
+          avg_session_gap_hours?: number | null
+          chapters_accessed?: number
+          consistency_score?: string
+          course_id?: string
+          coverage_label?: string
+          coverage_percentage?: number
+          created_at?: string
+          engagement_score?: string
+          frozen_at?: string
+          frozen_by?: string
+          id?: string
+          learning_days?: number
+          lessons_accessed?: number
+          lessons_completed?: number
+          total_active_minutes?: number
+          total_chapters?: number
+          total_focus_sessions?: number
+          total_lessons?: number
+          total_paused_minutes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_activity_summaries_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_enrollments: {
         Row: {
           activated_at: string | null
@@ -557,6 +634,66 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      focus_sessions: {
+        Row: {
+          completed_segments: number
+          course_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          interruptions: number
+          is_completed: boolean
+          lesson_id: string
+          started_at: string
+          total_active_seconds: number
+          total_paused_seconds: number
+          user_id: string
+        }
+        Insert: {
+          completed_segments?: number
+          course_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          interruptions?: number
+          is_completed?: boolean
+          lesson_id: string
+          started_at?: string
+          total_active_seconds?: number
+          total_paused_seconds?: number
+          user_id: string
+        }
+        Update: {
+          completed_segments?: number
+          course_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          interruptions?: number
+          is_completed?: boolean
+          lesson_id?: string
+          started_at?: string
+          total_active_seconds?: number
+          total_paused_seconds?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "focus_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "focus_sessions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
         ]
