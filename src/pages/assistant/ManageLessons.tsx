@@ -73,6 +73,7 @@ const ManageLessons = () => {
     chapter_id: '',
     is_free_lesson: false,
   });
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -206,12 +207,36 @@ const ManageLessons = () => {
       const translatedTitle = await translateText(formData.title_ar, 'en');
       const embedUrl = formData.video_url ? generateYouTubeEmbedUrl(formData.video_url) : null;
       
+      // Auto-fetch YouTube metadata for duration
+      let durationMinutes = formData.duration_minutes;
+      
+      if (formData.video_url) {
+        setIsFetchingMetadata(true);
+        try {
+          console.log('[ManageLessons] Fetching YouTube metadata...');
+          const { data: metadataResult, error: metadataError } = await supabase.functions.invoke('youtube-metadata', {
+            body: { videoUrl: formData.video_url }
+          });
+          
+          if (!metadataError && metadataResult?.duration_minutes) {
+            durationMinutes = metadataResult.duration_minutes;
+            console.log('[ManageLessons] Auto-extracted duration:', durationMinutes, 'minutes');
+          } else {
+            console.log('[ManageLessons] Could not extract duration, using form value');
+          }
+        } catch (metaError) {
+          console.log('[ManageLessons] Metadata fetch failed, using form duration:', metaError);
+        } finally {
+          setIsFetchingMetadata(false);
+        }
+      }
+      
       const lessonData = {
         title: translatedTitle || formData.title_ar, // Use translated or fallback to Arabic
         title_ar: formData.title_ar,
         lesson_type: 'online', // All lessons are video-based
         video_url: embedUrl,
-        duration_minutes: formData.duration_minutes,
+        duration_minutes: durationMinutes,
         chapter_id: formData.chapter_id || null,
         is_free_lesson: formData.is_free_lesson,
       };
@@ -379,11 +404,11 @@ const ManageLessons = () => {
             
             {/* Guidance Message for Assistant Teacher */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-start gap-2">
-              <span className="text-lg">💡</span>
+              <span className="text-lg">✨</span>
               <p className="text-sm text-muted-foreground">
                 {isArabic 
-                  ? 'الحصة لازم يكون ليها زمن مشاهدة لأن التقدم مبني على الوقت. أضف رابط اليوتيوب والمدة بالدقائق.'
-                  : 'Lessons need watch time since progress is time-based. Add YouTube URL and duration in minutes.'
+                  ? 'أضف عنوان الحصة ورابط اليوتيوب فقط - المدة تُستخرج تلقائياً من الفيديو!'
+                  : 'Just add title and YouTube URL - duration is auto-extracted from the video!'
                 }
               </p>
             </div>
@@ -415,23 +440,38 @@ const ManageLessons = () => {
                 className="text-left"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {isArabic ? 'يدعم: روابط المشاهدة، الروابط القصيرة، روابط التضمين' : 'Supports: Watch URLs, Short URLs, Embed URLs'}
+                {isArabic 
+                  ? '✨ يدعم جميع صيغ اليوتيوب - المدة تُستخرج تلقائياً' 
+                  : '✨ Supports all YouTube formats - Duration auto-extracted'}
               </p>
             </div>
 
-            {/* Duration */}
+            {/* Duration - Auto or Manual */}
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4" />
                 <label className="text-sm font-medium">{isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}</label>
+                {formData.video_url && isValidYouTubeInput(formData.video_url) && (
+                  <Badge variant="secondary" className="text-xs">
+                    {isArabic ? 'تلقائي' : 'Auto'}
+                  </Badge>
+                )}
               </div>
-              <Input
-                type="number"
-                min="1"
-                value={formData.duration_minutes}
-                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
-                className="max-w-[150px]"
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.duration_minutes}
+                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
+                  className="max-w-[150px]"
+                  disabled={isFetchingMetadata}
+                />
+                {formData.video_url && isValidYouTubeInput(formData.video_url) && (
+                  <span className="text-xs text-muted-foreground">
+                    {isArabic ? '(سيتم تحديثها تلقائياً عند الحفظ)' : '(Will be auto-updated on save)'}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Chapter Selection - Optional */}
@@ -478,11 +518,13 @@ const ManageLessons = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleSubmit} size="lg" disabled={isTranslating}>
-                {isTranslating && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-                {isTranslating 
-                  ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
-                  : (editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson'))}
+              <Button onClick={handleSubmit} size="lg" disabled={isTranslating || isFetchingMetadata}>
+                {(isTranslating || isFetchingMetadata) && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                {isFetchingMetadata 
+                  ? (isArabic ? 'جاري استخراج المدة...' : 'Extracting duration...')
+                  : isTranslating 
+                    ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                    : (editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson'))}
               </Button>
               <Button variant="outline" onClick={resetForm}>
                 {isArabic ? 'إلغاء' : 'Cancel'}
