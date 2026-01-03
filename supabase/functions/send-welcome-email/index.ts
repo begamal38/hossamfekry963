@@ -72,11 +72,10 @@ Deno.serve(async (req) => {
       <td align="center" style="padding: 32px 16px;">
         <table role="presentation" style="max-width: 560px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
           
-          <!-- Header with Logo -->
+          <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, ${brandPrimary} 0%, ${brandPrimaryDark} 100%); padding: 32px 24px; text-align: center;">
-              <img src="${logoUrl}" alt="منصة حسام فكري" style="height: 64px; width: auto; margin-bottom: 12px;" />
-              <p style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500;">
+            <td style="background: linear-gradient(135deg, ${brandPrimary} 0%, ${brandPrimaryDark} 100%); padding: 28px 24px; text-align: center;">
+              <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 600;">
                 منصة حسام فكري لتعليم الكيمياء 🧪
               </p>
             </td>
