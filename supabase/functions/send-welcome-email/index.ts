@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
     const platformUrl = 'https://hossamfekry.com';
 
     // Arabic welcome email HTML
+    // Brand colors matching the platform
+    const brandPrimary = '#3b82f6';
+    const brandPrimaryDark = '#2563eb';
+    const brandLight = '#eff6ff';
+    const textDark = '#1e293b';
+    const textMuted = '#64748b';
+    const logoUrl = 'https://hossamfekry.com/assets/logo-dab81b54.png';
+
     const htmlContent = `
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -58,48 +66,68 @@ Deno.serve(async (req) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>أهلاً بيك في منصة حسام فكري</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; direction: rtl;">
-  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background-color: #f1f5f9; direction: rtl;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f1f5f9;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); overflow: hidden;">
+      <td align="center" style="padding: 32px 16px;">
+        <table role="presentation" style="max-width: 560px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
           
-          <!-- Header -->
+          <!-- Header with Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">
-                منصة حسام فكري
-              </h1>
-              <p style="margin: 8px 0 0; color: #94a3b8; font-size: 14px;">
-                لتعليم الكيمياء 🧪
+            <td style="background: linear-gradient(135deg, ${brandPrimary} 0%, ${brandPrimaryDark} 100%); padding: 32px 24px; text-align: center;">
+              <img src="${logoUrl}" alt="منصة حسام فكري" style="height: 64px; width: auto; margin-bottom: 12px;" />
+              <p style="margin: 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500;">
+                منصة حسام فكري لتعليم الكيمياء 🧪
               </p>
             </td>
           </tr>
           
           <!-- Main Content -->
           <tr>
-            <td style="padding: 40px;">
-              <h2 style="margin: 0 0 16px; color: #0f172a; font-size: 22px; font-weight: 600;">
+            <td style="padding: 40px 32px 32px;">
+              <!-- Greeting -->
+              <h1 style="margin: 0 0 20px; color: ${textDark}; font-size: 26px; font-weight: 700; line-height: 1.4;">
                 أهلاً بيك 👋
-              </h2>
+              </h1>
               
-              <p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.8;">
-                سعيدين بانضمامك لمنصة حسام فكري — المنصة رقم 1 في مصر لتعليم الكيمياء لطلاب الثانوية العامة.
+              <!-- Intro Text -->
+              <p style="margin: 0 0 28px; color: ${textDark}; font-size: 16px; line-height: 1.9;">
+                سعيدين بانضمامك لـ<strong style="color: ${brandPrimary};">منصة حسام فكري</strong><br>
+                المنصة رقم 1 في مصر لتعليم الكيمياء لطلاب الثانوية العامة.
               </p>
               
-              <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin: 0 0 24px;">
-                <p style="margin: 0 0 16px; color: #334155; font-size: 15px; font-weight: 600;">
-                  هنا هتلاقي:
-                </p>
-                <ul style="margin: 0; padding: 0 20px; color: #475569; font-size: 15px; line-height: 2;">
-                  <li>شرح واضح وبسيط</li>
-                  <li>تطبيق عملي يخليك فاهم مش حافظ</li>
-                  <li>نظام متابعة يساعدك تذاكر صح</li>
-                </ul>
-              </div>
+              <!-- Features Box -->
+              <table role="presentation" style="width: 100%; background-color: ${brandLight}; border-radius: 12px; margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <p style="margin: 0 0 16px; color: ${textDark}; font-size: 15px; font-weight: 600;">
+                      هنا هتلاقي:
+                    </p>
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="padding: 8px 0; color: ${textDark}; font-size: 15px; line-height: 1.6;">
+                          <span style="color: ${brandPrimary}; font-weight: bold;">✔</span>&nbsp;&nbsp;شرح واضح وبسيط
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: ${textDark}; font-size: 15px; line-height: 1.6;">
+                          <span style="color: ${brandPrimary}; font-weight: bold;">✔</span>&nbsp;&nbsp;تطبيق عملي يخليك فاهم مش حافظ
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: ${textDark}; font-size: 15px; line-height: 1.6;">
+                          <span style="color: ${brandPrimary}; font-weight: bold;">✔</span>&nbsp;&nbsp;نظام متابعة يساعدك تذاكر بثقة
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
               
-              <p style="margin: 0 0 32px; color: #475569; font-size: 16px; line-height: 1.8;">
-                ابدأ رحلتك دلوقتي، واستكشف الكورسات والحصص المجانية المتاحة ليك 👇
+              <!-- CTA Text -->
+              <p style="margin: 0 0 24px; color: ${textDark}; font-size: 16px; line-height: 1.8; text-align: center;">
+                ابدأ رحلتك التعليمية دلوقتي،<br>
+                واستكشف الكورسات والحصص المجانية المتاحة ليك 👇
               </p>
               
               <!-- CTA Button -->
@@ -107,8 +135,8 @@ Deno.serve(async (req) => {
                 <tr>
                   <td align="center">
                     <a href="${platformUrl}" 
-                       style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
-                      الدخول إلى المنصة
+                       style="display: inline-block; background: linear-gradient(135deg, ${brandPrimary} 0%, ${brandPrimaryDark} 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 17px; font-weight: 600; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);">
+                      دخول المنصة
                     </a>
                   </td>
                 </tr>
@@ -118,11 +146,11 @@ Deno.serve(async (req) => {
           
           <!-- Footer -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0; color: #94a3b8; font-size: 13px; text-align: center; line-height: 1.6;">
-                لو عندك أي استفسار، تقدر تتواصل معانا في أي وقت.
+            <td style="padding: 24px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0 0 8px; color: ${textMuted}; font-size: 13px; line-height: 1.6;">
+                لو عندك أي استفسار، تواصل معانا في أي وقت.
               </p>
-              <p style="margin: 12px 0 0; color: #cbd5e1; font-size: 12px; text-align: center;">
+              <p style="margin: 0; color: #94a3b8; font-size: 12px;">
                 © ${new Date().getFullYear()} منصة حسام فكري لتعليم الكيمياء
               </p>
             </td>
