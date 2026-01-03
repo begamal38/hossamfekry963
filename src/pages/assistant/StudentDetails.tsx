@@ -108,7 +108,7 @@ const LANGUAGE_TRACK_LABELS: Record<string, { ar: string; en: string }> = {
 };
 
 export default function StudentDetails() {
-  const { userId } = useParams<{ userId: string }>();
+  const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -117,6 +117,7 @@ export default function StudentDetails() {
   const isArabic = language === 'ar';
 
   const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [attendanceStats, setAttendanceStats] = useState<AttendanceStats>({ online_count: 0, center_count: 0, total_count: 0 });
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
@@ -141,20 +142,52 @@ export default function StudentDetails() {
       return;
     }
 
-    if (userId) {
-      fetchStudentData();
+    if (studentId) {
+      resolveAndFetchStudent();
     }
-  }, [userId, roleLoading]);
+  }, [studentId, roleLoading]);
 
-  const fetchStudentData = async () => {
-    if (!userId) return;
+  // Resolve short_id to user_id
+  const resolveAndFetchStudent = async () => {
+    if (!studentId) return;
+    
+    // Check if studentId is a number (short_id) or UUID
+    const isShortId = /^\d+$/.test(studentId);
+    
+    let resolvedUserId: string | null = null;
+    
+    if (isShortId) {
+      // Lookup by short_id
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('short_id', parseInt(studentId, 10))
+        .maybeSingle();
+      
+      if (error || !data) {
+        console.error('Student not found by short_id:', error);
+        setLoading(false);
+        return;
+      }
+      resolvedUserId = data.user_id;
+    } else {
+      // It's already a UUID
+      resolvedUserId = studentId;
+    }
+    
+    setUserId(resolvedUserId);
+    fetchStudentData(resolvedUserId);
+  };
+
+  const fetchStudentData = async (targetUserId: string) => {
+    if (!targetUserId) return;
 
     try {
       // Fetch student profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', targetUserId)
         .maybeSingle();
 
       if (profileError) throw profileError;
@@ -180,7 +213,7 @@ export default function StudentDetails() {
             lessons_count
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', targetUserId);
 
       if (enrollmentError) throw enrollmentError;
       
@@ -197,7 +230,7 @@ export default function StudentDetails() {
           id,
           attendance_type
         `)
-        .eq('user_id', userId);
+        .eq('user_id', targetUserId);
 
       if (attendanceError) throw attendanceError;
 
@@ -230,7 +263,7 @@ export default function StudentDetails() {
             )
           )
         `)
-        .eq('user_id', userId)
+        .eq('user_id', targetUserId)
         .order('created_at', { ascending: false });
 
       if (examError) throw examError;
@@ -248,7 +281,7 @@ export default function StudentDetails() {
       const { data: notesData, error: notesError } = await supabase
         .from('student_notes')
         .select('*')
-        .eq('student_id', userId)
+        .eq('student_id', targetUserId)
         .order('created_at', { ascending: false });
 
       if (notesError) throw notesError;

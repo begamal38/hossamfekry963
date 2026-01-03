@@ -34,6 +34,7 @@ type AttendanceMode = Database['public']['Enums']['attendance_mode'];
 
 interface Profile {
   user_id: string;
+  short_id: number;
   full_name: string | null;
   phone: string | null;
   grade: string | null;
@@ -139,7 +140,7 @@ export default function Students() {
       // Fetch profiles only for users with student role (exclude current user)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
+        .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
         .in('user_id', studentUserIds)
         .neq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -472,7 +473,7 @@ export default function Students() {
                       <tr 
                         key={student.user_id} 
                         className="hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/assistant/students/${student.user_id}`)}
+                        onClick={() => navigate(`/assistant/students/${student.short_id}`)}
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -539,7 +540,7 @@ export default function Students() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/assistant/students/${student.user_id}`);
+                              navigate(`/assistant/students/${student.short_id}`);
                             }}
                           >
                             {isRTL ? 'عرض التفاصيل' : 'View Details'}

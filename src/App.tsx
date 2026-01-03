@@ -172,7 +172,7 @@ const App = () => (
                     }
                   />
                   <Route
-                    path="/assistant/students/:userId"
+                    path="/assistant/students/:studentId"
                     element={
                       <RequireResolvedAccess
                         requireAuth
