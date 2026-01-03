@@ -312,6 +312,7 @@ export type Database = {
           is_primary: boolean
           lessons_count: number | null
           price: number | null
+          short_id: number
           slug: string
           thumbnail_url: string | null
           title: string
@@ -329,6 +330,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
+          short_id?: number
           slug: string
           thumbnail_url?: string | null
           title: string
@@ -346,6 +348,7 @@ export type Database = {
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
+          short_id?: number
           slug?: string
           thumbnail_url?: string | null
           title?: string
@@ -708,6 +711,7 @@ export type Database = {
           order_index: number | null
           requires_exam_pass: boolean | null
           requires_previous_completion: boolean | null
+          short_id: number
           summary: string | null
           summary_ar: string | null
           title: string
@@ -729,6 +733,7 @@ export type Database = {
           order_index?: number | null
           requires_exam_pass?: boolean | null
           requires_previous_completion?: boolean | null
+          short_id?: number
           summary?: string | null
           summary_ar?: string | null
           title: string
@@ -750,6 +755,7 @@ export type Database = {
           order_index?: number | null
           requires_exam_pass?: boolean | null
           requires_previous_completion?: boolean | null
+          short_id?: number
           summary?: string | null
           summary_ar?: string | null
           title?: string
@@ -1159,7 +1165,15 @@ export type Database = {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
       }
+      get_course_id_by_short_id: {
+        Args: { p_short_id: number }
+        Returns: string
+      }
       get_exam_attempts_count: { Args: { exam_uuid: string }; Returns: number }
+      get_lesson_id_by_short_id: {
+        Args: { p_short_id: number }
+        Returns: string
+      }
       get_user_id_by_short_id: { Args: { p_short_id: number }; Returns: string }
       has_role: {
         Args: {

@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useShortId } from '@/hooks/useShortId';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -32,6 +33,7 @@ const getYouTubeVideoId = extractYouTubeVideoId;
 
 interface Lesson {
   id: string;
+  short_id: number;
   title: string;
   title_ar: string;
   course_id: string;
@@ -66,12 +68,15 @@ interface LinkedExam {
 }
 
 export default function LessonView() {
-  const { lessonId } = useParams();
+  const { lessonId: lessonIdParam } = useParams();
   const navigate = useNavigate();
   const { language, isRTL } = useLanguage();
   const { user } = useAuth();
   const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const isArabic = language === 'ar';
+  
+  // Resolve short_id or UUID to actual UUID
+  const { uuid: lessonId, loading: resolving } = useShortId(lessonIdParam, 'lesson');
   
   const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
@@ -87,10 +92,10 @@ export default function LessonView() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [lessonId]);
+  }, [lessonIdParam]);
 
   useEffect(() => {
-    if (lessonId) {
+    if (lessonId && !resolving) {
       fetchLesson();
     }
   }, [lessonId, user]);
@@ -219,7 +224,7 @@ export default function LessonView() {
     ? `شرح مبسط وواضح لـ ${lesson?.title_ar || ''} من كورس ${course?.title_ar || ''} للثانوية العامة مع تطبيق عملي واختبارات ذكية.`
     : `Understand ${lesson?.title || lesson?.title_ar || ''} clearly with practical explanation for Thanaweya Amma students.`;
 
-  if (loading) {
+  if (loading || resolving) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -334,7 +339,7 @@ export default function LessonView() {
         titleAr={seoTitle}
         description={seoDescription}
         descriptionAr={seoDescription}
-        canonical={`${window.location.origin}/lesson/${lessonId}`}
+        canonical={`${window.location.origin}/lesson/${lesson?.short_id || lessonId}`}
       />
       <Navbar />
 
@@ -544,7 +549,7 @@ export default function LessonView() {
               {previousLesson ? (
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate(`/lesson/${previousLesson.id}`)}
+                  onClick={() => navigate(`/lesson/${previousLesson.short_id}`)}
                   className="gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -570,7 +575,7 @@ export default function LessonView() {
             <div className="flex-1 flex justify-end">
               {nextLesson ? (
                 <Button 
-                  onClick={() => navigate(`/lesson/${nextLesson.id}`)}
+                  onClick={() => navigate(`/lesson/${nextLesson.short_id}`)}
                   className="gap-2"
                 >
                   <span className="hidden sm:inline">{isArabic ? 'الحصة التالية' : 'Next'}</span>

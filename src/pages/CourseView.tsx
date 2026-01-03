@@ -46,6 +46,7 @@ interface Course {
 
 interface Lesson {
   id: string;
+  short_id: number;
   title: string;
   title_ar: string;
   order_index: number;
@@ -716,7 +717,7 @@ export default function CourseView() {
                                 "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
                                 canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
                               )}
-                              onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                              onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.short_id}`)}
                             >
                               {/* Lesson Number */}
                               <div className={cn(
@@ -813,7 +814,7 @@ export default function CourseView() {
                               "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
                               canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
                             )}
-                            onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                            onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.short_id}`)}
                           >
                             <div className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
@@ -876,7 +877,7 @@ export default function CourseView() {
                         "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
                         canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
                       )}
-                      onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.id}`)}
+                      onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.short_id}`)}
                     >
                       <div className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
