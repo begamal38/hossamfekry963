@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ? `${academicYear === 'second_secondary' ? 'second' : 'third'}_${languageTrack}`
       : undefined;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -90,6 +90,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     });
+
+    // Send welcome email (non-blocking, fail silently)
+    if (!error && data?.user) {
+      supabase.functions.invoke('send-welcome-email', {
+        body: {
+          user_id: data.user.id,
+          email: email,
+          full_name: fullName,
+        }
+      }).catch(() => {
+        // Fail silently - don't block registration
+        console.log('Welcome email skipped');
+      });
+    }
+
     return { error };
   };
 
