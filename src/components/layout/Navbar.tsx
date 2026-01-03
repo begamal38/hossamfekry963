@@ -8,6 +8,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ThemeSelector } from '@/components/theme/ThemeSelector';
+import { AliveIndicator } from '@/components/ui/AliveIndicator';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 
@@ -49,15 +50,19 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
         <div className="flex items-center justify-between h-16 2xl:h-20 3xl:h-24">
           {/* Static logo - same on all pages */}
-          <Link to="/" className="flex items-center px-2 py-1">
-            <img 
-              src={logo} 
-              alt="Hossam Fekry" 
-              width={96}
-              height={96}
-              className="h-14 lg:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
-            />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center px-2 py-1">
+              <img 
+                src={logo} 
+                alt="Hossam Fekry" 
+                width={96}
+                height={96}
+                className="h-14 lg:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
+              />
+            </Link>
+            {/* Alive indicator - subtle system presence */}
+            {user && <AliveIndicator size="sm" className="hidden sm:flex" />}
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1 2xl:gap-2 3xl:gap-3">

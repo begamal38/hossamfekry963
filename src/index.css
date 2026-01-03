@@ -561,6 +561,55 @@
   }
 }
 
+/* Alive indicator breathing - 7 second cycle for calm feel */
+@keyframes alive-breathe {
+  0%, 100% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(2.2);
+    opacity: 0.5;
+  }
+}
+
+/* Button press micro-interaction */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Smooth number transition */
+@keyframes count-up {
+  from {
+    opacity: 0.5;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ripple effect for buttons */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -597,6 +646,50 @@
   background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+/* Button with micro-interaction */
+.btn-alive {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.btn-alive:active {
+  animation: button-press 0.15s ease-out;
+}
+
+.btn-alive:hover {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+/* Ripple container */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ripple-container:active::after {
+  animation: ripple 0.4s ease-out;
+}
+
+/* Smooth value transition */
+.value-transition {
+  transition: color 0.3s ease-out;
+}
+
+.value-transition.updating {
+  animation: count-up 0.3s ease-out;
 }
 
 .animate-glow-pulse {
