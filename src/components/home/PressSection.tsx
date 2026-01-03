@@ -123,6 +123,7 @@ export const PressSection: React.FC = () => {
             className={`absolute top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background ${isRTL ? '-right-4 md:-right-6' : '-left-4 md:-left-6'}`}
             onClick={isRTL ? scrollNext : scrollPrev}
             disabled={isRTL ? !canScrollNext : !canScrollPrev}
+            aria-label={isRTL ? 'المقال التالي' : 'Previous article'}
           >
             {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
@@ -133,6 +134,7 @@ export const PressSection: React.FC = () => {
             className={`absolute top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm hover:bg-background ${isRTL ? '-left-4 md:-left-6' : '-right-4 md:-right-6'}`}
             onClick={isRTL ? scrollPrev : scrollNext}
             disabled={isRTL ? !canScrollPrev : !canScrollNext}
+            aria-label={isRTL ? 'المقال السابق' : 'Next article'}
           >
             {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>

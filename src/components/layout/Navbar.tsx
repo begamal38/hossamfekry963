@@ -82,6 +82,7 @@ export const Navbar: React.FC = () => {
               size="icon"
               onClick={() => setSearchOpen(true)}
               className="text-muted-foreground hover:text-foreground"
+              aria-label={t('nav.search') || 'Search'}
             >
               <Search className="w-5 h-5" />
             </Button>
