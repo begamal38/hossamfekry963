@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,39 +12,49 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
 import Index from "./pages/Index";
-import AssistantTransition from "./pages/AssistantTransition";
-import Dashboard from "./pages/Dashboard";
-import Courses from "./pages/Courses";
-import CourseView from "./pages/CourseView";
-import LessonView from "./pages/LessonView";
-import FreeLessons from "./pages/FreeLessons";
-import Auth from "./pages/Auth";
-import Settings from "./pages/Settings";
-import Payment from "./pages/Payment";
-import NotFound from "./pages/NotFound";
-import Campaigns from "./pages/Campaigns";
-import About from "./pages/About";
-import Notifications from "./pages/Notifications";
-import StudentProfile from "./pages/StudentProfile";
-import Install from "./pages/Install";
-import AssistantDashboard from "./pages/assistant/AssistantDashboard";
-import Students from "./pages/assistant/Students";
-import StudentDetails from "./pages/assistant/StudentDetails";
-import Enrollments from "./pages/assistant/Enrollments";
-import ManageLessons from "./pages/assistant/ManageLessons";
-import ManageChapters from "./pages/assistant/ManageChapters";
-import RecordAttendance from "./pages/assistant/RecordAttendance";
-// RecordGrades removed - grades come ONLY from exams
-import Reports from "./pages/assistant/Reports";
-import ManageCourses from "./pages/assistant/ManageCourses";
-import SendNotifications from "./pages/assistant/SendNotifications";
-import CenterGroups from "./pages/assistant/CenterGroups";
-import CenterSessions from "./pages/assistant/CenterSessions";
-import ManageExams from "./pages/assistant/ManageExams";
-import ExamResults from "./pages/assistant/ExamResults";
-import TakeExam from "./pages/TakeExam";
+
+// Lazy load all pages except Index for better initial bundle size
+const AssistantTransition = lazy(() => import("./pages/AssistantTransition"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Courses = lazy(() => import("./pages/Courses"));
+const CourseView = lazy(() => import("./pages/CourseView"));
+const LessonView = lazy(() => import("./pages/LessonView"));
+const FreeLessons = lazy(() => import("./pages/FreeLessons"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Payment = lazy(() => import("./pages/Payment"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Campaigns = lazy(() => import("./pages/Campaigns"));
+const About = lazy(() => import("./pages/About"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+const Install = lazy(() => import("./pages/Install"));
+const TakeExam = lazy(() => import("./pages/TakeExam"));
+
+// Assistant pages
+const AssistantDashboard = lazy(() => import("./pages/assistant/AssistantDashboard"));
+const Students = lazy(() => import("./pages/assistant/Students"));
+const StudentDetails = lazy(() => import("./pages/assistant/StudentDetails"));
+const Enrollments = lazy(() => import("./pages/assistant/Enrollments"));
+const ManageLessons = lazy(() => import("./pages/assistant/ManageLessons"));
+const ManageChapters = lazy(() => import("./pages/assistant/ManageChapters"));
+const RecordAttendance = lazy(() => import("./pages/assistant/RecordAttendance"));
+const Reports = lazy(() => import("./pages/assistant/Reports"));
+const ManageCourses = lazy(() => import("./pages/assistant/ManageCourses"));
+const SendNotifications = lazy(() => import("./pages/assistant/SendNotifications"));
+const CenterGroups = lazy(() => import("./pages/assistant/CenterGroups"));
+const CenterSessions = lazy(() => import("./pages/assistant/CenterSessions"));
+const ManageExams = lazy(() => import("./pages/assistant/ManageExams"));
+const ExamResults = lazy(() => import("./pages/assistant/ExamResults"));
 
 const queryClient = new QueryClient();
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -57,6 +68,7 @@ const App = () => (
                 <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
@@ -304,6 +316,7 @@ const App = () => (
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </Suspense>
               </BrowserRouter>
               </TooltipProvider>
             </GovernorateCheck>
