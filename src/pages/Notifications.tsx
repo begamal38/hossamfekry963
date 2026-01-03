@@ -13,11 +13,12 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  ExternalLink
+  X
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,8 +50,8 @@ interface Notification {
   isRead: boolean;
 }
 
-// Helper to derive action URL from notification data
-const getActionUrl = (notification: Notification): string => {
+// Helper to derive action URL from notification data - returns null if no specific link
+const getActionUrl = (notification: Notification): string | null => {
   // Lesson notifications
   if (notification.lesson_id) {
     return `/lessons/${notification.lesson_id}`;
@@ -66,8 +67,13 @@ const getActionUrl = (notification: Notification): string => {
     return `/courses/${notification.course_id}`;
   }
   
-  // Default to dashboard
-  return '/dashboard';
+  // No specific link - will open message modal
+  return null;
+};
+
+// Check if notification has a specific action link
+const hasActionLink = (notification: Notification): boolean => {
+  return !!(notification.lesson_id || notification.exam_id || notification.course_id);
 };
 
 // Helper to get action label based on notification type
@@ -200,6 +206,7 @@ export default function Notifications() {
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -363,6 +370,23 @@ export default function Notifications() {
     });
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read if unread
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+    
+    const actionUrl = getActionUrl(notification);
+    
+    // If there's a specific link, navigate to it
+    if (actionUrl) {
+      navigate(actionUrl);
+    } else {
+      // Otherwise, open the message modal
+      setSelectedNotification(notification);
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   if (authLoading || loading) {
@@ -421,25 +445,16 @@ export default function Notifications() {
             notifications.map(notification => {
               const config = NOTIFICATION_CONFIG[notification.type];
               const Icon = config.icon;
-              const actionUrl = getActionUrl(notification);
-              const actionLabel = getActionLabel(notification.type, isArabic);
+              const hasLink = hasActionLink(notification);
+              const actionLabel = hasLink ? getActionLabel(notification.type, isArabic) : (isArabic ? 'اقرأ الرسالة' : 'Read Message');
               const message = isArabic ? notification.message_ar : notification.message;
               const { text: truncatedMessage, isTruncated } = truncateMessage(message);
               const messageIsArabic = isArabicText(message);
 
-              const handleClick = async () => {
-                // Mark as read if unread
-                if (!notification.isRead) {
-                  await markAsRead(notification.id);
-                }
-                // Navigate to action URL
-                navigate(actionUrl);
-              };
-
               return (
                 <div
                   key={notification.id}
-                  onClick={handleClick}
+                  onClick={() => handleNotificationClick(notification)}
                   className={cn(
                     "bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group",
                     !notification.isRead && "border-primary/30 bg-primary/5"
@@ -497,7 +512,7 @@ export default function Notifications() {
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleClick();
+                            handleNotificationClick(notification);
                           }}
                         >
                           {actionLabel}
@@ -518,6 +533,63 @@ export default function Notifications() {
           )}
         </div>
       </main>
+
+      {/* Notification Detail Modal */}
+      <Dialog open={!!selectedNotification} onOpenChange={(open) => !open && setSelectedNotification(null)}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
+          {selectedNotification && (() => {
+            const config = NOTIFICATION_CONFIG[selectedNotification.type];
+            const Icon = config.icon;
+            const message = isArabic ? selectedNotification.message_ar : selectedNotification.message;
+            const messageIsArabic = isArabicText(message);
+            
+            return (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      config.bgColor
+                    )}>
+                      <Icon className={cn("h-5 w-5", config.color)} />
+                    </div>
+                    <div>
+                      <Badge variant="outline" className={cn("text-xs mb-1", config.color)}>
+                        {isArabic ? config.labelAr : config.labelEn}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(selectedNotification.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <DialogTitle className="text-xl font-bold">
+                    {isArabic ? selectedNotification.title_ar : selectedNotification.title}
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div 
+                  className={cn(
+                    "text-foreground leading-relaxed whitespace-pre-line mt-4",
+                    messageIsArabic && "text-right"
+                  )}
+                  dir={messageIsArabic ? 'rtl' : 'ltr'}
+                >
+                  {message}
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedNotification(null)}
+                  >
+                    {isArabic ? 'إغلاق' : 'Close'}
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
