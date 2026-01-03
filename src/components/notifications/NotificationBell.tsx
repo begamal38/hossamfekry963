@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface NotificationBellProps {
   className?: string;
@@ -14,14 +15,17 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
   const navigate = useNavigate();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const prevUnreadCountRef = useRef(0);
+  const { playSound } = useNotificationSound();
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
       
-      // Subscribe to new notifications
+      // Subscribe to new notifications for real-time updates
       const channel = supabase
-        .channel('notifications-count')
+        .channel('notifications-realtime')
         .on(
           'postgres_changes',
           {
@@ -30,6 +34,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
             table: 'notifications',
           },
           () => {
+            console.log('New notification received');
+            fetchUnreadCount();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notification_reads',
+          },
+          () => {
+            // When user reads a notification, update count
             fetchUnreadCount();
           }
         )
@@ -40,6 +57,22 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       };
     }
   }, [user]);
+
+  // Play sound when unread count increases (new notification)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevUnreadCountRef.current = unreadCount;
+      return;
+    }
+
+    if (unreadCount > prevUnreadCountRef.current) {
+      // New notification arrived - play sound
+      playSound();
+    }
+    
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, playSound]);
 
   const fetchUnreadCount = async () => {
     if (!user) return;
@@ -105,9 +138,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
       className={cn("relative", className)}
       onClick={() => navigate('/notifications')}
     >
-      <Bell className="h-5 w-5" />
+      <Bell className={cn("h-5 w-5", unreadCount > 0 && "animate-pulse")} />
       {unreadCount > 0 && (
-        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center animate-bounce">
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>
       )}
