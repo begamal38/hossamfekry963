@@ -76,6 +76,7 @@ const CourseCard = React.memo<CourseCardProps>(({ course, index }) => {
         <Link 
           to={courseUrl} 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg scale-90 group-hover:scale-100"
+          aria-label={isArabic ? `شاهد كورس ${title}` : `View ${title} course`}
         >
           <Play className="w-6 h-6 text-primary-foreground ml-1" />
         </Link>
