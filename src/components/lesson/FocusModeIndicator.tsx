@@ -2,7 +2,16 @@ import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFocusMode, FocusState } from '@/hooks/useFocusMode';
-import { Eye, Pause, Timer, CheckCircle } from 'lucide-react';
+import { Eye, Pause, Timer } from 'lucide-react';
+
+export interface FocusSessionResult {
+  startedAt: number;
+  totalActiveSeconds: number;
+  totalPausedSeconds: number;
+  interruptions: number;
+  completedSegments: number;
+  isCompleted: boolean;
+}
 
 export interface FocusModeHandle {
   onVideoPlay: () => void;
@@ -10,6 +19,7 @@ export interface FocusModeHandle {
   onVideoEnd: () => void;
   onLessonComplete: () => void;
   resetFocus: () => void;
+  getSessionData: () => FocusSessionResult | null;
 }
 
 interface FocusModeIndicatorProps {
@@ -44,6 +54,26 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
   
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSegmentCountRef = useRef<number>(0);
+  const sessionStartTimeRef = useRef<number | null>(null);
+  const totalPausedTimeRef = useRef<number>(0);
+  const pauseStartRef = useRef<number | null>(null);
+
+  // Track paused time
+  useEffect(() => {
+    if (isPaused && pauseStartRef.current === null) {
+      pauseStartRef.current = Date.now();
+    } else if (isActive && pauseStartRef.current !== null) {
+      totalPausedTimeRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = null;
+    }
+  }, [isPaused, isActive]);
+
+  // Track session start
+  useEffect(() => {
+    if (isActive && sessionStartTimeRef.current === null) {
+      sessionStartTimeRef.current = Date.now();
+    }
+  }, [isActive]);
 
   // Expose video control methods to parent
   useImperativeHandle(ref, () => ({
@@ -62,8 +92,30 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     resetFocus: () => {
       resetFocus();
       lastSegmentCountRef.current = 0;
+      sessionStartTimeRef.current = null;
+      totalPausedTimeRef.current = 0;
+      pauseStartRef.current = null;
     },
-  }), [startFocus, pauseFocus, completeFocus, resetFocus]);
+    getSessionData: (): FocusSessionResult | null => {
+      const stats = getFocusStats();
+      if (!stats || sessionStartTimeRef.current === null) return null;
+      
+      // Calculate final paused time if currently paused
+      let finalPausedSeconds = totalPausedTimeRef.current / 1000;
+      if (pauseStartRef.current !== null) {
+        finalPausedSeconds += (Date.now() - pauseStartRef.current) / 1000;
+      }
+      
+      return {
+        startedAt: sessionStartTimeRef.current,
+        totalActiveSeconds: stats.totalMinutes * 60,
+        totalPausedSeconds: Math.round(finalPausedSeconds),
+        interruptions: stats.interruptions,
+        completedSegments: stats.completedSegments,
+        isCompleted: isCompleted,
+      };
+    },
+  }), [startFocus, pauseFocus, completeFocus, resetFocus, getFocusStats, isCompleted]);
 
   // Show segment completion message when a 20-min segment completes
   useEffect(() => {
