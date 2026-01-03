@@ -1148,6 +1148,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_assistant_view_student: {
+        Args: { _assistant_id: string; _student_id: string }
+        Returns: boolean
+      }
       generate_course_slug: {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
