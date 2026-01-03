@@ -216,10 +216,21 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   AMBIENT BREATHING UI - Global Living Effect
-   Single rhythm, 8s cycle, extremely subtle
+   AMBIENT PULSE SYSTEM - 7.5s Global Breathing Effect
+   Creates a subtle sense of life & presence across the platform
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Global ambient variables */
+:root {
+  --ambient-cycle: 7.5s;
+  --ambient-glow-color: 209 56% 46%;
+}
+
+.dark {
+  --ambient-glow-color: 209 80% 75%;
+}
+
+/* Core ambient breathing - subtle shadow pulse */
 @keyframes ambient-breathe {
   0%, 100% {
     box-shadow: 
@@ -228,68 +239,119 @@
   }
   50% {
     box-shadow: 
-      0 0 30px -10px hsl(var(--primary) / 0.06),
-      inset 0 0 20px -10px hsl(var(--primary) / 0.03);
+      0 0 40px -15px hsl(var(--ambient-glow-color) / 0.08),
+      inset 0 0 30px -15px hsl(var(--ambient-glow-color) / 0.04);
   }
 }
 
+/* Global background glow pulse */
+@keyframes ambient-glow-bg {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+}
+
+/* Border color pulse */
 @keyframes ambient-breathe-border {
   0%, 100% {
     border-color: hsl(var(--border));
   }
   50% {
-    border-color: hsl(var(--primary) / 0.15);
+    border-color: hsl(var(--primary) / 0.2);
   }
 }
 
+/* Icon glow pulse */
 @keyframes ambient-breathe-icon {
   0%, 100% {
     opacity: 0.7;
     filter: drop-shadow(0 0 0 transparent);
   }
   50% {
-    opacity: 0.85;
-    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.15));
+    opacity: 0.9;
+    filter: drop-shadow(0 0 10px hsl(var(--ambient-glow-color) / 0.2));
   }
 }
 
-/* Dark mode enhanced breathing - soft white/blue glow */
-.dark {
-  --ambient-glow-color: 209 80% 75%;
+/* Hero section specific - deeper ambient effect */
+@keyframes ambient-hero-glow {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(60px);
+  }
+  50% {
+    opacity: 0.6;
+    filter: blur(70px);
+  }
 }
 
-:root {
-  --ambient-glow-color: 209 56% 46%;
+/* Stat number pulse */
+@keyframes ambient-stat-pulse {
+  0%, 100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
 }
 
-/* Base breathing class - apply to containers */
+/* Base breathing class */
 .ambient-breathe {
-  animation: ambient-breathe 8s ease-in-out infinite;
+  animation: ambient-breathe var(--ambient-cycle) ease-in-out infinite;
+}
+
+/* Background glow variant */
+.ambient-glow-bg {
+  animation: ambient-glow-bg var(--ambient-cycle) ease-in-out infinite;
 }
 
 /* Border breathing variant */
 .ambient-breathe-border {
-  animation: ambient-breathe-border 8s ease-in-out infinite;
+  animation: ambient-breathe-border var(--ambient-cycle) ease-in-out infinite;
 }
 
 /* Icon/indicator breathing */
 .ambient-breathe-icon {
-  animation: ambient-breathe-icon 8s ease-in-out infinite;
+  animation: ambient-breathe-icon var(--ambient-cycle) ease-in-out infinite;
+}
+
+/* Stat numbers pulse */
+.ambient-stat-pulse {
+  animation: ambient-stat-pulse var(--ambient-cycle) ease-in-out infinite;
+}
+
+/* Hero glow orbs */
+.ambient-hero-glow {
+  animation: ambient-hero-glow var(--ambient-cycle) ease-in-out infinite;
 }
 
 /* Combined effect for cards */
 .ambient-card {
   animation: 
-    ambient-breathe 8s ease-in-out infinite,
-    ambient-breathe-border 8s ease-in-out infinite;
+    ambient-breathe var(--ambient-cycle) ease-in-out infinite,
+    ambient-breathe-border var(--ambient-cycle) ease-in-out infinite;
 }
 
-/* Reduced motion for accessibility and performance */
+/* Staggered delays for natural feel */
+.ambient-delay-1 { animation-delay: calc(var(--ambient-cycle) * 0.15); }
+.ambient-delay-2 { animation-delay: calc(var(--ambient-cycle) * 0.30); }
+.ambient-delay-3 { animation-delay: calc(var(--ambient-cycle) * 0.45); }
+
+/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .ambient-breathe,
+  .ambient-glow-bg,
+  .ambient-breathe-border,
+  .ambient-breathe-icon,
+  .ambient-stat-pulse,
+  .ambient-hero-glow,
+  .ambient-card {
+    animation: none !important;
   }
 }
 
@@ -312,14 +374,23 @@
 
 /* Mobile performance optimizations */
 @media (max-width: 768px) {
+  /* Reduce ambient intensity on mobile, don't disable completely */
+  :root {
+    --ambient-cycle: 10s; /* Slower on mobile */
+  }
+  
   .animate-pulse-glow,
-  .animate-float,
-  .animate-bounce-subtle,
+  .animate-bounce-subtle {
+    animation: none;
+  }
+  
+  /* Keep subtle ambient on mobile but reduce */
   .ambient-breathe,
   .ambient-breathe-border,
   .ambient-breathe-icon,
-  .ambient-card {
-    animation: none;
+  .ambient-card,
+  .ambient-hero-glow {
+    animation-duration: 12s;
   }
   
   .blur-3xl {
@@ -328,6 +399,29 @@
   
   .blur-2xl {
     filter: blur(30px);
+  }
+  
+  /* Slow down 3D background on mobile */
+  .animate-molecule-rotate {
+    animation-duration: 90s;
+  }
+  
+  .animate-electron-orbit {
+    animation-duration: 12s;
+  }
+  
+  .animate-electron-orbit-reverse {
+    animation-duration: 15s;
+  }
+}
+
+/* Very small screens - minimal animations */
+@media (max-width: 480px) {
+  .animate-float-particle,
+  .animate-float-particle-delayed,
+  .animate-float-particle-slow {
+    animation: none;
+    opacity: 0.1;
   }
 }
 
