@@ -263,19 +263,26 @@ export default function LessonView() {
 
   // Initialize YouTube Player API
   const initYouTubePlayer = useCallback((videoId: string) => {
-    if (!window.YT) {
-      // Load YouTube IFrame API
+    // If API is already ready
+    if (window.YT && window.YT.Player) {
+      createPlayer(videoId);
+      return;
+    }
+
+    // Ensure script is loaded only once
+    const existingScript = document.getElementById('youtube-iframe-api');
+    if (!existingScript) {
       const tag = document.createElement('script');
+      tag.id = 'youtube-iframe-api';
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScript = document.getElementsByTagName('script')[0];
-      firstScript.parentNode?.insertBefore(tag, firstScript);
-      
-      window.onYouTubeIframeAPIReady = () => {
-        createPlayer(videoId);
-      };
-    } else {
-      createPlayer(videoId);
+      firstScript?.parentNode?.insertBefore(tag, firstScript);
     }
+
+    // Wait until API is ready
+    window.onYouTubeIframeAPIReady = () => {
+      createPlayer(videoId);
+    };
   }, []);
 
   const createPlayer = useCallback((videoId: string) => {
@@ -333,22 +340,27 @@ export default function LessonView() {
     }
   }, []);
 
-  // Initialize player when lesson changes
+  // Initialize player when lesson changes (video must ALWAYS be playable)
+  // Focus tracking is still gated by whether FocusModeIndicator is rendered.
   useEffect(() => {
-    if (lesson?.video_url && user && !completed) {
+    if (lesson?.video_url) {
       const videoId = getYouTubeVideoId(lesson.video_url);
       if (videoId) {
         initYouTubePlayer(videoId);
       }
     }
-    
+
     return () => {
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          // ignore
+        }
         playerRef.current = null;
       }
     };
-  }, [lesson?.video_url, user, completed, initYouTubePlayer]);
+  }, [lesson?.video_url, initYouTubePlayer]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
