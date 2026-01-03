@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_teacher_permissions: {
+        Row: {
+          can_export_students: boolean
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_export_students?: boolean
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_export_students?: boolean
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       center_group_members: {
         Row: {
           enrolled_at: string
