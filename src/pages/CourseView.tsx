@@ -449,19 +449,19 @@ export default function CourseView() {
                   </div>
                 </div>
 
-                {/* Course Image */}
+                {/* Course Image - Always show cover or fallback */}
                 <div className="lg:w-80 shrink-0">
-                  {course.thumbnail_url ? (
-                    <img 
-                      src={course.thumbnail_url} 
-                      alt={isArabic ? course.title_ar : course.title}
-                      className="w-full aspect-video object-cover rounded-2xl shadow-lg"
-                    />
-                  ) : (
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center opacity-75">
-                      <BookOpen className="w-20 h-20 text-primary/50" />
-                    </div>
-                  )}
+                  <img 
+                    src={course.thumbnail_url || '/images/default-course-cover.svg'} 
+                    alt={isArabic ? course.title_ar : course.title}
+                    className={cn(
+                      "w-full aspect-video object-cover rounded-2xl shadow-lg",
+                      !course.thumbnail_url && "opacity-60"
+                    )}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -632,19 +632,19 @@ export default function CourseView() {
                 )}
               </div>
 
-              {/* Course Image */}
+              {/* Course Image - Always show cover or fallback */}
               <div className="lg:w-80 shrink-0">
-                {course.thumbnail_url ? (
-                  <img 
-                    src={course.thumbnail_url} 
-                    alt={isArabic ? course.title_ar : course.title}
-                    className="w-full aspect-video object-cover rounded-2xl shadow-lg"
-                  />
-                ) : (
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
-                    <BookOpen className="w-20 h-20 text-primary/50" />
-                  </div>
-                )}
+                <img 
+                  src={course.thumbnail_url || '/images/default-course-cover.svg'} 
+                  alt={isArabic ? course.title_ar : course.title}
+                  className={cn(
+                    "w-full aspect-video object-cover rounded-2xl shadow-lg",
+                    !course.thumbnail_url && "opacity-60"
+                  )}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
+                  }}
+                />
               </div>
             </div>
           </div>

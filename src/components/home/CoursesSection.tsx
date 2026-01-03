@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Users, Play, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-
-const GRADE_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
-  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
-  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
-  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
-};
+import { CourseCard } from '@/components/course/CourseCard';
 
 interface Course {
   id: string;
@@ -26,93 +18,8 @@ interface Course {
   duration_hours: number;
   thumbnail_url: string | null;
   slug: string | null;
+  price: number;
 }
-
-interface CourseCardProps {
-  course: Course;
-  index: number;
-}
-
-const CourseCard = React.memo<CourseCardProps>(({ course, index }) => {
-  const { language, t } = useLanguage();
-  const isArabic = language === 'ar';
-  
-  const title = isArabic ? course.title_ar : course.title;
-  const description = isArabic ? course.description_ar : course.description;
-  const gradeLabel = GRADE_LABELS[course.grade];
-  // Use slug for URL, fallback to ID
-  const courseUrl = `/course/${course.slug || course.id}`;
-
-  return (
-    <div className="group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:border-primary/20 transition-all duration-300 hover:-translate-y-1">
-      {/* Image - fixed height, no layout shift */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-        {course.thumbnail_url ? (
-          <img 
-            src={course.thumbnail_url} 
-            alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="w-16 h-16 text-primary/40" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
-        
-        {course.is_free && (
-          <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground shadow-lg">
-            {t('courses.free')}
-          </Badge>
-        )}
-        
-        {gradeLabel && (
-          <Badge className="absolute top-4 right-4 bg-secondary text-secondary-foreground shadow-sm">
-            {isArabic ? gradeLabel.ar : gradeLabel.en}
-          </Badge>
-        )}
-        
-        <Link 
-          to={courseUrl} 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg scale-90 group-hover:scale-100"
-          aria-label={isArabic ? `شاهد كورس ${title}` : `View ${title} course`}
-        >
-          <Play className="w-6 h-6 text-primary-foreground ml-1" />
-        </Link>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{title}</h3>
-        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-          {description || (isArabic ? 'كورس كيمياء شامل' : 'Comprehensive chemistry course')}
-        </p>
-
-        {/* Meta */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            {course.duration_hours || 0} {isArabic ? 'ساعة' : 'hours'}
-          </div>
-          <div className="flex items-center gap-1">
-            <Play className="w-4 h-4" />
-            {course.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}
-          </div>
-        </div>
-
-        {/* CTA */}
-        <Button variant={course.is_free ? 'default' : 'outline'} className="w-full group-hover:shadow-md transition-shadow" asChild>
-          <Link to={courseUrl}>
-            {course.is_free ? t('courses.preview') : t('courses.enroll')}
-          </Link>
-        </Button>
-      </div>
-    </div>
-  );
-});
-
-CourseCard.displayName = 'CourseCard';
 
 export const CoursesSection: React.FC = () => {
   const { t, language } = useLanguage();
@@ -126,7 +33,7 @@ export const CoursesSection: React.FC = () => {
         // Fetch only primary courses (2026 academic structure)
         const { data, error } = await supabase
           .from('courses')
-          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug')
+          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
           .eq('is_primary', true)
           .order('grade', { ascending: true })
           .limit(4); // Show max 4 courses on home
@@ -183,9 +90,15 @@ export const CoursesSection: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 2xl:gap-8 3xl:gap-10">
+          // Mobile: single column, Tablet: 2 columns, Desktop: 4 columns
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 2xl:gap-8 3xl:gap-10">
             {courses.map((course, index) => (
-              <CourseCard key={course.id} course={course} index={index} />
+              <CourseCard 
+                key={course.id} 
+                course={course} 
+                index={index}
+                variant="simple"
+              />
             ))}
           </div>
         )}
