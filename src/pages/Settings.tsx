@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Camera, Save, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
+import { User, Phone, Camera, Save, Lock, Eye, EyeOff, MapPin, Bell, Volume2, VolumeX } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { DeviceManagement } from '@/components/settings/DeviceManagement';
 import { useUserRole } from '@/hooks/useUserRole';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
-
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 const GRADE_OPTIONS = [
   { value: 'second_arabic', labelAr: 'تانية ثانوي عربي', labelEn: '2nd Secondary - Arabic' },
   { value: 'second_languages', labelAr: 'تانية ثانوي لغات', labelEn: '2nd Secondary - Languages' },
@@ -27,6 +27,7 @@ const Settings: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isStudent, isAssistantTeacher, isAdmin } = useUserRole();
+  const { soundEnabled, toggleSound } = useNotificationSound();
   
   // Students cannot change grade after initial setup
   const canChangeGrade = isAssistantTeacher() || isAdmin();
@@ -409,6 +410,38 @@ const Settings: React.FC = () => {
                     تغيير كلمة المرور
                   </>
                 )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Notification Settings Section */}
+          <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-250">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Bell className="w-5 h-5 text-primary" />
+              إعدادات الإشعارات
+            </h2>
+
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+              <div className="flex items-center gap-3">
+                {soundEnabled ? (
+                  <Volume2 className="w-5 h-5 text-primary" />
+                ) : (
+                  <VolumeX className="w-5 h-5 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="font-medium text-foreground">صوت الإشعارات</p>
+                  <p className="text-sm text-muted-foreground">
+                    {soundEnabled ? 'مفعّل - سيصدر صوت عند وصول إشعار جديد' : 'معطّل'}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant={soundEnabled ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => toggleSound(!soundEnabled)}
+                className="gap-2"
+              >
+                {soundEnabled ? 'تعطيل' : 'تفعيل'}
               </Button>
             </div>
           </div>
