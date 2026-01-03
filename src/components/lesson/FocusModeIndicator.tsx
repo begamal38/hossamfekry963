@@ -1,39 +1,69 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useFocusMode } from '@/hooks/useFocusMode';
-import { Eye, Pause, Timer } from 'lucide-react';
+import { useFocusMode, FocusState } from '@/hooks/useFocusMode';
+import { Eye, Pause, Timer, CheckCircle } from 'lucide-react';
+
+export interface FocusModeHandle {
+  onVideoPlay: () => void;
+  onVideoPause: () => void;
+  onVideoEnd: () => void;
+  onLessonComplete: () => void;
+  resetFocus: () => void;
+}
 
 interface FocusModeIndicatorProps {
-  isLessonActive: boolean;
   lessonId?: string;
   className?: string;
   showMessages?: boolean;
 }
 
-export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
-  isLessonActive,
+export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicatorProps>(({
   lessonId,
   className,
   showMessages = true,
-}) => {
+}, ref) => {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
   const {
+    focusState,
     isActive,
     isPaused,
-    status,
+    isCompleted,
     currentMessage,
     currentSegmentProgress,
+    session,
+    startFocus,
+    pauseFocus,
+    completeFocus,
+    resetFocus,
     showRandomMessage,
     showSegmentComplete,
     getFocusStats,
-    session,
-  } = useFocusMode(isLessonActive, lessonId);
+  } = useFocusMode(lessonId);
   
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMessageTimeRef = useRef<number>(0);
   const lastSegmentCountRef = useRef<number>(0);
+
+  // Expose video control methods to parent
+  useImperativeHandle(ref, () => ({
+    onVideoPlay: () => {
+      startFocus();
+    },
+    onVideoPause: () => {
+      pauseFocus();
+    },
+    onVideoEnd: () => {
+      completeFocus();
+    },
+    onLessonComplete: () => {
+      completeFocus();
+    },
+    resetFocus: () => {
+      resetFocus();
+      lastSegmentCountRef.current = 0;
+    },
+  }), [startFocus, pauseFocus, completeFocus, resetFocus]);
 
   // Show segment completion message when a 20-min segment completes
   useEffect(() => {
@@ -43,22 +73,20 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
     }
   }, [session?.completedSegments, showSegmentComplete, isArabic]);
 
-  // Show random messages at random intervals (6-10 minutes)
+  // Show random messages at random intervals (6-10 minutes) - ONLY when active
   useEffect(() => {
-    if (isActive && !isPaused && showMessages) {
+    if (isActive && showMessages) {
       // Show initial message after 30 seconds
       const initialTimeout = setTimeout(() => {
         showRandomMessage(isArabic);
-        lastMessageTimeRef.current = Date.now();
       }, 30000);
 
-      // Then show messages at random intervals (6-10 minutes = 360000-600000ms)
+      // Then show messages at random intervals (6-10 minutes)
       const scheduleNextMessage = () => {
-        const randomDelay = Math.random() * (600000 - 360000) + 360000; // 6-10 minutes
+        const randomDelay = Math.random() * (600000 - 360000) + 360000;
         return setTimeout(() => {
-          if (!document.hidden) {
+          if (!document.hidden && isActive) {
             showRandomMessage(isArabic);
-            lastMessageTimeRef.current = Date.now();
           }
           messageIntervalRef.current = scheduleNextMessage();
         }, randomDelay);
@@ -73,17 +101,21 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
         }
       };
     }
-  }, [isActive, isPaused, showMessages, showRandomMessage, isArabic]);
+  }, [isActive, showMessages, showRandomMessage, isArabic]);
 
-  if (!isActive) return null;
+  // Don't render if idle or completed
+  if (focusState === 'FOCUS_IDLE' || focusState === 'FOCUS_COMPLETED') {
+    return null;
+  }
 
   const stats = getFocusStats();
   const StatusIcon = isPaused ? Pause : Eye;
   
-  const statusLabels = {
-    active: isArabic ? 'وضع التركيز' : 'Focus Mode',
-    paused: isArabic ? 'متوقف مؤقتاً' : 'Paused',
-    resumed: isArabic ? 'رجعت! 👋' : 'Welcome back! 👋',
+  const statusLabels: Record<FocusState, string> = {
+    FOCUS_IDLE: isArabic ? 'جاهز' : 'Ready',
+    FOCUS_ACTIVE: isArabic ? 'وضع التركيز' : 'Focus Mode',
+    FOCUS_PAUSED: isArabic ? 'متوقف' : 'Paused',
+    FOCUS_COMPLETED: isArabic ? 'مكتمل' : 'Completed',
   };
 
   return (
@@ -95,13 +127,13 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
           "bg-card/90 backdrop-blur-md border shadow-lg",
           "transition-all duration-700 ease-out",
           isPaused 
-            ? "border-muted/50 opacity-70" 
+            ? "border-muted/50 opacity-60" 
             : "border-primary/30 shadow-primary/10"
         )}
       >
-        {/* Breathing indicator dot */}
+        {/* Breathing indicator dot - only pulses when ACTIVE */}
         <span className="relative flex items-center justify-center">
-          {!isPaused && (
+          {isActive && (
             <span 
               className={cn(
                 "absolute inline-flex h-4 w-4 rounded-full",
@@ -122,11 +154,11 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
           "text-sm font-medium transition-colors duration-300",
           isPaused ? "text-muted-foreground" : "text-foreground"
         )}>
-          {statusLabels[status === 'idle' ? 'active' : status]}
+          {statusLabels[focusState]}
         </span>
 
-        {/* Segment progress bar */}
-        {!isPaused && (
+        {/* Segment progress bar - only shows when ACTIVE */}
+        {isActive && (
           <div className="w-12 h-1.5 bg-muted/50 rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary/70 rounded-full transition-all duration-1000 ease-linear"
@@ -139,12 +171,12 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
         <StatusIcon className={cn(
           "w-4 h-4 transition-all duration-300",
           isPaused ? "text-muted-foreground" : "text-primary",
-          !isPaused && "animate-[subtle-pulse_4s_ease-in-out_infinite]"
+          isActive && "animate-[subtle-pulse_4s_ease-in-out_infinite]"
         )} />
       </div>
 
-      {/* Stats badge */}
-      {stats && stats.totalMinutes > 0 && !isPaused && (
+      {/* Stats badge - only shows when ACTIVE */}
+      {stats && stats.totalMinutes > 0 && isActive && (
         <div className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full",
           "bg-primary/10 border border-primary/20",
@@ -177,4 +209,6 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
       )}
     </div>
   );
-};
+});
+
+FocusModeIndicator.displayName = 'FocusModeIndicator';
