@@ -131,41 +131,62 @@ serve(async (req: Request): Promise<Response> => {
     // Get target users based on targeting
     let userIds: string[] = [];
 
+    // First, get all assistant teachers and admins to exclude them
+    const { data: staffRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["assistant_teacher", "admin"]);
+    
+    const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
+
     if (target_type === "all") {
-      // Get all student users
+      // Get all student users (excluding staff)
       const { data: studentRoles } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "student");
       
-      userIds = (studentRoles || []).map(r => r.user_id);
+      userIds = (studentRoles || [])
+        .map(r => r.user_id)
+        .filter(id => !staffUserIds.has(id));
     } else if (target_type === "user" && target_value) {
-      userIds = [target_value];
+      // Only include if not staff
+      if (!staffUserIds.has(target_value)) {
+        userIds = [target_value];
+      }
     } else if (target_type === "course" && target_value) {
-      // Get users enrolled in the course
+      // Get users enrolled in the course (excluding staff)
       const { data: enrollments } = await supabase
         .from("course_enrollments")
         .select("user_id")
         .eq("course_id", target_value);
       
-      userIds = (enrollments || []).map(e => e.user_id);
+      userIds = (enrollments || [])
+        .map(e => e.user_id)
+        .filter(id => !staffUserIds.has(id));
     } else if (target_type === "grade" && target_value) {
-      // Get users in specific grade
+      // Get users in specific grade (excluding staff)
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id")
         .eq("grade", target_value);
       
-      userIds = (profiles || []).map(p => p.user_id);
+      userIds = (profiles || [])
+        .map(p => p.user_id)
+        .filter(id => !staffUserIds.has(id));
     } else if (target_type === "attendance_mode" && target_value) {
-      // Get users with specific attendance mode
+      // Get users with specific attendance mode (excluding staff)
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id")
         .eq("attendance_mode", target_value);
       
-      userIds = (profiles || []).map(p => p.user_id);
+      userIds = (profiles || [])
+        .map(p => p.user_id)
+        .filter(id => !staffUserIds.has(id));
     }
+
+    console.log(`[send-notification-email] Found ${userIds.length} students (excluded ${staffUserIds.size} staff members)`);
 
     if (userIds.length === 0) {
       console.log("No target users found for notification");
