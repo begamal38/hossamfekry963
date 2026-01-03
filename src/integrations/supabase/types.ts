@@ -983,6 +983,7 @@ export type Database = {
           is_suspended: boolean
           language_track: string | null
           phone: string | null
+          short_id: number
           theme_preference: string | null
           updated_at: string
           user_id: string
@@ -999,6 +1000,7 @@ export type Database = {
           is_suspended?: boolean
           language_track?: string | null
           phone?: string | null
+          short_id?: number
           theme_preference?: string | null
           updated_at?: string
           user_id: string
@@ -1015,6 +1017,7 @@ export type Database = {
           is_suspended?: boolean
           language_track?: string | null
           phone?: string | null
+          short_id?: number
           theme_preference?: string | null
           updated_at?: string
           user_id?: string
@@ -1157,6 +1160,7 @@ export type Database = {
         Returns: string
       }
       get_exam_attempts_count: { Args: { exam_uuid: string }; Returns: number }
+      get_user_id_by_short_id: { Args: { p_short_id: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
