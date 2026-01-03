@@ -405,15 +405,6 @@ export default function LessonView() {
                       {isArabic ? 'مكتملة' : 'Completed'}
                     </Badge>
                   )}
-                  {/* Copy Link Button */}
-                  <button
-                    onClick={copyLessonLink}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-                    title={isArabic ? 'نسخ الرابط' : 'Copy link'}
-                  >
-                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                    <span className="hidden sm:inline">{copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ الرابط' : 'Copy link')}</span>
-                  </button>
                 </div>
               </div>
 
@@ -463,6 +454,19 @@ export default function LessonView() {
                 </p>
               </div>
             )}
+
+            {/* Share/Copy Link Button - Inside lesson content */}
+            <div className="flex justify-center mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyLessonLink}
+                className="gap-2"
+              >
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                {copied ? (isArabic ? 'تم نسخ الرابط!' : 'Link Copied!') : (isArabic ? 'مشاركة الحصة' : 'Share Lesson')}
+              </Button>
+            </div>
           </section>
 
           {/* Guidance Text - System-driven completion */}
