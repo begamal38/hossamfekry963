@@ -404,6 +404,77 @@
    FOCUS MODE ANIMATIONS - Calm, non-distracting indicators
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* Focus Mode ON indicator - 7-8 second breathing cycle */
+@keyframes focus-mode-breathe {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 12px 4px hsl(var(--primary) / 0.25);
+    transform: scale(1.05);
+  }
+}
+
+/* Focus indicator dot breathing */
+@keyframes focus-dot-breathe {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.4);
+  }
+}
+
+/* Icon container breathing for focus strip */
+@keyframes focus-icon-breathe {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 16px -4px hsl(var(--primary) / 0.3);
+    transform: scale(1.02);
+  }
+}
+
+/* Focus feature item fade-in stagger */
+@keyframes focus-feature-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply breathing to focus icons */
+.focus-icon-breathe {
+  animation: focus-icon-breathe 7.5s ease-in-out infinite;
+}
+
+/* Staggered appearance for focus features */
+.focus-feature-item {
+  animation: focus-feature-appear 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* Focus Mode ON badge animation */
+.focus-mode-on-badge {
+  animation: focus-mode-breathe 7.5s ease-in-out infinite;
+}
+
+/* Focus dot pulse */
+.focus-dot-pulse {
+  animation: focus-dot-breathe 7.5s ease-in-out infinite;
+}
+
 @keyframes focus-breathe {
   0%, 100% { 
     transform: scale(1); 
@@ -446,6 +517,17 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.4s ease-out forwards;
+}
+
+/* Reduced motion for accessibility - Focus Mode */
+@media (prefers-reduced-motion: reduce) {
+  .focus-icon-breathe,
+  .focus-mode-on-badge,
+  .focus-dot-pulse,
+  .focus-feature-item {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 @media (min-width: 1536px) {
   html {

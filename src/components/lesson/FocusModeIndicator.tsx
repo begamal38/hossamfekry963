@@ -172,7 +172,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
 
   return (
     <div className={cn("relative flex items-center gap-3", className)}>
-      {/* Main indicator */}
+      {/* Main indicator - Focus Mode: ON badge */}
       <div 
         className={cn(
           "flex items-center gap-2.5 px-3.5 py-2 rounded-full",
@@ -180,33 +180,36 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
           "transition-all duration-700 ease-out",
           isPaused 
             ? "border-muted/50 opacity-60" 
-            : "border-primary/30 shadow-primary/10"
+            : "border-primary/30 shadow-primary/10 focus-mode-on-badge"
         )}
       >
-        {/* Breathing indicator dot - only pulses when ACTIVE */}
+        {/* Breathing indicator dot with enhanced glow */}
         <span className="relative flex items-center justify-center">
           {isActive && (
             <span 
               className={cn(
-                "absolute inline-flex h-4 w-4 rounded-full",
-                "bg-primary/30 animate-[focus-breathe_7s_ease-in-out_infinite]"
+                "absolute inline-flex h-5 w-5 rounded-full",
+                "bg-primary/20 animate-[focus-breathe_7.5s_ease-in-out_infinite]"
               )}
             />
           )}
           <span 
             className={cn(
               "relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500",
-              isPaused ? "bg-muted-foreground/50" : "bg-primary"
+              isPaused ? "bg-muted-foreground/50" : "bg-primary focus-dot-pulse"
             )}
           />
         </span>
 
-        {/* Status text */}
+        {/* Status text - "Focus Mode: ON" style */}
         <span className={cn(
           "text-sm font-medium transition-colors duration-300",
           isPaused ? "text-muted-foreground" : "text-foreground"
         )}>
-          {statusLabels[focusState]}
+          {isPaused 
+            ? (isArabic ? 'متوقف' : 'Paused')
+            : (isArabic ? 'Focus Mode: ON' : 'Focus Mode: ON')
+          }
         </span>
 
         {/* Segment progress bar - only shows when ACTIVE */}
@@ -219,7 +222,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
           </div>
         )}
 
-        {/* Icon */}
+        {/* Icon with subtle animation */}
         <StatusIcon className={cn(
           "w-4 h-4 transition-all duration-300",
           isPaused ? "text-muted-foreground" : "text-primary",

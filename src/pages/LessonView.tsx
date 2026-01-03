@@ -30,6 +30,7 @@ import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
+import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 
@@ -609,6 +610,11 @@ export default function LessonView() {
                   {isArabic ? 'سيتم إضافة الفيديو قريباً — يمكنك متابعة الحصص الأخرى' : 'Video will be added soon — you can continue with other lessons'}
                 </p>
               </div>
+            )}
+
+            {/* Focus Info Strip - Visual indicators only */}
+            {lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
+              <FocusInfoStrip className="mt-5" />
             )}
 
             {/* Share/Copy Link Button - Inside lesson content */}
