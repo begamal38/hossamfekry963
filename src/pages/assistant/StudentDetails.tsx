@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Navbar } from '@/components/layout/Navbar';
 import { useCourseActivitySummary, CourseActivitySummary } from '@/hooks/useCourseActivitySummary';
 import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivitySummaryCard';
+import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 
 interface StudentProfile {
   user_id: string;
@@ -1059,7 +1060,10 @@ export default function StudentDetails() {
             </DialogDescription>
           </DialogHeader>
           {selectedSummary && (
-            <CourseActivitySummaryCard summary={selectedSummary} />
+            <div className="space-y-4">
+              <CourseActivitySummaryCard summary={selectedSummary} />
+              <ActivityGuidePanel />
+            </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSummaryDialogOpen(false)}>

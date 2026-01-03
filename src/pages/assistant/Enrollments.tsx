@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { ManualEnrollment } from '@/components/assistant/ManualEnrollment';
 import { useCourseActivitySummary } from '@/hooks/useCourseActivitySummary';
+import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 
 interface Enrollment {
   id: string;
@@ -286,6 +287,11 @@ const Enrollments = () => {
             </select>
           </div>
         </div>
+
+        {/* Activity Guide Panel - shown when filtering expired enrollments */}
+        {statusFilter === 'expired' && (
+          <ActivityGuidePanel className="mb-6" />
+        )}
 
         {/* Enrollments List */}
         <div className="bg-card border border-border rounded-xl overflow-hidden">
