@@ -53,8 +53,78 @@ serve(async (req: Request): Promise<Response> => {
       title_ar, 
       message, 
       message_ar,
-      type 
-    }: NotificationEmailRequest = await req.json();
+      type,
+      test_email // For testing: send directly to this email
+    }: NotificationEmailRequest & { test_email?: string } = await req.json();
+
+    // Direct test mode - send to specific email without database lookup
+    if (test_email) {
+      console.log(`[Test Mode] Sending test email to: ${test_email}`);
+      
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Hossam Fekry Platform <notifications@resend.dev>",
+          to: [test_email],
+          subject: `${title} | ${title_ar}`,
+          html: `
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+              <meta charset="UTF-8">
+              <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; background: white; }
+                .header { background: #3173B8; color: white; padding: 20px; text-align: center; }
+                .content { padding: 30px; }
+                .message-ar { direction: rtl; text-align: right; margin-bottom: 20px; padding: 20px; background: #f8fafc; border-radius: 8px; }
+                .footer { background: #e2e8f0; padding: 15px; text-align: center; font-size: 12px; color: #64748b; }
+                h1 { margin: 0; font-size: 24px; }
+                h2 { color: #3173B8; margin-top: 0; }
+                p { line-height: 1.6; color: #334155; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>منصة حسام فكري التعليمية</h1>
+                </div>
+                <div class="content">
+                  <div class="message-ar">
+                    <h2>${title_ar}</h2>
+                    <p>${message_ar}</p>
+                  </div>
+                </div>
+                <div class="footer">
+                  <p>Hossam Fekry Educational Platform</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`[Test Mode] Email sent successfully:`, data);
+        return new Response(
+          JSON.stringify({ success: true, emails_sent: 1, test_mode: true, email_id: data.id }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      } else {
+        const errorData = await response.json();
+        console.error(`[Test Mode] Email failed:`, errorData);
+        return new Response(
+          JSON.stringify({ success: false, error: errorData.message }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
 
     console.log(`Processing email notification: ${notification_id}, target: ${target_type}`);
 
