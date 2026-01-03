@@ -26,11 +26,22 @@ export const FocusModeIndicator: React.FC<FocusModeIndicatorProps> = ({
     currentMessage,
     currentSegmentProgress,
     showRandomMessage,
+    showSegmentComplete,
     getFocusStats,
+    session,
   } = useFocusMode(isLessonActive, lessonId);
   
   const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageTimeRef = useRef<number>(0);
+  const lastSegmentCountRef = useRef<number>(0);
+
+  // Show segment completion message when a 20-min segment completes
+  useEffect(() => {
+    if (session && session.completedSegments > lastSegmentCountRef.current) {
+      showSegmentComplete(isArabic);
+      lastSegmentCountRef.current = session.completedSegments;
+    }
+  }, [session?.completedSegments, showSegmentComplete, isArabic]);
 
   // Show random messages at random intervals (6-10 minutes)
   useEffect(() => {

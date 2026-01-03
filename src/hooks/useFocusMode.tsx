@@ -185,8 +185,6 @@ export const useFocusMode = (isLessonActive: boolean = false, lessonId?: string)
           const totalSegments = Math.floor(totalTime / SEGMENT_DURATION_MS);
           if (totalSegments > sessionRef.current.completedSegments) {
             sessionRef.current.completedSegments = totalSegments;
-            // Use Arabic by default for this platform
-            showSegmentComplete(true);
           }
           
           setState(prev => ({
