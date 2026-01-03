@@ -150,13 +150,64 @@ export default function Notifications() {
     if (!user) return;
 
     try {
-      // Fetch all notifications
+      // Fetch user's profile to get grade and attendance_mode
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('grade, attendance_mode')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Fetch user's course enrollments
+      const { data: enrollments } = await supabase
+        .from('course_enrollments')
+        .select('course_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      const enrolledCourseIds = (enrollments || []).map(e => e.course_id);
+
+      // Fetch notifications - we need to filter based on targeting
       const { data: notificationsData, error: notifError } = await supabase
         .from('notifications')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (notifError) throw notifError;
+
+      // Filter notifications based on targeting
+      const relevantNotifications = (notificationsData || []).filter(n => {
+        // Direct user targeting - only show if targeted to this user
+        if (n.target_type === 'user') {
+          return n.target_id === user.id;
+        }
+        
+        // All students
+        if (n.target_type === 'all') {
+          return true;
+        }
+        
+        // Course targeting - show if user is enrolled
+        if (n.target_type === 'course' && n.course_id) {
+          return enrolledCourseIds.includes(n.course_id);
+        }
+        
+        // Lesson targeting - show if user is enrolled in the course
+        if (n.target_type === 'lesson' && n.course_id) {
+          return enrolledCourseIds.includes(n.course_id);
+        }
+        
+        // Grade targeting
+        if (n.target_type === 'grade' && n.target_value) {
+          return profile?.grade === n.target_value;
+        }
+        
+        // Attendance mode targeting
+        if (n.target_type === 'attendance_mode' && n.target_value) {
+          return profile?.attendance_mode === n.target_value;
+        }
+        
+        return false;
+      });
 
       // Fetch user's read notifications
       const { data: readsData, error: readsError } = await supabase
@@ -169,7 +220,7 @@ export default function Notifications() {
       const readIds = new Set((readsData || []).map(r => r.notification_id));
 
       // Map notifications with read status
-      const mappedNotifications: Notification[] = (notificationsData || []).map(n => ({
+      const mappedNotifications: Notification[] = relevantNotifications.map(n => ({
         ...n,
         type: n.type as NotificationType,
         isRead: readIds.has(n.id),
