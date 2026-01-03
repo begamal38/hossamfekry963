@@ -8,7 +8,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.webp';
+import logo from '@/assets/logo.png';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';

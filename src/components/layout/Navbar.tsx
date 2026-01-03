@@ -9,7 +9,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ThemeSelector } from '@/components/theme/ThemeSelector';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.webp';
+import logo from '@/assets/logo.png';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

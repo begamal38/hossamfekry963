@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Instagram, MessageCircle } from 'lucide-react';
-import logo from '@/assets/logo.webp';
+import logo from '@/assets/logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer: React.FC = () => {
