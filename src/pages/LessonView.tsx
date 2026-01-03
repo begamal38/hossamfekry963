@@ -280,32 +280,57 @@ export default function LessonView() {
 
   const createPlayer = useCallback((videoId: string) => {
     if (playerRef.current) {
-      playerRef.current.destroy();
+      try {
+        playerRef.current.destroy();
+      } catch (e) {
+        // Player may not be initialized
+      }
+      playerRef.current = null;
     }
     
-    playerRef.current = new window.YT.Player(playerContainerRef.current, {
-      videoId,
-      playerVars: {
-        rel: 0,
-        modestbranding: 1,
-      },
-      events: {
-        onStateChange: (event: any) => {
-          switch (event.data) {
-            case YT_PLAYING:
-              focusModeRef.current?.onVideoPlay();
-              break;
-            case YT_PAUSED:
-            case YT_BUFFERING:
-              focusModeRef.current?.onVideoPause();
-              break;
-            case YT_ENDED:
-              focusModeRef.current?.onVideoEnd();
-              break;
-          }
+    const containerId = 'youtube-player-container';
+    const container = playerContainerRef.current;
+    if (!container) return;
+    
+    // Set ID for YouTube API
+    container.id = containerId;
+    
+    try {
+      playerRef.current = new window.YT.Player(containerId, {
+        videoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
         },
-      },
-    });
+        events: {
+          onReady: () => {
+            console.log('YouTube player ready');
+          },
+          onStateChange: (event: any) => {
+            switch (event.data) {
+              case YT_PLAYING:
+                focusModeRef.current?.onVideoPlay();
+                break;
+              case YT_PAUSED:
+              case YT_BUFFERING:
+                focusModeRef.current?.onVideoPause();
+                break;
+              case YT_ENDED:
+                focusModeRef.current?.onVideoEnd();
+                break;
+            }
+          },
+          onError: (event: any) => {
+            console.error('YouTube player error:', event.data);
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error creating YouTube player:', error);
+    }
   }, []);
 
   // Initialize player when lesson changes
