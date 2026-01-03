@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Filter, Search, BookOpen, CheckCircle, Loader2 } from 'lucide-react';
+import { Filter, Search, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { ContentTypeBadge } from '@/components/course/ContentTypeBadge';
+import { CourseCard } from '@/components/course/CourseCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
-import { filterCoursesForStudents, ACTIVE_SCOPE, isCoursePreview } from '@/lib/contentVisibility';
+import { filterCoursesForStudents, isCoursePreview } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
-
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
   'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
@@ -337,7 +335,8 @@ const Courses: React.FC = () => {
                 </Badge>
               </h2>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Mobile: single column with more spacing, Desktop: 2-3 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
                 {userGradeCourses.map((course, index) => (
                   <CourseCard 
                     key={course.id}
@@ -347,10 +346,10 @@ const Courses: React.FC = () => {
                     enrollingId={enrollingId}
                     onAction={handleCourseAction}
                     index={index}
-                    t={t}
                     isAssistantOrAdmin={canBypassAcademicRestrictions}
                     isPreview={isCoursePreview(course.grade)}
                     userGrade={userGrade}
+                    variant="full"
                   />
                 ))}
               </div>
@@ -377,7 +376,8 @@ const Courses: React.FC = () => {
               </div>
             )}
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Mobile: single column with more spacing, Desktop: 2-3 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
               {(selectedGrade === 'all' && userGrade ? otherCourses : filteredCourses).map((course, index) => (
                 <CourseCard 
                   key={course.id}
@@ -387,10 +387,10 @@ const Courses: React.FC = () => {
                   enrollingId={enrollingId}
                   onAction={handleCourseAction}
                   index={index}
-                  t={t}
                   isAssistantOrAdmin={canBypassAcademicRestrictions}
                   isPreview={isCoursePreview(course.grade)}
                   userGrade={userGrade}
+                  variant="full"
                 />
               ))}
             </div>
@@ -399,187 +399,6 @@ const Courses: React.FC = () => {
       </main>
 
       <Footer />
-    </div>
-  );
-};
-
-interface CourseCardProps {
-  course: Course;
-  isArabic: boolean;
-  isEnrolled: boolean;
-  enrollingId: string | null;
-  onAction: (courseId: string, isFree: boolean, price: number, courseGrade: string, slug: string | null) => void;
-  index: number;
-  t: (key: string) => string;
-  isAssistantOrAdmin?: boolean;
-  isPreview?: boolean;
-  userGrade?: string | null;
-}
-
-const CourseCard: React.FC<CourseCardProps> = ({ 
-  course, 
-  isArabic, 
-  isEnrolled, 
-  enrollingId, 
-  onAction, 
-  index,
-  t,
-  isAssistantOrAdmin = false,
-  isPreview = false,
-  userGrade = null
-}) => {
-  const gradeInfo = GRADE_OPTIONS[course.grade];
-  // Check if user's grade matches the course grade
-  const isGradeMatch = !userGrade || userGrade === course.grade;
-  const canEnroll = isAssistantOrAdmin || isGradeMatch;
-  // Use slug for URL, fallback to ID
-  const courseUrl = `/course/${course.slug || course.id}`;
-  
-  return (
-    <div 
-      className={cn(
-        "group bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-fade-in-up",
-        `animation-delay-${((index % 3) + 1) * 100}`
-      )}
-    >
-      {/* Image/Header */}
-      <div className={cn(
-        "relative h-40 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center",
-        isPreview && "opacity-75"
-      )}>
-        <BookOpen className="w-16 h-16 text-primary/50" />
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
-        
-        {/* Preview Badge - "قريباً" for upcoming courses */}
-        {isPreview && !isAssistantOrAdmin && (
-          <Badge className="absolute top-3 left-3 bg-amber-500 text-white gap-1">
-            {isArabic ? 'قريباً' : 'Coming Soon'}
-          </Badge>
-        )}
-        
-        {/* Free/Paid Badge - only show for active courses */}
-        {!isPreview && (
-          <div className="absolute top-3 left-3">
-            <ContentTypeBadge isFree={course.is_free} />
-          </div>
-        )}
-        
-        {/* Show enrolled badge for students only, not for assistants/admins */}
-        {isEnrolled && !isAssistantOrAdmin && !isPreview && (
-          <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground gap-1">
-            <CheckCircle className="w-3 h-3" />
-            {isArabic ? 'مشترك' : 'Enrolled'}
-          </Badge>
-        )}
-        
-        {/* Show management badge for assistants/admins */}
-        {isAssistantOrAdmin && (
-          <Badge className="absolute top-3 right-3 bg-secondary text-secondary-foreground gap-1">
-            {isArabic ? 'مدرس' : 'Teacher'}
-          </Badge>
-        )}
-        
-        {/* Show preview indicator for assistants/admins on preview courses */}
-        {isAssistantOrAdmin && isPreview && (
-          <Badge className="absolute top-3 left-3 bg-amber-500 text-white gap-1">
-            {isArabic ? 'معاينة' : 'Preview'}
-          </Badge>
-        )}
-        
-        {!isEnrolled && !isAssistantOrAdmin && !course.is_free && !isPreview && (
-          <Badge variant="secondary" className="absolute bottom-3 left-3 text-lg font-bold">
-            {course.price} {isArabic ? 'ج.م' : 'EGP'}
-          </Badge>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-5">
-        <Badge variant="outline" className="mb-3 text-xs">
-          {isArabic ? gradeInfo?.ar : gradeInfo?.en}
-        </Badge>
-        
-        <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-1">
-          {isArabic ? course.title_ar : course.title}
-        </h3>
-        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-          {isArabic ? course.description_ar : course.description}
-        </p>
-
-        {/* Meta */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            {course.duration_hours} {isArabic ? 'ساعة' : 'hrs'}
-          </div>
-          <div className="flex items-center gap-1">
-            <Play className="w-4 h-4" />
-            {course.lessons_count} {isArabic ? 'حصة' : 'sessions'}
-          </div>
-        </div>
-
-        {/* CTA - Different behavior based on role and preview status */}
-        {isAssistantOrAdmin ? (
-          // Assistant/Admin: Always show "View Course" - no enrollment needed
-          <Button 
-            variant="default" 
-            className="w-full gap-2"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
-          >
-            <BookOpen className="w-4 h-4" />
-            {isArabic ? 'عرض الكورس' : 'View Course'}
-          </Button>
-        ) : isPreview ? (
-          // Preview course: Show "View Details" - goes to preview page
-          <Button 
-            variant="secondary" 
-            className="w-full gap-2"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
-          >
-            <BookOpen className="w-4 h-4" />
-            {isArabic ? 'عرض التفاصيل' : 'View Details'}
-          </Button>
-        ) : isEnrolled ? (
-          // Enrolled student: Continue learning
-          <Button variant="default" className="w-full gap-2" asChild>
-            <Link to={courseUrl}>
-              <Play className="w-4 h-4" />
-              {isArabic ? 'متابعة التعلم' : 'Continue Learning'}
-            </Link>
-          </Button>
-        ) : !canEnroll ? (
-          // Grade mismatch: Show disabled button with message
-          <div className="space-y-2">
-            <Button 
-              variant="outline"
-              className="w-full opacity-50 cursor-not-allowed"
-              disabled
-            >
-              {isArabic ? 'غير متاح لمسارك' : 'Not available for your track'}
-            </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              {isArabic ? 'هذا الكورس مخصص لمسار دراسي آخر' : 'This course is for a different academic track'}
-            </p>
-          </div>
-        ) : (
-          // Not enrolled student: Enroll button
-          <Button 
-            variant="default"
-            className="w-full"
-            onClick={() => onAction(course.id, course.is_free, course.price, course.grade, course.slug)}
-            disabled={enrollingId === course.id}
-          >
-            {enrollingId === course.id ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : course.is_free ? (
-              isArabic ? 'اشترك مجاناً' : 'Enroll Free'
-            ) : (
-              isArabic ? 'اشترك الآن' : 'Enroll Now'
-            )}
-          </Button>
-        )}
-      </div>
     </div>
   );
 };

@@ -10,6 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { InlineCourseEditor } from '@/components/assistant/InlineCourseEditor';
+import { cn } from '@/lib/utils';
 
 interface Course {
   id: string;
@@ -483,19 +484,19 @@ export default function ManageCourses() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
               <div key={course.id} className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
-                {/* Course Cover Image */}
+                {/* Course Cover Image - Always show cover or fallback */}
                 <div className="relative h-36 overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
-                  {course.thumbnail_url ? (
-                    <img 
-                      src={course.thumbnail_url} 
-                      alt={isArabic ? course.title_ar : course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-12 h-12 text-primary/30" />
-                    </div>
-                  )}
+                  <img 
+                    src={course.thumbnail_url || '/images/default-course-cover.svg'} 
+                    alt={isArabic ? course.title_ar : course.title}
+                    className={cn(
+                      "w-full h-full object-cover",
+                      !course.thumbnail_url && "opacity-60"
+                    )}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
+                    }}
+                  />
                   {/* Badges overlay */}
                   <div className="absolute top-2 left-2 right-2 flex justify-between">
                     <Badge variant="secondary" className="text-xs">
