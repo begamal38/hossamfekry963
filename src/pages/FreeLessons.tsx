@@ -120,7 +120,7 @@ const FreeLessons: React.FC = () => {
   const remainingMinutes = totalDuration % 60;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-mobile-nav">
       <Navbar />
       
       <main className="pt-24 pb-16">

@@ -698,6 +698,53 @@ export type Database = {
           },
         ]
       }
+      free_lesson_analytics: {
+        Row: {
+          created_at: string
+          enrolled_at: string | null
+          id: string
+          is_completed: boolean | null
+          lesson_id: string
+          preview_seconds: number | null
+          session_id: string
+          user_id: string | null
+          view_ended_at: string | null
+          view_started_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrolled_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          lesson_id: string
+          preview_seconds?: number | null
+          session_id: string
+          user_id?: string | null
+          view_ended_at?: string | null
+          view_started_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrolled_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          lesson_id?: string
+          preview_seconds?: number | null
+          session_id?: string
+          user_id?: string | null
+          view_ended_at?: string | null
+          view_started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_lesson_analytics_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_answers: {
         Row: {
           answer: string

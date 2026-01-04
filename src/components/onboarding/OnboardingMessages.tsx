@@ -1,0 +1,159 @@
+import React, { useState, useEffect } from 'react';
+import { X, Sparkles, Play, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+type MessageType = 'welcome' | 'free_lesson_intro' | 'after_completion';
+
+interface OnboardingMessagesProps {
+  type: MessageType;
+  onDismiss?: () => void;
+  courseId?: string;
+  className?: string;
+}
+
+const STORAGE_KEY_PREFIX = 'onboarding_dismissed_';
+
+// Get or set dismissed state in session storage
+const isDismissed = (type: MessageType): boolean => {
+  try {
+    return sessionStorage.getItem(`${STORAGE_KEY_PREFIX}${type}`) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const setDismissed = (type: MessageType): void => {
+  try {
+    sessionStorage.setItem(`${STORAGE_KEY_PREFIX}${type}`, 'true');
+  } catch {
+    // Session storage not available
+  }
+};
+
+export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
+  type,
+  onDismiss,
+  courseId,
+  className,
+}) => {
+  const [visible, setVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    // Check if already dismissed
+    if (isDismissed(type)) {
+      return;
+    }
+    
+    // Show message after a short delay
+    const timer = setTimeout(() => {
+      setVisible(true);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [type]);
+
+  const handleDismiss = () => {
+    setExiting(true);
+    setDismissed(type);
+    setTimeout(() => {
+      setVisible(false);
+      onDismiss?.();
+    }, 300);
+  };
+
+  if (!visible) return null;
+
+  const messages = {
+    welcome: {
+      icon: Sparkles,
+      title: 'أهلاً بيك 👋',
+      subtitle: 'هنا تقدر تجرب أسلوب الشرح وطريقة المنصة قبل ما تقرر تكمل.',
+      cta: null,
+    },
+    free_lesson_intro: {
+      icon: Play,
+      title: 'دي حصة مجانية',
+      subtitle: 'عشان تاخد فكرة عن أسلوب الشرح. لو الشرح مناسبك، تقدر تكمل باقي المحتوى بعد الاشتراك.',
+      cta: null,
+    },
+    after_completion: {
+      icon: CheckCircle,
+      title: 'حاسس إن الشرح مناسبك؟',
+      subtitle: 'كمل باقي الحصص بنفس الأسلوب.',
+      cta: courseId ? { label: 'عرض الكورس', href: `/course/${courseId}` } : null,
+    },
+  };
+
+  const message = messages[type];
+  const Icon = message.icon;
+
+  return (
+    <div
+      className={cn(
+        "fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-40",
+        "bg-card border border-border rounded-xl shadow-lg p-4",
+        "transform transition-all duration-300 ease-out",
+        exiting ? "translate-y-4 opacity-0" : "translate-y-0 opacity-100",
+        className
+      )}
+      role="alert"
+      aria-live="polite"
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-primary" />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-foreground mb-1">{message.title}</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {message.subtitle}
+          </p>
+          
+          {message.cta && (
+            <Button 
+              size="sm" 
+              className="mt-3"
+              onClick={() => {
+                handleDismiss();
+                if (message.cta?.href) {
+                  window.location.href = message.cta.href;
+                }
+              }}
+            >
+              {message.cta.label}
+            </Button>
+          )}
+        </div>
+        
+        <button
+          onClick={handleDismiss}
+          className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+          aria-label="إغلاق"
+        >
+          <X className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Utility hook for showing onboarding messages
+export const useOnboardingMessage = (type: MessageType) => {
+  const [shouldShow, setShouldShow] = useState(false);
+
+  useEffect(() => {
+    if (!isDismissed(type)) {
+      setShouldShow(true);
+    }
+  }, [type]);
+
+  const dismiss = () => {
+    setDismissed(type);
+    setShouldShow(false);
+  };
+
+  return { shouldShow, dismiss };
+};
