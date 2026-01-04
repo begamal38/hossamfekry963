@@ -562,6 +562,25 @@ export default function LessonView() {
         <OnboardingMessages 
           type="free_lesson_intro" 
           courseId={course?.id}
+          courseSlug={course?.slug}
+        />
+      )}
+      
+      {/* Free Trial guidance for logged-in students (not enrolled) on free lessons */}
+      {user && isFreeLesson && !isEnrolled && !isStaff && !completed && (
+        <OnboardingMessages 
+          type="free_trial_guidance" 
+          courseId={course?.id}
+          courseSlug={course?.slug}
+        />
+      )}
+      
+      {/* Free Trial completion guidance for logged-in students */}
+      {user && isFreeLesson && !isEnrolled && !isStaff && completed && (
+        <OnboardingMessages 
+          type="free_trial_complete" 
+          courseId={course?.id}
+          courseSlug={course?.slug}
         />
       )}
 

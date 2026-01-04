@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Play, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Sparkles, Play, CheckCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type MessageType = 'welcome' | 'free_lesson_intro' | 'after_completion';
+type MessageType = 'welcome' | 'free_lesson_intro' | 'after_completion' | 'free_trial_guidance' | 'free_trial_complete';
 
 interface OnboardingMessagesProps {
   type: MessageType;
   onDismiss?: () => void;
   courseId?: string;
+  courseSlug?: string;
   className?: string;
 }
 
@@ -35,8 +37,10 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
   type,
   onDismiss,
   courseId,
+  courseSlug,
   className,
 }) => {
+  const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
@@ -63,6 +67,15 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
     }, 300);
   };
 
+  const handleCourseNavigation = () => {
+    handleDismiss();
+    if (courseSlug) {
+      navigate(`/course/${courseSlug}`);
+    } else if (courseId) {
+      navigate(`/course/${courseId}`);
+    }
+  };
+
   if (!visible) return null;
 
   const messages = {
@@ -82,7 +95,21 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
       icon: CheckCircle,
       title: 'حاسس إن الشرح مناسبك؟',
       subtitle: 'كمل باقي الحصص بنفس الأسلوب.',
-      cta: courseId ? { label: 'عرض الكورس', href: `/course/${courseId}` } : null,
+      cta: (courseId || courseSlug) ? { label: 'عرض الكورس', action: handleCourseNavigation } : null,
+    },
+    // Free Trial guidance for logged-in students
+    free_trial_guidance: {
+      icon: BookOpen,
+      title: 'دي حصة مجانية',
+      subtitle: 'عشان تتعرف على أسلوب الشرح وطريقة المنصة.',
+      cta: null,
+    },
+    // Free Trial completion for logged-in students
+    free_trial_complete: {
+      icon: CheckCircle,
+      title: 'لو الشرح مناسبك',
+      subtitle: 'تقدر تكمل باقي المحتوى بعد الاشتراك في الكورس.',
+      cta: (courseId || courseSlug) ? { label: 'عرض الكورس', action: handleCourseNavigation } : null,
     },
   };
 
@@ -116,12 +143,7 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
             <Button 
               size="sm" 
               className="mt-3"
-              onClick={() => {
-                handleDismiss();
-                if (message.cta?.href) {
-                  window.location.href = message.cta.href;
-                }
-              }}
+              onClick={message.cta.action}
             >
               {message.cta.label}
             </Button>
