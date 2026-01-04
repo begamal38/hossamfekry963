@@ -28,17 +28,18 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useShortId } from '@/hooks/useShortId';
 import { usePreviewTimer } from '@/hooks/usePreviewTimer';
 import { useFreeAnalytics } from '@/hooks/useFreeAnalytics';
+import { usePageVisibility } from '@/hooks/useUnifiedFocusState';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
 import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
 import { PreviewLockOverlay } from '@/components/lesson/PreviewLockOverlay';
-import { VisitorPreviewCountdown } from '@/components/lesson/VisitorPreviewCountdown';
-import { VisitorFocusIndicator } from '@/components/lesson/VisitorFocusIndicator';
+import { UnifiedFocusBar } from '@/components/lesson/UnifiedFocusBar';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
+import { UserType } from '@/hooks/useUnifiedFocusState';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
 
@@ -119,9 +120,14 @@ export default function LessonView() {
 
   // Playback gates (must not affect iframe mounting)
   const [hasPlaybackStarted, setHasPlaybackStarted] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   
-  // Visitor focus state: true when video is playing AND tab is active
-  const [isVisitorFocusActive, setIsVisitorFocusActive] = useState(false);
+  // Page visibility for unified focus state
+  const { isPageVisible, isTabActive } = usePageVisibility();
+  
+  // Viewport visibility for video container
+  const [isVideoInViewport, setIsVideoInViewport] = useState(false);
+  const videoContainerObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Preview timer for visitors (only active for non-logged-in users on free lessons)
   const previewTimer = usePreviewTimer(lessonId || '');
@@ -137,7 +143,16 @@ export default function LessonView() {
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
   const previewLockedRef = useRef(previewTimer.isLocked);
   const isVisitorPreviewRef = useRef(false);
-  const setVisitorFocusActiveRef = useRef(setIsVisitorFocusActive);
+
+  // Unified focus state: computed from all conditions
+  const isFocusActive = isVideoPlaying && isTabActive && isPageVisible && isVideoInViewport;
+  
+  // Determine user type for unified focus bar
+  const getUserType = (): UserType => {
+    if (!user) return 'visitor';
+    if (isEnrolled || isStaff) return 'enrolled';
+    return 'student';
+  };
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -360,28 +375,28 @@ export default function LessonView() {
 
                 // Playback gate: ONLY after user presses play and YT confirms PLAYING
                 setHasPlaybackStarted(true);
+                setIsVideoPlaying(true);
 
                 // Activate focus + preview timer only after confirmed playback
                 focusModeRef.current?.onVideoPlay();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.startTimer();
-                  setVisitorFocusActiveRef.current(true);
                 }
                 break;
               }
               case YT_PAUSED:
               case YT_BUFFERING:
+                setIsVideoPlaying(false);
                 focusModeRef.current?.onVideoPause();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.pauseTimer();
-                  setVisitorFocusActiveRef.current(false);
                 }
                 break;
               case YT_ENDED:
+                setIsVideoPlaying(false);
                 focusModeRef.current?.onVideoEnd();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.pauseTimer();
-                  setVisitorFocusActiveRef.current(false);
                 }
                 break;
             }
@@ -448,7 +463,7 @@ export default function LessonView() {
     if (previewTimer.isLocked && playerRef.current) {
       try {
         playerRef.current.pauseVideo();
-        setIsVisitorFocusActive(false);
+        setIsVideoPlaying(false);
         // Update analytics with final preview time (3 minutes = 180 seconds)
         if (analyticsId) {
           const elapsedSeconds = 180 - previewTimer.remainingSeconds;
@@ -459,6 +474,36 @@ export default function LessonView() {
       }
     }
   }, [previewTimer.isLocked, analyticsId, previewTimer.remainingSeconds, updatePreviewTime]);
+
+  // Effect to pause/resume preview timer based on unified focus state
+  useEffect(() => {
+    if (!isVisitorPreviewRef.current) return;
+    
+    if (isFocusActive && !previewTimer.isLocked) {
+      previewControlsRef.current.startTimer();
+    } else {
+      previewControlsRef.current.pauseTimer();
+    }
+  }, [isFocusActive, previewTimer.isLocked]);
+
+  // Viewport observer for video container
+  useEffect(() => {
+    const container = playerContainerRef.current;
+    if (!container) return;
+
+    videoContainerObserverRef.current = new IntersectionObserver(
+      ([entry]) => {
+        setIsVideoInViewport(entry.intersectionRatio >= 0.6);
+      },
+      { threshold: [0, 0.25, 0.5, 0.6, 0.75, 1] }
+    );
+
+    videoContainerObserverRef.current.observe(container);
+
+    return () => {
+      videoContainerObserverRef.current?.disconnect();
+    };
+  }, [loading, videoId]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
@@ -697,24 +742,27 @@ export default function LessonView() {
                 </h2>
               </div>
               
-              {/* Focus Mode Indicator - for logged-in users */}
-              {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && !completed && (
-                <FocusModeIndicator 
-                  ref={focusModeRef}
-                  lessonId={lesson.id}
-                  showMessages={true}
-                />
-              )}
-              
-              {/* Visitor Focus Indicator + Preview Countdown - only for visitors on free lessons */}
-              {isVisitorFreeLesson && hasPlaybackStarted && !previewTimer.isLocked && (
-                <div className="flex items-center gap-2 flex-wrap justify-end">
-                  <VisitorFocusIndicator isActive={isVisitorFocusActive} />
-                  <VisitorPreviewCountdown 
+              {/* Unified Focus Bar - for all user types when video is available */}
+              {lesson.video_url && getYouTubeVideoId(lesson.video_url) && !completed && !previewTimer.isLocked && (
+                <>
+                  {/* Legacy Focus Mode Indicator for enrolled users - hidden, just for session tracking */}
+                  {user && (
+                    <FocusModeIndicator 
+                      ref={focusModeRef}
+                      lessonId={lesson.id}
+                      showMessages={false}
+                      className="hidden"
+                    />
+                  )}
+                  {/* Unified Focus Bar - visible for all user types */}
+                  <UnifiedFocusBar
+                    userType={getUserType()}
+                    isFocusActive={isFocusActive}
                     remainingSeconds={previewTimer.remainingSeconds}
-                    isRunning={previewTimer.isRunning}
+                    isTimerRunning={previewTimer.isRunning}
+                    hasPlaybackStarted={hasPlaybackStarted}
                   />
-                </div>
+                </>
               )}
             </div>
             
