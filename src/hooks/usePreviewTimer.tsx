@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const PREVIEW_LIMIT_SECONDS = 10 * 60; // 10 minutes
+const PREVIEW_LIMIT_SECONDS = 3 * 60; // 3 minutes
 const STORAGE_KEY_PREFIX = 'preview_time_';
 
 interface PreviewTimerState {

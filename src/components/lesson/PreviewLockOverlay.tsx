@@ -23,10 +23,10 @@ export const PreviewLockOverlay: React.FC<PreviewLockOverlayProps> = ({ classNam
       
       {/* Arabic message */}
       <h3 className="text-xl font-bold text-foreground mb-2 text-center px-4">
-        دي كانت عينة من الحصة
+        دي كانت معاينة سريعة للحصة
       </h3>
       <p className="text-muted-foreground text-center mb-6 px-4">
-        كمّل باقي المحتوى بعد تسجيل حسابك
+        سجّل حسابك وكمّل الحصص المجانية كاملة
       </p>
       
       {/* CTA Button */}

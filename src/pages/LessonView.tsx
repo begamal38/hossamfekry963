@@ -34,6 +34,8 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusModeIndicator';
 import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
 import { PreviewLockOverlay } from '@/components/lesson/PreviewLockOverlay';
+import { VisitorPreviewCountdown } from '@/components/lesson/VisitorPreviewCountdown';
+import { VisitorFocusIndicator } from '@/components/lesson/VisitorFocusIndicator';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
@@ -117,6 +119,9 @@ export default function LessonView() {
 
   // Playback gates (must not affect iframe mounting)
   const [hasPlaybackStarted, setHasPlaybackStarted] = useState(false);
+  
+  // Visitor focus state: true when video is playing AND tab is active
+  const [isVisitorFocusActive, setIsVisitorFocusActive] = useState(false);
 
   // Preview timer for visitors (only active for non-logged-in users on free lessons)
   const previewTimer = usePreviewTimer(lessonId || '');
@@ -132,6 +137,7 @@ export default function LessonView() {
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
   const previewLockedRef = useRef(previewTimer.isLocked);
   const isVisitorPreviewRef = useRef(false);
+  const setVisitorFocusActiveRef = useRef(setIsVisitorFocusActive);
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -359,6 +365,7 @@ export default function LessonView() {
                 focusModeRef.current?.onVideoPlay();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.startTimer();
+                  setVisitorFocusActiveRef.current(true);
                 }
                 break;
               }
@@ -367,12 +374,14 @@ export default function LessonView() {
                 focusModeRef.current?.onVideoPause();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.pauseTimer();
+                  setVisitorFocusActiveRef.current(false);
                 }
                 break;
               case YT_ENDED:
                 focusModeRef.current?.onVideoEnd();
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.pauseTimer();
+                  setVisitorFocusActiveRef.current(false);
                 }
                 break;
             }
@@ -439,9 +448,10 @@ export default function LessonView() {
     if (previewTimer.isLocked && playerRef.current) {
       try {
         playerRef.current.pauseVideo();
-        // Update analytics with final preview time
+        setIsVisitorFocusActive(false);
+        // Update analytics with final preview time (3 minutes = 180 seconds)
         if (analyticsId) {
-          const elapsedSeconds = 600 - previewTimer.remainingSeconds;
+          const elapsedSeconds = 180 - previewTimer.remainingSeconds;
           updatePreviewTime(analyticsId, elapsedSeconds);
         }
       } catch {
@@ -679,7 +689,7 @@ export default function LessonView() {
         <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
           {/* Video Player Section */}
           <section className="mb-8" aria-labelledby="video-section-title">
-            <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Youtube className="w-5 h-5 text-red-500" />
                 <h2 id="video-section-title" className="font-semibold text-lg">
@@ -687,13 +697,24 @@ export default function LessonView() {
                 </h2>
               </div>
               
-              {/* Focus Mode Indicator - controlled by video state via ref */}
+              {/* Focus Mode Indicator - for logged-in users */}
               {user && lesson.video_url && getYouTubeVideoId(lesson.video_url) && !completed && (
                 <FocusModeIndicator 
                   ref={focusModeRef}
                   lessonId={lesson.id}
                   showMessages={true}
                 />
+              )}
+              
+              {/* Visitor Focus Indicator + Preview Countdown - only for visitors on free lessons */}
+              {isVisitorFreeLesson && hasPlaybackStarted && !previewTimer.isLocked && (
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <VisitorFocusIndicator isActive={isVisitorFocusActive} />
+                  <VisitorPreviewCountdown 
+                    remainingSeconds={previewTimer.remainingSeconds}
+                    isRunning={previewTimer.isRunning}
+                  />
+                </div>
               )}
             </div>
             
