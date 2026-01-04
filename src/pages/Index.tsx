@@ -16,7 +16,7 @@ const Index: React.FC = () => {
   }, []);
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-mobile-nav">
       <SEOHead 
         title="Hossam Fekry Platform – Chemistry for Thanaweya Amma"
         titleAr="منصة حسام فكري – شرح الكيمياء للثانوية العامة عربي ولغات"

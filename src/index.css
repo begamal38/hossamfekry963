@@ -194,6 +194,16 @@
   .glow-effect:hover::before {
     opacity: 0.5;
   }
+
+  /* Safe area for mobile bottom navigation */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Add padding to main content to account for bottom nav on mobile */
+  .pb-mobile-nav {
+    @apply pb-20 md:pb-0;
+  }
 }
 
 /* Animations */

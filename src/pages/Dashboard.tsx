@@ -299,7 +299,7 @@ const Dashboard: React.FC = () => {
       }));
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="pt-24 pb-16">

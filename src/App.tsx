@@ -12,6 +12,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
 import { SystemFeedbackProvider } from "@/components/ui/SystemFeedback";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
 
 // Lazy load all pages except Index for better initial bundle size
@@ -319,6 +320,8 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 </Suspense>
+                {/* Mobile Bottom Navigation - visible only on mobile */}
+                <MobileBottomNav />
               </BrowserRouter>
               </SystemFeedbackProvider>
               </TooltipProvider>

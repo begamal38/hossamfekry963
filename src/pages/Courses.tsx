@@ -264,7 +264,7 @@ const Courses: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-mobile-nav">
       <SEOHead 
         title="Chemistry Courses – Hossam Fekry Platform"
         titleAr="كورسات الكيمياء – منصة حسام فكري"
