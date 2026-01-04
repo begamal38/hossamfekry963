@@ -8,6 +8,11 @@ type MessageType = 'welcome' | 'free_lesson_intro' | 'after_completion' | 'free_
 
 interface OnboardingMessagesProps {
   type: MessageType;
+  /**
+   * When false, the message will not mount/animate yet.
+   * Used to guarantee overlays appear ONLY after YouTube playback starts.
+   */
+  enabled?: boolean;
   onDismiss?: () => void;
   courseId?: string;
   courseSlug?: string;
@@ -35,6 +40,7 @@ const setDismissed = (type: MessageType): void => {
 
 export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
   type,
+  enabled = true,
   onDismiss,
   courseId,
   courseSlug,
@@ -45,18 +51,25 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
+    // Hard gate: never show before "enabled" is true
+    if (!enabled) {
+      setVisible(false);
+      setExiting(false);
+      return;
+    }
+
     // Check if already dismissed
     if (isDismissed(type)) {
       return;
     }
-    
+
     // Show message after a short delay
     const timer = setTimeout(() => {
       setVisible(true);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [type]);
+  }, [type, enabled]);
 
   const handleDismiss = () => {
     setExiting(true);

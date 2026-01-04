@@ -114,16 +114,24 @@ export default function LessonView() {
   const [completionSaving, setCompletionSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [analyticsId, setAnalyticsId] = useState<string | null>(null);
-  
+
+  // Playback gates (must not affect iframe mounting)
+  const [hasPlaybackStarted, setHasPlaybackStarted] = useState(false);
+
   // Preview timer for visitors (only active for non-logged-in users on free lessons)
   const previewTimer = usePreviewTimer(lessonId || '');
   const { trackView, updatePreviewTime, markCompleted: markAnalyticsCompleted } = useFreeAnalytics();
-  
+
   // Focus Mode refs and persistence
   const focusModeRef = useRef<FocusModeHandle>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const { saveFocusSession } = useFocusSessionPersistence();
+
+  // Keep volatile values in refs so player lifecycle never re-initializes on re-renders
+  const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
+  const previewLockedRef = useRef(previewTimer.isLocked);
+  const isVisitorPreviewRef = useRef(false);
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -140,6 +148,11 @@ export default function LessonView() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [lessonIdParam]);
+
+  useEffect(() => {
+    // reset local playback gate when switching lessons
+    setHasPlaybackStarted(false);
+  }, [lessonId]);
 
   useEffect(() => {
     if (lessonId && !resolving) {
@@ -277,6 +290,16 @@ export default function LessonView() {
     }
   };
 
+  // Keep refs updated (no re-init side effects)
+  useEffect(() => {
+    previewControlsRef.current = {
+      startTimer: previewTimer.startTimer,
+      pauseTimer: previewTimer.pauseTimer,
+    };
+    previewLockedRef.current = previewTimer.isLocked;
+    isVisitorPreviewRef.current = !user && !!lesson?.is_free_lesson;
+  }, [previewTimer.startTimer, previewTimer.pauseTimer, previewTimer.isLocked, user, lesson?.is_free_lesson]);
+
   const createPlayer = useCallback((videoId: string) => {
     if (playerRef.current) {
       try {
@@ -294,9 +317,6 @@ export default function LessonView() {
     // Set ID for YouTube API
     container.id = containerId;
 
-    // Determine if this is a visitor preview session
-    const isVisitorPreview = !user && lesson?.is_free_lesson;
-
     try {
       playerRef.current = new window.YT.Player(containerId, {
         videoId,
@@ -310,30 +330,49 @@ export default function LessonView() {
         events: {
           onReady: () => {
             console.log('YouTube player ready');
+            // If this visitor already exhausted preview, keep playback blocked.
+            if (isVisitorPreviewRef.current && previewLockedRef.current) {
+              try {
+                playerRef.current?.pauseVideo?.();
+              } catch {
+                // ignore
+              }
+            }
           },
           onStateChange: (event: any) => {
             switch (event.data) {
-              case YT_PLAYING:
-                // Lesson started ONLY when the user actually presses play
+              case YT_PLAYING: {
+                // If locked, immediately stop (anti-abuse). Do not start any timers.
+                if (isVisitorPreviewRef.current && previewLockedRef.current) {
+                  try {
+                    playerRef.current?.pauseVideo?.();
+                  } catch {
+                    // ignore
+                  }
+                  return;
+                }
+
+                // Playback gate: ONLY after user presses play and YT confirms PLAYING
+                setHasPlaybackStarted(true);
+
+                // Activate focus + preview timer only after confirmed playback
                 focusModeRef.current?.onVideoPlay();
-                // Start preview timer for visitors
-                if (isVisitorPreview) {
-                  previewTimer.startTimer();
+                if (isVisitorPreviewRef.current) {
+                  previewControlsRef.current.startTimer();
                 }
                 break;
+              }
               case YT_PAUSED:
               case YT_BUFFERING:
                 focusModeRef.current?.onVideoPause();
-                // Pause preview timer for visitors
-                if (isVisitorPreview) {
-                  previewTimer.pauseTimer();
+                if (isVisitorPreviewRef.current) {
+                  previewControlsRef.current.pauseTimer();
                 }
                 break;
               case YT_ENDED:
                 focusModeRef.current?.onVideoEnd();
-                // Pause preview timer on video end
-                if (isVisitorPreview) {
-                  previewTimer.pauseTimer();
+                if (isVisitorPreviewRef.current) {
+                  previewControlsRef.current.pauseTimer();
                 }
                 break;
             }
@@ -346,13 +385,24 @@ export default function LessonView() {
     } catch (error) {
       console.error('Error creating YouTube player:', error);
     }
-  }, [user, lesson?.is_free_lesson, previewTimer]);
+  }, []);
 
-  // Initialize YouTube Player API
-  const initYouTubePlayer = useCallback((videoId: string) => {
+  const videoId = useMemo(() => {
+    const url = lesson?.video_url;
+    return url ? getYouTubeVideoId(url) : null;
+  }, [lesson?.video_url]);
+
+  // Initialize YouTube Player API (stable - do not re-run on re-renders)
+  useEffect(() => {
+    if (loading) return;
+    if (!videoId) return;
+    if (!playerContainerRef.current) return;
+
+    const init = () => createPlayer(videoId);
+
     // If API is already ready
     if (window.YT && window.YT.Player) {
-      createPlayer(videoId);
+      init();
       return;
     }
 
@@ -360,51 +410,29 @@ export default function LessonView() {
     const existingScript = document.getElementById('youtube-iframe-api') as HTMLScriptElement | null;
     if (!existingScript) {
       // IMPORTANT: define callback BEFORE inserting script to avoid missing it on fast loads
-      window.onYouTubeIframeAPIReady = () => {
-        createPlayer(videoId);
-      };
+      window.onYouTubeIframeAPIReady = init;
 
       const tag = document.createElement('script');
       tag.id = 'youtube-iframe-api';
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScript = document.getElementsByTagName('script')[0];
       firstScript?.parentNode?.insertBefore(tag, firstScript);
-      return;
+    } else {
+      // Script exists but API not ready yet → wait for global ready
+      window.onYouTubeIframeAPIReady = init;
     }
-
-    // Script exists but API not ready yet → wait for global ready
-    window.onYouTubeIframeAPIReady = () => {
-      createPlayer(videoId);
-    };
-  }, [createPlayer]);
-
-  const videoId = useMemo(() => {
-    const url = lesson?.video_url;
-    return url ? getYouTubeVideoId(url) : null;
-  }, [lesson?.video_url]);
-
-  // Initialize player as soon as BOTH:
-  // - lesson video is known
-  // - video container is mounted (loading spinner is gone)
-  // Never auto-play, never start focus here.
-  useEffect(() => {
-    if (loading) return;
-    if (!videoId) return;
-    if (!playerContainerRef.current) return;
-
-    initYouTubePlayer(videoId);
 
     return () => {
       if (playerRef.current) {
         try {
           playerRef.current.destroy();
-        } catch (e) {
+        } catch {
           // ignore
         }
         playerRef.current = null;
       }
     };
-  }, [loading, videoId, initYouTubePlayer]);
+  }, [loading, videoId, createPlayer]);
 
   // Effect to pause video when preview timer locks
   useEffect(() => {
@@ -416,8 +444,8 @@ export default function LessonView() {
           const elapsedSeconds = 600 - previewTimer.remainingSeconds;
           updatePreviewTime(analyticsId, elapsedSeconds);
         }
-      } catch (e) {
-        // Player may not be ready
+      } catch {
+        // ignore
       }
     }
   }, [previewTimer.isLocked, analyticsId, previewTimer.remainingSeconds, updatePreviewTime]);
@@ -557,28 +585,30 @@ export default function LessonView() {
       />
       <Navbar />
       
-      {/* Onboarding messages for visitors on free lessons */}
+      {/* Onboarding messages for visitors on free lessons (ONLY after playback starts) */}
       {isVisitorFreeLesson && (
-        <OnboardingMessages 
-          type="free_lesson_intro" 
+        <OnboardingMessages
+          type="free_lesson_intro"
+          enabled={hasPlaybackStarted}
           courseId={course?.id}
           courseSlug={course?.slug}
         />
       )}
-      
-      {/* Free Trial guidance for logged-in students (not enrolled) on free lessons */}
+
+      {/* Free Trial guidance for logged-in students (not enrolled) on free lessons (ONLY after playback starts) */}
       {user && isFreeLesson && !isEnrolled && !isStaff && !completed && (
-        <OnboardingMessages 
-          type="free_trial_guidance" 
+        <OnboardingMessages
+          type="free_trial_guidance"
+          enabled={hasPlaybackStarted}
           courseId={course?.id}
           courseSlug={course?.slug}
         />
       )}
-      
+
       {/* Free Trial completion guidance for logged-in students */}
       {user && isFreeLesson && !isEnrolled && !isStaff && completed && (
-        <OnboardingMessages 
-          type="free_trial_complete" 
+        <OnboardingMessages
+          type="free_trial_complete"
           courseId={course?.id}
           courseSlug={course?.slug}
         />
