@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -7,112 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Gift, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { hasValidVideo } from '@/lib/contentVisibility';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
-
-interface FreeLesson {
-  id: string;
-  title: string;
-  title_ar: string;
-  duration_minutes: number | null;
-  video_url: string | null;
-  course_id: string;
-  courses?: {
-    title_ar: string;
-    title: string;
-    grade: string;
-  };
-}
+import { useFreeLessons } from '@/hooks/useFreeLessons';
 
 const FreeLessons: React.FC = () => {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const isArabic = language === 'ar';
-  const [lessons, setLessons] = useState<FreeLesson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [userGrade, setUserGrade] = useState<string | null>(null);
+  
+  // Use the centralized free lessons hook - single source of truth
+  const { lessons, loading } = useFreeLessons();
 
-  // Check if user is staff (can see all free lessons)
-  const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
-
-  // Fetch user profile to get grade if logged in (students only)
-  useEffect(() => {
-    const fetchUserGrade = async () => {
-      if (!user || isStaff) {
-        setUserGrade(null);
-        return;
-      }
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('grade')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      setUserGrade(data?.grade || null);
-    };
-    
-    fetchUserGrade();
-  }, [user, isStaff]);
-
-  useEffect(() => {
-    // Wait for roles to load before fetching
-    if (rolesLoading) return;
-    fetchFreeLessons();
-  }, [userGrade, user, rolesLoading, isStaff]);
-
-  const fetchFreeLessons = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('lessons')
-        .select(`
-          id,
-          title,
-          title_ar,
-          duration_minutes,
-          video_url,
-          course_id,
-          courses!inner (
-            title_ar,
-            title,
-            grade,
-            is_primary
-          )
-        `)
-        .eq('is_free_lesson', true)
-        .eq('courses.is_primary', true) // Only from primary courses
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Filter to only show lessons with valid videos
-      let validLessons = (data || []).filter(lesson => hasValidVideo(lesson.video_url));
-      
-      // ROLE-BASED FILTERING:
-      // - Staff (admin/assistant): See ALL free lessons (no grade filter)
-      // - Logged-in students: Filter by their grade
-      // - Guests (not logged in): See ALL free lessons
-      if (user && !isStaff && userGrade) {
-        validLessons = validLessons.filter(lesson => 
-          lesson.courses?.grade === userGrade
-        );
-      }
-      // If staff or guest: show all (no filtering)
-      
-      setLessons(validLessons);
-    } catch (error) {
-      console.error('Error fetching free lessons:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLessonClick = (lessonId: string) => {
-    navigate(`/lesson/${lessonId}`);
+  const handleLessonClick = (shortId: number) => {
+    navigate(`/lesson/${shortId}`);
   };
 
   const totalDuration = lessons.reduce((acc, lesson) => acc + (lesson.duration_minutes || 0), 0);
@@ -195,7 +101,7 @@ const FreeLessons: React.FC = () => {
                 {lessons.map((lesson, index) => (
                   <div 
                     key={lesson.id}
-                    onClick={() => handleLessonClick(lesson.id)}
+                    onClick={() => handleLessonClick(lesson.short_id)}
                     className={cn(
                       "group flex items-center gap-4 p-5 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 animate-fade-in-up cursor-pointer",
                       `animation-delay-${((index % 4) + 1) * 100}`
