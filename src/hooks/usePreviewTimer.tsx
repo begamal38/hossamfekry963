@@ -42,15 +42,11 @@ export const usePreviewTimer = (lessonId: string): UsePreviewTimerReturn => {
   const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const storageKeyRef = useRef(storageKey);
 
-  // Save elapsed time to session storage
-  const saveElapsedTime = useCallback((remaining: number) => {
-    try {
-      const elapsed = PREVIEW_LIMIT_SECONDS - remaining;
-      sessionStorage.setItem(storageKey, elapsed.toString());
-    } catch {
-      // Session storage not available
-    }
+  // Keep storageKey ref updated
+  useEffect(() => {
+    storageKeyRef.current = storageKey;
   }, [storageKey]);
 
   // Handle visibility change
@@ -65,19 +61,48 @@ export const usePreviewTimer = (lessonId: string): UsePreviewTimerReturn => {
     };
   }, []);
 
-  // Timer logic
+  // Timer logic - only depends on isRunning, isTabVisible, isLocked
   useEffect(() => {
-    if (isRunning && isTabVisible && !isLocked && remainingSeconds > 0) {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    if (isRunning && isTabVisible && !isLocked) {
       intervalRef.current = setInterval(() => {
         setRemainingSeconds((prev) => {
+          if (prev <= 0) {
+            // Already at zero, lock it
+            setIsLocked(true);
+            setIsRunning(false);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            return 0;
+          }
+          
           const newValue = prev - 1;
-          saveElapsedTime(newValue);
+          
+          // Save to session storage
+          try {
+            const elapsed = PREVIEW_LIMIT_SECONDS - newValue;
+            sessionStorage.setItem(storageKeyRef.current, elapsed.toString());
+          } catch {
+            // Session storage not available
+          }
           
           if (newValue <= 0) {
             setIsLocked(true);
             setIsRunning(false);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
             return 0;
           }
+          
           return newValue;
         });
       }, 1000);
@@ -89,21 +114,15 @@ export const usePreviewTimer = (lessonId: string): UsePreviewTimerReturn => {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, isTabVisible, isLocked, saveElapsedTime, remainingSeconds]);
+  }, [isRunning, isTabVisible, isLocked]);
 
-  // Pause timer when tab becomes hidden
-  useEffect(() => {
-    if (!isTabVisible && intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [isTabVisible]);
-
+  // Stable startTimer - no dependencies on changing values
   const startTimer = useCallback(() => {
-    if (!isLocked && remainingSeconds > 0) {
-      setIsRunning(true);
-    }
-  }, [isLocked, remainingSeconds]);
+    setIsRunning((running) => {
+      // Only start if not already running
+      return true;
+    });
+  }, []);
 
   const pauseTimer = useCallback(() => {
     setIsRunning(false);
@@ -114,7 +133,13 @@ export const usePreviewTimer = (lessonId: string): UsePreviewTimerReturn => {
   }, []);
 
   const resetForNewLesson = useCallback((newLessonId: string) => {
-    // This is called when switching lessons
+    // Stop current timer
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsRunning(false);
+    
     // Each lesson has its own timer in session storage
     const newStorageKey = `${STORAGE_KEY_PREFIX}${newLessonId}`;
     try {
@@ -132,8 +157,15 @@ export const usePreviewTimer = (lessonId: string): UsePreviewTimerReturn => {
       setRemainingSeconds(PREVIEW_LIMIT_SECONDS);
       setIsLocked(false);
     }
-    setIsRunning(false);
   }, []);
+
+  // Check lock state based on remainingSeconds
+  useEffect(() => {
+    if (remainingSeconds <= 0 && !isLocked) {
+      setIsLocked(true);
+      setIsRunning(false);
+    }
+  }, [remainingSeconds, isLocked]);
 
   return {
     remainingSeconds,
