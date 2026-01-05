@@ -124,10 +124,6 @@ export default function LessonView() {
   
   // Page visibility for unified focus state
   const { isPageVisible, isTabActive } = usePageVisibility();
-  
-  // Viewport visibility for video container
-  const [isVideoInViewport, setIsVideoInViewport] = useState(false);
-  const videoContainerObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Preview timer for visitors (only active for non-logged-in users on free lessons)
   const previewTimer = usePreviewTimer(lessonId || '');
@@ -144,8 +140,9 @@ export default function LessonView() {
   const previewLockedRef = useRef(previewTimer.isLocked);
   const isVisitorPreviewRef = useRef(false);
 
-  // Unified focus state: computed from all conditions
-  const isFocusActive = isVideoPlaying && isTabActive && isPageVisible && isVideoInViewport;
+  // Unified focus state: computed from video + tab + page visibility
+  // NOTE: No viewport check - YouTube embeds are unreliable with intersection observers
+  const isFocusActive = isVideoPlaying && isTabActive && isPageVisible;
   
   // Determine user type for unified focus bar
   const getUserType = (): UserType => {
@@ -485,25 +482,6 @@ export default function LessonView() {
       previewControlsRef.current.pauseTimer();
     }
   }, [isFocusActive, previewTimer.isLocked]);
-
-  // Viewport observer for video container
-  useEffect(() => {
-    const container = playerContainerRef.current;
-    if (!container) return;
-
-    videoContainerObserverRef.current = new IntersectionObserver(
-      ([entry]) => {
-        setIsVideoInViewport(entry.intersectionRatio >= 0.6);
-      },
-      { threshold: [0, 0.25, 0.5, 0.6, 0.75, 1] }
-    );
-
-    videoContainerObserverRef.current.observe(container);
-
-    return () => {
-      videoContainerObserverRef.current?.disconnect();
-    };
-  }, [loading, videoId]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;

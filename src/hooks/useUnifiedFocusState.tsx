@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 export type UserType = 'visitor' | 'student' | 'enrolled';
 
@@ -7,7 +7,6 @@ export interface UnifiedFocusStateProps {
   isVideoPlaying: boolean;
   isTabActive: boolean;
   isPageVisible: boolean;
-  isVideoInViewport: boolean;
 }
 
 export interface UnifiedFocusState {
@@ -21,19 +20,21 @@ export interface UnifiedFocusState {
  * - Video is playing
  * - Browser tab is active
  * - Page is visible
- * - Video iframe is ≥60% in viewport
+ * 
+ * NOTE: Viewport visibility is intentionally NOT checked.
+ * YouTube embeds are unreliable with intersection observers,
+ * and mobile scrolling causes false focus loss.
  */
 export const useUnifiedFocusState = ({
   userType,
   isVideoPlaying,
   isTabActive,
   isPageVisible,
-  isVideoInViewport,
 }: UnifiedFocusStateProps): UnifiedFocusState => {
   const [focusLostReason, setFocusLostReason] = useState<string | null>(null);
 
-  // Compute focus active state
-  const isFocusActive = isVideoPlaying && isTabActive && isPageVisible && isVideoInViewport;
+  // Compute focus active state (NO viewport check)
+  const isFocusActive = isVideoPlaying && isTabActive && isPageVisible;
 
   // Track reason for focus loss
   useEffect(() => {
@@ -45,10 +46,8 @@ export const useUnifiedFocusState = ({
       setFocusLostReason('tab_inactive');
     } else if (!isPageVisible) {
       setFocusLostReason('page_hidden');
-    } else if (!isVideoInViewport) {
-      setFocusLostReason('video_not_visible');
     }
-  }, [isFocusActive, isVideoPlaying, isTabActive, isPageVisible, isVideoInViewport]);
+  }, [isFocusActive, isVideoPlaying, isTabActive, isPageVisible]);
 
   return {
     isFocusActive,
