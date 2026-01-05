@@ -60,24 +60,43 @@ export const useUnifiedFocusState = ({
  */
 export const usePageVisibility = () => {
   const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
-  const [isTabActive, setIsTabActive] = useState(document.hasFocus());
+  // IMPORTANT: "tab active" events are unreliable on mobile + YouTube iframes.
+  // We default to true, then only flip to false on real blur/pagehide events.
+  const [isTabActive, setIsTabActive] = useState(true);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      setIsPageVisible(!document.hidden);
+      const visible = !document.hidden;
+      setIsPageVisible(visible);
+
+      // If the page is visible again, treat it as active (fail-safe).
+      if (visible) setIsTabActive(true);
     };
 
     const handleFocus = () => setIsTabActive(true);
     const handleBlur = () => setIsTabActive(false);
 
+    const handlePageShow = () => {
+      setIsPageVisible(true);
+      setIsTabActive(true);
+    };
+
+    const handlePageHide = () => {
+      setIsTabActive(false);
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pagehide', handlePageHide);
     };
   }, []);
 
