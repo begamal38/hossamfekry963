@@ -1064,3 +1064,92 @@
 .bg-gradient-radial {
   background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENHANCED 3D BACKGROUND - Dark Mode Stars & Nebula Effects
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Slow pulsing for nebula clouds */
+@keyframes pulse-slow-nebula {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow-nebula 8s ease-in-out infinite;
+}
+
+/* Animation delays for staggered effects */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Slow floating for small molecules */
+@keyframes float-slow-reverse {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(10px) translateX(-5px);
+  }
+  50% {
+    transform: translateY(5px) translateX(5px);
+  }
+  75% {
+    transform: translateY(15px) translateX(-3px);
+  }
+}
+
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 22s ease-in-out infinite;
+}
+
+/* Third electron orbit - slower */
+@keyframes electron-orbit-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-electron-orbit-slow {
+  animation: electron-orbit-slow 15s linear infinite;
+}
+
+/* Dark mode star twinkle effect */
+.dark .animate-star-twinkle {
+  animation: star-twinkle 3s ease-in-out infinite;
+}
+
+@keyframes star-twinkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-slow,
+  .animate-float-slow-reverse,
+  .animate-electron-orbit-slow,
+  .animate-star-twinkle {
+    animation: none !important;
+  }
+}
