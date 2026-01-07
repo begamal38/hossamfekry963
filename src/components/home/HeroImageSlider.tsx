@@ -26,7 +26,7 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 3000);
+    const interval = setInterval(nextSlide, 4000);
     return () => clearInterval(interval);
   }, [nextSlide]);
 
