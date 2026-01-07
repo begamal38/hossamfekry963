@@ -16,8 +16,19 @@ import {
   FileQuestion,
   AlertCircle,
   Copy,
-  Check
+  Check,
+  AlertTriangle
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -117,6 +128,7 @@ export default function LessonView() {
   const [completed, setCompleted] = useState(false);
   const [completionSaving, setCompletionSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
   const [analyticsId, setAnalyticsId] = useState<string | null>(null);
 
   // Playback gates (must not affect iframe mounting)
@@ -261,9 +273,14 @@ export default function LessonView() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleCompleteClick = () => {
+    setShowCompletionConfirm(true);
+  };
+
+  const handleConfirmComplete = async () => {
     if (!user || !lesson || completionSaving) return;
 
+    setShowCompletionConfirm(false);
     setCompletionSaving(true);
     try {
       // Stop Focus Mode immediately when lesson is marked complete
@@ -885,7 +902,7 @@ export default function LessonView() {
                   {/* System-driven completion button - always enabled */}
                   <Button 
                     size="lg" 
-                    onClick={handleComplete} 
+                    onClick={handleCompleteClick} 
                     className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={completionSaving}
                   >
@@ -896,6 +913,46 @@ export default function LessonView() {
                     )}
                     {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
                   </Button>
+
+                  {/* Completion Confirmation Dialog */}
+                  <AlertDialog open={showCompletionConfirm} onOpenChange={setShowCompletionConfirm}>
+                    <AlertDialogContent className="max-w-md" dir={isRTL ? 'rtl' : 'ltr'}>
+                      <AlertDialogHeader>
+                        <div className="flex justify-center mb-4">
+                          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                            <AlertTriangle className="w-8 h-8 text-amber-500" />
+                          </div>
+                        </div>
+                        <AlertDialogTitle className="text-center text-xl">
+                          {isArabic ? 'تأكيد إكمال الحصة' : 'Confirm Lesson Completion'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-center space-y-3 pt-2">
+                          <p className="text-base">
+                            {isArabic 
+                              ? 'هل أنت متأكد أنك شاهدت الحصة بالكامل؟'
+                              : 'Are you sure you watched the entire lesson?'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {isArabic 
+                              ? '⚠️ تعليم الحصة كمكتملة بدون مشاهدتها فعلياً هيأثر على تقدمك ومستواك في الكورس.'
+                              : '⚠️ Marking the lesson complete without actually watching it will affect your progress and performance.'}
+                          </p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+                        <AlertDialogCancel className="w-full sm:w-auto">
+                          {isArabic ? 'رجوع' : 'Go Back'}
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleConfirmComplete}
+                          className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          {isArabic ? 'نعم، خلصت الحصة' : 'Yes, I Completed It'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   
                   {/* Exam Button - disabled state with reason */}
                   {linkedExam && (
