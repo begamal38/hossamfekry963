@@ -36,6 +36,7 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   slug: string | null;
+  is_hidden?: boolean;
 }
 
 interface Enrollment {
@@ -228,8 +229,26 @@ const Courses: React.FC = () => {
     bypassScope: canBypassAcademicRestrictions,
   });
 
+  // Filter hidden courses for non-enrolled users (visibility control)
+  // Hidden courses are only visible to:
+  // 1. Admins/Assistant Teachers (canBypassAcademicRestrictions)
+  // 2. Students who are already enrolled in them
+  const visibleCourses = scopedCourses.filter(course => {
+    // Staff can see all courses
+    if (canBypassAcademicRestrictions) return true;
+    
+    // If course is not hidden, show it
+    if (!course.is_hidden) return true;
+    
+    // If course is hidden, only show if user is enrolled
+    if (user && isEnrolled(course.id)) return true;
+    
+    // Hidden course and not enrolled - don't show
+    return false;
+  });
+
   // Filter and sort courses (free courses first for marketing)
-  const filteredCourses = scopedCourses
+  const filteredCourses = visibleCourses
     .filter(course => {
       const matchesSearch = 
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

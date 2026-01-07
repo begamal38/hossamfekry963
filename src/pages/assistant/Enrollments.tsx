@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { ManualEnrollment } from '@/components/assistant/ManualEnrollment';
+import { BulkEnrollment } from '@/components/assistant/BulkEnrollment';
 import { useCourseActivitySummary } from '@/hooks/useCourseActivitySummary';
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 
@@ -255,6 +256,7 @@ const Enrollments = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <BulkEnrollment isArabic={isRTL} onEnrollmentComplete={fetchEnrollments} />
             <ManualEnrollment isArabic={isRTL} onEnrollmentComplete={fetchEnrollments} />
             <Button variant="outline" size="sm" onClick={fetchEnrollments} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'} ${loading ? 'animate-spin' : ''}`} />

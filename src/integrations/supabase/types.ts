@@ -212,6 +212,60 @@ export type Database = {
           },
         ]
       }
+      chapter_enrollments: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          chapter_id: string
+          course_id: string
+          created_at: string
+          enrolled_at: string
+          expires_at: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          chapter_id: string
+          course_id: string
+          created_at?: string
+          enrolled_at?: string
+          expires_at?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          chapter_id?: string
+          course_id?: string
+          created_at?: string
+          enrolled_at?: string
+          expires_at?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_enrollments_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           course_id: string
@@ -386,6 +440,7 @@ export type Database = {
           grade: string
           id: string
           is_free: boolean | null
+          is_hidden: boolean
           is_primary: boolean
           lessons_count: number | null
           price: number | null
@@ -404,6 +459,7 @@ export type Database = {
           grade: string
           id?: string
           is_free?: boolean | null
+          is_hidden?: boolean
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
@@ -422,6 +478,7 @@ export type Database = {
           grade?: string
           id?: string
           is_free?: boolean | null
+          is_hidden?: boolean
           is_primary?: boolean
           lessons_count?: number | null
           price?: number | null
