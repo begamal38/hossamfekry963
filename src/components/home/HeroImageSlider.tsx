@@ -1,5 +1,4 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
-import teacherImage from '@/assets/teacher.jpg';
 import heroSlide1 from '@/assets/hero-slide-1.jpg';
 import heroSlide2 from '@/assets/hero-slide-2.jpg';
 import heroSlide3 from '@/assets/hero-slide-3.jpg';
@@ -9,7 +8,6 @@ interface HeroImageSliderProps {
 }
 
 const slides = [
-  { src: teacherImage, alt: 'حسام فكري - مدرس الكيمياء' },
   { src: heroSlide1, alt: 'حسام فكري - في الاستوديو' },
   { src: heroSlide2, alt: 'حسام فكري - صورة رسمية' },
   { src: heroSlide3, alt: 'حسام فكري - في البرنامج' },
@@ -40,19 +38,27 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
       {/* LANDSCAPE Image container - 16:9 mobile, larger on desktop */}
       <div className="relative aspect-video lg:aspect-[16/9] xl:aspect-[2/1]">
         {slides.map((slide, index) => (
-          <img
+          <div
             key={index}
-            src={slide.src}
-            alt={slide.alt}
-            width={1920}
-            height={1080}
-            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ease-in-out ${
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
+            className={`absolute inset-0 transition-all duration-1000 ease-out ${
+              index === currentIndex 
+                ? 'opacity-100 scale-100' 
+                : 'opacity-0 scale-105'
             }`}
-            loading={index === 0 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : 'auto'}
-            decoding="async"
-          />
+          >
+            <img
+              src={slide.src}
+              alt={slide.alt}
+              width={1920}
+              height={1080}
+              className={`w-full h-full object-cover object-top transition-transform duration-[6000ms] ease-out ${
+                index === currentIndex ? 'scale-105' : 'scale-100'
+              }`}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              fetchPriority={index === 0 ? 'high' : 'auto'}
+              decoding="async"
+            />
+          </div>
         ))}
       </div>
 
