@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, BookOpen, Clock, Video, ImagePlus, X, ChevronDown, ChevronUp, Loader2, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -27,6 +27,7 @@ interface Course {
   created_at: string;
   thumbnail_url: string | null;
   slug: string;
+  is_hidden?: boolean;
 }
 
 const GRADE_OPTIONS = [
@@ -510,9 +511,17 @@ export default function ManageCourses() {
                   />
                   {/* Badges overlay */}
                   <div className="absolute top-2 left-2 right-2 flex justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {getGradeLabel(course.grade)}
-                    </Badge>
+                    <div className="flex gap-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {getGradeLabel(course.grade)}
+                      </Badge>
+                      {course.is_hidden && (
+                        <Badge variant="outline" className="text-xs bg-amber-500/20 text-amber-700 border-amber-500/30">
+                          <EyeOff className="w-3 h-3 me-1" />
+                          {isArabic ? 'مخفي' : 'Hidden'}
+                        </Badge>
+                      )}
+                    </div>
                     {course.is_free ? (
                       <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                         {isArabic ? 'مجاني' : 'Free'}

@@ -19,6 +19,7 @@ interface Course {
   is_free: boolean | null;
   duration_hours: number | null;
   thumbnail_url: string | null;
+  is_hidden?: boolean;
 }
 
 interface InlineCourseEditorProps {
@@ -49,6 +50,7 @@ export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEdi
     is_free: course.is_free || false,
     duration_hours: course.duration_hours || 0,
     thumbnail_url: course.thumbnail_url || '',
+    is_hidden: course.is_hidden || false,
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(course.thumbnail_url || null);
@@ -141,6 +143,7 @@ export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEdi
           is_free: formData.is_free,
           duration_hours: formData.duration_hours,
           thumbnail_url: thumbnailUrl,
+          is_hidden: formData.is_hidden,
         })
         .eq('id', course.id);
 
@@ -257,6 +260,28 @@ export function InlineCourseEditor({ course, onSave, onCancel }: InlineCourseEdi
             <span className="text-sm text-muted-foreground">{isArabic ? 'ج.م' : 'EGP'}</span>
           </div>
         )}
+      </div>
+
+      {/* Visibility Control */}
+      <div className="border border-amber-500/30 bg-amber-500/5 rounded-lg p-3">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.is_hidden}
+            onChange={(e) => setFormData({ ...formData, is_hidden: e.target.checked })}
+            className="w-4 h-4 mt-0.5"
+          />
+          <div>
+            <p className="text-sm font-medium">
+              {isArabic ? 'إخفاء الكورس عن العرض العام' : 'Hide Course from Public'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isArabic 
+                ? 'الكورس لن يظهر للطلاب الجدد. الطلاب المشتركين حالياً لن يتأثروا.' 
+                : 'Course will not appear to new students. Existing enrollments are not affected.'}
+            </p>
+          </div>
+        </label>
       </div>
 
       {/* Thumbnail */}
