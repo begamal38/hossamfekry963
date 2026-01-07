@@ -13,7 +13,7 @@ export interface Enrollment {
   id: string;
   course_id: string;
   user_id: string;
-  status: 'pending' | 'active' | 'expired' | 'cancelled';
+  status: 'pending' | 'active' | 'suspended' | 'expired' | 'cancelled';
   progress: number;
   completed_lessons: number;
   enrolled_at: string;
@@ -110,9 +110,15 @@ export const useEnrollments = () => {
     fetchEnrollments();
   }, [fetchEnrollments]);
 
-  // Derived values
+  // Active enrollments include 'active' status only (not suspended)
   const activeEnrollments = useMemo(() => 
     enrollments.filter(e => e.status === 'active'),
+    [enrollments]
+  );
+
+  // Suspended enrollments - student can view completed lessons only
+  const suspendedEnrollments = useMemo(() => 
+    enrollments.filter(e => e.status === 'suspended'),
     [enrollments]
   );
 
@@ -130,14 +136,22 @@ export const useEnrollments = () => {
     return enrollment?.status || null;
   }, [enrollments]);
 
+  // Check if user has suspended enrollment (can view completed lessons only)
+  const isSuspendedIn = useCallback((courseId: string) => {
+    const enrollment = enrollments.find(e => e.course_id === courseId);
+    return enrollment?.status === 'suspended';
+  }, [enrollments]);
+
   return {
     enrollments,
     activeEnrollments,
+    suspendedEnrollments,
     pendingEnrollments,
     loading,
     error,
     isEnrolledIn,
     getEnrollmentStatus,
+    isSuspendedIn,
     refreshEnrollments: () => fetchEnrollments(true),
   };
 };
