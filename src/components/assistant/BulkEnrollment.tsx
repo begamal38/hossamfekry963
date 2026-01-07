@@ -476,22 +476,21 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
     (enrollmentTarget === 'course' || selectedChapterIds.size > 0);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
+    <TooltipProvider>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Users className="w-4 h-4" />
                 {isArabic ? 'اشتراك جماعي' : 'Bulk Enrollment'}
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isArabic ? 'تقدر تضيف أكتر من طالب في خطوة واحدة' : 'Enroll multiple students at once'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </DialogTrigger>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isArabic ? 'تقدر تضيف أكتر من طالب في خطوة واحدة' : 'Enroll multiple students at once'}</p>
+          </TooltipContent>
+        </Tooltip>
 
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
@@ -760,5 +759,6 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 };
