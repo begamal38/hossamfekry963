@@ -51,9 +51,10 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
               alt={slide.alt}
               width={1920}
               height={1080}
-              className={`w-full h-full object-cover object-top transition-transform duration-[6000ms] ease-out ${
+              className={`w-full h-full object-cover object-top transition-transform ease-out ${
                 index === currentIndex ? 'scale-105' : 'scale-100'
               }`}
+              style={{ transitionDuration: '6000ms' }}
               loading={index === 0 ? 'eager' : 'lazy'}
               fetchPriority={index === 0 ? 'high' : 'auto'}
               decoding="async"
