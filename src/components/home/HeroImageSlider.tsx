@@ -1,32 +1,59 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import teacherImage from '@/assets/teacher.jpg';
+import heroSlide1 from '@/assets/hero-slide-1.jpg';
+import heroSlide2 from '@/assets/hero-slide-2.jpg';
+import heroSlide3 from '@/assets/hero-slide-3.jpg';
 
 interface HeroImageSliderProps {
   className?: string;
 }
 
+const slides = [
+  { src: teacherImage, alt: 'حسام فكري - مدرس الكيمياء' },
+  { src: heroSlide1, alt: 'حسام فكري - في الاستوديو' },
+  { src: heroSlide2, alt: 'حسام فكري - صورة رسمية' },
+  { src: heroSlide3, alt: 'حسام فكري - في البرنامج' },
+];
+
 /**
- * Optimized single LANDSCAPE image for hero section.
- * Wide cinematic aspect ratio with subtle animation.
+ * Optimized auto-sliding hero images.
+ * Larger on desktop, same layout on mobile.
  */
 export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Auto-slide every 3 seconds
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 3000);
+    return () => clearInterval(interval);
+  }, [nextSlide]);
+
   return (
     <div className={`relative overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl group ${className}`}>
       {/* Subtle glow behind */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 blur-xl scale-105 -z-10 opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
       
-      {/* LANDSCAPE Image container - 16:9 mobile, 21:9 desktop */}
-      <div className="relative aspect-video lg:aspect-[21/9]">
-        <img
-          src={teacherImage}
-          alt="حسام فكري - مدرس الكيمياء"
-          width={1920}
-          height={1080}
-          className="w-full h-full object-cover object-top transform group-hover:scale-105 transition-transform duration-700 ease-out"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-        />
+      {/* LANDSCAPE Image container - 16:9 mobile, larger on desktop */}
+      <div className="relative aspect-video lg:aspect-[16/9] xl:aspect-[2/1]">
+        {slides.map((slide, index) => (
+          <img
+            key={index}
+            src={slide.src}
+            alt={slide.alt}
+            width={1920}
+            height={1080}
+            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ease-in-out ${
+              index === currentIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            fetchPriority={index === 0 ? 'high' : 'auto'}
+            decoding="async"
+          />
+        ))}
       </div>
 
       {/* Subtle overlay gradient for depth */}
@@ -38,6 +65,22 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
       {/* Decorative corner accent */}
       <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/30 to-transparent pointer-events-none" />
       <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent/20 to-transparent pointer-events-none" />
+
+      {/* Slide indicators */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {slides.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            aria-label={`الانتقال للصورة ${index + 1}`}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              index === currentIndex 
+                ? 'bg-white w-6' 
+                : 'bg-white/50 hover:bg-white/70'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 });
