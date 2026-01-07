@@ -46,11 +46,17 @@ export function useFreeLessons(options: UseFreeLessonsOptions = {}) {
   const [loading, setLoading] = useState(true);
   const [userGrade, setUserGrade] = useState<string | null>(null);
 
+  // Staff check - wait for roles to fully load
   const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   // Fetch user's grade for filtering (students only)
+  // Staff members should NEVER have grade filtering applied
   useEffect(() => {
+    // Wait for roles to be resolved first
+    if (rolesLoading) return;
+    
     const fetchUserGrade = async () => {
+      // Staff members don't need grade - set to null immediately
       if (!user || isStaff) {
         setUserGrade(null);
         return;
@@ -66,7 +72,7 @@ export function useFreeLessons(options: UseFreeLessonsOptions = {}) {
     };
     
     fetchUserGrade();
-  }, [user, isStaff]);
+  }, [user, isStaff, rolesLoading]);
 
   /**
    * Fetch free lessons - SINGLE SOURCE OF TRUTH
