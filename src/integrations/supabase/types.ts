@@ -223,6 +223,9 @@ export type Database = {
           expires_at: string | null
           id: string
           status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
           user_id: string
         }
         Insert: {
@@ -235,6 +238,9 @@ export type Database = {
           expires_at?: string | null
           id?: string
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           user_id: string
         }
         Update: {
@@ -247,6 +253,9 @@ export type Database = {
           expires_at?: string | null
           id?: string
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           user_id?: string
         }
         Relationships: [
@@ -394,9 +403,13 @@ export type Database = {
           completed_lessons: number | null
           course_id: string
           enrolled_at: string
+          expires_at: string | null
           id: string
           progress: number | null
           status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
           user_id: string
         }
         Insert: {
@@ -405,9 +418,13 @@ export type Database = {
           completed_lessons?: number | null
           course_id: string
           enrolled_at?: string
+          expires_at?: string | null
           id?: string
           progress?: number | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           user_id: string
         }
         Update: {
@@ -416,9 +433,13 @@ export type Database = {
           completed_lessons?: number | null
           course_id?: string
           enrolled_at?: string
+          expires_at?: string | null
           id?: string
           progress?: number | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           user_id?: string
         }
         Relationships: [

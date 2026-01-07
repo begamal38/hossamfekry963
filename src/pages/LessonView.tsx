@@ -113,6 +113,7 @@ export default function LessonView() {
   const [linkedExam, setLinkedExam] = useState<LinkedExam | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<string>(''); // active, suspended, expired, etc.
   const [completed, setCompleted] = useState(false);
   const [completionSaving, setCompletionSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -230,12 +231,13 @@ export default function LessonView() {
       if (user) {
         const { data: enrollment } = await supabase
           .from('course_enrollments')
-          .select('id')
+          .select('id, status')
           .eq('user_id', user.id)
           .eq('course_id', lessonData.course_id)
           .maybeSingle();
 
         setIsEnrolled(!!enrollment);
+        setEnrollmentStatus(enrollment?.status || '');
 
         const { data: attendance } = await supabase
           .from('lesson_attendance')
@@ -520,7 +522,60 @@ export default function LessonView() {
 
   // Access logic: staff always has access, free lessons accessible to all, enrolled users have access
   const isFreeLesson = lesson.is_free_lesson;
-  const canAccess = isStaff || isFreeLesson || course?.is_free || isEnrolled;
+  const isSuspended = enrollmentStatus === 'suspended';
+  
+  // Suspended users can ONLY access lessons they've already completed (for review)
+  const canAccessAsSuspended = isSuspended && completed;
+  
+  // Full access: staff, free content, or active enrollment
+  const hasFullAccess = isStaff || isFreeLesson || course?.is_free || (isEnrolled && enrollmentStatus === 'active');
+  
+  // Can access = full access OR suspended with completed lesson
+  const canAccess = hasFullAccess || canAccessAsSuspended;
+
+  // Show suspended message when user has suspended enrollment and trying to access uncompleted lesson
+  if (isSuspended && !completed && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEOHead 
+          title={seoTitle}
+          titleAr={seoTitle}
+          description={seoDescription}
+          descriptionAr={seoDescription}
+          noIndex={true}
+        />
+        <Navbar />
+        <main className="container mx-auto px-4 py-8 pt-24">
+          <div className="max-w-lg mx-auto text-center">
+            <div className="w-20 h-20 rounded-full bg-orange-100 dark:bg-orange-950 flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-10 h-10 text-orange-600" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">{isArabic ? 'الاشتراك موقوف مؤقتاً' : 'Subscription Suspended'}</h1>
+            <p className="text-muted-foreground mb-6">
+              {isArabic 
+                ? 'اشتراكك موقوف مؤقتاً. يمكنك مراجعة الحصص التي أكملتها سابقاً فقط. للوصول لحصص جديدة، تواصل مع المسؤول.' 
+                : 'Your subscription is temporarily suspended. You can only review lessons you\'ve already completed. Contact support to resume access.'}
+            </p>
+            <div className="bg-card border border-orange-200 dark:border-orange-800 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold mb-2">{isArabic ? 'الحصص المتاحة للمراجعة' : 'Available for Review'}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {isArabic 
+                  ? 'الحصص اللي خلصتها قبل كده متاحة للمراجعة' 
+                  : 'Previously completed lessons are available for review'}
+              </p>
+              <Button 
+                variant="outline"
+                className="w-full border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
+              >
+                {isArabic ? 'العودة للكورس' : 'Back to Course'}
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Show locked state for paid content when not enrolled
   if (!canAccess && user) {

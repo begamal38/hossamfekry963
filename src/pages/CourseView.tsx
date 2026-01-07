@@ -348,7 +348,7 @@ export default function CourseView() {
   // Progress is now calculated via useMemo with progressData
 
   // Determine lesson access based on role and enrollment
-  const canAccessLesson = (index: number) => {
+  const canAccessLesson = (lessonId: string, lessonCompleted: boolean) => {
     // Assistants and admins can ALWAYS access all lessons
     if (canBypassRestrictions) return true;
     
@@ -358,11 +358,19 @@ export default function CourseView() {
     // Free courses: anyone can access
     if (course?.is_free) return true;
     
-    // Paid courses: need enrollment and active status
+    // Paid courses: need enrollment
     if (!isEnrolled) return false;
-    if (enrollmentStatus !== 'active') return false;
     
-    return true;
+    // Suspended enrollment: only completed lessons for review
+    if (enrollmentStatus === 'suspended') {
+      return lessonCompleted;
+    }
+    
+    // Active enrollment: full access
+    if (enrollmentStatus === 'active') return true;
+    
+    // Other statuses (pending, expired): no access
+    return false;
   };
 
   if (loading) {
@@ -707,7 +715,7 @@ export default function CourseView() {
                       <div className="space-y-3 mr-6">
                         {chapterLessons.map((lesson, index) => {
                           const completed = isLessonCompleted(lesson.id);
-                          const canAccess = canAccessLesson(index);
+                          const canAccess = canAccessLesson(lesson.id, completed);
                           const hasVideo = hasValidVideo(lesson.video_url);
 
                           return (
@@ -804,7 +812,7 @@ export default function CourseView() {
                     <div className="space-y-3">
                       {lessonsByChapter.uncategorized.map((lesson, index) => {
                         const completed = isLessonCompleted(lesson.id);
-                        const canAccess = canAccessLesson(index);
+                        const canAccess = canAccessLesson(lesson.id, completed);
                         const hasVideo = hasValidVideo(lesson.video_url);
 
                         return (
@@ -867,7 +875,7 @@ export default function CourseView() {
               <div className="space-y-3">
                 {visibleLessons.map((lesson, index) => {
                   const completed = isLessonCompleted(lesson.id);
-                  const canAccess = canAccessLesson(index);
+                  const canAccess = canAccessLesson(lesson.id, completed);
                   const hasVideo = hasValidVideo(lesson.video_url);
 
                   return (

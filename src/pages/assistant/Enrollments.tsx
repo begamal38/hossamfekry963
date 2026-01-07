@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CheckCircle, XCircle, ArrowLeft, User, BookOpen, RefreshCw, FileText } from 'lucide-react';
+import { Search, CheckCircle, XCircle, ArrowLeft, User, BookOpen, RefreshCw, FileText, PauseCircle, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -170,6 +170,16 @@ const Enrollments = () => {
       if (newStatus === 'active') {
         updateData.activated_by = user.id;
         updateData.activated_at = new Date().toISOString();
+        // Clear suspension data when reactivating
+        updateData.suspended_at = null;
+        updateData.suspended_by = null;
+        updateData.suspended_reason = null;
+      }
+
+      if (newStatus === 'suspended') {
+        updateData.suspended_at = new Date().toISOString();
+        updateData.suspended_by = user.id;
+        updateData.suspended_reason = 'Payment pending'; // Default reason
       }
 
       // If expiring/ending course access, freeze the activity summary
@@ -188,11 +198,15 @@ const Enrollments = () => {
 
       if (error) throw error;
 
+      const statusMessages: Record<string, { ar: string; en: string }> = {
+        active: { ar: 'تم تفعيل الاشتراك', en: 'Enrollment activated' },
+        suspended: { ar: 'تم إيقاف الاشتراك مؤقتاً', en: 'Enrollment suspended' },
+        expired: { ar: 'تم إنهاء الاشتراك وحفظ ملخص النشاط', en: 'Enrollment ended and activity summary saved' },
+      };
+
       toast({
         title: isRTL ? 'تم التحديث' : 'Updated',
-        description: newStatus === 'expired' 
-          ? (isRTL ? 'تم إنهاء الاشتراك وحفظ ملخص النشاط' : 'Enrollment ended and activity summary saved')
-          : (isRTL ? 'تم تحديث حالة الاشتراك بنجاح' : 'Enrollment status updated successfully'),
+        description: isRTL ? statusMessages[newStatus]?.ar : statusMessages[newStatus]?.en,
       });
 
       // Update local state instead of refetching
@@ -212,16 +226,17 @@ const Enrollments = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: { ar: string; en: string } }> = {
+    const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: { ar: string; en: string }; className?: string }> = {
       pending: { variant: 'secondary', label: { ar: 'معلق', en: 'Pending' } },
       active: { variant: 'default', label: { ar: 'نشط', en: 'Active' } },
+      suspended: { variant: 'outline', label: { ar: 'موقوف', en: 'Suspended' }, className: 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950' },
       expired: { variant: 'destructive', label: { ar: 'منتهي', en: 'Expired' } },
     };
 
-    const { variant, label } = config[status] || { variant: 'outline', label: { ar: status, en: status } };
+    const { variant, label, className } = config[status] || { variant: 'outline', label: { ar: status, en: status } };
 
     return (
-      <Badge variant={variant}>
+      <Badge variant={variant} className={className}>
         {isRTL ? label.ar : label.en}
       </Badge>
     );
@@ -285,6 +300,7 @@ const Enrollments = () => {
               <option value="all">{isRTL ? 'جميع الحالات' : 'All Status'}</option>
               <option value="pending">{isRTL ? 'معلق' : 'Pending'}</option>
               <option value="active">{isRTL ? 'نشط' : 'Active'}</option>
+              <option value="suspended">{isRTL ? 'موقوف' : 'Suspended'}</option>
               <option value="expired">{isRTL ? 'منتهي' : 'Expired'}</option>
             </select>
           </div>
@@ -392,21 +408,75 @@ const Enrollments = () => {
                             </Button>
                           )}
                           {enrollment.status === 'active' && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
-                              disabled={updating === enrollment.id || summaryLoading}
-                            >
-                              {(updating === enrollment.id || summaryLoading) ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  <XCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
-                                  {isRTL ? 'إنهاء' : 'End'}
-                                </>
-                              )}
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                                onClick={() => updateEnrollmentStatus(enrollment.id, 'suspended', enrollment)}
+                                disabled={updating === enrollment.id}
+                                title={isRTL ? 'إيقاف مؤقت - الطالب يشوف الدروس القديمة فقط' : 'Suspend - student can only view completed lessons'}
+                              >
+                                {updating === enrollment.id ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <PauseCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
+                                    {isRTL ? 'إيقاف' : 'Suspend'}
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
+                                disabled={updating === enrollment.id || summaryLoading}
+                                title={isRTL ? 'إنهاء نهائي - يحفظ ملخص النشاط' : 'End permanently - saves activity summary'}
+                              >
+                                {(updating === enrollment.id || summaryLoading) ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <XCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
+                                    {isRTL ? 'إنهاء' : 'End'}
+                                  </>
+                                )}
+                              </Button>
+                            </>
+                          )}
+                          {enrollment.status === 'suspended' && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => updateEnrollmentStatus(enrollment.id, 'active')}
+                                disabled={updating === enrollment.id}
+                              >
+                                {updating === enrollment.id ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <PlayCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
+                                    {isRTL ? 'إعادة تفعيل' : 'Reactivate'}
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
+                                disabled={updating === enrollment.id || summaryLoading}
+                              >
+                                {(updating === enrollment.id || summaryLoading) ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <XCircle className={`h-4 w-4 ${isRTL ? 'ms-1' : 'me-1'}`} />
+                                    {isRTL ? 'إنهاء' : 'End'}
+                                  </>
+                                )}
+                              </Button>
+                            </>
                           )}
                           {enrollment.status === 'expired' && (
                             <Button
