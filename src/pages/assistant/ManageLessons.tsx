@@ -180,6 +180,13 @@ const ManageLessons = () => {
       is_free_lesson: lesson.is_free_lesson || false,
     });
     setShowForm(true);
+    // Scroll to form after state update
+    setTimeout(() => {
+      const formElement = document.getElementById('lesson-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -397,7 +404,7 @@ const ManageLessons = () => {
 
         {/* Simplified Add/Edit Lesson Form */}
         {showForm && (
-          <div className="bg-card border rounded-xl p-6 mb-6">
+          <div id="lesson-form" className="bg-card border rounded-xl p-6 mb-6 scroll-mt-24">
             <h3 className="font-semibold text-lg mb-4">
               {editingLesson ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson') : (isArabic ? 'حصة جديدة' : 'New Lesson')}
             </h3>
