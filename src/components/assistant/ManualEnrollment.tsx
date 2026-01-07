@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, UserPlus, BookOpen, Check, Loader2, X, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, BookOpen, Check, Loader2, X, AlertCircle, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +51,15 @@ interface Course {
   grade: string;
 }
 
+interface Chapter {
+  id: string;
+  title: string;
+  title_ar: string;
+  order_index: number | null;
+}
+
+type EnrollmentTarget = 'course' | 'chapters';
+
 interface ManualEnrollmentProps {
   isArabic?: boolean;
   onEnrollmentComplete?: () => void;
@@ -66,9 +75,13 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
+  const [enrollmentTarget, setEnrollmentTarget] = useState<EnrollmentTarget>('course');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [loadingChapters, setLoadingChapters] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -98,10 +111,45 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
     }
   }, [open]);
 
+  // Fetch chapters when course is selected and target is chapters
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (!selectedCourseId || enrollmentTarget !== 'chapters') {
+        setChapters([]);
+        return;
+      }
+
+      setLoadingChapters(true);
+      try {
+        const { data, error } = await supabase
+          .from('chapters')
+          .select('id, title, title_ar, order_index')
+          .eq('course_id', selectedCourseId)
+          .order('order_index');
+
+        if (error) throw error;
+        setChapters(data || []);
+      } catch (error) {
+        console.error('Error fetching chapters:', error);
+      } finally {
+        setLoadingChapters(false);
+      }
+    };
+
+    fetchChapters();
+  }, [selectedCourseId, enrollmentTarget]);
+
   // Clear validation error when selections change
   useEffect(() => {
     setValidationError(null);
-  }, [selectedStudentId, selectedCourseId]);
+  }, [selectedStudentId, selectedCourseId, enrollmentTarget, selectedChapterIds]);
+
+  // Reset chapter selection when switching enrollment target
+  useEffect(() => {
+    if (enrollmentTarget === 'course') {
+      setSelectedChapterIds(new Set());
+    }
+  }, [enrollmentTarget]);
 
   // Search students
   const handleSearch = useCallback(async () => {
@@ -169,8 +217,22 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
       return;
     }
     setSelectedCourseId(courseId);
+    setSelectedChapterIds(new Set()); // Reset chapters when course changes
     setValidationError(null);
   }, [isArabic]);
+
+  // Toggle chapter selection
+  const toggleChapter = useCallback((chapterId: string) => {
+    setSelectedChapterIds(prev => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) {
+        next.delete(chapterId);
+      } else {
+        next.add(chapterId);
+      }
+      return next;
+    });
+  }, []);
 
   // Validate before enrollment
   const validateEnrollment = (): boolean => {
@@ -202,6 +264,12 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
       return false;
     }
 
+    // Check chapters if enrolling by chapter
+    if (enrollmentTarget === 'chapters' && selectedChapterIds.size === 0) {
+      setValidationError(isArabic ? 'يجب اختيار باب واحد على الأقل' : 'Select at least one chapter');
+      return false;
+    }
+
     return true;
   };
 
@@ -221,72 +289,131 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
     setValidationError(null);
 
     try {
-      // Check if already enrolled
-      const { data: existing, error: checkError } = await supabase
-        .from('course_enrollments')
-        .select('id, status')
-        .eq('user_id', studentId)
-        .eq('course_id', courseId)
-        .maybeSingle();
-
-      if (checkError) {
-        throw new Error(isArabic ? 'خطأ في التحقق من الاشتراك' : 'Error checking enrollment');
-      }
-
-      if (existing) {
-        if (existing.status === 'active') {
-          setValidationError(isArabic ? 'هذا الطالب مشترك بالفعل في الكورس' : 'Student already enrolled');
-          setEnrolling(false);
-          return;
-        }
-        
-        // Reactivate existing enrollment
-        const { error: updateError } = await supabase
+      if (enrollmentTarget === 'course') {
+        // Full course enrollment
+        const { data: existing, error: checkError } = await supabase
           .from('course_enrollments')
-          .update({
-            status: 'active',
-            activated_at: new Date().toISOString(),
-            activated_by: assistantId,
-          })
-          .eq('id', existing.id);
+          .select('id, status')
+          .eq('user_id', studentId)
+          .eq('course_id', courseId)
+          .maybeSingle();
 
-        if (updateError) {
-          if (updateError.code === '42501') {
-            throw new Error(isArabic ? 'ليس لديك صلاحية لتعديل الاشتراكات' : 'Permission denied');
-          }
-          throw updateError;
+        if (checkError) {
+          throw new Error(isArabic ? 'خطأ في التحقق من الاشتراك' : 'Error checking enrollment');
         }
+
+        if (existing) {
+          if (existing.status === 'active') {
+            setValidationError(isArabic ? 'هذا الطالب مشترك بالفعل في الكورس' : 'Student already enrolled');
+            setEnrolling(false);
+            return;
+          }
+          
+          // Reactivate existing enrollment
+          const { error: updateError } = await supabase
+            .from('course_enrollments')
+            .update({
+              status: 'active',
+              activated_at: new Date().toISOString(),
+              activated_by: assistantId,
+            })
+            .eq('id', existing.id);
+
+          if (updateError) {
+            if (updateError.code === '42501') {
+              throw new Error(isArabic ? 'ليس لديك صلاحية لتعديل الاشتراكات' : 'Permission denied');
+            }
+            throw updateError;
+          }
+        } else {
+          // Create new enrollment with explicit UUID values
+          const { error: insertError } = await supabase
+            .from('course_enrollments')
+            .insert({
+              user_id: studentId,
+              course_id: courseId,
+              status: 'active',
+              activated_at: new Date().toISOString(),
+              activated_by: assistantId,
+            });
+
+          if (insertError) {
+            if (insertError.code === '42501') {
+              throw new Error(isArabic ? 'ليس لديك صلاحية لإضافة اشتراكات' : 'Permission denied');
+            }
+            if (insertError.code === '23503') {
+              throw new Error(isArabic ? 'الطالب أو الكورس غير موجود' : 'Student or course not found');
+            }
+            throw insertError;
+          }
+        }
+
+        // Success message for course
+        const studentName = selectedStudent?.full_name || '';
+        toast({
+          title: isArabic ? 'تم التسجيل بنجاح' : 'Enrollment successful',
+          description: isArabic 
+            ? `تم تسجيل ${studentName} في الكورس`
+            : `${studentName} has been enrolled in the course`,
+        });
       } else {
-        // Create new enrollment with explicit UUID values
-        const { error: insertError } = await supabase
-          .from('course_enrollments')
-          .insert({
-            user_id: studentId,
-            course_id: courseId,
-            status: 'active',
-            activated_at: new Date().toISOString(),
-            activated_by: assistantId,
-          });
+        // Chapter-based enrollment
+        const chapterIds = Array.from(selectedChapterIds);
+        let successCount = 0;
+        let skipCount = 0;
 
-        if (insertError) {
-          if (insertError.code === '42501') {
-            throw new Error(isArabic ? 'ليس لديك صلاحية لإضافة اشتراكات' : 'Permission denied');
+        for (const chapterId of chapterIds) {
+          // Check if already enrolled in this chapter
+          const { data: existing } = await supabase
+            .from('chapter_enrollments')
+            .select('id, status')
+            .eq('user_id', studentId)
+            .eq('chapter_id', chapterId)
+            .maybeSingle();
+
+          if (existing) {
+            if (existing.status === 'active') {
+              skipCount++;
+              continue;
+            }
+            // Reactivate
+            await supabase
+              .from('chapter_enrollments')
+              .update({
+                status: 'active',
+                activated_at: new Date().toISOString(),
+                activated_by: assistantId,
+              })
+              .eq('id', existing.id);
+            successCount++;
+          } else {
+            // Create new chapter enrollment
+            const { error: insertError } = await supabase
+              .from('chapter_enrollments')
+              .insert({
+                user_id: studentId,
+                chapter_id: chapterId,
+                course_id: courseId,
+                status: 'active',
+                activated_at: new Date().toISOString(),
+                activated_by: assistantId,
+              });
+
+            if (!insertError) {
+              successCount++;
+            }
           }
-          if (insertError.code === '23503') {
-            throw new Error(isArabic ? 'الطالب أو الكورس غير موجود' : 'Student or course not found');
-          }
-          throw insertError;
         }
-      }
 
-      // Success
-      const studentName = selectedStudent?.full_name || '';
-      toast({
-        title: isArabic ? 'تم التسجيل بنجاح' : 'Enrollment successful',
-        description: isArabic 
-          ? `تم تسجيل ${studentName} في الكورس`
-          : `${studentName} has been enrolled in the course`,
-      });
+        // Success message for chapters
+        const studentName = selectedStudent?.full_name || '';
+        toast({
+          title: isArabic ? 'تم التسجيل بنجاح' : 'Enrollment successful',
+          description: isArabic 
+            ? `تم تسجيل ${studentName} في ${successCount} باب${skipCount > 0 ? ` (${skipCount} موجود مسبقاً)` : ''}`
+            : `${studentName} enrolled in ${successCount} chapter(s)${skipCount > 0 ? ` (${skipCount} already enrolled)` : ''}`,
+        });
+      }
 
       // Reset and close
       resetState();
@@ -309,8 +436,11 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
   const resetState = useCallback(() => {
     setSelectedStudentId(null);
     setSelectedCourseId(null);
+    setSelectedChapterIds(new Set());
+    setEnrollmentTarget('course');
     setSearchTerm('');
     setStudents([]);
+    setChapters([]);
     setValidationError(null);
   }, []);
 
@@ -320,7 +450,12 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
   }, [resetState]);
 
   // Check if submit should be enabled
-  const canSubmit = Boolean(selectedStudentId && selectedCourseId && !enrolling);
+  const canSubmit = Boolean(
+    selectedStudentId && 
+    selectedCourseId && 
+    !enrolling &&
+    (enrollmentTarget === 'course' || selectedChapterIds.size > 0)
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -333,7 +468,7 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>
-            {isArabic ? 'تسجيل طالب في كورس' : 'Enroll Student in Course'}
+            {isArabic ? 'تسجيل طالب في كورس أو باب' : 'Enroll Student in Course or Chapter'}
           </DialogTitle>
         </DialogHeader>
 
@@ -456,8 +591,82 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
             </div>
           )}
 
-          {/* Step 3: Confirm */}
-          {selectedStudent && (
+          {/* Step 3: Enrollment Type */}
+          {selectedStudent && selectedCourseId && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                {isArabic ? '3. نوع الاشتراك' : '3. Enrollment Type'}
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  variant={enrollmentTarget === 'course' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEnrollmentTarget('course')}
+                  className="flex-1"
+                  type="button"
+                >
+                  <BookOpen className="w-4 h-4 me-1" />
+                  {isArabic ? 'الكورس كامل' : 'Full Course'}
+                </Button>
+                <Button
+                  variant={enrollmentTarget === 'chapters' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setEnrollmentTarget('chapters')}
+                  className="flex-1"
+                  type="button"
+                >
+                  <Layers className="w-4 h-4 me-1" />
+                  {isArabic ? 'أبواب محددة' : 'Specific Chapters'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Chapter Selection (if chapters mode) */}
+          {selectedStudent && selectedCourseId && enrollmentTarget === 'chapters' && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                {isArabic ? '4. اختر الأبواب' : '4. Select Chapters'}
+              </label>
+              <div className="border rounded-lg max-h-40 overflow-y-auto bg-background">
+                {loadingChapters ? (
+                  <div className="p-4 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                  </div>
+                ) : chapters.length === 0 ? (
+                  <p className="p-4 text-center text-muted-foreground text-sm">
+                    {isArabic ? 'لا توجد أبواب في هذا الكورس' : 'No chapters in this course'}
+                  </p>
+                ) : (
+                  <div className="divide-y">
+                    {chapters.map((chapter) => (
+                      <button
+                        key={chapter.id}
+                        type="button"
+                        onClick={() => toggleChapter(chapter.id)}
+                        className={`w-full p-3 text-start hover:bg-muted/50 transition-colors flex items-center justify-between ${
+                          selectedChapterIds.has(chapter.id) ? 'bg-primary/10' : ''
+                        }`}
+                      >
+                        <span className="text-sm">{isArabic ? chapter.title_ar : chapter.title}</span>
+                        {selectedChapterIds.has(chapter.id) && (
+                          <Check className="w-4 h-4 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedChapterIds.size > 0 && (
+                <Badge variant="secondary">
+                  {isArabic ? `${selectedChapterIds.size} باب محدد` : `${selectedChapterIds.size} selected`}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Step 5: Confirm */}
+          {selectedStudent && selectedCourseId && (
             <div className="pt-4 border-t">
               <Button 
                 onClick={handleEnroll} 
@@ -473,9 +682,9 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
                 {isArabic ? 'تأكيد التسجيل' : 'Confirm Enrollment'}
               </Button>
               
-              {!selectedCourseId && (
+              {enrollmentTarget === 'chapters' && selectedChapterIds.size === 0 && (
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  {isArabic ? 'اختر الكورس أولاً للمتابعة' : 'Select a course to continue'}
+                  {isArabic ? 'اختر باب واحد على الأقل للمتابعة' : 'Select at least one chapter to continue'}
                 </p>
               )}
             </div>
