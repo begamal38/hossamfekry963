@@ -116,13 +116,6 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
       {/* Frost overlay on edges */}
       <div className="frost-overlay" />
       
-      {/* Animated fog at bottom */}
-      <div className="winter-fog-container">
-        <div className="winter-fog fog-layer-1" />
-        <div className="winter-fog fog-layer-2" />
-        <div className="winter-fog fog-layer-3" />
-      </div>
-      
       <style>{`
         /* Snowflake base style */
         .snowflake {
@@ -236,87 +229,9 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
           }
         }
         
-        /* Animated Fog at Bottom */
-        .winter-fog-container {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 150px;
-          overflow: hidden;
-          pointer-events: none;
-        }
-        
-        .winter-fog {
-          position: absolute;
-          bottom: -20px;
-          left: -10%;
-          width: 120%;
-          height: 100%;
-          background: linear-gradient(to top,
-            rgba(220, 240, 255, 0.35) 0%,
-            rgba(200, 230, 255, 0.2) 30%,
-            rgba(180, 220, 255, 0.08) 60%,
-            transparent 100%
-          );
-          filter: blur(8px);
-          will-change: transform;
-        }
-        
-        .fog-layer-1 {
-          animation: fog-drift-1 12s ease-in-out infinite;
-        }
-        
-        .fog-layer-2 {
-          animation: fog-drift-2 15s ease-in-out infinite;
-          opacity: 0.7;
-        }
-        
-        .fog-layer-3 {
-          animation: fog-drift-3 18s ease-in-out infinite;
-          opacity: 0.5;
-        }
-        
-        .dark .winter-fog {
-          background: linear-gradient(to top,
-            rgba(200, 235, 255, 0.25) 0%,
-            rgba(180, 225, 255, 0.15) 30%,
-            rgba(160, 215, 255, 0.05) 60%,
-            transparent 100%
-          );
-        }
-        
-        @keyframes fog-drift-1 {
-          0%, 100% {
-            transform: translateX(0) scaleY(1);
-          }
-          50% {
-            transform: translateX(3%) scaleY(1.1);
-          }
-        }
-        
-        @keyframes fog-drift-2 {
-          0%, 100% {
-            transform: translateX(2%) scaleY(0.9);
-          }
-          50% {
-            transform: translateX(-2%) scaleY(1.05);
-          }
-        }
-        
-        @keyframes fog-drift-3 {
-          0%, 100% {
-            transform: translateX(-1%) scaleY(1.05);
-          }
-          50% {
-            transform: translateX(4%) scaleY(0.95);
-          }
-        }
-        
         @media (prefers-reduced-motion: reduce) {
           .snowflake,
-          .frost-overlay,
-          .winter-fog {
+          .frost-overlay {
             animation: none !important;
             display: none !important;
           }
@@ -326,9 +241,6 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
         @media (max-width: 480px) {
           .snowflake:nth-child(n+25) {
             display: none;
-          }
-          .winter-fog-container {
-            height: 80px;
           }
         }
       `}</style>
