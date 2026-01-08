@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
-import heroSlide1 from '@/assets/hero-slide-1.jpg';
-import heroSlide2 from '@/assets/hero-slide-2.jpg';
-import heroSlide3 from '@/assets/hero-slide-3.jpg';
+import heroSlide1 from '@/assets/hero-slide-1.webp';
+import heroSlide2 from '@/assets/hero-slide-2.webp';
+import heroSlide3 from '@/assets/hero-slide-3.webp';
 
 interface HeroImageSliderProps {
   className?: string;
