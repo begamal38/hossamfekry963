@@ -23,8 +23,8 @@ function translateValue(type: string, value: string | null | undefined): string 
   
   const translations: Record<string, Record<string, string>> = {
     academic_year: {
-      'second_secondary': 'الثاني الثانوي',
-      'third_secondary': 'الثالث الثانوي',
+      'second_secondary': 'تانية ثانوي',
+      'third_secondary': 'تالته ثانوي',
     },
     language_track: {
       'arabic': 'عربي',

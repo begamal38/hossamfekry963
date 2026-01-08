@@ -316,10 +316,10 @@ export default function SendNotifications() {
 
   const getGradeLabel = (grade: string) => {
     const labels: Record<string, { en: string; ar: string }> = {
-      'second_arabic': { en: '2nd Secondary (Arabic)', ar: 'تانية ثانوي عربي' },
-      'second_languages': { en: '2nd Secondary (Languages)', ar: 'تانية ثانوي لغات' },
-      'third_arabic': { en: '3rd Secondary (Arabic)', ar: 'تالتة ثانوي عربي' },
-      'third_languages': { en: '3rd Secondary (Languages)', ar: 'تالتة ثانوي لغات' },
+      'second_arabic': { en: '2nd Secondary - Arabic', ar: 'تانية ثانوي - عربي' },
+      'second_languages': { en: '2nd Secondary - Languages', ar: 'تانية ثانوي - لغات' },
+      'third_arabic': { en: '3rd Secondary - Arabic', ar: 'تالته ثانوي - عربي' },
+      'third_languages': { en: '3rd Secondary - Languages', ar: 'تالته ثانوي - لغات' },
     };
     return isArabic ? labels[grade]?.ar : labels[grade]?.en || grade;
   };
