@@ -81,6 +81,10 @@ export default function Reports() {
   const [lessonCompletions, setLessonCompletions] = useState<any[]>([]);
   const [examAttempts, setExamAttempts] = useState<any[]>([]);
   const [focusSessions, setFocusSessions] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [chapterEnrollments, setChapterEnrollments] = useState<any[]>([]);
+  const [exams, setExams] = useState<any[]>([]);
 
   useEffect(() => {
     if (!roleLoading && !canAccessDashboard()) {
@@ -103,15 +107,16 @@ export default function Reports() {
       const [
         { data: allProfiles },
         { data: courses },
-        { data: enrollments },
-        { data: lessons },
+        { data: enrollmentsData },
+        { data: lessonsData },
         { data: attendance },
-        { data: exams },
+        { data: examsData },
         { data: examResults },
         { data: chaptersData },
         { data: lessonCompletionsData },
         { data: examAttemptsData },
-        { data: focusSessionsData }
+        { data: focusSessionsData },
+        { data: chapterEnrollmentsData }
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('courses').select('*'),
@@ -123,13 +128,24 @@ export default function Reports() {
         supabase.from('chapters').select('*, course:courses(title, title_ar)'),
         supabase.from('lesson_completions').select('*'),
         supabase.from('exam_attempts').select('*'),
-        supabase.from('focus_sessions').select('*')
+        supabase.from('focus_sessions').select('*'),
+        supabase.from('chapter_enrollments').select('*')
       ]);
 
+      // Store in state for useMemo dependencies
       setChapters(chaptersData || []);
       setLessonCompletions(lessonCompletionsData || []);
       setExamAttempts(examAttemptsData || []);
       setFocusSessions(focusSessionsData || []);
+      setLessons(lessonsData || []);
+      setEnrollments(enrollmentsData || []);
+      setChapterEnrollments(chapterEnrollmentsData || []);
+      setExams(examsData || []);
+      
+      // Use local variables for calculations in this function
+      const lessons = lessonsData || [];
+      const enrollments = enrollmentsData || [];
+      const exams = examsData || [];
 
       // Filter profiles to only include students
       const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
@@ -372,11 +388,84 @@ export default function Reports() {
     };
   }, [overallStats, attendanceBreakdown, examAttempts, chapters, lessonCompletions, courseStats, isArabic]);
 
-  // Compute chapter analytics
+  // Compute chapter analytics with REAL data
   const chapterAnalyticsData = useMemo(() => {
     return chapters.map(ch => {
       const courseTitle = (ch.course as any)?.title || '';
       const courseTitleAr = (ch.course as any)?.title_ar || '';
+      
+      // Get lessons for this chapter
+      const chapterLessons = lessons.filter(l => l.chapter_id === ch.id);
+      const chapterLessonIds = chapterLessons.map(l => l.id);
+      const totalLessons = chapterLessons.length;
+      
+      // Get students enrolled in this chapter (via chapter_enrollments or course_enrollments)
+      const chapterStudentIds = new Set<string>();
+      
+      // First check chapter-level enrollments
+      const directChapterEnrolls = chapterEnrollments.filter(
+        ce => ce.chapter_id === ch.id && ce.status === 'active'
+      );
+      directChapterEnrolls.forEach(ce => chapterStudentIds.add(ce.user_id));
+      
+      // If no chapter enrollments, fall back to course enrollments
+      if (chapterStudentIds.size === 0) {
+        const courseEnrolls = enrollments.filter(
+          e => e.course_id === ch.course_id && e.status === 'active'
+        );
+        courseEnrolls.forEach(e => chapterStudentIds.add(e.user_id));
+      }
+      
+      const totalStudents = chapterStudentIds.size;
+      
+      // Calculate average completion for this chapter
+      let avgCompletion = 0;
+      if (totalLessons > 0 && totalStudents > 0) {
+        // Count completions per student for lessons in this chapter
+        const studentCompletions = new Map<string, number>();
+        
+        lessonCompletions
+          .filter(lc => chapterLessonIds.includes(lc.lesson_id))
+          .forEach(lc => {
+            if (chapterStudentIds.has(lc.user_id)) {
+              studentCompletions.set(
+                lc.user_id, 
+                (studentCompletions.get(lc.user_id) || 0) + 1
+              );
+            }
+          });
+        
+        // Calculate completion percentage per student, then average
+        let totalCompletionPercent = 0;
+        chapterStudentIds.forEach(studentId => {
+          const completed = studentCompletions.get(studentId) || 0;
+          totalCompletionPercent += (completed / totalLessons) * 100;
+        });
+        
+        avgCompletion = Math.round(totalCompletionPercent / totalStudents);
+      }
+      
+      // Calculate exam pass rate for chapter exams
+      const chapterExams = exams.filter(e => e.chapter_id === ch.id);
+      let examPassRate: number | null = null;
+      
+      if (chapterExams.length > 0) {
+        const chapterExamIds = chapterExams.map(e => e.id);
+        const chapterAttempts = examAttempts.filter(
+          a => chapterExamIds.includes(a.exam_id) && a.is_completed
+        );
+        
+        if (chapterAttempts.length > 0) {
+          const passedCount = chapterAttempts.filter(a => {
+            const percentage = a.total_questions > 0 
+              ? (a.score / a.total_questions) * 100 
+              : 0;
+            return percentage >= 60;
+          }).length;
+          
+          examPassRate = Math.round((passedCount / chapterAttempts.length) * 100);
+        }
+      }
       
       return {
         id: ch.id,
@@ -384,13 +473,13 @@ export default function Reports() {
         titleAr: ch.title_ar,
         courseName: courseTitle,
         courseNameAr: courseTitleAr,
-        totalLessons: 0, // Would need join
-        avgCompletion: Math.floor(Math.random() * 100), // Placeholder
-        totalStudents: overallStats?.totalStudents || 0,
-        examPassRate: null as number | null,
+        totalLessons,
+        avgCompletion,
+        totalStudents,
+        examPassRate,
       };
     });
-  }, [chapters, overallStats]);
+  }, [chapters, lessons, lessonCompletions, enrollments, chapterEnrollments, exams, examAttempts]);
 
   // Compute exam analytics
   const examAnalyticsData = useMemo(() => {
