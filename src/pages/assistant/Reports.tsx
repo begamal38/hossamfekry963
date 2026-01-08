@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, BookOpen, Award, TrendingUp, Building, Globe, Layers, BarChart3, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Award, TrendingUp, Building, Globe, Layers, BarChart3, Lightbulb, Clock, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
 import { Progress } from '@/components/ui/progress';
@@ -40,6 +40,11 @@ interface OverallStats {
     center: number;
     hybrid: number;
   };
+  // Focus mode stats
+  totalFocusSessions: number;
+  totalFocusMinutes: number;
+  studentsWithFocusSessions: number;
+  avgFocusMinutesPerStudent: number;
 }
 
 interface TopStudent {
@@ -75,6 +80,7 @@ export default function Reports() {
   const [chapters, setChapters] = useState<any[]>([]);
   const [lessonCompletions, setLessonCompletions] = useState<any[]>([]);
   const [examAttempts, setExamAttempts] = useState<any[]>([]);
+  const [focusSessions, setFocusSessions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!roleLoading && !canAccessDashboard()) {
@@ -104,7 +110,8 @@ export default function Reports() {
         { data: examResults },
         { data: chaptersData },
         { data: lessonCompletionsData },
-        { data: examAttemptsData }
+        { data: examAttemptsData },
+        { data: focusSessionsData }
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('courses').select('*'),
@@ -115,12 +122,14 @@ export default function Reports() {
         supabase.from('exam_results').select('*, exams:exam_id(max_score)'),
         supabase.from('chapters').select('*, course:courses(title, title_ar)'),
         supabase.from('lesson_completions').select('*'),
-        supabase.from('exam_attempts').select('*')
+        supabase.from('exam_attempts').select('*'),
+        supabase.from('focus_sessions').select('*')
       ]);
 
       setChapters(chaptersData || []);
       setLessonCompletions(lessonCompletionsData || []);
       setExamAttempts(examAttemptsData || []);
+      setFocusSessions(focusSessionsData || []);
 
       // Filter profiles to only include students
       const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
@@ -148,6 +157,17 @@ export default function Reports() {
           }, 0) / examResults!.length)
         : 0;
 
+      // Calculate focus session stats
+      const allFocusSessions = focusSessionsData || [];
+      const totalFocusSessions = allFocusSessions.length;
+      const totalFocusMinutes = Math.round(
+        allFocusSessions.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0) / 60
+      );
+      const studentsWithFocusSessions = new Set(allFocusSessions.map(s => s.user_id)).size;
+      const avgFocusMinutesPerStudent = studentsWithFocusSessions > 0 
+        ? Math.round(totalFocusMinutes / studentsWithFocusSessions) 
+        : 0;
+
       setOverallStats({
         totalStudents: profiles.length,
         totalEnrollments: (enrollments || []).length,
@@ -165,6 +185,10 @@ export default function Reports() {
           center: centerStudents,
           hybrid: hybridStudents,
         },
+        totalFocusSessions,
+        totalFocusMinutes,
+        studentsWithFocusSessions,
+        avgFocusMinutesPerStudent,
       });
 
       // Calculate course-level stats
@@ -453,7 +477,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-24">
@@ -517,6 +541,49 @@ export default function Reports() {
             </div>
             <p className="text-2xl font-bold">{overallStats?.totalExamResults || 0}</p>
           </div>
+        </div>
+
+        {/* Focus Mode Stats Section */}
+        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Play className="h-5 w-5 text-green-600" />
+            {isArabic ? 'إحصائيات وضع التركيز (المشاهدة الفعلية)' : 'Focus Mode Stats (Actual Viewing)'}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-background/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Play className="h-4 w-4 text-green-600" />
+                <span className="text-xs">{isArabic ? 'جلسات التركيز' : 'Focus Sessions'}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{overallStats?.totalFocusSessions || 0}</p>
+            </div>
+            <div className="bg-background/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Clock className="h-4 w-4 text-green-600" />
+                <span className="text-xs">{isArabic ? 'دقائق المشاهدة' : 'Watch Minutes'}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{overallStats?.totalFocusMinutes || 0}</p>
+            </div>
+            <div className="bg-background/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Users className="h-4 w-4 text-green-600" />
+                <span className="text-xs">{isArabic ? 'طلاب نشطين' : 'Active Students'}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{overallStats?.studentsWithFocusSessions || 0}</p>
+            </div>
+            <div className="bg-background/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <span className="text-xs">{isArabic ? 'متوسط الدقائق/طالب' : 'Avg Min/Student'}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{overallStats?.avgFocusMinutesPerStudent || 0}</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-4 text-center">
+            {isArabic 
+              ? '⏱️ هذه الإحصائيات تُظهر وقت المشاهدة الفعلي للطلاب في وضع التركيز - وليس مجرد الضغط على "شاهدت الحصة"' 
+              : '⏱️ These stats show actual student watch time in Focus Mode - not just clicking "Watched Lesson"'}
+          </p>
         </div>
 
         {/* Actionable Insights Section */}

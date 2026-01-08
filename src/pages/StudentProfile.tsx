@@ -244,7 +244,7 @@ export default function StudentProfile() {
   const completedLessons = enrollments.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="pt-24 pb-16">

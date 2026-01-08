@@ -607,7 +607,7 @@ export default function StudentDetails() {
   const groupLabel = getGroupLabel();
 
   return (
-    <div className="min-h-screen bg-muted/30" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
       <div className="pt-20 px-4 pb-12">
         <div className="container mx-auto max-w-5xl">

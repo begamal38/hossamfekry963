@@ -47,7 +47,7 @@ const Campaigns = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="pt-24 pb-16">

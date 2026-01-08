@@ -100,7 +100,7 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
         title="About Hossam Fekry – 25 Years of Chemistry Teaching Excellence"
         titleAr="عن حسام فكري – 25 عام من التميز في تدريس الكيمياء"

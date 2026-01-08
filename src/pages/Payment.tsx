@@ -127,7 +127,7 @@ const Payment: React.FC = () => {
   const gradeInfo = GRADE_OPTIONS[course.grade];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-mobile-nav">
       <Navbar />
       
       <main className="pt-24 pb-16">
