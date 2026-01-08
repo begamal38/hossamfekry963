@@ -36,17 +36,12 @@ const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typ
   hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600' },
 };
 
-// Academic year labels
-const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
-  'second_secondary': { ar: 'الصف الثاني الثانوي', en: 'Second Secondary' },
-  'third_secondary': { ar: 'الصف الثالث الثانوي', en: 'Third Secondary' },
-};
+// Import unified grade labels
+import { GRADE_LABELS, TRACK_LABELS, getFullGroupLabel } from '@/lib/gradeLabels';
 
-// Language track labels
-const LANGUAGE_TRACK_LABELS: Record<string, { ar: string; en: string }> = {
-  'arabic': { ar: 'عربي', en: 'Arabic' },
-  'languages': { ar: 'لغات', en: 'Languages' },
-};
+// Use unified labels
+const ACADEMIC_YEAR_LABELS = GRADE_LABELS;
+const LANGUAGE_TRACK_LABELS = TRACK_LABELS;
 
 // Helper to get full group label
 const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {

@@ -624,11 +624,14 @@ export default function StudentDetails() {
 
   const getGradeLabel = (grade: string | null) => {
     if (!grade) return isArabic ? 'غير محدد' : 'Not specified';
+    // Use unified grade labels
     const grades: Record<string, { ar: string; en: string }> = {
-      'first': { ar: 'أولى ثانوي', en: '1st Secondary' },
-      'second': { ar: 'تانية ثانوي', en: '2nd Secondary' },
-      'third_arabic': { ar: 'تالته ثانوي (عربي)', en: '3rd Secondary (Arabic)' },
-      'third_english': { ar: 'تالته ثانوي (لغات)', en: '3rd Secondary (Languages)' },
+      'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+      'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
+      'second_arabic': { ar: 'تانية ثانوي - عربي', en: '2nd Secondary - Arabic' },
+      'second_languages': { ar: 'تانية ثانوي - لغات', en: '2nd Secondary - Languages' },
+      'third_arabic': { ar: 'تالته ثانوي - عربي', en: '3rd Secondary - Arabic' },
+      'third_languages': { ar: 'تالته ثانوي - لغات', en: '3rd Secondary - Languages' },
     };
     return grades[grade]?.[isArabic ? 'ar' : 'en'] || grade;
   };
