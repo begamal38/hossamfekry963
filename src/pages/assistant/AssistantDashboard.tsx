@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
+import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 
 interface Stats {
   totalStudents: number;
@@ -170,14 +171,19 @@ export default function AssistantDashboard() {
       
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            {hasValidName 
-              ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
-              : `${t('dashboard.welcomeMessage')}! 👋`}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {t('assistant.platformSubtitle')}
-          </p>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {hasValidName 
+                  ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
+                  : `${t('dashboard.welcomeMessage')}! 👋`}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {t('assistant.platformSubtitle')}
+              </p>
+            </div>
+            <PlatformGuidance role="assistant_teacher" isArabic={isRTL} />
+          </div>
         </div>
 
         {/* Stats Grid - Simplified */}
