@@ -95,6 +95,25 @@ interface AttendanceStats {
   total_count: number;
 }
 
+interface FocusSessionStats {
+  totalSessions: number;
+  totalActiveMinutes: number;
+  totalPausedMinutes: number;
+  completedSessions: number;
+  avgSessionMinutes: number;
+  lessonsWatched: number;
+}
+
+interface LessonFocusDetail {
+  lessonId: string;
+  lessonTitle: string;
+  lessonTitleAr: string;
+  watchMinutes: number;
+  lessonDuration: number;
+  isCompleted: boolean;
+  sessions: number;
+}
+
 const ATTENDANCE_MODE_CONFIG = {
   online: { ar: 'أونلاين', en: 'Online', icon: Globe, color: 'text-purple-600 bg-purple-100' },
   center: { ar: 'سنتر', en: 'Center', icon: MapPin, color: 'text-blue-600 bg-blue-100' },
@@ -129,6 +148,17 @@ export default function StudentDetails() {
   const [loading, setLoading] = useState(true);
   const [activitySummaries, setActivitySummaries] = useState<Map<string, CourseActivitySummary>>(new Map());
   const { getSummary } = useCourseActivitySummary();
+  
+  // Focus session stats
+  const [focusStats, setFocusStats] = useState<FocusSessionStats>({
+    totalSessions: 0,
+    totalActiveMinutes: 0,
+    totalPausedMinutes: 0,
+    completedSessions: 0,
+    avgSessionMinutes: 0,
+    lessonsWatched: 0
+  });
+  const [lessonFocusDetails, setLessonFocusDetails] = useState<LessonFocusDetail[]>([]);
 
   // Action dialogs
   const [modeDialogOpen, setModeDialogOpen] = useState(false);
@@ -323,6 +353,58 @@ export default function StudentDetails() {
 
       if (notesError) throw notesError;
       setNotes(notesData || []);
+      
+      // Fetch focus sessions for this student
+      const { data: focusData, error: focusError } = await supabase
+        .from('focus_sessions')
+        .select('*')
+        .eq('user_id', targetUserId);
+      
+      if (!focusError && focusData) {
+        const sessions = focusData || [];
+        const totalActive = sessions.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
+        const totalPaused = sessions.reduce((sum, s) => sum + (s.total_paused_seconds || 0), 0);
+        const completed = sessions.filter(s => s.is_completed).length;
+        const uniqueLessons = new Set(sessions.map(s => s.lesson_id)).size;
+        
+        setFocusStats({
+          totalSessions: sessions.length,
+          totalActiveMinutes: Math.round(totalActive / 60),
+          totalPausedMinutes: Math.round(totalPaused / 60),
+          completedSessions: completed,
+          avgSessionMinutes: sessions.length > 0 ? Math.round((totalActive / 60) / sessions.length) : 0,
+          lessonsWatched: uniqueLessons
+        });
+        
+        // Fetch lesson details for focus sessions
+        const lessonIds = [...new Set(sessions.map(s => s.lesson_id))];
+        if (lessonIds.length > 0) {
+          const { data: lessonsData } = await supabase
+            .from('lessons')
+            .select('id, title, title_ar, duration_minutes')
+            .in('id', lessonIds);
+          
+          const lessonMap = new Map((lessonsData || []).map(l => [l.id, l]));
+          
+          const details: LessonFocusDetail[] = lessonIds.map(lessonId => {
+            const lessonSessions = sessions.filter(s => s.lesson_id === lessonId);
+            const lesson = lessonMap.get(lessonId);
+            const totalWatchTime = lessonSessions.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
+            
+            return {
+              lessonId,
+              lessonTitle: lesson?.title || 'Unknown',
+              lessonTitleAr: lesson?.title_ar || 'غير معروف',
+              watchMinutes: Math.round(totalWatchTime / 60),
+              lessonDuration: lesson?.duration_minutes || 0,
+              isCompleted: lessonSessions.some(s => s.is_completed),
+              sessions: lessonSessions.length
+            };
+          }).sort((a, b) => b.watchMinutes - a.watchMinutes);
+          
+          setLessonFocusDetails(details);
+        }
+      }
 
     } catch (error) {
       console.error('Error fetching student data:', error);
@@ -767,6 +849,80 @@ export default function StudentDetails() {
               <p className="text-sm text-muted-foreground">{isArabic ? 'إجمالي الحضور' : 'Total Attendance'}</p>
             </div>
           </div>
+          
+          {/* Focus Mode Analytics - Only show if there are focus sessions */}
+          {focusStats.totalSessions > 0 && (
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Video className="h-5 w-5 text-green-600" />
+                {isArabic ? 'المشاهدة الفعلية (وضع التركيز)' : 'Actual Viewing (Focus Mode)'}
+              </h3>
+              
+              {/* Focus Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="bg-background/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{focusStats.totalSessions}</p>
+                  <p className="text-xs text-muted-foreground">{isArabic ? 'جلسة تركيز' : 'Focus Sessions'}</p>
+                </div>
+                <div className="bg-background/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">
+                    {focusStats.totalActiveMinutes >= 60 
+                      ? `${Math.floor(focusStats.totalActiveMinutes / 60)}h ${focusStats.totalActiveMinutes % 60}m`
+                      : `${focusStats.totalActiveMinutes}m`
+                    }
+                  </p>
+                  <p className="text-xs text-muted-foreground">{isArabic ? 'وقت المشاهدة' : 'Watch Time'}</p>
+                </div>
+                <div className="bg-background/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{focusStats.lessonsWatched}</p>
+                  <p className="text-xs text-muted-foreground">{isArabic ? 'حصص شوهدت' : 'Lessons Watched'}</p>
+                </div>
+                <div className="bg-background/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600">{focusStats.avgSessionMinutes}m</p>
+                  <p className="text-xs text-muted-foreground">{isArabic ? 'متوسط/جلسة' : 'Avg/Session'}</p>
+                </div>
+              </div>
+              
+              {/* Lesson Watch Details */}
+              {lessonFocusDetails.length > 0 && (
+                <div className="bg-background/50 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold mb-3">{isArabic ? 'تفاصيل المشاهدة بالحصة' : 'Watch Details by Lesson'}</h4>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {lessonFocusDetails.slice(0, 10).map(detail => {
+                      const watchPercentage = detail.lessonDuration > 0 
+                        ? Math.min(100, Math.round((detail.watchMinutes / detail.lessonDuration) * 100))
+                        : 0;
+                      return (
+                        <div key={detail.lessonId} className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <p className="text-sm font-medium truncate">
+                                {isArabic ? detail.lessonTitleAr : detail.lessonTitle}
+                              </p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {detail.isCompleted && (
+                                  <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                    {isArabic ? 'مكتمل' : 'Done'}
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  {detail.watchMinutes}m / {detail.lessonDuration || '?'}m
+                                </span>
+                              </div>
+                            </div>
+                            <Progress 
+                              value={watchPercentage} 
+                              className={`h-1.5 ${watchPercentage >= 80 ? '[&>div]:bg-green-500' : watchPercentage >= 50 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'}`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Enrollments */}
