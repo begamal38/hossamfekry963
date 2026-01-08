@@ -467,6 +467,41 @@ export default function Reports() {
         }
       }
       
+      // Calculate REAL focus time from focus_sessions for this chapter's lessons
+      const chapterFocusSessions = focusSessions.filter(
+        fs => chapterLessonIds.includes(fs.lesson_id)
+      );
+      
+      // Total active viewing minutes for all students in this chapter
+      const totalActiveMinutes = Math.round(
+        chapterFocusSessions.reduce((sum, fs) => sum + (fs.total_active_seconds || 0), 0) / 60
+      );
+      
+      // Students who actually watched (have focus sessions)
+      const studentsWithFocus = new Set(
+        chapterFocusSessions.map(fs => fs.user_id)
+      ).size;
+      
+      // Average viewing minutes per student
+      const avgViewingMinutes = studentsWithFocus > 0 
+        ? Math.round(totalActiveMinutes / studentsWithFocus) 
+        : 0;
+      
+      // Total expected duration for chapter lessons (in minutes)
+      const expectedDuration = chapterLessons.reduce(
+        (sum, l) => sum + (l.duration_minutes || 0), 0
+      );
+      
+      // Viewing coverage: what percentage of expected time students actually watched
+      const viewingCoverage = expectedDuration > 0 && studentsWithFocus > 0
+        ? Math.min(100, Math.round((avgViewingMinutes / expectedDuration) * 100))
+        : 0;
+      
+      // Total interruptions in this chapter
+      const totalInterruptions = chapterFocusSessions.reduce(
+        (sum, fs) => sum + (fs.interruptions || 0), 0
+      );
+      
       return {
         id: ch.id,
         title: ch.title,
@@ -477,6 +512,13 @@ export default function Reports() {
         avgCompletion,
         totalStudents,
         examPassRate,
+        // New focus-based metrics
+        totalActiveMinutes,
+        studentsWithFocus,
+        avgViewingMinutes,
+        expectedDuration,
+        viewingCoverage,
+        totalInterruptions,
       };
     });
   }, [chapters, lessons, lessonCompletions, enrollments, chapterEnrollments, exams, examAttempts]);
