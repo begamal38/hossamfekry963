@@ -197,7 +197,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className={cn("min-h-screen bg-muted/30", isRTL && "rtl")}>
+    <div className={cn("min-h-screen bg-muted/30 pb-mobile-nav", isRTL && "rtl")}>
       <Navbar />
       
       <main className="pt-24 pb-16">

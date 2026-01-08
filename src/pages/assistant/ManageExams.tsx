@@ -565,7 +565,7 @@ export default function ManageExams() {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <main className="pt-24 pb-16">

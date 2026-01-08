@@ -333,7 +333,7 @@ const ManageLessons = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 pt-24">
