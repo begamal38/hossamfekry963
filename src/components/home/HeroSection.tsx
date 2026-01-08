@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { HeroImageSlider } from './HeroImageSlider';
 import { Hero3DBackground } from './Hero3DBackground';
-
+import { WinterAmbientEffect } from './WinterAmbientEffect';
 export const HeroSection: React.FC = () => {
   const { isRTL, t } = useLanguage();
   const { user } = useAuth();
@@ -20,6 +20,9 @@ export const HeroSection: React.FC = () => {
     <section className="relative min-h-[500px] lg:min-h-[600px] pt-20 lg:pt-24 pb-12 lg:pb-16 overflow-hidden bg-gradient-hero">
       {/* 3D Chemistry Background Animation - positioned behind everything */}
       <Hero3DBackground />
+      
+      {/* Temporary Winter Ambient Effect - auto-expires after 35 days */}
+      <WinterAmbientEffect />
       
       {/* Ambient Glow Effects - with breathing animation */}
       <div 
