@@ -24,6 +24,8 @@ import { ExamActivityList, ExamActivity } from '@/components/dashboard/ExamActiv
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
+import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
+import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,6 +104,15 @@ const Dashboard: React.FC = () => {
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
   const [allExams, setAllExams] = useState<ExamActivity[]>([]);
   const [recentLessons, setRecentLessons] = useState<LessonActivity[]>([]);
+  const [focusStats, setFocusStats] = useState<{
+    totalSessions: number;
+    totalActiveMinutes: number;
+    totalPausedMinutes: number;
+    completedSegments: number;
+    totalInterruptions: number;
+    uniqueLessonsWatched: number;
+    avgSessionMinutes: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Scroll to top on mount
@@ -243,6 +254,30 @@ const Dashboard: React.FC = () => {
           }
         }
 
+        // Fetch focus sessions for this student
+        const { data: focusData } = await supabase
+          .from('focus_sessions')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (focusData && focusData.length > 0) {
+          const totalActive = focusData.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
+          const totalPaused = focusData.reduce((sum, s) => sum + (s.total_paused_seconds || 0), 0);
+          const totalSegments = focusData.reduce((sum, s) => sum + (s.completed_segments || 0), 0);
+          const totalInterruptions = focusData.reduce((sum, s) => sum + (s.interruptions || 0), 0);
+          const uniqueLessons = new Set(focusData.map(s => s.lesson_id)).size;
+          
+          setFocusStats({
+            totalSessions: focusData.length,
+            totalActiveMinutes: Math.round(totalActive / 60),
+            totalPausedMinutes: Math.round(totalPaused / 60),
+            completedSegments: totalSegments,
+            totalInterruptions,
+            uniqueLessonsWatched: uniqueLessons,
+            avgSessionMinutes: focusData.length > 0 ? Math.round((totalActive / 60) / focusData.length) : 0,
+          });
+        }
+
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -327,12 +362,15 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
               </div>
-              <Button variant="outline" asChild className="gap-2">
-                <Link to="/settings">
-                  <Settings className="w-4 h-4" />
-                  {t('nav.settings')}
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <PlatformGuidance role="student" isArabic={isArabic} />
+                <Button variant="outline" asChild className="gap-2">
+                  <Link to="/settings">
+                    <Settings className="w-4 h-4" />
+                    {t('nav.settings')}
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -485,6 +523,15 @@ const Dashboard: React.FC = () => {
                 totalLessons={totalLessons}
                 attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
               />
+
+              {/* Student Focus Stats */}
+              {focusStats && (
+                <StudentFocusStats 
+                  stats={focusStats}
+                  totalLessonsEnrolled={totalLessons}
+                  isArabic={isArabic}
+                />
+              )}
 
               {/* Center Attendance Section - only show for center/hybrid students */}
               {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (

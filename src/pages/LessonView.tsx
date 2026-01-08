@@ -47,6 +47,7 @@ import { FocusModeIndicator, FocusModeHandle } from '@/components/lesson/FocusMo
 import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
 import { PreviewLockOverlay } from '@/components/lesson/PreviewLockOverlay';
 import { UnifiedFocusBar } from '@/components/lesson/UnifiedFocusBar';
+import { WatchInsideTip } from '@/components/lesson/WatchInsideTip';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
@@ -844,6 +845,11 @@ export default function LessonView() {
             {/* Focus Info Strip - Visual indicators only */}
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) && (
               <FocusInfoStrip className="mt-5" />
+            )}
+
+            {/* Watch Inside Tip for enrolled students */}
+            {user && isEnrolled && hasValidVideo(lesson.video_url) && (
+              <WatchInsideTip isArabic={isArabic} isEnrolled={isEnrolled} className="mt-4" />
             )}
 
             {/* Share/Copy Link Button - Inside lesson content */}
