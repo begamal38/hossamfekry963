@@ -543,48 +543,61 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* Focus Mode Stats Section */}
-        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Play className="h-5 w-5 text-green-600" />
-            {isArabic ? 'إحصائيات وضع التركيز (المشاهدة الفعلية)' : 'Focus Mode Stats (Actual Viewing)'}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-background/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Play className="h-4 w-4 text-green-600" />
-                <span className="text-xs">{isArabic ? 'جلسات التركيز' : 'Focus Sessions'}</span>
+        {/* Focus Mode Stats Section - Only show when there's meaningful data */}
+        {(overallStats?.totalFocusSessions ?? 0) > 0 && (
+          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Play className="h-5 w-5 text-green-600" />
+              {isArabic ? 'نشاط وضع التركيز' : 'Focus Mode Activity'}
+            </h2>
+            
+            {/* Main Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-green-600">{overallStats?.totalFocusSessions || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'جلسة تركيز' : 'Focus Sessions'}</p>
               </div>
-              <p className="text-2xl font-bold text-green-600">{overallStats?.totalFocusSessions || 0}</p>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-green-600">
+                  {overallStats?.totalFocusMinutes && overallStats.totalFocusMinutes >= 60 
+                    ? `${Math.floor(overallStats.totalFocusMinutes / 60)}h ${overallStats.totalFocusMinutes % 60}m`
+                    : `${overallStats?.totalFocusMinutes || 0}m`
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'وقت المشاهدة الفعلي' : 'Actual Watch Time'}</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-green-600">
+                  {overallStats?.studentsWithFocusSessions || 0}
+                  <span className="text-lg text-muted-foreground">/{overallStats?.totalStudents || 0}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'طلاب استخدموا وضع التركيز' : 'Students Used Focus'}</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-4 text-center">
+                <p className="text-3xl font-bold text-green-600">{overallStats?.avgFocusMinutesPerStudent || 0}m</p>
+                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'متوسط/طالب' : 'Avg/Student'}</p>
+              </div>
             </div>
+            
+            {/* Focus Rate Progress Bar */}
             <div className="bg-background/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Clock className="h-4 w-4 text-green-600" />
-                <span className="text-xs">{isArabic ? 'دقائق المشاهدة' : 'Watch Minutes'}</span>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">{isArabic ? 'نسبة الطلاب النشطين في وضع التركيز' : 'Students Active in Focus Mode'}</span>
+                <span className="font-semibold text-green-600">
+                  {overallStats?.totalStudents && overallStats.totalStudents > 0 
+                    ? Math.round((overallStats.studentsWithFocusSessions / overallStats.totalStudents) * 100)
+                    : 0}%
+                </span>
               </div>
-              <p className="text-2xl font-bold text-green-600">{overallStats?.totalFocusMinutes || 0}</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Users className="h-4 w-4 text-green-600" />
-                <span className="text-xs">{isArabic ? 'طلاب نشطين' : 'Active Students'}</span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">{overallStats?.studentsWithFocusSessions || 0}</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="text-xs">{isArabic ? 'متوسط الدقائق/طالب' : 'Avg Min/Student'}</span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">{overallStats?.avgFocusMinutesPerStudent || 0}</p>
+              <Progress 
+                value={overallStats?.totalStudents && overallStats.totalStudents > 0 
+                  ? (overallStats.studentsWithFocusSessions / overallStats.totalStudents) * 100
+                  : 0} 
+                className="h-2 [&>div]:bg-green-500" 
+              />
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-4 text-center">
-            {isArabic 
-              ? '⏱️ هذه الإحصائيات تُظهر وقت المشاهدة الفعلي للطلاب في وضع التركيز - وليس مجرد الضغط على "شاهدت الحصة"' 
-              : '⏱️ These stats show actual student watch time in Focus Mode - not just clicking "Watched Lesson"'}
-          </p>
-        </div>
+        )}
 
         {/* Actionable Insights Section */}
         {insightsData && (
