@@ -1,29 +1,47 @@
 import React, { memo, useState, useEffect, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+// Desktop images (larger)
 import heroSlide1 from '@/assets/hero-slide-1.webp';
 import heroSlide2 from '@/assets/hero-slide-2.webp';
 import heroSlide3 from '@/assets/hero-slide-3.webp';
+
+// Mobile images (smaller, optimized)
+import heroSlide1Mobile from '@/assets/hero-slide-1-mobile.webp';
+import heroSlide2Mobile from '@/assets/hero-slide-2-mobile.webp';
+import heroSlide3Mobile from '@/assets/hero-slide-3-mobile.webp';
 
 interface HeroImageSliderProps {
   className?: string;
 }
 
-const slides = [
+const desktopSlides = [
   { src: heroSlide1, alt: 'حسام فكري - في الاستوديو' },
   { src: heroSlide2, alt: 'حسام فكري - صورة رسمية' },
   { src: heroSlide3, alt: 'حسام فكري - في البرنامج' },
 ];
 
+const mobileSlides = [
+  { src: heroSlide1Mobile, alt: 'حسام فكري - في الاستوديو' },
+  { src: heroSlide2Mobile, alt: 'حسام فكري - صورة رسمية' },
+  { src: heroSlide3Mobile, alt: 'حسام فكري - في البرنامج' },
+];
+
 /**
  * Optimized auto-sliding hero images.
- * Larger on desktop, same layout on mobile.
+ * Uses smaller images on mobile for faster loading.
  */
 export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const isMobile = useIsMobile();
+  
+  // Select appropriate slides based on device
+  const slides = isMobile ? mobileSlides : desktopSlides;
 
-  // Auto-slide every 3 seconds
+  // Auto-slide every 4 seconds
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
-  }, []);
+  }, [slides.length]);
 
   useEffect(() => {
     const interval = setInterval(nextSlide, 4000);
@@ -49,8 +67,8 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
             <img
               src={slide.src}
               alt={slide.alt}
-              width={1920}
-              height={1080}
+              width={isMobile ? 800 : 1920}
+              height={isMobile ? 450 : 1080}
               className={`w-full h-full object-cover object-top transition-transform ease-out ${
                 index === currentIndex ? 'scale-105' : 'scale-100'
               }`}
