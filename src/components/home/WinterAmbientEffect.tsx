@@ -10,7 +10,7 @@ import React, { memo, useEffect, useState, useMemo } from 'react';
 const ACTIVATION_DATE = new Date('2026-01-08');
 const DURATION_DAYS = 35;
 const EXPIRATION_DATE = new Date(ACTIVATION_DATE.getTime() + DURATION_DAYS * 24 * 60 * 60 * 1000);
-const PARTICLE_COUNT = 25; // Lightweight count
+const PARTICLE_COUNT = 40; // More visible particles
 
 // Check if effect should be active
 const isEffectActive = (): boolean => {
@@ -27,23 +27,22 @@ const prefersReducedMotion = (): boolean => {
 // Check for low performance indicators
 const isLowPerformance = (): boolean => {
   if (typeof navigator === 'undefined') return false;
-  // @ts-ignore - hardwareConcurrency may not exist
-  const cores = navigator.hardwareConcurrency || 4;
-  // @ts-ignore - deviceMemory may not exist  
+  const cores = (navigator as any).hardwareConcurrency || 4;
   const memory = (navigator as any).deviceMemory || 4;
   return cores < 2 || memory < 2;
 };
 
-// Generate random particles
-const generateParticles = () => {
+// Generate random snowflakes with varied properties
+const generateSnowflakes = () => {
   return Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
     id: i,
     left: Math.random() * 100,
-    delay: Math.random() * 10,
-    duration: 8 + Math.random() * 6, // 8-14 seconds
-    size: 2 + Math.random() * 4, // 2-6px
-    opacity: 0.3 + Math.random() * 0.4, // 0.3-0.7
-    drift: -20 + Math.random() * 40, // Horizontal drift
+    delay: Math.random() * 8,
+    duration: 6 + Math.random() * 8, // 6-14 seconds
+    size: 3 + Math.random() * 6, // 3-9px - larger snowflakes
+    opacity: 0.4 + Math.random() * 0.5, // 0.4-0.9 - more visible
+    drift: -30 + Math.random() * 60, // Horizontal drift
+    wobble: Math.random() > 0.5, // Some wobble effect
   }));
 };
 
@@ -55,10 +54,9 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
   const [shouldRender, setShouldRender] = useState(false);
   const [isTabVisible, setIsTabVisible] = useState(true);
 
-  const particles = useMemo(() => generateParticles(), []);
+  const snowflakes = useMemo(() => generateSnowflakes(), []);
 
   useEffect(() => {
-    // Check all conditions
     const checkShouldRender = () => {
       if (!isEffectActive()) return false;
       if (prefersReducedMotion()) return false;
@@ -69,7 +67,6 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
 
     setShouldRender(checkShouldRender());
 
-    // Listen for reduced motion changes
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleMotionChange = () => setShouldRender(checkShouldRender());
     motionQuery.addEventListener('change', handleMotionChange);
@@ -96,66 +93,153 @@ export const WinterAmbientEffect: React.FC<WinterAmbientEffectProps> = memo(({ i
 
   return (
     <div 
-      className="absolute inset-0 overflow-hidden pointer-events-none z-[1]"
+      className="absolute inset-0 overflow-hidden pointer-events-none z-[5]"
       aria-hidden="true"
     >
-      {particles.map((particle) => (
+      {/* Snowflakes */}
+      {snowflakes.map((flake) => (
         <div
-          key={particle.id}
-          className="absolute rounded-full winter-particle"
+          key={flake.id}
+          className={`absolute snowflake ${flake.wobble ? 'snowflake-wobble' : ''}`}
           style={{
-            left: `${particle.left}%`,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            opacity: particle.opacity,
-            animationDelay: `${particle.delay}s`,
-            animationDuration: `${particle.duration}s`,
-            // @ts-ignore
-            '--drift': `${particle.drift}px`,
+            left: `${flake.left}%`,
+            width: `${flake.size}px`,
+            height: `${flake.size}px`,
+            opacity: flake.opacity,
+            animationDelay: `${flake.delay}s`,
+            animationDuration: `${flake.duration}s`,
+            ['--drift' as any]: `${flake.drift}px`,
           }}
         />
       ))}
       
+      {/* Frost overlay on edges */}
+      <div className="frost-overlay" />
+      
       <style>{`
-        .winter-particle {
-          background: radial-gradient(circle, 
-            hsl(var(--primary) / 0.8) 0%, 
-            hsl(var(--primary) / 0.3) 50%, 
-            transparent 70%
+        /* Snowflake base style */
+        .snowflake {
+          background: radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(220, 240, 255, 0.7) 40%, 
+            rgba(200, 230, 255, 0.3) 70%,
+            transparent 100%
           );
-          top: -10px;
-          animation: winter-fall linear infinite;
+          border-radius: 50%;
+          top: -15px;
+          animation: snow-fall linear infinite;
           will-change: transform;
+          filter: blur(0.3px);
+          box-shadow: 
+            0 0 4px rgba(255, 255, 255, 0.5),
+            0 0 8px rgba(200, 230, 255, 0.3);
         }
         
-        .dark .winter-particle {
-          background: radial-gradient(circle, 
-            hsl(210 100% 95% / 0.7) 0%, 
-            hsl(200 80% 90% / 0.3) 50%, 
-            transparent 70%
+        .snowflake-wobble {
+          animation: snow-fall-wobble linear infinite;
+        }
+        
+        /* Light mode - subtle but visible */
+        :root .snowflake {
+          background: radial-gradient(circle at 30% 30%, 
+            rgba(100, 180, 255, 0.6) 0%, 
+            rgba(150, 200, 255, 0.4) 40%, 
+            rgba(180, 220, 255, 0.2) 70%,
+            transparent 100%
           );
+          box-shadow: 
+            0 0 3px rgba(100, 180, 255, 0.4),
+            0 0 6px rgba(150, 200, 255, 0.2);
         }
         
-        @keyframes winter-fall {
+        /* Dark mode - bright white/ice blue */
+        .dark .snowflake {
+          background: radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(220, 245, 255, 0.7) 40%, 
+            rgba(200, 235, 255, 0.4) 70%,
+            transparent 100%
+          );
+          box-shadow: 
+            0 0 6px rgba(255, 255, 255, 0.6),
+            0 0 12px rgba(200, 235, 255, 0.4);
+        }
+        
+        /* Frost overlay on edges */
+        .frost-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: 
+            radial-gradient(ellipse at top left, rgba(200, 230, 255, 0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at top right, rgba(200, 230, 255, 0.1) 0%, transparent 40%),
+            radial-gradient(ellipse at bottom left, rgba(180, 220, 255, 0.08) 0%, transparent 30%);
+        }
+        
+        .dark .frost-overlay {
+          background: 
+            radial-gradient(ellipse at top left, rgba(220, 245, 255, 0.12) 0%, transparent 50%),
+            radial-gradient(ellipse at top right, rgba(200, 235, 255, 0.08) 0%, transparent 40%),
+            radial-gradient(ellipse at bottom left, rgba(180, 225, 255, 0.06) 0%, transparent 30%);
+        }
+        
+        /* Main falling animation */
+        @keyframes snow-fall {
           0% {
-            transform: translateY(-10px) translateX(0) rotate(0deg);
+            transform: translateY(-15px) translateX(0) scale(0.8);
             opacity: 0;
           }
-          10% {
-            opacity: var(--tw-opacity, 0.5);
+          5% {
+            opacity: var(--tw-opacity, 0.7);
+            transform: translateY(0) translateX(0) scale(1);
           }
-          90% {
-            opacity: var(--tw-opacity, 0.5);
+          95% {
+            opacity: var(--tw-opacity, 0.7);
           }
           100% {
-            transform: translateY(calc(100vh + 20px)) translateX(var(--drift, 0px)) rotate(360deg);
+            transform: translateY(calc(100vh + 30px)) translateX(var(--drift, 0px)) scale(0.6);
+            opacity: 0;
+          }
+        }
+        
+        /* Wobble variation */
+        @keyframes snow-fall-wobble {
+          0% {
+            transform: translateY(-15px) translateX(0) rotate(0deg) scale(0.8);
+            opacity: 0;
+          }
+          5% {
+            opacity: var(--tw-opacity, 0.7);
+          }
+          25% {
+            transform: translateY(25vh) translateX(calc(var(--drift, 0px) * 0.3)) rotate(90deg) scale(1);
+          }
+          50% {
+            transform: translateY(50vh) translateX(calc(var(--drift, 0px) * 0.6)) rotate(180deg) scale(0.9);
+          }
+          75% {
+            transform: translateY(75vh) translateX(calc(var(--drift, 0px) * 0.8)) rotate(270deg) scale(0.8);
+          }
+          95% {
+            opacity: var(--tw-opacity, 0.7);
+          }
+          100% {
+            transform: translateY(calc(100vh + 30px)) translateX(var(--drift, 0px)) rotate(360deg) scale(0.6);
             opacity: 0;
           }
         }
         
         @media (prefers-reduced-motion: reduce) {
-          .winter-particle {
+          .snowflake,
+          .frost-overlay {
             animation: none !important;
+            display: none !important;
+          }
+        }
+        
+        /* Reduce on very small screens */
+        @media (max-width: 480px) {
+          .snowflake:nth-child(n+25) {
             display: none;
           }
         }
