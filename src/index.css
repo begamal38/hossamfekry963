@@ -159,6 +159,62 @@
 }
 
 @layer utilities {
+  /* App Launch Animation - CSS only, GPU accelerated */
+  @keyframes launch-enter {
+    0% {
+      opacity: 0;
+      transform: scale(0.96) translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(-5px);
+    }
+  }
+
+  @keyframes launch-exit {
+    0% {
+      opacity: 1;
+      transform: scale(1) translateY(-5px);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.98) translateY(-10px);
+    }
+  }
+
+  @keyframes launch-dots {
+    0%, 100% {
+      opacity: 0.05;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.08;
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-launch-enter {
+    animation: launch-enter 0.8s ease-out forwards;
+  }
+
+  .animate-launch-exit {
+    animation: launch-exit 0.4s ease-out forwards;
+  }
+
+  .launch-dots {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 30%, hsl(209 56% 46% / 0.06) 1px, transparent 1px),
+                      radial-gradient(circle at 80% 70%, hsl(209 56% 46% / 0.06) 1px, transparent 1px),
+                      radial-gradient(circle at 50% 50%, hsl(209 56% 46% / 0.04) 2px, transparent 2px);
+    background-size: 60px 60px, 80px 80px, 100px 100px;
+    animation: launch-dots 1.5s ease-in-out infinite;
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
   }
