@@ -154,9 +154,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-cairo antialiased;
+    @apply bg-background text-foreground font-cairo antialiased overflow-x-hidden;
   }
-}
 
 @layer utilities {
   .text-gradient {
