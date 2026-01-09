@@ -153,15 +153,13 @@ const Payment: React.FC = () => {
                 {/* Card Header with gradient */}
                 <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 md:p-8 border-b border-border/50">
                   <div className="flex items-start gap-4">
-                    {course.thumbnail_url && (
-                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 border-primary/20">
-                        <img 
-                          src={course.thumbnail_url} 
-                          alt={isArabic ? course.title_ar : course.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 border-primary/20 bg-muted">
+                      <img 
+                        src={course.thumbnail_url || '/images/default-course-cover.svg'} 
+                        alt={isArabic ? course.title_ar : course.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2 leading-tight">
                         {isArabic ? course.title_ar : course.title}
