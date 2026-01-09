@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  BookOpen, 
-  Clock, 
+import {
+  BookOpen,
+  Clock,
   Award,
   FileText,
   ChevronRight,
@@ -129,7 +129,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      
+
       try {
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
@@ -137,7 +137,7 @@ const Dashboard: React.FC = () => {
           .select('full_name, phone, grade, academic_year, language_track, avatar_url, attendance_mode')
           .eq('user_id', user.id)
           .maybeSingle();
-        
+
         if (profileError) throw profileError;
         setProfile(profileData);
 
@@ -186,7 +186,7 @@ const Dashboard: React.FC = () => {
         setExamResults((examResultsData || []) as unknown as ExamResult[]);
 
         // Fetch all available exams for courses the user is enrolled in
-        const courseIds = (enrollmentsData || []).map(e => e.course_id);
+        const courseIds = (enrollmentsData || []).map((e) => e.course_id);
         if (courseIds.length > 0) {
           const { data: allExamsData, error: allExamsError } = await supabase
             .from('exams')
@@ -205,8 +205,8 @@ const Dashboard: React.FC = () => {
           if (allExamsError) throw allExamsError;
 
           // Map exams to activity format
-          const examActivities: ExamActivity[] = (allExamsData || []).map(exam => {
-            const result = (examResultsData || []).find(r => (r.exam as any)?.id === exam.id);
+          const examActivities: ExamActivity[] = (allExamsData || []).map((exam) => {
+            const result = (examResultsData || []).find((r) => (r.exam as any)?.id === exam.id);
             return {
               id: exam.id,
               title: isArabic ? exam.title_ar : exam.title,
@@ -255,18 +255,15 @@ const Dashboard: React.FC = () => {
         }
 
         // Fetch focus sessions for this student
-        const { data: focusData } = await supabase
-          .from('focus_sessions')
-          .select('*')
-          .eq('user_id', user.id);
-        
+        const { data: focusData } = await supabase.from('focus_sessions').select('*').eq('user_id', user.id);
+
         if (focusData && focusData.length > 0) {
           const totalActive = focusData.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
           const totalPaused = focusData.reduce((sum, s) => sum + (s.total_paused_seconds || 0), 0);
           const totalSegments = focusData.reduce((sum, s) => sum + (s.completed_segments || 0), 0);
           const totalInterruptions = focusData.reduce((sum, s) => sum + (s.interruptions || 0), 0);
-          const uniqueLessons = new Set(focusData.map(s => s.lesson_id)).size;
-          
+          const uniqueLessons = new Set(focusData.map((s) => s.lesson_id)).size;
+
           setFocusStats({
             totalSessions: focusData.length,
             totalActiveMinutes: Math.round(totalActive / 60),
@@ -274,10 +271,9 @@ const Dashboard: React.FC = () => {
             completedSegments: totalSegments,
             totalInterruptions,
             uniqueLessonsWatched: uniqueLessons,
-            avgSessionMinutes: focusData.length > 0 ? Math.round((totalActive / 60) / focusData.length) : 0,
+            avgSessionMinutes: focusData.length > 0 ? Math.round(totalActive / 60 / focusData.length) : 0,
           });
         }
-
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -306,33 +302,33 @@ const Dashboard: React.FC = () => {
   const totalLessonsCompleted = enrolledCourses.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
   const totalLessons = enrolledCourses.reduce((sum, e) => sum + (e.course?.lessons_count || 0), 0);
   const lessonsRemaining = totalLessons - totalLessonsCompleted;
-  
+
   const examsTaken = examResults.length;
-  const examsPending = allExams.filter(e => !e.isAttempted).length;
-  
-  const overallProgress = totalLessons > 0 
-    ? Math.round((totalLessonsCompleted / totalLessons) * 100) 
-    : 0;
+  const examsPending = allExams.filter((e) => !e.isAttempted).length;
+
+  const overallProgress = totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0;
 
   // Use real lesson activity data from attendance records
   // If no recent lessons, show next lessons to complete from enrolled courses
-  const lessonActivities: LessonActivity[] = recentLessons.length > 0 
-    ? recentLessons 
-    : enrolledCourses.slice(0, 3).map((enrollment, index) => ({
-        id: `next-${index}`,
-        title: isArabic 
-          ? `الحصة ${enrollment.completed_lessons + 1}` 
-          : `Session ${enrollment.completed_lessons + 1}`,
-        courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
-        isCompleted: false,
-        isLastAccessed: false,
-      }));
+  const lessonActivities: LessonActivity[] =
+    recentLessons.length > 0
+      ? recentLessons
+      : enrolledCourses.slice(0, 3).map((enrollment, index) => ({
+          id: `next-${index}`,
+          title: isArabic ? `الحصة ${enrollment.completed_lessons + 1}` : `Session ${enrollment.completed_lessons + 1}`,
+          courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
+          isCompleted: false,
+          isLastAccessed: false,
+        }));
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div
+      className="min-h-screen bg-muted/30 pb-mobile-nav overflow-x-hidden"
+      dir={isArabic ? 'rtl' : 'ltr'}
+    >
       <Navbar />
-      
-      <main className="pt-24 pb-16">
+
+      <main className="pt-24 pb-16 overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4">
           {/* Welcome Header - Mobile Optimized */}
           <div className="mb-4 sm:mb-6 md:mb-8">
@@ -340,7 +336,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground truncate">
-                  {hasValidName 
+                  {hasValidName
                     ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
                     : `${t('dashboard.welcomeMessage')}! 👋`}
                 </h1>
@@ -351,7 +347,7 @@ const Dashboard: React.FC = () => {
                 </Link>
               </Button>
             </div>
-            
+
             {/* Badges + Guide Row */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 flex-wrap min-w-0">
@@ -361,10 +357,18 @@ const Dashboard: React.FC = () => {
                   </Badge>
                 )}
                 {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
-                  <Badge variant="outline" className={cn("text-xs gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
-                    {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
-                    {isArabic 
-                      ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs gap-1",
+                      ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color
+                    )}
+                  >
+                    {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, {
+                      className: 'w-3 h-3',
+                    })}
+                    {isArabic
+                      ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar
                       : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
                   </Badge>
                 )}
@@ -375,30 +379,10 @@ const Dashboard: React.FC = () => {
 
           {/* Stats Grid - Compact on mobile */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 md:mb-8">
-            <StatCard
-              icon={CheckCircle2}
-              value={totalLessonsCompleted}
-              label={t('dashboard.lessonsCompleted')}
-              variant="success"
-            />
-            <StatCard
-              icon={BookOpen}
-              value={lessonsRemaining}
-              label={t('dashboard.lessonsRemaining')}
-              variant="primary"
-            />
-            <StatCard
-              icon={Award}
-              value={examsTaken}
-              label={t('dashboard.examsTaken')}
-              variant="accent"
-            />
-            <StatCard
-              icon={Clock}
-              value={examsPending}
-              label={t('dashboard.examsPending')}
-              variant="warning"
-            />
+            <StatCard icon={CheckCircle2} value={totalLessonsCompleted} label={t('dashboard.lessonsCompleted')} variant="success" />
+            <StatCard icon={BookOpen} value={lessonsRemaining} label={t('dashboard.lessonsRemaining')} variant="primary" />
+            <StatCard icon={Award} value={examsTaken} label={t('dashboard.examsTaken')} variant="accent" />
+            <StatCard icon={Clock} value={examsPending} label={t('dashboard.examsPending')} variant="warning" />
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -417,13 +401,9 @@ const Dashboard: React.FC = () => {
                     <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                       {t('dashboard.startWithCourse')}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {t('dashboard.chooseFirstCourse')}
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">{t('dashboard.chooseFirstCourse')}</p>
                     <Button asChild size="sm">
-                      <Link to="/courses">
-                        {t('dashboard.browseCourses')}
-                      </Link>
+                      <Link to="/courses">{t('dashboard.browseCourses')}</Link>
                     </Button>
                   </div>
                 ) : (
@@ -431,7 +411,7 @@ const Dashboard: React.FC = () => {
                     {enrolledCourses.map((enrollment) => {
                       const course = enrollment.course;
                       if (!course) return null;
-                      
+
                       return (
                         <CourseProgressCard
                           key={enrollment.id}
@@ -447,13 +427,13 @@ const Dashboard: React.FC = () => {
                 )}
               </section>
 
-              {/* Lesson Activity Section */}
-              <section className="bg-card rounded-xl border border-border p-6">
+              {/* Lesson Activity Section (desktop/tablet only) */}
+              <section className="bg-card rounded-xl border border-border p-6 hidden md:block">
                 <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <Play className="w-5 h-5 text-primary" />
                   {t('lesson.activity')}
                 </h2>
-                
+
                 <LessonActivityList
                   lessons={lessonActivities}
                   isRTL={isArabic}
@@ -461,13 +441,13 @@ const Dashboard: React.FC = () => {
                 />
               </section>
 
-              {/* Exam Activity Section */}
-              <section className="bg-card rounded-xl border border-border p-6">
+              {/* Exam Activity Section (desktop/tablet only) */}
+              <section className="bg-card rounded-xl border border-border p-6 hidden md:block">
                 <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
                   {t('exams')}
                 </h2>
-                
+
                 <ExamActivityList
                   exams={allExams}
                   isRTL={isArabic}
@@ -477,38 +457,34 @@ const Dashboard: React.FC = () => {
               </section>
             </div>
 
-            {/* Sidebar - 1 column */}
-            <div className="space-y-6">
+            {/* Sidebar - hidden on mobile */}
+            <div className="space-y-6 hidden md:block">
               {/* Motivational Progress Message */}
               {enrolledCourses.length > 0 && (
                 <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 p-4">
                   <p className="text-sm font-medium text-foreground">
-                    {overallProgress >= 100 
+                    {overallProgress >= 100
                       ? `🎉 ${t('dashboard.progressExcellent')}`
-                      : overallProgress >= 75 
+                      : overallProgress >= 75
                       ? `🔥 ${t('dashboard.progressAlmostDone')}`
-                      : overallProgress >= 50 
+                      : overallProgress >= 50
                       ? `👏 ${t('dashboard.progressKeepGoing')}`
-                      : overallProgress >= 25 
+                      : overallProgress >= 25
                       ? `💪 ${t('dashboard.progressJustStarted')}`
-                      : `🚀 ${t('dashboard.continueJourney')}`
-                    }
+                      : `🚀 ${t('dashboard.continueJourney')}`}
                   </p>
                 </div>
               )}
 
               {/* Overall Progress */}
-              <OverallProgressCard
-                progressPercent={overallProgress}
-                isRTL={isArabic}
-              />
+              <OverallProgressCard progressPercent={overallProgress} isRTL={isArabic} />
 
               {/* Performance Chart */}
               <PerformanceChart
-                examScores={examResults.map(r => ({
+                examScores={examResults.map((r) => ({
                   score: r.score,
                   maxScore: r.exam?.max_score || 100,
-                  title: isArabic ? r.exam?.title_ar : r.exam?.title
+                  title: isArabic ? r.exam?.title_ar : r.exam?.title,
                 }))}
                 lessonsCompleted={totalLessonsCompleted}
                 totalLessons={totalLessons}
@@ -516,13 +492,7 @@ const Dashboard: React.FC = () => {
               />
 
               {/* Student Focus Stats */}
-              {focusStats && (
-                <StudentFocusStats 
-                  stats={focusStats}
-                  totalLessonsEnrolled={totalLessons}
-                  isArabic={isArabic}
-                />
-              )}
+              {focusStats && <StudentFocusStats stats={focusStats} totalLessonsEnrolled={totalLessons} isArabic={isArabic} />}
 
               {/* Center Attendance Section - only show for center/hybrid students */}
               {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (
@@ -531,16 +501,12 @@ const Dashboard: React.FC = () => {
 
               {/* Profile Card */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="font-semibold text-foreground mb-4">
-                  {t('dashboard.accountInfo')}
-                </h3>
-                
+                <h3 className="font-semibold text-foreground mb-4">{t('dashboard.accountInfo')}</h3>
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-primary font-bold">
-                        {firstName.charAt(0).toUpperCase()}
-                      </span>
+                      <span className="text-primary font-bold">{firstName.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-foreground truncate">{fullName}</p>
@@ -550,21 +516,17 @@ const Dashboard: React.FC = () => {
 
                   {profile?.phone && (
                     <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {isArabic ? 'رقم الواتساب' : 'WhatsApp'}
+                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'رقم الواتساب' : 'WhatsApp'}</p>
+                      <p className="font-medium text-foreground" dir="ltr">
+                        {profile.phone}
                       </p>
-                      <p className="font-medium text-foreground" dir="ltr">{profile.phone}</p>
                     </div>
                   )}
 
                   {groupLabel && (
                     <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {isArabic ? 'المجموعة الدراسية' : 'Academic Group'}
-                      </p>
-                      <p className="font-medium text-foreground">
-                        {groupLabel}
-                      </p>
+                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'المجموعة الدراسية' : 'Academic Group'}</p>
+                      <p className="font-medium text-foreground">{groupLabel}</p>
                     </div>
                   )}
                 </div>
@@ -572,11 +534,10 @@ const Dashboard: React.FC = () => {
                 <Button variant="outline" className="w-full mt-4" asChild>
                   <Link to="/settings">
                     {isArabic ? 'تعديل الحساب' : 'Edit Profile'}
-                    <ChevronRight className={cn("w-4 h-4", isArabic ? "mr-2 rotate-180" : "ml-2")} />
+                    <ChevronRight className={cn('w-4 h-4', isArabic ? 'mr-2 rotate-180' : 'ml-2')} />
                   </Link>
                 </Button>
               </div>
-
             </div>
           </div>
         </div>

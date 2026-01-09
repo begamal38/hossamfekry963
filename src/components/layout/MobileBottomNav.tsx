@@ -46,11 +46,11 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom"
+      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom w-screen max-w-full"
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="flex items-center justify-around h-16 px-2">
+      <div className="flex items-center justify-around h-16 px-2 max-w-full">
         {navItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
