@@ -334,48 +334,50 @@ const Dashboard: React.FC = () => {
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Welcome Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                  {hasValidName 
-                    ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
-                    : `${t('dashboard.welcomeMessage')}! 👋`}
-                </h1>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <p className="text-muted-foreground">
-                      {t('nav.platform')}
-                    </p>
-                  {groupLabel && (
-                    <Badge variant="secondary" className="text-sm">
-                      {groupLabel}
-                    </Badge>
-                  )}
-                  {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
-                    <Badge variant="outline" className={cn("text-sm gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
-                      {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
-                      {isArabic 
-                        ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
-                        : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
+          {/* Welcome Header - Mobile Optimized */}
+          <div className="mb-6 md:mb-8">
+            {/* Top Row: Title + Actions */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
+                {hasValidName 
+                  ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
+                  : `${t('dashboard.welcomeMessage')}! 👋`}
+              </h1>
+              {/* Actions - Icon only on mobile */}
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <PlatformGuidance role="student" isArabic={isArabic} />
-                <Button variant="outline" asChild className="gap-2">
+                <Button variant="outline" size="sm" asChild className="gap-1 px-2 sm:px-3">
                   <Link to="/settings">
                     <Settings className="w-4 h-4" />
-                    {t('nav.settings')}
+                    <span className="hidden sm:inline">{t('nav.settings')}</span>
                   </Link>
                 </Button>
               </div>
             </div>
+            
+            {/* Subtitle + Badges - Compact on mobile */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                {t('nav.platform')}
+              </p>
+              {groupLabel && (
+                <Badge variant="secondary" className="text-xs">
+                  {groupLabel}
+                </Badge>
+              )}
+              {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
+                <Badge variant="outline" className={cn("text-xs gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
+                  {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
+                  {isArabic 
+                    ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
+                    : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {/* Stats Grid - Compact on mobile */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 md:mb-8">
             <StatCard
               icon={CheckCircle2}
               value={totalLessonsCompleted}

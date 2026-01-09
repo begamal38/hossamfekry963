@@ -28,15 +28,15 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        "bg-card rounded-xl border border-border p-5 transition-shadow hover:shadow-md",
+        "bg-card rounded-lg sm:rounded-xl border border-border p-3 sm:p-5 transition-shadow hover:shadow-md",
         className
       )}
     >
-      <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center mb-3", variantStyles[variant])}>
-        <Icon className="w-5 h-5" />
+      <div className={cn("w-8 h-8 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center mb-2 sm:mb-3", variantStyles[variant])}>
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-sm text-muted-foreground mt-1">{label}</p>
+      <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 line-clamp-2">{label}</p>
     </div>
   );
 };

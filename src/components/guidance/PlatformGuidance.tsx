@@ -187,46 +187,51 @@ export const PlatformGuidance: React.FC<PlatformGuidanceProps> = ({
         <Button 
           variant="ghost" 
           size="sm" 
-          className={cn("gap-2 relative", triggerClassName)}
+          className={cn("gap-1.5 relative text-xs sm:text-sm px-2 sm:px-3", triggerClassName)}
         >
           <HelpCircle className="w-4 h-4" />
-          {isArabic ? 'كيف يعمل النظام؟' : 'How it works?'}
+          <span className="hidden xs:inline">
+            {isArabic ? 'كيف يعمل النظام؟' : 'How it works?'}
+          </span>
+          <span className="xs:hidden">
+            {isArabic ? 'دليل' : 'Guide'}
+          </span>
           {!hasSeenGuidance && (
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
         </Button>
       </SheetTrigger>
       
       <SheetContent 
         side={isArabic ? 'right' : 'left'} 
-        className="w-full sm:max-w-lg overflow-y-auto"
+        className="w-[90vw] max-w-md sm:max-w-lg overflow-y-auto p-4 sm:p-6"
       >
-        <SheetHeader className="mb-6">
-          <SheetTitle className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-primary" />
+        <SheetHeader className="mb-4 sm:mb-6">
+          <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             {isArabic 
               ? (role === 'student' ? 'دليل الطالب' : 'دليل المدرس المساعد')
               : (role === 'student' ? 'Student Guide' : 'Assistant Teacher Guide')}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {guidance.map((item, index) => {
             const Icon = item.icon;
             return (
               <div 
                 key={index}
-                className="p-4 rounded-xl bg-muted/50 border border-border"
+                className="p-3 rounded-lg bg-muted/50 border border-border"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-primary" />
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-primary" />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-foreground text-sm mb-0.5">
                       {isArabic ? item.title.ar : item.title.en}
                     </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       {isArabic ? item.description.ar : item.description.en}
                     </p>
                   </div>
@@ -236,8 +241,8 @@ export const PlatformGuidance: React.FC<PlatformGuidanceProps> = ({
           })}
         </div>
 
-        <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+          <p className="text-xs text-muted-foreground">
             💡 {isArabic 
               ? 'لو عندك أي سؤال، تواصل معانا!'
               : 'If you have any questions, contact us!'}

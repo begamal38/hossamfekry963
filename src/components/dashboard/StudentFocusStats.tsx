@@ -60,17 +60,17 @@ export const StudentFocusStats: React.FC<StudentFocusStatsProps> = ({
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground flex items-center gap-2">
-          <Eye className="w-5 h-5 text-primary" />
-          {isArabic ? 'إحصائيات التركيز الفعلي' : 'Real Focus Stats'}
+    <div className="bg-card rounded-lg sm:rounded-xl border border-border p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+        <h3 className="font-semibold text-foreground flex items-center gap-1.5 text-sm sm:text-base">
+          <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          {isArabic ? 'إحصائيات التركيز' : 'Focus Stats'}
         </h3>
         <Badge 
           variant="outline" 
-          className={cn("text-xs gap-1", qualityConfig[focusQuality].color)}
+          className={cn("text-[10px] sm:text-xs gap-1 px-1.5 sm:px-2", qualityConfig[focusQuality].color)}
         >
-          <Target className="w-3 h-3" />
+          <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
           {isArabic 
             ? qualityConfig[focusQuality].ar 
             : qualityConfig[focusQuality].en}
@@ -78,81 +78,81 @@ export const StudentFocusStats: React.FC<StudentFocusStatsProps> = ({
       </div>
 
       {/* Focus Coverage Progress */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
+      <div className="mb-3 sm:mb-4">
+        <div className="flex justify-between text-xs sm:text-sm mb-1.5">
           <span className="text-muted-foreground">
-            {isArabic ? 'تغطية المشاهدة الفعلية' : 'Actual Viewing Coverage'}
+            {isArabic ? 'تغطية المشاهدة' : 'Viewing Coverage'}
           </span>
           <span className="font-semibold">{focusPercentage}%</span>
         </div>
         <Progress 
           value={focusPercentage} 
           className={cn(
-            "h-3",
+            "h-2 sm:h-3",
             focusPercentage >= 70 && "[&>div]:bg-green-500",
             focusPercentage >= 40 && focusPercentage < 70 && "[&>div]:bg-amber-500",
             focusPercentage < 40 && "[&>div]:bg-red-500"
           )}
         />
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
           {isArabic 
-            ? `${stats.uniqueLessonsWatched} حصة من ${totalLessonsEnrolled} تمت مشاهدتها فعلياً`
-            : `${stats.uniqueLessonsWatched} of ${totalLessonsEnrolled} lessons actually watched`}
+            ? `${stats.uniqueLessonsWatched} / ${totalLessonsEnrolled} حصة`
+            : `${stats.uniqueLessonsWatched} / ${totalLessonsEnrolled} lessons`}
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <Clock className="w-4 h-4 mx-auto text-primary mb-1" />
-          <p className="text-xl font-bold text-foreground">
+      {/* Stats Grid - Compact */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-muted/50 rounded-lg p-2 sm:p-3 text-center">
+          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto text-primary mb-0.5" />
+          <p className="text-base sm:text-xl font-bold text-foreground">
             {stats.totalActiveMinutes}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {isArabic ? 'دقيقة تركيز' : 'Focus Minutes'}
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {isArabic ? 'دقيقة' : 'Minutes'}
           </p>
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <Zap className="w-4 h-4 mx-auto text-amber-500 mb-1" />
-          <p className="text-xl font-bold text-foreground">
+        <div className="bg-muted/50 rounded-lg p-2 sm:p-3 text-center">
+          <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto text-amber-500 mb-0.5" />
+          <p className="text-base sm:text-xl font-bold text-foreground">
             {stats.completedSegments}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {isArabic ? 'فترات 20 دقيقة' : '20-min Segments'}
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {isArabic ? 'فترات' : 'Segments'}
           </p>
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
-          <TrendingUp className="w-4 h-4 mx-auto text-green-500 mb-1" />
-          <p className="text-xl font-bold text-foreground">
+        <div className="bg-muted/50 rounded-lg p-2 sm:p-3 text-center">
+          <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto text-green-500 mb-0.5" />
+          <p className="text-base sm:text-xl font-bold text-foreground">
             {stats.avgSessionMinutes}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {isArabic ? 'متوسط/جلسة' : 'Avg per Session'}
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {isArabic ? 'متوسط' : 'Average'}
           </p>
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-3 text-center">
+        <div className="bg-muted/50 rounded-lg p-2 sm:p-3 text-center">
           <AlertTriangle className={cn(
-            "w-4 h-4 mx-auto mb-1",
+            "w-3.5 h-3.5 sm:w-4 sm:h-4 mx-auto mb-0.5",
             stats.totalInterruptions > 10 ? "text-red-500" : "text-muted-foreground"
           )} />
-          <p className="text-xl font-bold text-foreground">
+          <p className="text-base sm:text-xl font-bold text-foreground">
             {stats.totalInterruptions}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {isArabic ? 'انقطاعات' : 'Interruptions'}
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
+            {isArabic ? 'انقطاعات' : 'Interrupts'}
           </p>
         </div>
       </div>
 
-      {/* Tip */}
-      <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+      {/* Tip - Hidden on small mobile */}
+      <div className="mt-3 p-2 rounded-lg bg-primary/5 border border-primary/10 hidden sm:block">
         <p className="text-xs text-muted-foreground">
           💡 {isArabic 
-            ? 'كلما زاد وقت تركيزك داخل المنصة، كلما تم تسجيل تقدمك بشكل أفضل. شاهد من داخل الموقع دائماً!'
-            : 'The more you focus inside the platform, the better your progress is tracked. Always watch from inside the website!'}
+            ? 'شاهد من داخل الموقع دائماً لتسجيل تقدمك!'
+            : 'Always watch from inside the website to track progress!'}
         </p>
       </div>
     </div>
