@@ -1,7 +1,6 @@
 import React from 'react';
 import { Users, BookOpen, TrendingUp } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/usePlatformStats';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
@@ -10,33 +9,36 @@ interface LiveStatsStripProps {
   variant?: 'default' | 'compact';
 }
 
+/**
+ * LiveStatsStrip - Lightweight real-time platform activity strip
+ * Shows dynamic stats fetched from the database
+ * Arabic-first with RTL support
+ */
 export const LiveStatsStrip: React.FC<LiveStatsStripProps> = ({ 
   className,
   variant = 'default' 
 }) => {
   const { totalStudents, totalLessons, weeklyViews, loading } = usePlatformStats();
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
 
   const stats = [
     {
       icon: Users,
       value: totalStudents,
-      label: isArabic ? 'طالب مسجّل' : 'Enrolled Students',
+      label: 'طالب على المنصة',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
       icon: BookOpen,
       value: totalLessons,
-      label: isArabic ? 'حصة متاحة' : 'Lessons Available',
+      label: 'حصة متاحة',
       color: 'text-accent-foreground',
       bgColor: 'bg-accent/50',
     },
     {
       icon: TrendingUp,
       value: weeklyViews,
-      label: isArabic ? 'جلسة تركيز هذا الأسبوع' : 'Focus Sessions This Week',
+      label: 'جلسة تركيز الأسبوع ده',
       color: 'text-green-600 dark:text-green-500',
       bgColor: 'bg-green-500/10',
     },
@@ -48,7 +50,7 @@ export const LiveStatsStrip: React.FC<LiveStatsStripProps> = ({
         "flex items-center justify-center gap-4 md:gap-8 py-3 px-4",
         "border-y border-border/50 bg-muted/30",
         className
-      )}>
+      )} dir="rtl">
         <div className="flex gap-6">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-2 animate-pulse">
@@ -69,7 +71,7 @@ export const LiveStatsStrip: React.FC<LiveStatsStripProps> = ({
       <div className={cn(
         "flex items-center justify-center gap-4 flex-wrap py-2",
         className
-      )}>
+      )} dir="rtl">
         {stats.map((stat, index) => (
           <div 
             key={index}
@@ -91,7 +93,7 @@ export const LiveStatsStrip: React.FC<LiveStatsStripProps> = ({
       "flex items-center justify-center gap-6 md:gap-10 py-4 px-4",
       "border-y border-border/50 bg-muted/30 backdrop-blur-sm",
       className
-    )}>
+    )} dir="rtl">
       {stats.map((stat, index) => (
         <div 
           key={index}
