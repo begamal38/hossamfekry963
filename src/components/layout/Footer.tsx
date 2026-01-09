@@ -18,8 +18,8 @@ export const Footer: React.FC = () => {
       className="border-t border-border mt-16 bg-muted/50 dark:bg-background/80" 
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <div className="container mx-auto px-6 py-16 md:py-20 2xl:py-24 3xl:py-28">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 2xl:gap-16 3xl:gap-20 text-center md:text-right">
+      <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 text-center md:text-right">
           
           {/* Brand Section */}
           <div className="space-y-5 2xl:space-y-6 flex flex-col items-center md:items-start">
