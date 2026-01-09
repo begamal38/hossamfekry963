@@ -843,7 +843,7 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('ar');
+  const [language, setLanguageState] = useState<Language>('en');
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -857,7 +857,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
       setLanguage(savedLang);
     } else {
-      setLanguage('ar');
+      setLanguage('en');
     }
   }, []);
 
