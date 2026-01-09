@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
+import { ConversionInsightsCard } from '@/components/assistant/ConversionInsightsCard';
 
 interface Stats {
   totalStudents: number;
@@ -316,6 +317,11 @@ export default function AssistantDashboard() {
                     </Link>
                   </Button>
                 </div>
+              </div>
+
+              {/* Conversion Insights - Read-only */}
+              <div className="mb-6">
+                <ConversionInsightsCard />
               </div>
 
               {/* Analytics Section */}

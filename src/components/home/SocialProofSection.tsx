@@ -1,8 +1,10 @@
 import React from 'react';
-import { Star, Quote, GraduationCap, Trophy, Users } from 'lucide-react';
+import { Star, Quote, GraduationCap, Trophy, Users, BookOpen } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePlatformStats } from '@/hooks/usePlatformStats';
 import { cn } from '@/lib/utils';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
 const testimonials = [
   {
@@ -34,36 +36,42 @@ const testimonials = [
   }
 ];
 
-const achievements = [
-  {
-    icon: Trophy,
-    value: '25+',
-    label_ar: 'سنة خبرة',
-    label_en: 'Years Experience'
-  },
-  {
-    icon: Users,
-    value: '10,000+',
-    label_ar: 'طالب',
-    label_en: 'Students'
-  },
-  {
-    icon: GraduationCap,
-    value: '95%',
-    label_ar: 'نسبة النجاح',
-    label_en: 'Success Rate'
-  },
-  {
-    icon: Star,
-    value: '4.9',
-    label_ar: 'تقييم الطلاب',
-    label_en: 'Student Rating'
-  }
-];
-
 export const SocialProofSection: React.FC = () => {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
+  const { totalStudents, totalLessons, loading: statsLoading } = usePlatformStats();
+
+  // Dynamic achievements with real data
+  const achievements = [
+    {
+      icon: Trophy,
+      value: '25+',
+      label_ar: 'سنة خبرة',
+      label_en: 'Years Experience'
+    },
+    {
+      icon: Users,
+      value: statsLoading ? '...' : `${totalStudents}+`,
+      label_ar: 'طالب مسجّل',
+      label_en: 'Enrolled Students',
+      isAnimated: true,
+      numericValue: totalStudents
+    },
+    {
+      icon: BookOpen,
+      value: statsLoading ? '...' : `${totalLessons}+`,
+      label_ar: 'حصة متاحة',
+      label_en: 'Lessons Available',
+      isAnimated: true,
+      numericValue: totalLessons
+    },
+    {
+      icon: Star,
+      value: '4.9',
+      label_ar: 'تقييم الطلاب',
+      label_en: 'Student Rating'
+    }
+  ];
 
   return (
     <section className="py-16 2xl:py-20 3xl:py-24 bg-muted/30" style={{ contain: 'layout' }}>

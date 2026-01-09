@@ -49,6 +49,7 @@ import { PreviewLockOverlay } from '@/components/lesson/PreviewLockOverlay';
 import { UnifiedFocusBar } from '@/components/lesson/UnifiedFocusBar';
 import { WatchInsideTip } from '@/components/lesson/WatchInsideTip';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
+import { SmartNextStep } from '@/components/guidance/SmartNextStep';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 import { UserType } from '@/hooks/useUnifiedFocusState';
@@ -901,6 +902,18 @@ export default function LessonView() {
                         {isArabic ? 'ابدأ الامتحان' : 'Start Exam'}
                       </Button>
                     </div>
+                  )}
+                  
+                  {/* Smart Next Step Guidance */}
+                  {nextLesson && (
+                    <SmartNextStep
+                      currentLessonTitle={isArabic ? lesson.title_ar : lesson.title}
+                      nextLessonId={nextLesson.id}
+                      nextLessonTitle={isArabic ? (nextLesson as any).title_ar : (nextLesson as any).title}
+                      nextLessonShortId={(nextLesson as any).short_id}
+                      chapterTitle={chapter ? (isArabic ? chapter.title_ar : chapter.title) : undefined}
+                      className="w-full max-w-md mt-4"
+                    />
                   )}
                 </div>
               ) : (
