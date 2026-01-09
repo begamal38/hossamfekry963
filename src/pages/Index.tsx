@@ -7,6 +7,7 @@ import { CoursesSection } from '@/components/home/CoursesSection';
 import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection';
 import { PressSection } from '@/components/home/PressSection';
 import { SocialProofSection } from '@/components/home/SocialProofSection';
+import { LiveStatsStrip } from '@/components/home/LiveStatsStrip';
 import { SEOHead } from '@/components/seo/SEOHead';
 
 const Index: React.FC = () => {
@@ -27,6 +28,8 @@ const Index: React.FC = () => {
       <Navbar />
       <main>
         <HeroSection />
+        {/* Real-time platform stats */}
+        <LiveStatsStrip />
         <FeaturesSection />
         <CoursesSection />
         <SocialProofSection />
