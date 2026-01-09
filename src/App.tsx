@@ -13,6 +13,8 @@ import { SessionProtectionProvider } from "@/components/session/SessionProtectio
 import { SystemFeedbackProvider } from "@/components/ui/SystemFeedback";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { AppLaunchAnimation } from "@/components/launch/AppLaunchAnimation";
+import { useLaunchAnimation } from "@/hooks/useLaunchAnimation";
 import Index from "./pages/Index";
 
 // Lazy load all pages except Index for better initial bundle size
@@ -58,7 +60,8 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
+// Inner app content component
+const AppContent = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
@@ -332,5 +335,19 @@ const App = () => (
     </LanguageProvider>
   </QueryClientProvider>
 );
+
+// Main App component with launch animation
+const App = () => {
+  const { showAnimation, handleAnimationComplete } = useLaunchAnimation();
+
+  return (
+    <>
+      {showAnimation && (
+        <AppLaunchAnimation onComplete={handleAnimationComplete} />
+      )}
+      <AppContent />
+    </>
+  );
+};
 
 export default App;
