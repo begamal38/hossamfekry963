@@ -408,30 +408,22 @@ const Dashboard: React.FC = () => {
             {/* Main Content - 2 columns */}
             <div className="lg:col-span-2 space-y-6">
               {/* Course Progress Section */}
-              <section className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                    {t('courses.progress')}
-                  </h2>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to="/courses" className="gap-1">
-                      {t('system.viewAll')}
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
+              <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  {t('courses.progress')}
+                </h2>
 
                 {enrolledCourses.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookOpen className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                  <div className="text-center py-8 sm:py-12">
+                    <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground/40 mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                       {t('dashboard.startWithCourse')}
                     </h3>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       {t('dashboard.chooseFirstCourse')}
                     </p>
-                    <Button asChild>
+                    <Button asChild size="sm">
                       <Link to="/courses">
                         {t('dashboard.browseCourses')}
                       </Link>
@@ -588,23 +580,6 @@ const Dashboard: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Quick Actions CTA */}
-              <div className="bg-gradient-to-br from-primary to-accent rounded-xl p-6 text-primary-foreground">
-                <h3 className="font-bold text-lg mb-2">
-                  {isArabic ? 'ابدأ الآن!' : 'Start Now!'}
-                </h3>
-                <p className="text-primary-foreground/80 text-sm mb-4">
-                  {isArabic 
-                    ? 'استمر في رحلة التعلم وحقق أهدافك'
-                    : 'Continue your learning journey and achieve your goals'
-                  }
-                </p>
-                <Button variant="secondary" className="w-full" asChild>
-                  <Link to="/courses">
-                    {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
-                  </Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
