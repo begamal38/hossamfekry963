@@ -333,46 +333,43 @@ const Dashboard: React.FC = () => {
       <Navbar />
       
       <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-3 sm:px-4">
           {/* Welcome Header - Mobile Optimized */}
-          <div className="mb-6 md:mb-8">
-            {/* Top Row: Title + Actions */}
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-                {hasValidName 
-                  ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
-                  : `${t('dashboard.welcomeMessage')}! 👋`}
-              </h1>
-              {/* Actions - Icon only on mobile */}
-              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                <PlatformGuidance role="student" isArabic={isArabic} />
-                <Button variant="outline" size="sm" asChild className="gap-1 px-2 sm:px-3">
-                  <Link to="/settings">
-                    <Settings className="w-4 h-4" />
-                    <span className="hidden sm:inline">{t('nav.settings')}</span>
-                  </Link>
-                </Button>
+          <div className="mb-4 sm:mb-6 md:mb-8">
+            {/* Name + Badges Row */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                  {hasValidName 
+                    ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
+                    : `${t('dashboard.welcomeMessage')}! 👋`}
+                </h1>
               </div>
+              <Button variant="outline" size="icon" asChild className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9">
+                <Link to="/settings">
+                  <Settings className="w-4 h-4" />
+                </Link>
+              </Button>
             </div>
             
-            {/* Subtitle + Badges - Compact on mobile */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm text-muted-foreground hidden sm:block">
-                {t('nav.platform')}
-              </p>
-              {groupLabel && (
-                <Badge variant="secondary" className="text-xs">
-                  {groupLabel}
-                </Badge>
-              )}
-              {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
-                <Badge variant="outline" className={cn("text-xs gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
-                  {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
-                  {isArabic 
-                    ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
-                    : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
-                </Badge>
-              )}
+            {/* Badges + Guide Row */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                {groupLabel && (
+                  <Badge variant="secondary" className="text-xs">
+                    {groupLabel}
+                  </Badge>
+                )}
+                {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
+                  <Badge variant="outline" className={cn("text-xs gap-1", ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color)}>
+                    {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, { className: "w-3 h-3" })}
+                    {isArabic 
+                      ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar 
+                      : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
+                  </Badge>
+                )}
+              </div>
+              <PlatformGuidance role="student" isArabic={isArabic} />
             </div>
           </div>
 

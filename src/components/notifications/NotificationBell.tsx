@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { useNotificationSound } from '@/hooks/useNotificationSound';
 
 interface NotificationBellProps {
   className?: string;
@@ -15,9 +14,6 @@ export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellPr
   const navigate = useNavigate();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const prevUnreadCountRef = useRef(0);
-  const { playSound } = useNotificationSound();
-  const isInitialMount = useRef(true);
 
   useEffect(() => {
     if (user) {
@@ -57,22 +53,6 @@ export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellPr
       };
     }
   }, [user]);
-
-  // Play sound when unread count increases (new notification)
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      prevUnreadCountRef.current = unreadCount;
-      return;
-    }
-
-    if (unreadCount > prevUnreadCountRef.current) {
-      // New notification arrived - play sound
-      playSound();
-    }
-    
-    prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount, playSound]);
 
   const fetchUnreadCount = async () => {
     if (!user) return;

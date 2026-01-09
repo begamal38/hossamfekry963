@@ -186,10 +186,11 @@ export const PlatformGuidance: React.FC<PlatformGuidanceProps> = ({
       <SheetTrigger asChild>
         <Button 
           variant="outline" 
-          size="icon"
-          className={cn("relative w-8 h-8 sm:w-9 sm:h-9", triggerClassName)}
+          size="sm"
+          className={cn("relative gap-1.5 px-2 sm:px-3", triggerClassName)}
         >
           <HelpCircle className="w-4 h-4" />
+          <span className="text-xs sm:text-sm">{isArabic ? 'كيف يعمل النظام؟' : 'How it works?'}</span>
           {!hasSeenGuidance && (
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
           )}
