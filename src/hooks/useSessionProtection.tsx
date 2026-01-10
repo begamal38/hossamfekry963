@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DeviceInfo {
   fingerprint: string;
@@ -64,7 +63,10 @@ export const useSessionProtection = () => {
   const { user } = useAuth();
   const { isStudent, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
-  const { isRTL } = useLanguage();
+  
+  // Get language from localStorage directly to avoid LanguageContext dependency order issues
+  const isRTL = typeof window !== 'undefined' && localStorage.getItem('language') === 'ar';
+  
   const [sessionState, setSessionState] = useState<SessionState>({
     isNewDevice: false,
     sessionEnded: false,
