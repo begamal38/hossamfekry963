@@ -3,7 +3,7 @@ import {
   Focus, 
   Eye, 
   UserCheck, 
-  Lock
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -35,9 +35,9 @@ export const TechnologySection: React.FC = () => {
       descKey: 'tech.studentAwarenessDesc',
     },
     {
-      icon: Lock,
-      titleKey: 'tech.assistantControl',
-      descKey: 'tech.assistantControlDesc',
+      icon: TrendingUp,
+      titleKey: 'tech.progressTracking',
+      descKey: 'tech.progressTrackingDesc',
     },
   ];
 
