@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VisitorFocusIndicatorProps {
   isActive: boolean;
@@ -9,17 +10,20 @@ interface VisitorFocusIndicatorProps {
 
 /**
  * Simple Focus Mode indicator for visitors
- * Shows whether focus validation is active or paused in Arabic
+ * Shows whether focus validation is active or paused
+ * Uses centralized translation keys for consistency
  * Visible ONLY to visitors (not logged in) during free lesson preview
  */
 export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
   isActive,
   className,
 }) => {
+  const { t, isRTL } = useLanguage();
   const Icon = isActive ? Eye : Pause;
 
   return (
     <div 
+      dir={isRTL ? 'rtl' : 'ltr'}
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
         "border transition-all duration-300",
@@ -47,8 +51,8 @@ export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
       
       <Icon className="w-4 h-4" />
       
-      <span dir="rtl">
-        {isActive ? 'وضع التركيز شغّال' : 'وضع التركيز متوقف مؤقتًا'}
+      <span>
+        {isActive ? t('focus.active') : t('focus.paused')}
       </span>
     </div>
   );
