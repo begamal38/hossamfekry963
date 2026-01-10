@@ -7,30 +7,33 @@ import {
   Eye, 
   Shield
 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { usePlatformStats } from '@/hooks/usePlatformStats';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useScrollFadeIn } from '@/hooks/useScrollFadeIn';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// SOCIAL PROOF SECTION - Numbers to Stories
-// One highlighted metric with human context, secondary metrics below
+// SOCIAL PROOF SECTION - Numbers to Stories with Scroll Animation
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const SocialProofSection: React.FC = () => {
   const { totalStudents, totalLessons, loading } = usePlatformStats();
+  const { t, isRTL } = useLanguage();
+  const { ref: mainRef, isVisible: mainVisible } = useScrollFadeIn(0.2);
+  const { ref: pillarsRef, isVisible: pillarsVisible } = useScrollFadeIn(0.2);
 
   // Secondary metrics (displayed smaller)
   const secondaryMetrics = [
     {
       value: totalLessons,
-      label: 'حصة',
+      labelKey: 'socialProof.lesson',
       icon: BookOpen,
     },
     {
       value: 95,
       suffix: '%',
-      label: 'نسبة النجاح',
+      labelKey: 'socialProof.successRate',
       icon: TrendingUp,
     },
   ];
@@ -39,26 +42,32 @@ export const SocialProofSection: React.FC = () => {
   const pillars = [
     {
       icon: Brain,
-      title: 'الفهم قبل الحفظ',
+      titleKey: 'socialProof.pillar1',
     },
     {
       icon: Eye,
-      title: 'نظام تركيز حقيقي',
+      titleKey: 'socialProof.pillar2',
     },
     {
       icon: Shield,
-      title: 'تجربة قبل الدفع',
+      titleKey: 'socialProof.pillar3',
     },
   ];
 
   return (
-    <section className="py-16 md:py-20 bg-background" dir="rtl">
+    <section className="py-16 md:py-20 bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="container mx-auto px-4">
         
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            HIGHLIGHTED METRIC - One number with human story
+            HIGHLIGHTED METRIC - One number with human story (Fade-in)
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="text-center mb-10 md:mb-12 max-w-2xl mx-auto">
+        <div 
+          ref={mainRef}
+          className={cn(
+            "text-center mb-10 md:mb-12 max-w-2xl mx-auto transition-all duration-700",
+            mainVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+          )}
+        >
           {/* Primary Number */}
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -68,18 +77,23 @@ export const SocialProofSection: React.FC = () => {
               {loading ? '...' : <><AnimatedCounter value={totalStudents} />+</>}
             </span>
             <span className="text-xl md:text-2xl font-semibold text-primary">
-              طالب مشترك
+              {t('socialProof.subscribedStudent')}
             </span>
           </div>
           
           {/* Human Story */}
           <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg mx-auto">
-            أغلبهم بدأوا بحصة مجانية وجربوا الشرح بنفسهم.
+            {t('socialProof.studentStory')}
           </p>
         </div>
 
-        {/* Secondary Metrics - Smaller, supporting */}
-        <div className="flex items-center justify-center gap-8 md:gap-12 mb-14 md:mb-16">
+        {/* Secondary Metrics - Smaller, supporting (Fade-in with delay) */}
+        <div 
+          className={cn(
+            "flex items-center justify-center gap-8 md:gap-12 mb-14 md:mb-16 transition-all duration-700 delay-150",
+            mainVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          )}
+        >
           {secondaryMetrics.map((metric, idx) => (
             <div key={idx} className="flex items-center gap-2 text-muted-foreground">
               <metric.icon className="w-5 h-5 text-primary/70" />
@@ -88,17 +102,23 @@ export const SocialProofSection: React.FC = () => {
                   metric.suffix ? `${metric.value}${metric.suffix}` : <AnimatedCounter value={metric.value} />
                 )}
               </span>
-              <span className="text-sm">{metric.label}</span>
+              <span className="text-sm">{t(metric.labelKey)}</span>
             </div>
           ))}
         </div>
 
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            PLATFORM DIFFERENTIATION - Why Different?
+            PLATFORM DIFFERENTIATION - Why Different? (Fade-in)
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className="max-w-3xl mx-auto">
+        <div 
+          ref={pillarsRef}
+          className={cn(
+            "max-w-3xl mx-auto transition-all duration-700",
+            pillarsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+          )}
+        >
           <h3 className="text-lg md:text-xl font-bold text-foreground text-center mb-6">
-            ليه مختلفة؟
+            {t('socialProof.whyDifferent')}
           </h3>
           
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
@@ -108,11 +128,14 @@ export const SocialProofSection: React.FC = () => {
                 className={cn(
                   "flex items-center gap-2.5 px-4 py-2.5 rounded-full",
                   "bg-muted/40 border border-border/30",
-                  "text-foreground text-sm font-medium"
+                  "text-foreground text-sm font-medium",
+                  "transition-all duration-500",
+                  pillarsVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 )}
+                style={{ transitionDelay: `${idx * 100 + 200}ms` }}
               >
                 <pillar.icon className="w-4 h-4 text-primary" />
-                <span>{pillar.title}</span>
+                <span>{t(pillar.titleKey)}</span>
               </div>
             ))}
           </div>

@@ -356,6 +356,32 @@ const translations: Record<Language, Record<string, string>> = {
     'features.tracking.desc': 'Know exactly where you stand, what you finished, and what\'s left... without complications.',
 
     // ══════════════════════════════════════════════════════════════════════════
+    // SOCIAL PROOF SECTION
+    // ══════════════════════════════════════════════════════════════════════════
+    'socialProof.subscribedStudent': 'subscribed student',
+    'socialProof.studentStory': 'Most started with a free lesson and tried the explanation themselves.',
+    'socialProof.lesson': 'lesson',
+    'socialProof.successRate': 'success rate',
+    'socialProof.whyDifferent': 'Why different?',
+    'socialProof.pillar1': 'Understanding before memorization',
+    'socialProof.pillar2': 'Real focus system',
+    'socialProof.pillar3': 'Try before paying',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TECHNOLOGY SECTION
+    // ══════════════════════════════════════════════════════════════════════════
+    'tech.title': 'Not just videos... it\'s a smart system',
+    'tech.subtitle': 'Every part of the platform is designed to help you understand and track progress.',
+    'tech.focusMode': 'Real Focus Mode',
+    'tech.focusModeDesc': 'Not just a timer, it\'s a system that measures your real focus and tracks your progress.',
+    'tech.previewLogic': 'Preview Logic',
+    'tech.previewLogicDesc': 'Watch before you pay, try the content and decide for yourself.',
+    'tech.studentAwareness': 'Student State Awareness',
+    'tech.studentAwarenessDesc': 'The platform knows where you are and guides you to the next step.',
+    'tech.assistantControl': 'Assistant-controlled Access',
+    'tech.assistantControlDesc': 'The assistant teacher fully controls subscriptions and access.',
+
+    // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
     // ══════════════════════════════════════════════════════════════════════════
     'footer.contact': 'Contact',
@@ -848,6 +874,32 @@ const translations: Record<Language, Record<string, string>> = {
     'features.languages.desc': 'شرح احترافي لطلاب العربي واللغات بنفس العمق ونفس الاهتمام.',
     'features.tracking.title': 'متابعة حقيقية لتقدمك',
     'features.tracking.desc': 'عارف أنت واقف فين، خلصت إيه، ولسه فاضلك إيه… من غير تعقيد.',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SOCIAL PROOF SECTION
+    // ══════════════════════════════════════════════════════════════════════════
+    'socialProof.subscribedStudent': 'طالب مشترك',
+    'socialProof.studentStory': 'أغلبهم بدأوا بحصة مجانية وجربوا الشرح بنفسهم.',
+    'socialProof.lesson': 'حصة',
+    'socialProof.successRate': 'نسبة النجاح',
+    'socialProof.whyDifferent': 'ليه مختلفة؟',
+    'socialProof.pillar1': 'الفهم قبل الحفظ',
+    'socialProof.pillar2': 'نظام تركيز حقيقي',
+    'socialProof.pillar3': 'تجربة قبل الدفع',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TECHNOLOGY SECTION
+    // ══════════════════════════════════════════════════════════════════════════
+    'tech.title': 'المنصة مش فيديو… دي نظام ذكي',
+    'tech.subtitle': 'كل جزء في المنصة مصمم عشان يساعدك تفهم وتتابع.',
+    'tech.focusMode': 'Focus Mode الحقيقي',
+    'tech.focusModeDesc': 'مش مجرد تايمر، ده نظام بيقيس تركيزك الفعلي وبيتابع تقدمك.',
+    'tech.previewLogic': 'معاينة قبل الدفع',
+    'tech.previewLogicDesc': 'شوف قبل ما تدفع، جرب المحتوى وقرر بنفسك.',
+    'tech.studentAwareness': 'المنصة فاهماك',
+    'tech.studentAwarenessDesc': 'المنصة فاهمة انت فين، وبتوجهك للخطوة الجاية.',
+    'tech.assistantControl': 'تحكم المدرس المساعد',
+    'tech.assistantControlDesc': 'المدرس المساعد بيتحكم في الاشتراكات والوصول بشكل كامل.',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
