@@ -68,16 +68,16 @@ export const SocialProofSection: React.FC = () => {
             mainVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
           )}
         >
-          {/* Primary Number */}
+          {/* Primary Number - Fixed at +750 */}
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Users className="w-7 h-7 text-primary" />
             </div>
             <span className="text-4xl md:text-5xl font-bold text-foreground">
-              {loading ? '...' : <><AnimatedCounter value={totalStudents} />+</>}
+              +750
             </span>
             <span className="text-xl md:text-2xl font-semibold text-primary">
-              {t('socialProof.subscribedStudent')}
+              {t('socialProof.fixedStudentCount')}
             </span>
           </div>
           
