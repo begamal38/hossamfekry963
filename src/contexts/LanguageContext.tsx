@@ -379,8 +379,8 @@ const translations: Record<Language, Record<string, string>> = {
     'tech.previewLogicDesc': 'Watch before you pay, try the content and decide for yourself.',
     'tech.studentAwareness': 'Student State Awareness',
     'tech.studentAwarenessDesc': 'The platform knows where you are and guides you to the next step.',
-    'tech.assistantControl': 'Assistant-controlled Access',
-    'tech.assistantControlDesc': 'The assistant teacher fully controls subscriptions and access.',
+    'tech.progressTracking': 'Track Your Progress',
+    'tech.progressTrackingDesc': 'See your progress clearly - completed lessons, exams, and your overall performance.',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
@@ -900,8 +900,8 @@ const translations: Record<Language, Record<string, string>> = {
     'tech.previewLogicDesc': 'شوف قبل ما تدفع، جرب المحتوى وقرر بنفسك.',
     'tech.studentAwareness': 'المنصة فاهماك',
     'tech.studentAwarenessDesc': 'المنصة فاهمة انت فين، وبتوجهك للخطوة الجاية.',
-    'tech.assistantControl': 'تحكم المدرس المساعد',
-    'tech.assistantControlDesc': 'المدرس المساعد بيتحكم في الاشتراكات والوصول بشكل كامل.',
+    'tech.progressTracking': 'تتبع تقدمك',
+    'tech.progressTrackingDesc': 'شوف تقدمك بوضوح - الحصص اللي خلصتها، الامتحانات، ومستواك الكلي.',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOOTER
