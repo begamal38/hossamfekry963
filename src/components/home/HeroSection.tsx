@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Play, Settings } from 'lucide-react';
+import { ArrowRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,50 +55,31 @@ export const HeroSection: React.FC = () => {
               </p>
             </div>
 
-            {/* CTA Buttons - Role-aware with proper translations */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Single CTA - Clear next action */}
+            <div className="flex justify-center">
               {user ? (
-                // Logged in user - show role-appropriate buttons
-                <>
-                  {isStaff ? (
-                    // Staff (Assistant/Admin) - show admin dashboard button
-                    <Button variant="hero" size="lg" asChild>
-                      <Link to="/assistant">
-                        <Settings className="w-5 h-5" />
-                        {t('hero.cta_admin')}
-                      </Link>
-                    </Button>
-                  ) : (
-                    // Student - show platform entry button
-                    <Button variant="hero" size="lg" asChild>
-                      <Link to="/platform">
-                        {t('hero.cta_platform')}
-                        <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
-                      </Link>
-                    </Button>
-                  )}
-                  <Button variant="heroOutline" size="lg" asChild>
-                    <Link to="/courses">
-                      {t('hero.cta_courses')}
-                    </Link>
-                  </Button>
-                </>
-              ) : (
-                // Not logged in - show clear CTAs
-                <>
+                isStaff ? (
                   <Button variant="hero" size="lg" asChild>
-                    <Link to="/auth?mode=signup">
-                      <Play className="w-5 h-5" />
-                      {t('hero.startLearning')}
+                    <Link to="/assistant">
+                      <Settings className="w-5 h-5" />
+                      {t('hero.cta_admin')}
                     </Link>
                   </Button>
-                  <Button variant="heroOutline" size="lg" asChild>
+                ) : (
+                  <Button variant="hero" size="lg" asChild>
                     <Link to="/courses">
                       {t('hero.cta_courses')}
                       <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>
-                </>
+                )
+              ) : (
+                <Button variant="hero" size="lg" asChild>
+                  <Link to="/courses">
+                    {t('hero.cta_courses')}
+                    <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
+                  </Link>
+                </Button>
               )}
             </div>
           </div>
