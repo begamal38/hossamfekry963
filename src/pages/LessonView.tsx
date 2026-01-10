@@ -53,6 +53,7 @@ import { SmartNextStep } from '@/components/guidance/SmartNextStep';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 import { UserType } from '@/hooks/useUnifiedFocusState';
+import { useEngagementSafe } from '@/components/consent';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
 
@@ -149,6 +150,9 @@ export default function LessonView() {
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const { saveFocusSession } = useFocusSessionPersistence();
+  
+  // Smart engagement for prompts (safe hook - returns null if not in provider)
+  const engagement = useEngagementSafe();
 
   // Keep volatile values in refs so player lifecycle never re-initializes on re-renders
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
@@ -321,6 +325,9 @@ export default function LessonView() {
 
       setCompleted(true);
       toast.success(isArabic ? '✔️ تم تسجيل إكمال الحصة بنجاح' : '✔️ Lesson completed successfully');
+      
+      // Trigger engagement for smart prompts (lesson_complete)
+      engagement?.recordEngagement('lesson_complete');
     } catch (error) {
       console.error('Error marking lesson complete:', error);
       toast.error(isArabic ? 'حدث خطأ، حاول مرة أخرى' : 'An error occurred, please try again');
@@ -503,6 +510,15 @@ export default function LessonView() {
       previewControlsRef.current.pauseTimer();
     }
   }, [isFocusActive, previewTimer.isLocked]);
+
+  // Start/stop engagement focus timer based on video state
+  useEffect(() => {
+    if (isFocusActive) {
+      engagement?.startFocusTimer();
+    } else {
+      engagement?.stopFocusTimer();
+    }
+  }, [isFocusActive, engagement]);
 
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
