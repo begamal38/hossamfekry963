@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
 import { SystemFeedbackProvider } from "@/components/ui/SystemFeedback";
+import { SmartEngagementProvider } from "@/components/consent";
 import GovernorateCheck from "@/components/profile/GovernorateCheck";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
@@ -64,12 +65,13 @@ const App = () => (
       <AuthProvider>
         <ThemeProvider>
           <SessionProtectionProvider>
-            <GovernorateCheck>
-              <TooltipProvider>
-                <SystemFeedbackProvider>
-                <Toaster />
-                <Sonner />
-              <BrowserRouter>
+            <SmartEngagementProvider>
+              <GovernorateCheck>
+                <TooltipProvider>
+                  <SystemFeedbackProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
                 <ScrollToTop />
                 <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -322,10 +324,11 @@ const App = () => (
                 </Suspense>
                 {/* Mobile Bottom Navigation - visible only on mobile */}
                 <MobileBottomNav />
-              </BrowserRouter>
-              </SystemFeedbackProvider>
-              </TooltipProvider>
-            </GovernorateCheck>
+                    </BrowserRouter>
+                  </SystemFeedbackProvider>
+                </TooltipProvider>
+              </GovernorateCheck>
+            </SmartEngagementProvider>
           </SessionProtectionProvider>
         </ThemeProvider>
       </AuthProvider>

@@ -1150,6 +1150,36 @@ export type Database = {
           },
         ]
       }
+      platform_consent_events: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          event_type: string
+          id?: string
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       practice_attempts: {
         Row: {
           attempted_at: string

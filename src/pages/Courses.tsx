@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
 import { filterCoursesForStudents, isCoursePreview } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { useEngagementSafe } from '@/components/consent';
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
   'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
@@ -52,6 +53,7 @@ const Courses: React.FC = () => {
   const navigate = useNavigate();
   const isArabic = language === 'ar';
   const canBypassAcademicRestrictions = !!user && !rolesLoading && (isAdmin() || isAssistantTeacher());
+  const engagement = useEngagementSafe();
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -199,6 +201,8 @@ const Courses: React.FC = () => {
           title: isArabic ? 'تم الاشتراك!' : 'Enrolled!',
           description: isArabic ? 'تم الاشتراك في الكورس بنجاح' : 'Successfully enrolled in the course',
         });
+        // Trigger engagement for smart prompts
+        engagement?.recordEngagement('enrollment');
         // Navigate to course after enrollment
         navigate(`/course/${courseId}`);
       }
