@@ -359,6 +359,7 @@ const translations: Record<Language, Record<string, string>> = {
     // SOCIAL PROOF SECTION
     // ══════════════════════════════════════════════════════════════════════════
     'socialProof.subscribedStudent': 'subscribed student',
+    'socialProof.fixedStudentCount': 'students currently in 2026',
     'socialProof.studentStory': 'Most started with a free lesson and tried the explanation themselves.',
     'socialProof.lesson': 'lesson',
     'socialProof.successRate': 'success rate',
@@ -879,6 +880,7 @@ const translations: Record<Language, Record<string, string>> = {
     // SOCIAL PROOF SECTION
     // ══════════════════════════════════════════════════════════════════════════
     'socialProof.subscribedStudent': 'طالب مشترك',
+    'socialProof.fixedStudentCount': 'طالب حاليًا في 2026',
     'socialProof.studentStory': 'أغلبهم بدأوا بحصة مجانية وجربوا الشرح بنفسهم.',
     'socialProof.lesson': 'حصة',
     'socialProof.successRate': 'نسبة النجاح',
