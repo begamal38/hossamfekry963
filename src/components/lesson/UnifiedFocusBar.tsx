@@ -16,6 +16,7 @@ interface UnifiedFocusBarProps {
 /**
  * Unified Focus Bar component that works across all user states.
  * Collapsible with auto-expand on important events.
+ * Uses centralized translation keys for consistency.
  * 
  * Design:
  * - Default: Collapsed (shows only pulsing dot)
@@ -31,8 +32,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
   hasPlaybackStarted,
   className,
 }) => {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const { t, isRTL } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wasActiveRef = useRef(false);
@@ -88,40 +88,32 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
     return null;
   }
 
-  // Get state-specific text (Arabic + English)
+  // Get state-specific text using translation keys
   const getText = () => {
     if (userType === 'visitor') {
       if (isFocusActive) {
         return {
-          title: isArabic ? 'معاينة سريعة للحصة 👀' : 'Quick lesson preview 👀',
-          subtitle: isArabic 
-            ? 'بتاخد فكرة عن أسلوب الشرح قبل التسجيل.' 
-            : 'Get a feel for the teaching style before signing up.',
-          timer: isArabic 
-            ? `المتبقي من المعاينة: ${formatTime(remainingSeconds)}` 
-            : `Preview remaining: ${formatTime(remainingSeconds)}`,
+          title: `${t('preview.quick')} 👀`,
+          subtitle: t('preview.getIdea'),
+          timer: `${t('preview.remaining')}: ${formatTime(remainingSeconds)}`,
         };
       } else {
         return {
-          title: isArabic ? 'وضع التركيز متوقف مؤقتًا' : 'Focus mode paused',
-          subtitle: isArabic 
-            ? 'ارجع للفيديو لاستكمال المعاينة' 
-            : 'Return to video to continue preview',
-          timer: isArabic 
-            ? `المتبقي: ${formatTime(remainingSeconds)}` 
-            : `Remaining: ${formatTime(remainingSeconds)}`,
+          title: t('focus.paused'),
+          subtitle: t('focus.resumeVideo'),
+          timer: `${t('system.remaining')}: ${formatTime(remainingSeconds)}`,
         };
       }
     } else if (userType === 'student') {
       if (isFocusActive) {
         return {
-          title: isArabic ? 'دي حصة مجانية — ركّز مع الشرح 👌' : 'Free lesson — stay focused 👌',
+          title: `${t('preview.stayFocused')} 👌`,
           subtitle: null,
           timer: null,
         };
       } else {
         return {
-          title: isArabic ? 'وضع التركيز متوقف' : 'Focus mode paused',
+          title: t('focus.paused'),
           subtitle: null,
           timer: null,
         };
@@ -130,13 +122,13 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
       // Enrolled
       if (isFocusActive) {
         return {
-          title: isArabic ? 'وضع التركيز نشط' : 'Focus mode active',
+          title: t('focus.active'),
           subtitle: null,
           timer: null,
         };
       } else {
         return {
-          title: isArabic ? 'وضع التركيز متوقف' : 'Focus mode paused',
+          title: t('focus.paused'),
           subtitle: null,
           timer: null,
         };
@@ -157,7 +149,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
 
   return (
     <div
-      dir="rtl"
+      dir={isRTL ? 'rtl' : 'ltr'}
       className={cn(
         "flex items-center gap-2 transition-all duration-300 rounded-full",
         "border backdrop-blur-sm cursor-pointer select-none",

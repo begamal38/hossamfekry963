@@ -425,6 +425,88 @@ const translations: Record<Language, Record<string, string>> = {
     'campaigns.followTitle': 'Follow Us on Facebook',
     'campaigns.followDesc': 'Join our Facebook community and be the first to know about exclusive offers and discounts',
     'campaigns.visitPage': 'Visit Our Page',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // FOCUS MODE (UNIFIED TERMINOLOGY)
+    // ══════════════════════════════════════════════════════════════════════════
+    'focus.mode': 'Focus Mode',
+    'focus.active': 'Focus Mode Active',
+    'focus.paused': 'Focus Mode Paused',
+    'focus.smart': 'Smart Focus Mode',
+    'focus.interval': '20-minute tracked intervals',
+    'focus.encouragement': 'Auto encouragement while studying',
+    'focus.tracking': 'Real performance tracking',
+    'focus.examsLinked': 'Exams linked to chapters',
+    'focus.studyTime': 'Study Time',
+    'focus.resumeVideo': 'Return to video to continue',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PREVIEW / TRIAL (VISITOR UX)
+    // ══════════════════════════════════════════════════════════════════════════
+    'preview.quick': 'Quick lesson preview',
+    'preview.remaining': 'Preview remaining',
+    'preview.ended': 'Preview ended',
+    'preview.locked': 'Preview locked',
+    'preview.getIdea': 'Get a feel for the teaching style before signing up',
+    'preview.wasQuick': 'This was a quick lesson preview',
+    'preview.signupToContinue': 'Create account to continue with free lessons',
+    'preview.freeLesson': 'Free Lesson',
+    'preview.thisIsFree': 'This is a free lesson',
+    'preview.stayFocused': 'Free lesson — stay focused',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SYSTEM MESSAGES (EXTENDED)
+    // ══════════════════════════════════════════════════════════════════════════
+    'system.pleaseWait': 'Please wait...',
+    'system.somethingWrong': 'Something went wrong',
+    'system.retry': 'Retry',
+    'system.continue': 'Continue',
+    'system.remaining': 'Remaining',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // THEME
+    // ══════════════════════════════════════════════════════════════════════════
+    'theme.light': 'Light',
+    'theme.dark': 'Dark',
+    'theme.system': 'Auto',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ASSISTANT INSIGHTS
+    // ══════════════════════════════════════════════════════════════════════════
+    'assistant.insights': 'Conversion Insights',
+    'assistant.closeToConvert': 'Students close to conversion',
+    'assistant.highEngagement': 'High engagement content',
+    'assistant.dropOff': 'Drop-off points',
+    'assistant.activateCourse': 'Activate Course',
+    'assistant.deactivateCourse': 'Deactivate Course',
+    'assistant.activateChapter': 'Activate Chapter',
+    'assistant.deactivateChapter': 'Deactivate Chapter',
+    'assistant.manualEnroll': 'Manual Enrollment',
+    'assistant.bulkAssign': 'Bulk Student Assignment',
+    'assistant.trialAnalytics': 'Trial Analytics',
+    'assistant.focusAnalytics': 'Focus Analytics',
+    'assistant.scoreLabel.low': 'Low',
+    'assistant.scoreLabel.medium': 'Medium',
+    'assistant.scoreLabel.high': 'High',
+    'assistant.coverage.weak': 'Weak',
+    'assistant.coverage.partial': 'Partial',
+    'assistant.coverage.good': 'Good',
+    'assistant.coverage.excellent': 'Excellent',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════════════════════════════════
+    'auth.createAccount': 'Create Account',
+    'auth.register': 'Register',
+    'auth.registerToContinue': 'Register to continue',
+    'auth.login': 'Login',
+    'auth.logout': 'Logout',
+    'auth.email': 'Email',
+    'auth.password': 'Password',
+    'auth.confirmPassword': 'Confirm Password',
+    'auth.forgotPassword': 'Forgot Password?',
+    'auth.noAccount': "Don't have an account?",
+    'auth.hasAccount': 'Already have an account?',
   },
 
   ar: {
@@ -837,6 +919,88 @@ const translations: Record<Language, Record<string, string>> = {
     'campaigns.followTitle': 'تابعنا على فيسبوك',
     'campaigns.followDesc': 'انضم لمجتمعنا على فيسبوك وكن أول من يعرف عن العروض والخصومات الحصرية',
     'campaigns.visitPage': 'زور صفحتنا',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // FOCUS MODE (UNIFIED TERMINOLOGY)
+    // ══════════════════════════════════════════════════════════════════════════
+    'focus.mode': 'وضع التركيز',
+    'focus.active': 'وضع التركيز نشط',
+    'focus.paused': 'وضع التركيز متوقف مؤقتًا',
+    'focus.smart': 'وضع تركيز ذكي',
+    'focus.interval': 'كل 20 دقيقة محسوبة',
+    'focus.encouragement': 'تشجيع تلقائي وانت بتذاكر',
+    'focus.tracking': 'متابعة أداء حقيقية',
+    'focus.examsLinked': 'امتحانات مرتبطة بالأبواب',
+    'focus.studyTime': 'وقت المذاكرة',
+    'focus.resumeVideo': 'ارجع للفيديو لاستكمال المعاينة',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PREVIEW / TRIAL (VISITOR UX)
+    // ══════════════════════════════════════════════════════════════════════════
+    'preview.quick': 'معاينة سريعة للحصة',
+    'preview.remaining': 'المتبقي من المعاينة',
+    'preview.ended': 'انتهت المعاينة',
+    'preview.locked': 'المعاينة مقفولة',
+    'preview.getIdea': 'بتاخد فكرة عن أسلوب الشرح قبل التسجيل',
+    'preview.wasQuick': 'دي كانت معاينة سريعة للحصة',
+    'preview.signupToContinue': 'سجّل حسابك وكمّل الحصص المجانية كاملة',
+    'preview.freeLesson': 'حصة مجانية',
+    'preview.thisIsFree': 'دي حصة مجانية',
+    'preview.stayFocused': 'دي حصة مجانية — ركّز مع الشرح',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SYSTEM MESSAGES (EXTENDED)
+    // ══════════════════════════════════════════════════════════════════════════
+    'system.pleaseWait': 'استنى شوية...',
+    'system.somethingWrong': 'حصل حاجة غلط',
+    'system.retry': 'حاول تاني',
+    'system.continue': 'كمّل',
+    'system.remaining': 'المتبقي',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // THEME
+    // ══════════════════════════════════════════════════════════════════════════
+    'theme.light': 'فاتح',
+    'theme.dark': 'داكن',
+    'theme.system': 'تلقائي',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ASSISTANT INSIGHTS
+    // ══════════════════════════════════════════════════════════════════════════
+    'assistant.insights': 'رؤى التحويل',
+    'assistant.closeToConvert': 'طلاب قريبين من الاشتراك',
+    'assistant.highEngagement': 'محتوى بتفاعل عالي',
+    'assistant.dropOff': 'نقاط التوقف',
+    'assistant.activateCourse': 'تفعيل الكورس',
+    'assistant.deactivateCourse': 'إلغاء تفعيل الكورس',
+    'assistant.activateChapter': 'تفعيل الباب',
+    'assistant.deactivateChapter': 'إلغاء تفعيل الباب',
+    'assistant.manualEnroll': 'تسجيل يدوي',
+    'assistant.bulkAssign': 'تسجيل طلاب بالجملة',
+    'assistant.trialAnalytics': 'تحليلات المعاينة',
+    'assistant.focusAnalytics': 'تحليلات التركيز',
+    'assistant.scoreLabel.low': 'منخفض',
+    'assistant.scoreLabel.medium': 'متوسط',
+    'assistant.scoreLabel.high': 'مرتفع',
+    'assistant.coverage.weak': 'ضعيف',
+    'assistant.coverage.partial': 'جزئي',
+    'assistant.coverage.good': 'جيد',
+    'assistant.coverage.excellent': 'ممتاز',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════════════════════════════════
+    'auth.createAccount': 'إنشاء حساب',
+    'auth.register': 'تسجيل',
+    'auth.registerToContinue': 'سجّل عشان تكمل',
+    'auth.login': 'تسجيل الدخول',
+    'auth.logout': 'تسجيل الخروج',
+    'auth.email': 'البريد الإلكتروني',
+    'auth.password': 'كلمة السر',
+    'auth.confirmPassword': 'تأكيد كلمة السر',
+    'auth.forgotPassword': 'نسيت كلمة السر؟',
+    'auth.noAccount': 'معندكش حساب؟',
+    'auth.hasAccount': 'عندك حساب بالفعل؟',
   },
 };
 

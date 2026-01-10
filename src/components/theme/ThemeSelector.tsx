@@ -11,14 +11,18 @@ import { useTheme, Theme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
+/**
+ * Theme Selector - Uses centralized translation keys
+ * Supports Light, Dark, and System (Auto) themes
+ */
 export const ThemeSelector: React.FC = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const { language } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
-  const themes: { value: Theme; label: string; labelAr: string; icon: React.ReactNode }[] = [
-    { value: 'light', label: 'Light', labelAr: 'فاتح', icon: <Sun className="w-4 h-4" /> },
-    { value: 'dark', label: 'Dark', labelAr: 'داكن', icon: <Moon className="w-4 h-4" /> },
-    { value: 'system', label: 'Auto', labelAr: 'تلقائي', icon: <Monitor className="w-4 h-4" /> },
+  const themes: { value: Theme; labelKey: string; icon: React.ReactNode }[] = [
+    { value: 'light', labelKey: 'theme.light', icon: <Sun className="w-4 h-4" /> },
+    { value: 'dark', labelKey: 'theme.dark', icon: <Moon className="w-4 h-4" /> },
+    { value: 'system', labelKey: 'theme.system', icon: <Monitor className="w-4 h-4" /> },
   ];
 
   const currentIcon = theme === 'system' 
@@ -34,23 +38,23 @@ export const ThemeSelector: React.FC = () => {
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-foreground"
-          aria-label={language === 'ar' ? 'تغيير السمة' : 'Toggle theme'}
+          aria-label={isRTL ? 'تغيير السمة' : 'Toggle theme'}
         >
           {currentIcon}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[120px]">
-        {themes.map((t) => (
+        {themes.map((themeOption) => (
           <DropdownMenuItem
-            key={t.value}
-            onClick={() => setTheme(t.value)}
+            key={themeOption.value}
+            onClick={() => setTheme(themeOption.value)}
             className={cn(
               "flex items-center gap-2 cursor-pointer",
-              theme === t.value && "bg-accent text-accent-foreground"
+              theme === themeOption.value && "bg-accent text-accent-foreground"
             )}
           >
-            {t.icon}
-            <span>{language === 'ar' ? t.labelAr : t.label}</span>
+            {themeOption.icon}
+            <span>{t(themeOption.labelKey)}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

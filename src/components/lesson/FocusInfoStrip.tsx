@@ -11,31 +11,31 @@ interface FocusInfoStripProps {
  * Focus Info Strip - Visual-only informational strip
  * Shows platform features without any buttons or logic changes
  * Designed to blend seamlessly with existing UI
+ * Uses centralized translation keys for consistency
  */
 export const FocusInfoStrip: React.FC<FocusInfoStripProps> = ({ className }) => {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const { t } = useLanguage();
 
   const features = [
     {
       icon: Target,
-      label: isArabic ? 'وضع تركيز ذكي' : 'Smart Focus Mode',
+      labelKey: 'focus.smart',
     },
     {
       icon: Timer,
-      label: isArabic ? 'كل 20 دقيقة محسوبة' : '20-minute tracked intervals',
+      labelKey: 'focus.interval',
     },
     {
       icon: Bell,
-      label: isArabic ? 'تشجيع تلقائي وانت بتذاكر' : 'Auto encouragement while studying',
+      labelKey: 'focus.encouragement',
     },
     {
       icon: BarChart3,
-      label: isArabic ? 'متابعة أداء حقيقية' : 'Real performance tracking',
+      labelKey: 'focus.tracking',
     },
     {
       icon: FileCheck,
-      label: isArabic ? 'امتحانات مرتبطة بالأبواب' : 'Exams linked to chapters',
+      labelKey: 'focus.examsLinked',
     },
   ];
 
@@ -89,7 +89,7 @@ export const FocusInfoStrip: React.FC<FocusInfoStripProps> = ({ className }) => 
               
               {/* Label */}
               <span className="text-xs md:text-sm font-medium text-foreground/80 leading-tight">
-                {feature.label}
+                {t(feature.labelKey)}
               </span>
             </div>
           ))}

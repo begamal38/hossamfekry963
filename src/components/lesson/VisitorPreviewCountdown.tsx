@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VisitorPreviewCountdownProps {
   remainingSeconds: number;
@@ -9,7 +10,8 @@ interface VisitorPreviewCountdownProps {
 }
 
 /**
- * Countdown timer for visitor preview - shows remaining time in Arabic
+ * Countdown timer for visitor preview - shows remaining time
+ * Uses centralized translation keys for consistency
  * Visible ONLY to visitors (not logged in) during free lesson preview
  */
 export const VisitorPreviewCountdown: React.FC<VisitorPreviewCountdownProps> = ({
@@ -17,6 +19,8 @@ export const VisitorPreviewCountdown: React.FC<VisitorPreviewCountdownProps> = (
   isRunning,
   className,
 }) => {
+  const { t, isRTL } = useLanguage();
+  
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -26,6 +30,7 @@ export const VisitorPreviewCountdown: React.FC<VisitorPreviewCountdownProps> = (
 
   return (
     <div 
+      dir={isRTL ? 'rtl' : 'ltr'}
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
         "border transition-all duration-300",
@@ -41,8 +46,8 @@ export const VisitorPreviewCountdown: React.FC<VisitorPreviewCountdownProps> = (
         "w-4 h-4",
         isRunning && !isWarning && "animate-pulse"
       )} />
-      <span dir="rtl">
-        المتبقي من المعاينة: {formattedTime}
+      <span>
+        {t('preview.remaining')}: {formattedTime}
       </span>
     </div>
   );
