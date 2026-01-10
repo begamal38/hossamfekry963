@@ -450,9 +450,12 @@ export default function ManageCourses() {
                     className="hidden"
                   />
                   
-                  <div className="text-sm text-muted-foreground">
-                    <p>الحجم الأقصى: 5 ميجابايت</p>
-                    <p>الأبعاد المثالية: 1280×720 (16:9)</p>
+                  <div className="text-sm text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg border">
+                    <p className="font-medium text-foreground">📐 إرشادات رفع صورة الغلاف:</p>
+                    <p>• <strong>المقاس المثالي:</strong> 1280×720 بكسل (نسبة 16:9)</p>
+                    <p>• <strong>الحجم الأقصى:</strong> 5 ميجابايت</p>
+                    <p>• <strong>الصيغ المدعومة:</strong> JPG, PNG, WEBP</p>
+                    <p className="text-xs opacity-75">💡 تأكد أن العناصر المهمة في منتصف الصورة</p>
                   </div>
                 </div>
               </div>
