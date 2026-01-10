@@ -2,12 +2,11 @@ import React, { useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { HeroSection } from '@/components/home/HeroSection';
-import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { CoursesSection } from '@/components/home/CoursesSection';
 import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection';
 import { PressSection } from '@/components/home/PressSection';
 import { SocialProofSection } from '@/components/home/SocialProofSection';
-import { LiveStatsStrip } from '@/components/home/LiveStatsStrip';
+import { TechnologySection } from '@/components/home/TechnologySection';
 import { SEOHead } from '@/components/seo/SEOHead';
 
 const Index: React.FC = () => {
@@ -27,13 +26,22 @@ const Index: React.FC = () => {
       />
       <Navbar />
       <main>
+        {/* Hero: Clear value proposition, no stats */}
         <HeroSection />
-        {/* Real-time platform stats */}
-        <LiveStatsStrip />
-        <FeaturesSection />
-        <CoursesSection />
+        
+        {/* Single Social Proof: Numbers as stories */}
         <SocialProofSection />
+        
+        {/* Courses: What's available */}
+        <CoursesSection />
+        
+        {/* Technology: System intelligence */}
+        <TechnologySection />
+        
+        {/* Press: External validation */}
         <PressSection />
+        
+        {/* Progress Preview: What you'll achieve */}
         <ProgressPreviewSection />
       </main>
       <Footer />

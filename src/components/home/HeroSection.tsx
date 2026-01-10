@@ -42,21 +42,16 @@ export const HeroSection: React.FC = () => {
           </div>
 
           {/* Content - Below image */}
-          <div className="space-y-5 lg:space-y-6 w-full max-w-3xl">
-            {/* Main Headline - Translated */}
-            <div className="space-y-3 lg:space-y-4 text-center">
+          <div className="space-y-6 lg:space-y-8 w-full max-w-3xl">
+            {/* Main Headline - Single clear message */}
+            <div className="space-y-4 text-center">
               <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground leading-relaxed lg:leading-relaxed">
                 {t('hero.title')}
               </h1>
               
-              {/* Sub-headline - Translated */}
+              {/* Supporting Subline - How learning happens */}
               <p className="text-base lg:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
                 {t('hero.subtitle')}
-              </p>
-              
-              {/* Highlight - Tracks - Translated */}
-              <p className="text-lg lg:text-xl font-semibold text-primary">
-                {t('hero.accent')}
               </p>
             </div>
 
@@ -105,22 +100,6 @@ export const HeroSection: React.FC = () => {
                   </Button>
                 </>
               )}
-            </div>
-
-            {/* Stats - with ambient pulse effect */}
-            <div className="grid grid-cols-3 gap-4 lg:gap-8 pt-5 border-t border-border/50 max-w-lg mx-auto ambient-breathe-border">
-              <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse">+500</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_lessons')}</p>
-              </div>
-              <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse ambient-delay-1">+10K</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_students')}</p>
-              </div>
-              <div className="text-center group">
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block ambient-stat-pulse ambient-delay-2">95%</p>
-                <p className="text-xs lg:text-sm text-muted-foreground">{t('hero.stats_success')}</p>
-              </div>
             </div>
           </div>
         </div>
