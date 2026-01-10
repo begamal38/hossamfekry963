@@ -34,18 +34,36 @@ export const CoursesSection: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // Fetch only primary courses (2026 academic structure)
-        const { data, error } = await supabase
+        // Home should always show courses if any exist.
+        // 1) Prefer primary (2026 structure)
+        const primaryRes = await supabase
           .from('courses')
           .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
           .eq('is_primary', true)
           .order('grade', { ascending: true })
-          .limit(4); // Show max 4 courses on home
+          .limit(4);
 
-        if (error) throw error;
-        setCourses(data || []);
+        if (primaryRes.error) throw primaryRes.error;
+
+        const primaryCourses = primaryRes.data || [];
+        if (primaryCourses.length > 0) {
+          setCourses(primaryCourses);
+          return;
+        }
+
+        // 2) Fallback: show any non-hidden courses (protects against misconfigured is_primary)
+        const fallbackRes = await supabase
+          .from('courses')
+          .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
+          .eq('is_hidden', false)
+          .order('created_at', { ascending: false })
+          .limit(4);
+
+        if (fallbackRes.error) throw fallbackRes.error;
+        setCourses(fallbackRes.data || []);
       } catch (err) {
         console.error('Error fetching courses:', err);
+        setCourses([]);
       } finally {
         setLoading(false);
       }
@@ -60,10 +78,7 @@ export const CoursesSection: React.FC = () => {
         {/* Header with fade-in */}
         <div 
           ref={headerRef}
-          className={cn(
-            "flex flex-col md:flex-row md:items-end md:justify-between gap-4 2xl:gap-6 mb-12 2xl:mb-16 3xl:mb-20 transition-all duration-700",
-            headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          )}
+          className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 2xl:gap-6 mb-12 2xl:mb-16 3xl:mb-20"
         >
           <div>
             <h2 id="courses-heading" className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
@@ -104,20 +119,17 @@ export const CoursesSection: React.FC = () => {
           // Mobile: single column, Tablet: 2 columns, Desktop: 4 columns with fade-in
           <div 
             ref={cardsRef}
-            className={cn(
-              "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 2xl:gap-8 3xl:gap-10 transition-all duration-700",
-              cardsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            )}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 2xl:gap-8 3xl:gap-10"
           >
             {courses.map((course, index) => (
               <div 
                 key={course.id}
                 className="transition-all duration-500"
-                style={{ 
-                  transitionDelay: cardsVisible ? `${index * 100}ms` : '0ms',
-                  opacity: cardsVisible ? 1 : 0,
-                  transform: cardsVisible ? 'translateY(0)' : 'translateY(20px)'
-                }}
+                 style={{
+                   transitionDelay: `${index * 100}ms`,
+                   opacity: 1,
+                   transform: 'translateY(0)'
+                 }}
               >
                 <CourseCard 
                   course={course} 
