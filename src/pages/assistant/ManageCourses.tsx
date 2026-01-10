@@ -452,7 +452,7 @@ export default function ManageCourses() {
                   
                   <div className="text-sm text-muted-foreground">
                     <p>الحجم الأقصى: 5 ميجابايت</p>
-                    <p>الأبعاد المثالية: 800×450</p>
+                    <p>الأبعاد المثالية: 1280×720 (16:9)</p>
                   </div>
                 </div>
               </div>
