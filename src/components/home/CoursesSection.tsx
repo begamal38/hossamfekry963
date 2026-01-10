@@ -28,8 +28,8 @@ export const CoursesSection: React.FC = () => {
   const isArabic = language === 'ar';
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const { ref: headerRef, isVisible: headerVisible } = useScrollFadeIn(0.2);
-  const { ref: cardsRef, isVisible: cardsVisible } = useScrollFadeIn(0.15);
+  const { ref: headerRef, isVisible: headerVisible } = useScrollFadeIn(0.05);
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollFadeIn(0.05);
 
   useEffect(() => {
     const fetchCourses = async () => {
