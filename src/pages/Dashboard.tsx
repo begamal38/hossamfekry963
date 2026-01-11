@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -32,6 +32,7 @@ import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard'
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
 import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -118,94 +119,100 @@ const Dashboard: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  const fetchData = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        // Fetch profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('full_name, phone, grade, academic_year, language_track, avatar_url, attendance_mode')
-          .eq('user_id', user.id)
-          .maybeSingle();
+    try {
+      setLoading(true);
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, phone, grade, academic_year, language_track, avatar_url, attendance_mode')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-        if (profileError) throw profileError;
-        setProfile(profileData);
+      if (profileError) throw profileError;
+      setProfile(profileData);
 
-        // Fetch enrolled courses with course details
-        const { data: enrollmentsData, error: enrollmentsError } = await supabase
-          .from('course_enrollments')
-          .select(`
+      // Fetch enrolled courses with course details
+      const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        .from('course_enrollments')
+        .select(`
+          id,
+          course_id,
+          progress,
+          completed_lessons,
+          course:courses (
             id,
-            course_id,
-            progress,
-            completed_lessons,
+            title,
+            title_ar,
+            lessons_count,
+            duration_hours
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (enrollmentsError) throw enrollmentsError;
+      setEnrolledCourses((enrollmentsData || []) as unknown as EnrolledCourse[]);
+
+      // Fetch exam results for this user
+      const { data: examResultsData, error: examResultsError } = await supabase
+        .from('exam_results')
+        .select(`
+          id,
+          score,
+          exam:exams (
+            id,
+            title,
+            title_ar,
+            max_score,
             course:courses (
-              id,
               title,
-              title_ar,
-              lessons_count,
-              duration_hours
+              title_ar
             )
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'active');
+          )
+        `)
+        .eq('user_id', user.id);
 
-        if (enrollmentsError) throw enrollmentsError;
-        setEnrolledCourses((enrollmentsData || []) as unknown as EnrolledCourse[]);
+      if (examResultsError) throw examResultsError;
+      setExamResults((examResultsData || []) as unknown as ExamResult[]);
 
-        // Fetch exam results for this user
-        const { data: examResultsData, error: examResultsError } = await supabase
-          .from('exam_results')
-          .select(`
-            id,
-            score,
-            exam:exams (
-              id,
-              title,
-              title_ar,
-              max_score,
-              course:courses (
-                title,
-                title_ar
-              )
-            )
-          `)
-          .eq('user_id', user.id);
+      // Fetch focus sessions for this student
+      const { data: focusData } = await supabase.from('focus_sessions').select('*').eq('user_id', user.id);
 
-        if (examResultsError) throw examResultsError;
-        setExamResults((examResultsData || []) as unknown as ExamResult[]);
+      if (focusData && focusData.length > 0) {
+        const totalActive = focusData.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
+        const totalPaused = focusData.reduce((sum, s) => sum + (s.total_paused_seconds || 0), 0);
+        const totalSegments = focusData.reduce((sum, s) => sum + (s.completed_segments || 0), 0);
+        const totalInterruptions = focusData.reduce((sum, s) => sum + (s.interruptions || 0), 0);
+        const uniqueLessons = new Set(focusData.map((s) => s.lesson_id)).size;
 
-        // Fetch focus sessions for this student
-        const { data: focusData } = await supabase.from('focus_sessions').select('*').eq('user_id', user.id);
-
-        if (focusData && focusData.length > 0) {
-          const totalActive = focusData.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
-          const totalPaused = focusData.reduce((sum, s) => sum + (s.total_paused_seconds || 0), 0);
-          const totalSegments = focusData.reduce((sum, s) => sum + (s.completed_segments || 0), 0);
-          const totalInterruptions = focusData.reduce((sum, s) => sum + (s.interruptions || 0), 0);
-          const uniqueLessons = new Set(focusData.map((s) => s.lesson_id)).size;
-
-          setFocusStats({
-            totalSessions: focusData.length,
-            totalActiveMinutes: Math.round(totalActive / 60),
-            totalPausedMinutes: Math.round(totalPaused / 60),
-            completedSegments: totalSegments,
-            totalInterruptions,
-            uniqueLessonsWatched: uniqueLessons,
-            avgSessionMinutes: focusData.length > 0 ? Math.round(totalActive / 60 / focusData.length) : 0,
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
+        setFocusStats({
+          totalSessions: focusData.length,
+          totalActiveMinutes: Math.round(totalActive / 60),
+          totalPausedMinutes: Math.round(totalPaused / 60),
+          completedSegments: totalSegments,
+          totalInterruptions,
+          uniqueLessonsWatched: uniqueLessons,
+          avgSessionMinutes: focusData.length > 0 ? Math.round(totalActive / 60 / focusData.length) : 0,
+        });
       }
-    };
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
+  useEffect(() => {
     fetchData();
-  }, [user, isArabic]);
+  }, [fetchData]);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    await fetchData();
+  }, [fetchData]);
 
   if (authLoading || loading) {
     return (
@@ -288,8 +295,9 @@ const Dashboard: React.FC = () => {
     >
       <Navbar />
 
-      <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
-        <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
+      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
+        <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
+          <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
           {/* Welcome Header - Compact */}
           <div className="flex items-center justify-between mb-4">
             <div className="min-w-0 flex-1">
@@ -515,8 +523,8 @@ const Dashboard: React.FC = () => {
             )}
           </SectionCard>
         </div>
-      </main>
-
+        </main>
+      </PullToRefresh>
       <Footer />
     </div>
   );
