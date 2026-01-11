@@ -29,7 +29,7 @@ interface MobileDataCardProps {
   iconColor?: string;
   iconBgColor?: string;
   metadata?: MetadataItem[];
-  actions?: ActionItem[];
+  actions?: ActionItem[] | React.ReactNode;
   href?: string;
   isRTL?: boolean;
   onClick?: () => void;
@@ -130,10 +130,10 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
           )}
         </div>
 
-        {/* Actions */}
-        {actions && actions.length > 0 && (
+        {/* Actions - Icon buttons on the side */}
+        {actions && Array.isArray(actions) && actions.length > 0 && (
           <div className="flex items-center gap-1 flex-shrink-0">
-            {actions.map((action, index) => (
+            {(actions as ActionItem[]).map((action, index) => (
               <Button
                 key={index}
                 variant={action.variant || 'ghost'}
@@ -150,6 +150,9 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Actions - Custom React Node (full width below content) */}
+      {actions && !Array.isArray(actions) && actions}
       
       {children}
     </div>

@@ -449,6 +449,11 @@ const Enrollments = () => {
                           label: enrollment.profile.phone,
                         }] : []),
                       ]}
+                      actions={
+                        <div className="flex gap-2 mt-3 w-full">
+                          {renderEnrollmentActions(enrollment)}
+                        </div>
+                      }
                     />
                   );
                 })}
