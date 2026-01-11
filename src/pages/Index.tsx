@@ -26,23 +26,23 @@ const Index: React.FC = () => {
       />
       <Navbar />
       <main>
-        {/* 1. Hero: أنا فين؟ - Clear platform identity */}
+        {/* 1. Hero: أنا فين؟ - Single message + Single CTA */}
         <HeroSection />
         
-        {/* 2. Social Proof: ليه مختلفة؟ - Trust through relatability */}
+        {/* 2. Social Proof: Story-based trust (scroll reveal) */}
         <SocialProofSection />
         
-        {/* 3. Courses: أعمل إيه دلوقتي؟ - Clear next action */}
-        <CoursesSection />
-        
-        {/* 4. Technology: إزاي؟ - System details after trust */}
+        {/* 3. Technology: Platform strength - Focus Mode, structure */}
         <TechnologySection />
         
-        {/* 5. Press: External validation */}
-        <PressSection />
+        {/* 4. Courses: أعمل إيه دلوقتي؟ - Clear next action */}
+        <CoursesSection />
         
-        {/* 6. Progress: What you'll achieve */}
+        {/* 5. Progress: What you'll achieve (depth on scroll) */}
         <ProgressPreviewSection />
+        
+        {/* 6. Press: External validation (depth on scroll) */}
+        <PressSection />
       </main>
       <Footer />
     </div>
