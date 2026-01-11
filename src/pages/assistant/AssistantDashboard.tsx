@@ -1,13 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, BookOpen, CreditCard, TrendingUp, Clock, CheckCircle, Award, ClipboardList, BarChart3, FileText, GraduationCap, Send, MapPin, Calendar, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  Users, 
+  BookOpen, 
+  Plus, 
+  TrendingUp, 
+  CheckCircle, 
+  Award, 
+  FileText, 
+  GraduationCap, 
+  Send, 
+  MapPin, 
+  Calendar, 
+  ClipboardList, 
+  BarChart3,
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  Bell,
+  Settings,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
+import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
+import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActionsStrip';
+import { SectionCard } from '@/components/dashboard/SectionCard';
+import { InfoCard } from '@/components/dashboard/InfoCard';
 import { ConversionInsightsCard } from '@/components/assistant/ConversionInsightsCard';
 
 interface Stats {
@@ -19,6 +41,7 @@ interface Stats {
   totalExams: number;
   totalAttendance: number;
   avgExamScore: number;
+  newStudentsThisWeek: number;
 }
 
 interface Profile {
@@ -40,6 +63,7 @@ export default function AssistantDashboard() {
     totalExams: 0,
     totalAttendance: 0,
     avgExamScore: 0,
+    newStudentsThisWeek: 0,
   });
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -71,21 +95,25 @@ export default function AssistantDashboard() {
         setProfile(profileData);
 
         // Fetch all stats in parallel
-        // Count only users with 'student' role
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
         const [
           { count: studentsCount },
           { data: enrollments },
           { count: lessonsCount },
           { count: examsCount },
           { count: attendanceCount },
-          { data: examResults }
+          { data: examResults },
+          { count: newStudentsCount }
         ] = await Promise.all([
           supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
           supabase.from('course_enrollments').select('status'),
           supabase.from('lessons').select('*', { count: 'exact', head: true }),
           supabase.from('exams').select('*', { count: 'exact', head: true }),
           supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
-          supabase.from('exam_results').select('score, exams:exam_id(max_score)')
+          supabase.from('exam_results').select('score, exams:exam_id(max_score)'),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString())
         ]);
 
         const totalEnrollments = enrollments?.length || 0;
@@ -108,6 +136,7 @@ export default function AssistantDashboard() {
           totalExams: examsCount || 0,
           totalAttendance: attendanceCount || 0,
           avgExamScore,
+          newStudentsThisWeek: newStudentsCount || 0,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -129,246 +158,291 @@ export default function AssistantDashboard() {
     );
   }
 
-  // Simplified stats - only essential metrics
-  const statCards = [
-    {
-      title: t('assistant.totalStudents'),
-      value: stats.totalStudents,
-      icon: Users,
-      color: 'bg-primary/10 text-primary',
-      link: '/assistant/students',
-    },
-    {
-      title: t('assistant.totalLessons'),
-      value: stats.totalLessons,
-      icon: BookOpen,
-      color: 'bg-blue-500/10 text-blue-600',
-      link: '/assistant/lessons',
-    },
-    {
-      title: t('assistant.activeEnrollments'),
-      value: stats.activeEnrollments,
-      icon: CheckCircle,
-      color: 'bg-green-500/10 text-green-600',
-      link: '/assistant/enrollments',
-    },
-    {
-      title: t('assistant.avgExamScore'),
-      value: `${stats.avgExamScore}%`,
-      icon: Award,
-      color: 'bg-purple-500/10 text-purple-600',
-      link: '/assistant/reports',
-    },
-  ];
-
   // Robust name handling with Arabic fallback
   const fullName = profile?.full_name?.trim() || '';
   const firstName = fullName.split(' ')[0] || user?.email?.split('@')[0] || '';
   const hasValidName = firstName && firstName.length > 0;
 
+  // Quick actions for assistant
+  const quickActions: QuickAction[] = [
+    {
+      icon: Users,
+      label: isRTL ? 'الطلاب' : 'Students',
+      href: '/assistant/students',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      icon: GraduationCap,
+      label: isRTL ? 'الكورسات' : 'Courses',
+      href: '/assistant/courses',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500/10',
+    },
+    {
+      icon: Plus,
+      label: isRTL ? 'حصة جديدة' : 'New Lesson',
+      href: '/assistant/lessons?action=add',
+      color: 'text-green-600',
+      bgColor: 'bg-green-500/10',
+    },
+    {
+      icon: Send,
+      label: isRTL ? 'إشعار' : 'Notify',
+      href: '/assistant/notifications',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+    },
+    {
+      icon: CreditCard,
+      label: isRTL ? 'الاشتراكات' : 'Enrollments',
+      href: '/assistant/enrollments',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+    },
+    {
+      icon: BarChart3,
+      label: isRTL ? 'التقارير' : 'Reports',
+      href: '/assistant/reports',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="mb-8">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
+      <main className="pt-20 sm:pt-24 pb-8">
+        <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
+          {/* Welcome Header - Compact */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
                 {hasValidName 
-                  ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
-                  : `${t('dashboard.welcomeMessage')}! 👋`}
+                  ? `${isRTL ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
+                  : `${isRTL ? 'أهلاً بيك' : 'Welcome'}! 👋`}
               </h1>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 {t('assistant.platformSubtitle')}
               </p>
             </div>
-            <PlatformGuidance role="assistant_teacher" isArabic={isRTL} />
-          </div>
-        </div>
-
-        {/* Stats Grid - Simplified */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {statCards.map((stat, index) => (
-            <Link
-              key={index}
-              to={stat.link}
-              className="bg-card border border-border rounded-xl p-4 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
-            >
-              <div className="flex flex-col">
-                <div className={`p-2 rounded-lg ${stat.color} w-fit mb-2`}>
-                  <stat.icon className="h-5 w-5" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {loading ? '...' : stat.value}
-                </p>
-                <p className="text-muted-foreground text-xs mt-1">{stat.title}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Quick Actions - ONLY Daily Frequent Actions */}
-        <div className="bg-card border border-border rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            {t('assistant.quickActions')}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            <Button asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/students">
-                <Users className="h-6 w-6" />
-                <span>{t('assistant.students')}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-primary/30 bg-primary/5">
-              <Link to="/assistant/courses">
-                <GraduationCap className="h-6 w-6" />
-                <span>{t('assistant.courses')}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2">
-              <Link to="/assistant/lessons">
-                <BookOpen className="h-6 w-6" />
-                <span>{t('assistant.lessons')}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-green-500/30 bg-green-500/5">
-              <Link to="/assistant/lessons?action=add">
-                <Plus className="h-6 w-6 text-green-600" />
-                <span className="text-green-700">{t('assistant.addLesson')}</span>
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="h-auto py-4 flex-col gap-2 border-2 border-blue-500/30 bg-blue-500/5">
-              <Link to="/assistant/notifications">
-                <Send className="h-6 w-6 text-blue-600" />
-                <span className="text-blue-700">{t('assistant.sendNotifications')}</span>
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Advanced Actions - Collapsible */}
-        <div className="bg-card border border-border rounded-xl p-6">
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between text-lg font-semibold text-foreground mb-4"
-          >
-            <span>{t('assistant.advancedActions')}</span>
-            {showAdvanced ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            )}
-          </button>
-          
-          {showAdvanced && (
-            <div className="space-y-6">
-              {/* Content Section */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {t('assistant.content')}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/courses">
-                      <GraduationCap className="h-4 w-4 mr-2" />
-                      {t('assistant.courses')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/chapters">
-                      <FileText className="h-4 w-4 mr-2" />
-                      {t('assistant.chapters')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/lessons">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      {t('assistant.lessons')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/exams">
-                      <Award className="h-4 w-4 mr-2" />
-                      {t('assistant.exams')}
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Students Section */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  {t('assistant.students')}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/students">
-                      <Users className="h-4 w-4 mr-2" />
-                      {t('assistant.studentList')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/enrollments">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      {t('assistant.enrollments')}
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Conversion Insights - Read-only */}
-              <div className="mb-6">
-                <ConversionInsightsCard />
-              </div>
-
-              {/* Analytics Section */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  {t('assistant.analytics')}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/reports">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      {t('assistant.reports')}
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Center Section */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {t('assistant.center')}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/center-groups">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {t('assistant.groups')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/center-sessions">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {t('assistant.sessions')}
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="sm" asChild className="justify-start h-10">
-                    <Link to="/assistant/attendance">
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      {t('assistant.attendance')}
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+                <Link to="/assistant/notifications">
+                  <Bell className="w-5 h-5" />
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+                <Link to="/settings">
+                  <Settings className="w-5 h-5" />
+                </Link>
+              </Button>
             </div>
-          )}
+          </div>
+
+          {/* Status Summary Card */}
+          <StatusSummaryCard
+            primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
+            secondaryText={stats.newStudentsThisWeek > 0 
+              ? (isRTL ? `+${stats.newStudentsThisWeek} طالب الأسبوع ده` : `+${stats.newStudentsThisWeek} students this week`)
+              : (isRTL ? 'إدارة الطلاب والمحتوى' : 'Manage students & content')
+            }
+            badge={stats.pendingEnrollments > 0 
+              ? (isRTL ? `${stats.pendingEnrollments} طلب معلق` : `${stats.pendingEnrollments} pending`)
+              : (isRTL ? 'كل شيء تمام' : 'All good')
+            }
+            badgeVariant={stats.pendingEnrollments > 0 ? 'warning' : 'success'}
+            href="/assistant/students"
+            isRTL={isRTL}
+            className="mb-5"
+          />
+
+          {/* Quick Actions Strip */}
+          <QuickActionsStrip actions={quickActions} isRTL={isRTL} className="mb-6" />
+
+          {/* Stats Cards - Vodafone Style */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <InfoCard
+              icon={Users}
+              value={loading ? '...' : stats.totalStudents}
+              label={isRTL ? 'طالب مسجل' : 'Students'}
+              subtext={stats.newStudentsThisWeek > 0 
+                ? (isRTL ? `+${stats.newStudentsThisWeek} جديد` : `+${stats.newStudentsThisWeek} new`)
+                : undefined
+              }
+              href="/assistant/students"
+              color="text-primary"
+              bgColor="bg-primary/10"
+              isRTL={isRTL}
+              compact
+            />
+            <InfoCard
+              icon={BookOpen}
+              value={loading ? '...' : stats.totalLessons}
+              label={isRTL ? 'حصة' : 'Lessons'}
+              href="/assistant/lessons"
+              color="text-blue-600"
+              bgColor="bg-blue-500/10"
+              isRTL={isRTL}
+              compact
+            />
+            <InfoCard
+              icon={CheckCircle}
+              value={loading ? '...' : stats.activeEnrollments}
+              label={isRTL ? 'اشتراك نشط' : 'Active'}
+              href="/assistant/enrollments"
+              color="text-green-600"
+              bgColor="bg-green-500/10"
+              isRTL={isRTL}
+              compact
+            />
+            <InfoCard
+              icon={Award}
+              value={loading ? '...' : `${stats.avgExamScore}%`}
+              label={isRTL ? 'متوسط الامتحانات' : 'Avg Score'}
+              href="/assistant/reports"
+              color="text-purple-600"
+              bgColor="bg-purple-500/10"
+              isRTL={isRTL}
+              compact
+            />
+          </div>
+
+          {/* Conversion Insights */}
+          <div className="mb-5">
+            <ConversionInsightsCard />
+          </div>
+
+          {/* Content Management Section */}
+          <SectionCard
+            title={isRTL ? 'إدارة المحتوى' : 'Content Management'}
+            icon={BookOpen}
+            isRTL={isRTL}
+            className="mb-5"
+          >
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Link
+                to="/assistant/courses"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <GraduationCap className="w-6 h-6 text-primary" />
+                <span className="text-xs font-medium text-foreground">{t('assistant.courses')}</span>
+              </Link>
+              <Link
+                to="/assistant/chapters"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <FileText className="w-6 h-6 text-blue-600" />
+                <span className="text-xs font-medium text-foreground">{t('assistant.chapters')}</span>
+              </Link>
+              <Link
+                to="/assistant/lessons"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <BookOpen className="w-6 h-6 text-green-600" />
+                <span className="text-xs font-medium text-foreground">{t('assistant.lessons')}</span>
+              </Link>
+              <Link
+                to="/assistant/exams"
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Award className="w-6 h-6 text-purple-600" />
+                <span className="text-xs font-medium text-foreground">{t('assistant.exams')}</span>
+              </Link>
+            </div>
+          </SectionCard>
+
+          {/* Advanced Actions - Collapsible */}
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between text-base font-semibold text-foreground"
+            >
+              <span>{isRTL ? 'إجراءات متقدمة' : 'Advanced Actions'}</span>
+              {showAdvanced ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </button>
+            
+            {showAdvanced && (
+              <div className="mt-4 space-y-4">
+                {/* Students Section */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5" />
+                    {t('assistant.students')}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/students">
+                        <Users className="h-3.5 w-3.5 mr-2" />
+                        {t('assistant.studentList')}
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/enrollments">
+                        <CreditCard className="h-3.5 w-3.5 mr-2" />
+                        {t('assistant.enrollments')}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Analytics Section */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    {t('assistant.analytics')}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/reports">
+                        <BarChart3 className="h-3.5 w-3.5 mr-2" />
+                        {t('assistant.reports')}
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/exam-results">
+                        <TrendingUp className="h-3.5 w-3.5 mr-2" />
+                        {t('exam.results')}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Center Section */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {t('assistant.center')}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/center-groups">
+                        <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                        {t('assistant.groups')}
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/center-sessions">
+                        <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                        {t('assistant.sessions')}
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/attendance">
+                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                        {t('assistant.attendance')}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
