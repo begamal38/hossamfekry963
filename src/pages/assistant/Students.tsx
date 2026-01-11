@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, FileSpreadsheet, FileText, ChevronLeft } from 'lucide-react';
+import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, FileSpreadsheet, FileText, ChevronLeft, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -34,7 +34,8 @@ import { FloatingActionButton } from '@/components/assistant/FloatingActionButto
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
-
+import { QuickEnrollmentDrawer } from '@/components/assistant/QuickEnrollmentDrawer';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 type AttendanceMode = Database['public']['Enums']['attendance_mode'];
 
 interface Profile {
@@ -93,6 +94,10 @@ export default function Students() {
   const [newMode, setNewMode] = useState<AttendanceMode>('online');
   const [updatingMode, setUpdatingMode] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
+  // Quick Enrollment state
+  const [quickEnrollStudent, setQuickEnrollStudent] = useState<EnrichedStudent | null>(null);
+  const [quickEnrollOpen, setQuickEnrollOpen] = useState(false);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
@@ -279,6 +284,12 @@ export default function Students() {
     return 'text-red-600';
   };
 
+  const openQuickEnroll = (student: EnrichedStudent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setQuickEnrollStudent(student);
+    setQuickEnrollOpen(true);
+  };
+
   const hasActiveFilters = academicYearFilter !== 'all' || attendanceModeFilter !== 'all';
 
   if (authLoading || roleLoading) {
@@ -418,6 +429,12 @@ export default function Students() {
                   onClick={() => navigate(`/assistant/students/${student.short_id}`)}
                   actions={[
                     { 
+                      icon: Plus, 
+                      onClick: (e?: React.MouseEvent) => openQuickEnroll(student, e as React.MouseEvent), 
+                      variant: 'outline' as const,
+                      className: 'bg-green-50 hover:bg-green-100 text-green-600 border-green-200 dark:bg-green-950 dark:hover:bg-green-900 dark:text-green-400 dark:border-green-800'
+                    },
+                    { 
                       icon: ChevronLeft, 
                       onClick: () => navigate(`/assistant/students/${student.short_id}`), 
                       variant: 'ghost' as const,
@@ -490,6 +507,20 @@ export default function Students() {
           }}
           isRTL={isRTL}
         />
+
+        {/* Quick Enrollment Drawer */}
+        {quickEnrollStudent && (
+          <QuickEnrollmentDrawer
+            student={quickEnrollStudent}
+            isOpen={quickEnrollOpen}
+            onClose={() => {
+              setQuickEnrollOpen(false);
+              setQuickEnrollStudent(null);
+            }}
+            onComplete={fetchStudents}
+            isArabic={isRTL}
+          />
+        )}
       </main>
     </div>
   );
