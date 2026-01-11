@@ -13,7 +13,7 @@ interface MetadataItem {
 
 interface ActionItem {
   icon: LucideIcon;
-  onClick: () => void;
+  onClick: (e?: React.MouseEvent) => void;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   className?: string;
   label?: string;
@@ -141,7 +141,7 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
                 className={cn("h-8 w-8", action.className)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  action.onClick();
+                  action.onClick(e);
                 }}
               >
                 <action.icon className="w-4 h-4" />
