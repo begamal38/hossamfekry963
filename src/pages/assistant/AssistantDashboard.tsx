@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Users, 
@@ -26,6 +26,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActionsStrip';
 import { SectionCard } from '@/components/dashboard/SectionCard';
@@ -80,75 +81,81 @@ export default function AssistantDashboard() {
     }
   }, [user, authLoading, roleLoading, hasAccess, navigate]);
 
+  const fetchStats = useCallback(async () => {
+    if (!user || !hasAccess) return;
+
+    try {
+      setLoading(true);
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setProfile(profileData);
+
+      // Fetch all stats in parallel
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const [
+        { count: studentsCount },
+        { data: enrollments },
+        { count: lessonsCount },
+        { count: examsCount },
+        { count: attendanceCount },
+        { data: examResults },
+        { count: newStudentsCount }
+      ] = await Promise.all([
+        supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+        supabase.from('course_enrollments').select('status'),
+        supabase.from('lessons').select('*', { count: 'exact', head: true }),
+        supabase.from('exams').select('*', { count: 'exact', head: true }),
+        supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
+        supabase.from('exam_results').select('score, exams:exam_id(max_score)'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString())
+      ]);
+
+      const totalEnrollments = enrollments?.length || 0;
+      const pendingEnrollments = enrollments?.filter(e => e.status === 'pending').length || 0;
+      const activeEnrollments = enrollments?.filter(e => e.status === 'active').length || 0;
+
+      const avgExamScore = (examResults || []).length > 0
+        ? Math.round((examResults || []).reduce((sum, r) => {
+            const maxScore = (r.exams as any)?.max_score || 100;
+            return sum + ((r.score / maxScore) * 100);
+          }, 0) / examResults!.length)
+        : 0;
+
+      setStats({
+        totalStudents: studentsCount || 0,
+        totalEnrollments,
+        pendingEnrollments,
+        activeEnrollments,
+        totalLessons: lessonsCount || 0,
+        totalExams: examsCount || 0,
+        totalAttendance: attendanceCount || 0,
+        avgExamScore,
+        newStudentsThisWeek: newStudentsCount || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, hasAccess]);
+
   useEffect(() => {
-    const fetchStats = async () => {
-      if (!user || !hasAccess) return;
-
-      try {
-        // Fetch profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        setProfile(profileData);
-
-        // Fetch all stats in parallel
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-        const [
-          { count: studentsCount },
-          { data: enrollments },
-          { count: lessonsCount },
-          { count: examsCount },
-          { count: attendanceCount },
-          { data: examResults },
-          { count: newStudentsCount }
-        ] = await Promise.all([
-          supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-          supabase.from('course_enrollments').select('status'),
-          supabase.from('lessons').select('*', { count: 'exact', head: true }),
-          supabase.from('exams').select('*', { count: 'exact', head: true }),
-          supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
-          supabase.from('exam_results').select('score, exams:exam_id(max_score)'),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString())
-        ]);
-
-        const totalEnrollments = enrollments?.length || 0;
-        const pendingEnrollments = enrollments?.filter(e => e.status === 'pending').length || 0;
-        const activeEnrollments = enrollments?.filter(e => e.status === 'active').length || 0;
-
-        const avgExamScore = (examResults || []).length > 0
-          ? Math.round((examResults || []).reduce((sum, r) => {
-              const maxScore = (r.exams as any)?.max_score || 100;
-              return sum + ((r.score / maxScore) * 100);
-            }, 0) / examResults!.length)
-          : 0;
-
-        setStats({
-          totalStudents: studentsCount || 0,
-          totalEnrollments,
-          pendingEnrollments,
-          activeEnrollments,
-          totalLessons: lessonsCount || 0,
-          totalExams: examsCount || 0,
-          totalAttendance: attendanceCount || 0,
-          avgExamScore,
-          newStudentsThisWeek: newStudentsCount || 0,
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (!authLoading && !roleLoading && hasAccess) {
       fetchStats();
     }
-  }, [user, authLoading, roleLoading, hasAccess]);
+  }, [authLoading, roleLoading, hasAccess, fetchStats]);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    await fetchStats();
+  }, [fetchStats]);
 
   if (authLoading || roleLoading) {
     return (
@@ -213,8 +220,9 @@ export default function AssistantDashboard() {
     <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-8">
-        <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
+      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
+        <main className="pt-20 sm:pt-24 pb-8">
+          <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
           {/* Welcome Header - Compact */}
           <div className="flex items-center justify-between mb-4">
             <div className="min-w-0 flex-1">
@@ -444,7 +452,8 @@ export default function AssistantDashboard() {
             )}
           </div>
         </div>
-      </main>
+        </main>
+      </PullToRefresh>
     </div>
   );
 }
