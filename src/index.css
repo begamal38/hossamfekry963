@@ -1,6 +1,15 @@
 /* Google Fonts loaded asynchronously in index.html to avoid render-blocking */
 
 @tailwind base;
+
+/* Scrollbar hide utility for horizontal scrolling strips */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 @tailwind components;
 @tailwind utilities;
 

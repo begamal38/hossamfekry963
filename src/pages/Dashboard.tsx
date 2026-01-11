@@ -2,34 +2,41 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
-  Clock,
+  Play,
   Award,
   FileText,
-  ChevronRight,
   Settings,
-  Play,
-  CheckCircle2,
+  Bell,
+  User,
+  ChevronRight,
+  ChevronLeft,
   Globe,
   MapPin,
   Layers,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  CreditCard,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { StatCard } from '@/components/dashboard/StatCard';
+import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
+import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActionsStrip';
+import { SectionCard } from '@/components/dashboard/SectionCard';
+import { InfoCard } from '@/components/dashboard/InfoCard';
+import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { CourseProgressCard } from '@/components/dashboard/CourseProgressCard';
-import { LessonActivityList, LessonActivity, LessonAttendanceStatus } from '@/components/dashboard/LessonActivityList';
-import { ExamActivityList, ExamActivity } from '@/components/dashboard/ExamActivityList';
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
-import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
-import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
+import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
 
 // Attendance mode config
 const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
@@ -38,18 +45,11 @@ const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typ
   hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600' },
 };
 
-// Import unified grade labels
-import { GRADE_LABELS, TRACK_LABELS, getFullGroupLabel } from '@/lib/gradeLabels';
-
-// Use unified labels
-const ACADEMIC_YEAR_LABELS = GRADE_LABELS;
-const LANGUAGE_TRACK_LABELS = TRACK_LABELS;
-
 // Helper to get full group label
 const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
   if (!academicYear || !languageTrack) return null;
-  const year = ACADEMIC_YEAR_LABELS[academicYear];
-  const track = LANGUAGE_TRACK_LABELS[languageTrack];
+  const year = GRADE_LABELS[academicYear];
+  const track = TRACK_LABELS[languageTrack];
   if (!year || !track) return null;
   return isArabic ? `${year.ar} - ${track.ar}` : `${year.en} - ${track.en}`;
 };
@@ -102,8 +102,6 @@ const Dashboard: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [examResults, setExamResults] = useState<ExamResult[]>([]);
-  const [allExams, setAllExams] = useState<ExamActivity[]>([]);
-  const [recentLessons, setRecentLessons] = useState<LessonActivity[]>([]);
   const [focusStats, setFocusStats] = useState<{
     totalSessions: number;
     totalActiveMinutes: number;
@@ -118,12 +116,6 @@ const Dashboard: React.FC = () => {
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
-
-  // NOTE: Route access is now handled centrally (prevents redirect loops / stuck loading).
-  // Keep this page focused on data fetching & rendering only.
-  useEffect(() => {
-    // no-op
   }, []);
 
   useEffect(() => {
@@ -185,75 +177,6 @@ const Dashboard: React.FC = () => {
         if (examResultsError) throw examResultsError;
         setExamResults((examResultsData || []) as unknown as ExamResult[]);
 
-        // Fetch all available exams for courses the user is enrolled in
-        const courseIds = (enrollmentsData || []).map((e) => e.course_id);
-        if (courseIds.length > 0) {
-          const { data: allExamsData, error: allExamsError } = await supabase
-            .from('exams')
-            .select(`
-              id,
-              title,
-              title_ar,
-              max_score,
-              course:courses (
-                title,
-                title_ar
-              )
-            `)
-            .in('course_id', courseIds);
-
-          if (allExamsError) throw allExamsError;
-
-          // Map exams to activity format
-          const examActivities: ExamActivity[] = (allExamsData || []).map((exam) => {
-            const result = (examResultsData || []).find((r) => (r.exam as any)?.id === exam.id);
-            return {
-              id: exam.id,
-              title: isArabic ? exam.title_ar : exam.title,
-              courseName: isArabic ? (exam.course as any)?.title_ar : (exam.course as any)?.title,
-              isAttempted: !!result,
-              score: result?.score,
-              maxScore: exam.max_score,
-              canRetake: false, // Can be configured based on business logic
-            };
-          });
-          setAllExams(examActivities);
-
-          // Fetch recent lesson attendance for activity list (real data)
-          const { data: attendanceData } = await supabase
-            .from('lesson_attendance')
-            .select(`
-              id,
-              lesson_id,
-              attended_at,
-              lesson:lessons (
-                id,
-                title,
-                title_ar,
-                duration_minutes,
-                course:courses (
-                  title,
-                  title_ar
-                )
-              )
-            `)
-            .eq('user_id', user.id)
-            .order('attended_at', { ascending: false })
-            .limit(5);
-
-          if (attendanceData) {
-            const lessonActs: LessonActivity[] = attendanceData.map((att: any, idx: number) => ({
-              id: att.lesson_id,
-              title: isArabic ? att.lesson?.title_ar : att.lesson?.title,
-              courseName: isArabic ? att.lesson?.course?.title_ar : att.lesson?.course?.title,
-              isCompleted: true,
-              isLastAccessed: idx === 0,
-              timeSpent: att.lesson?.duration_minutes ? `${att.lesson.duration_minutes} min` : undefined,
-            }));
-            setRecentLessons(lessonActs);
-          }
-        }
-
         // Fetch focus sessions for this student
         const { data: focusData } = await supabase.from('focus_sessions').select('*').eq('user_id', user.id);
 
@@ -302,24 +225,61 @@ const Dashboard: React.FC = () => {
   const totalLessonsCompleted = enrolledCourses.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
   const totalLessons = enrolledCourses.reduce((sum, e) => sum + (e.course?.lessons_count || 0), 0);
   const lessonsRemaining = totalLessons - totalLessonsCompleted;
-
-  const examsTaken = examResults.length;
-  const examsPending = allExams.filter((e) => !e.isAttempted).length;
-
   const overallProgress = totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0;
+  const examsTaken = examResults.length;
 
-  // Use real lesson activity data from attendance records
-  // If no recent lessons, show next lessons to complete from enrolled courses
-  const lessonActivities: LessonActivity[] =
-    recentLessons.length > 0
-      ? recentLessons
-      : enrolledCourses.slice(0, 3).map((enrollment, index) => ({
-          id: `next-${index}`,
-          title: isArabic ? `الحصة ${enrollment.completed_lessons + 1}` : `Session ${enrollment.completed_lessons + 1}`,
-          courseName: isArabic ? enrollment.course?.title_ar : enrollment.course?.title,
-          isCompleted: false,
-          isLastAccessed: false,
-        }));
+  // Get current/active course for status card
+  const currentCourse = enrolledCourses[0];
+  const currentCourseTitle = currentCourse
+    ? (isArabic ? currentCourse.course?.title_ar : currentCourse.course?.title)
+    : null;
+  const currentCourseProgress = currentCourse?.progress || 0;
+
+  // Quick actions for student
+  const quickActions: QuickAction[] = [
+    {
+      icon: Play,
+      label: isArabic ? 'استكمل الحصة' : 'Resume',
+      href: currentCourse ? `/course/${currentCourse.course_id}` : '/courses',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      icon: BookOpen,
+      label: isArabic ? 'الحصص المجانية' : 'Free Lessons',
+      href: '/free-lessons',
+      color: 'text-green-600',
+      bgColor: 'bg-green-500/10',
+    },
+    {
+      icon: Award,
+      label: isArabic ? 'الامتحانات' : 'Exams',
+      href: '/courses',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+    },
+    {
+      icon: Bell,
+      label: isArabic ? 'الإشعارات' : 'Notifications',
+      href: '/notifications',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+    },
+    {
+      icon: CreditCard,
+      label: isArabic ? 'الاشتراكات' : 'Subscriptions',
+      href: '/payment',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500/10',
+    },
+    {
+      icon: User,
+      label: isArabic ? 'حسابي' : 'Account',
+      href: '/settings',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted',
+    },
+  ];
 
   return (
     <div
@@ -328,31 +288,19 @@ const Dashboard: React.FC = () => {
     >
       <Navbar />
 
-      <main className="pt-24 pb-16 overflow-x-hidden">
-        <div className="container mx-auto px-3 sm:px-4">
-          {/* Welcome Header - Mobile Optimized */}
-          <div className="mb-4 sm:mb-6 md:mb-8">
-            {/* Name + Badges Row */}
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground truncate">
-                  {hasValidName
-                    ? `${t('dashboard.welcomeMessage')} ${firstName}! 👋`
-                    : `${t('dashboard.welcomeMessage')}! 👋`}
-                </h1>
-              </div>
-              <Button variant="outline" size="icon" asChild className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9">
-                <Link to="/settings">
-                  <Settings className="w-4 h-4" />
-                </Link>
-              </Button>
-            </div>
-
-            {/* Badges + Guide Row */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+      <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
+        <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
+          {/* Welcome Header - Compact */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                {hasValidName
+                  ? `${isArabic ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
+                  : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
+              </h1>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {groupLabel && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                     {groupLabel}
                   </Badge>
                 )}
@@ -360,12 +308,12 @@ const Dashboard: React.FC = () => {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-xs gap-1",
+                      "text-[10px] gap-1 px-2 py-0.5",
                       ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color
                     )}
                   >
                     {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, {
-                      className: 'w-3 h-3',
+                      className: 'w-2.5 h-2.5',
                     })}
                     {isArabic
                       ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar
@@ -373,173 +321,199 @@ const Dashboard: React.FC = () => {
                   </Badge>
                 )}
               </div>
-              <PlatformGuidance role="student" isArabic={isArabic} />
             </div>
+            <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+              <Link to="/settings">
+                <Settings className="w-5 h-5" />
+              </Link>
+            </Button>
           </div>
 
-          {/* Stats Grid - Compact on mobile */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 md:mb-8">
-            <StatCard icon={CheckCircle2} value={totalLessonsCompleted} label={t('dashboard.lessonsCompleted')} variant="success" />
-            <StatCard icon={BookOpen} value={lessonsRemaining} label={t('dashboard.lessonsRemaining')} variant="primary" />
-            <StatCard icon={Award} value={examsTaken} label={t('dashboard.examsTaken')} variant="accent" />
-            <StatCard icon={Clock} value={examsPending} label={t('dashboard.examsPending')} variant="warning" />
+          {/* Status Summary Card */}
+          {enrolledCourses.length > 0 && currentCourse ? (
+            <StatusSummaryCard
+              primaryText={currentCourseTitle || (isArabic ? 'الكورس الحالي' : 'Current Course')}
+              secondaryText={isArabic 
+                ? `${currentCourse.completed_lessons || 0} من ${currentCourse.course?.lessons_count || 0} حصة مكتملة`
+                : `${currentCourse.completed_lessons || 0} of ${currentCourse.course?.lessons_count || 0} lessons completed`
+              }
+              progress={currentCourseProgress}
+              badge={isArabic ? 'الكورس النشط' : 'Active Course'}
+              badgeVariant="success"
+              href={`/course/${currentCourse.course_id}`}
+              isRTL={isArabic}
+              className="mb-5"
+            />
+          ) : (
+            <StatusSummaryCard
+              primaryText={isArabic ? 'ابدأ رحلتك التعليمية' : 'Start Your Learning Journey'}
+              secondaryText={isArabic ? 'اختار الكورس الأول ليك وابدأ دلوقتي' : 'Choose your first course and begin today'}
+              badge={isArabic ? 'جديد' : 'New'}
+              badgeVariant="accent"
+              href="/courses"
+              isRTL={isArabic}
+              className="mb-5"
+            />
+          )}
+
+          {/* Quick Actions Strip */}
+          <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-6" />
+
+          {/* Stats Cards - Vodafone Style */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <InfoCard
+              icon={CheckCircle2}
+              value={totalLessonsCompleted}
+              label={isArabic ? 'حصة مكتملة' : 'Lessons Done'}
+              subtext={totalLessons > 0 ? (isArabic ? `من ${totalLessons} حصة` : `of ${totalLessons} total`) : undefined}
+              color="text-green-600"
+              bgColor="bg-green-500/10"
+              compact
+            />
+            <InfoCard
+              icon={BookOpen}
+              value={lessonsRemaining}
+              label={isArabic ? 'حصة متبقية' : 'Remaining'}
+              color="text-primary"
+              bgColor="bg-primary/10"
+              compact
+            />
+            <InfoCard
+              icon={Award}
+              value={examsTaken}
+              label={isArabic ? 'امتحان تم' : 'Exams Taken'}
+              color="text-purple-600"
+              bgColor="bg-purple-500/10"
+              compact
+            />
+            <InfoCard
+              icon={TrendingUp}
+              value={`${overallProgress}%`}
+              label={isArabic ? 'التقدم الكلي' : 'Overall'}
+              color="text-amber-600"
+              bgColor="bg-amber-500/10"
+              compact
+            />
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Main Content - 2 columns */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Course Progress Section */}
-              <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
-                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-primary" />
-                  {t('courses.progress')}
-                </h2>
-
-                {enrolledCourses.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground/40 mx-auto mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-                      {t('dashboard.startWithCourse')}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">{t('dashboard.chooseFirstCourse')}</p>
-                    <Button asChild size="sm">
-                      <Link to="/courses">{t('dashboard.browseCourses')}</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {enrolledCourses.map((enrollment) => {
-                      const course = enrollment.course;
-                      if (!course) return null;
-
-                      return (
-                        <CourseProgressCard
-                          key={enrollment.id}
-                          title={isArabic ? course.title_ar : course.title}
-                          completedLessons={enrollment.completed_lessons || 0}
-                          totalLessons={course.lessons_count || 0}
-                          isRTL={isArabic}
-                          onContinue={() => navigate(`/course/${course.id}`)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              {/* Lesson Activity Section (desktop/tablet only) */}
-              <section className="bg-card rounded-xl border border-border p-6 hidden md:block">
-                <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                  <Play className="w-5 h-5 text-primary" />
-                  {t('lesson.activity')}
-                </h2>
-
-                <LessonActivityList
-                  lessons={lessonActivities}
-                  isRTL={isArabic}
-                  onLessonClick={(id) => navigate(`/lesson/${id}`)}
-                />
-              </section>
-
-              {/* Exam Activity Section (desktop/tablet only) */}
-              <section className="bg-card rounded-xl border border-border p-6 hidden md:block">
-                <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  {t('exams')}
-                </h2>
-
-                <ExamActivityList
-                  exams={allExams}
-                  isRTL={isArabic}
-                  onTakeExam={(id) => navigate(`/exam/${id}`)}
-                  onRetakeExam={(id) => navigate(`/exam/${id}`)}
-                />
-              </section>
-            </div>
-
-            {/* Sidebar - hidden on mobile */}
-            <div className="space-y-6 hidden md:block">
-              {/* Motivational Progress Message */}
-              {enrolledCourses.length > 0 && (
-                <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20 p-4">
-                  <p className="text-sm font-medium text-foreground">
-                    {overallProgress >= 100
-                      ? `🎉 ${t('dashboard.progressExcellent')}`
-                      : overallProgress >= 75
-                      ? `🔥 ${t('dashboard.progressAlmostDone')}`
-                      : overallProgress >= 50
-                      ? `👏 ${t('dashboard.progressKeepGoing')}`
-                      : overallProgress >= 25
-                      ? `💪 ${t('dashboard.progressJustStarted')}`
-                      : `🚀 ${t('dashboard.continueJourney')}`}
-                  </p>
-                </div>
-              )}
-
-              {/* Overall Progress */}
-              <OverallProgressCard progressPercent={overallProgress} isRTL={isArabic} />
-
-              {/* Performance Chart */}
-              <PerformanceChart
-                examScores={examResults.map((r) => ({
-                  score: r.score,
-                  maxScore: r.exam?.max_score || 100,
-                  title: isArabic ? r.exam?.title_ar : r.exam?.title,
-                }))}
-                lessonsCompleted={totalLessonsCompleted}
-                totalLessons={totalLessons}
-                attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
-              />
-
-              {/* Student Focus Stats */}
-              {focusStats && <StudentFocusStats stats={focusStats} totalLessonsEnrolled={totalLessons} isArabic={isArabic} />}
-
-              {/* Center Attendance Section - only show for center/hybrid students */}
-              {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (
-                <CenterAttendanceSection isArabic={isArabic} />
-              )}
-
-              {/* Profile Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="font-semibold text-foreground mb-4">{t('dashboard.accountInfo')}</h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-primary font-bold">{firstName.charAt(0).toUpperCase()}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">{fullName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                    </div>
-                  </div>
-
-                  {profile?.phone && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'رقم الواتساب' : 'WhatsApp'}</p>
-                      <p className="font-medium text-foreground" dir="ltr">
-                        {profile.phone}
-                      </p>
-                    </div>
-                  )}
-
-                  {groupLabel && (
-                    <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">{isArabic ? 'المجموعة الدراسية' : 'Academic Group'}</p>
-                      <p className="font-medium text-foreground">{groupLabel}</p>
-                    </div>
-                  )}
-                </div>
-
-                <Button variant="outline" className="w-full mt-4" asChild>
-                  <Link to="/settings">
-                    {isArabic ? 'تعديل الحساب' : 'Edit Profile'}
-                    <ChevronRight className={cn('w-4 h-4', isArabic ? 'mr-2 rotate-180' : 'ml-2')} />
-                  </Link>
+          {/* My Courses Section */}
+          <SectionCard
+            title={isArabic ? 'كورساتي' : 'My Courses'}
+            icon={BookOpen}
+            seeAllHref="/courses"
+            isRTL={isArabic}
+            className="mb-5"
+          >
+            {enrolledCourses.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  {isArabic ? 'مفيش كورسات مشترك فيها' : 'No courses enrolled yet'}
+                </p>
+                <Button size="sm" asChild>
+                  <Link to="/courses">{isArabic ? 'تصفح الكورسات' : 'Browse Courses'}</Link>
                 </Button>
               </div>
+            ) : (
+              <div className="space-y-3">
+                {enrolledCourses.slice(0, 3).map((enrollment) => {
+                  const course = enrollment.course;
+                  if (!course) return null;
+                  return (
+                    <CourseProgressCard
+                      key={enrollment.id}
+                      title={isArabic ? course.title_ar : course.title}
+                      completedLessons={enrollment.completed_lessons || 0}
+                      totalLessons={course.lessons_count || 0}
+                      isRTL={isArabic}
+                      onContinue={() => navigate(`/course/${course.id}`)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Performance Section - Desktop/Tablet */}
+          <div className="hidden md:grid md:grid-cols-2 gap-5 mb-5">
+            {/* Overall Progress with Ring */}
+            <div className="bg-card rounded-2xl border border-border p-5 flex items-center gap-5">
+              <ProgressRing 
+                progress={overallProgress} 
+                size={90} 
+                label={isArabic ? 'مكتمل' : 'Complete'}
+              />
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">
+                  {isArabic ? 'التقدم الإجمالي' : 'Overall Progress'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {overallProgress >= 75
+                    ? (isArabic ? 'أداء ممتاز! استمر 🔥' : 'Excellent! Keep going 🔥')
+                    : overallProgress >= 50
+                    ? (isArabic ? 'في الطريق الصح 👏' : 'On the right track 👏')
+                    : (isArabic ? 'ابدأ رحلتك 🚀' : 'Start your journey 🚀')}
+                </p>
+              </div>
             </div>
+
+            {/* Performance Chart */}
+            <PerformanceChart
+              examScores={examResults.map((r) => ({
+                score: r.score,
+                maxScore: r.exam?.max_score || 100,
+                title: isArabic ? r.exam?.title_ar : r.exam?.title,
+              }))}
+              lessonsCompleted={totalLessonsCompleted}
+              totalLessons={totalLessons}
+              attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
+            />
           </div>
+
+          {/* Focus Stats - if available */}
+          {focusStats && (
+            <div className="mb-5">
+              <StudentFocusStats stats={focusStats} totalLessonsEnrolled={totalLessons} isArabic={isArabic} />
+            </div>
+          )}
+
+          {/* Center Attendance Section - only show for center/hybrid students */}
+          {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (
+            <div className="mb-5">
+              <CenterAttendanceSection isArabic={isArabic} />
+            </div>
+          )}
+
+          {/* Account Card - Mobile optimized */}
+          <SectionCard
+            title={isArabic ? 'حسابي' : 'My Account'}
+            icon={User}
+            isRTL={isArabic}
+          >
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-3">
+              <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-primary font-bold text-lg">{firstName.charAt(0).toUpperCase()}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground truncate">{fullName || user?.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <Link to="/settings">
+                {isArabic ? (
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                )}
+              </Link>
+            </div>
+
+            {profile?.phone && (
+              <div className="p-3 rounded-xl bg-muted/50">
+                <p className="text-xs text-muted-foreground mb-0.5">{isArabic ? 'رقم الواتساب' : 'WhatsApp'}</p>
+                <p className="font-medium text-foreground text-sm" dir="ltr">{profile.phone}</p>
+              </div>
+            )}
+          </SectionCard>
         </div>
       </main>
 
