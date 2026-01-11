@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, ArrowLeft, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, MapPin, FileSpreadsheet, FileText } from 'lucide-react';
+import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, FileSpreadsheet, FileText, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { StudentFilters } from '@/components/assistant/StudentFilters';
 import { StudentImport } from '@/components/assistant/StudentImport';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -29,6 +28,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Database } from '@/integrations/supabase/types';
+import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader';
+import { MobileDataCard } from '@/components/assistant/MobileDataCard';
+import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+import { EmptyState } from '@/components/assistant/EmptyState';
+import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
+import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 
 type AttendanceMode = Database['public']['Enums']['attendance_mode'];
 
@@ -52,18 +57,17 @@ interface EnrichedStudent extends Profile {
   enrollmentCount: number;
 }
 
-// Helper to get group label
 const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
   if (!academicYear || !languageTrack) return null;
   
   const yearLabels: Record<string, { ar: string; en: string }> = {
-    'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
-    'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
+    'second_secondary': { ar: 'تانية ثانوي', en: '2nd Sec' },
+    'third_secondary': { ar: 'تالته ثانوي', en: '3rd Sec' },
   };
   
   const trackLabels: Record<string, { ar: string; en: string }> = {
-    'arabic': { ar: 'عربي', en: 'Arabic' },
-    'languages': { ar: 'لغات', en: 'Languages' },
+    'arabic': { ar: 'عربي', en: 'AR' },
+    'languages': { ar: 'لغات', en: 'Lang' },
   };
   
   const year = yearLabels[academicYear];
@@ -82,26 +86,17 @@ export default function Students() {
   const [filteredStudents, setFilteredStudents] = useState<EnrichedStudent[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Use the new analytics export hook
   const { exportStudents, exporting, progress: exportProgress, canExport, roleLoading: exportRoleLoading } = useStudentExport();
   
-  // Attendance mode dialog state
   const [modeDialogOpen, setModeDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<EnrichedStudent | null>(null);
   const [newMode, setNewMode] = useState<AttendanceMode>('online');
   const [updatingMode, setUpdatingMode] = useState(false);
-  
-  // Import dialog state
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
-  // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
-  const [languageTrackFilter, setLanguageTrackFilter] = useState('all');
-  const [progressFilter, setProgressFilter] = useState('all');
-  const [examFilter, setExamFilter] = useState('all');
   const [attendanceModeFilter, setAttendanceModeFilter] = useState('all');
-  const [governorateFilter, setGovernorateFilter] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -115,11 +110,10 @@ export default function Students() {
     }
   }, [roleLoading, canAccessDashboard, navigate]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     if (!user || !canAccessDashboard()) return;
 
     try {
-      // First, get all user_ids that have the 'student' role
       const { data: studentRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -129,7 +123,6 @@ export default function Students() {
 
       const studentUserIds = (studentRoles || []).map(r => r.user_id);
 
-      // If no students, return empty
       if (studentUserIds.length === 0) {
         setStudents([]);
         setFilteredStudents([]);
@@ -137,7 +130,6 @@ export default function Students() {
         return;
       }
 
-      // Fetch profiles only for users with student role (exclude current user)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
@@ -147,17 +139,14 @@ export default function Students() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all enrollments for progress data
       const { data: enrollmentsData } = await supabase
         .from('course_enrollments')
         .select('user_id, progress');
 
-      // Fetch all exam results
       const { data: examResultsData } = await supabase
         .from('exam_results')
         .select('user_id, score, exams:exam_id(max_score)');
 
-      // Enrich students with progress and exam data
       const enrichedStudents: EnrichedStudent[] = (profilesData || []).map(profile => {
         const userEnrollments = (enrollmentsData || []).filter(e => e.user_id === profile.user_id);
         const userExamResults = (examResultsData || []).filter(e => e.user_id === profile.user_id);
@@ -189,18 +178,17 @@ export default function Students() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, canAccessDashboard]);
 
   useEffect(() => {
     if (!roleLoading && canAccessDashboard()) {
       fetchStudents();
     }
-  }, [user, roleLoading, canAccessDashboard]);
+  }, [user, roleLoading, canAccessDashboard, fetchStudents]);
 
   useEffect(() => {
     let filtered = students;
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (s) =>
@@ -209,66 +197,23 @@ export default function Students() {
       );
     }
 
-    // Academic year filter
     if (academicYearFilter !== 'all') {
       filtered = filtered.filter((s) => s.academic_year === academicYearFilter);
     }
 
-    // Language track filter
-    if (languageTrackFilter !== 'all') {
-      filtered = filtered.filter((s) => s.language_track === languageTrackFilter);
-    }
-
-    // Progress filter
-    if (progressFilter !== 'all') {
-      filtered = filtered.filter((s) => {
-        switch (progressFilter) {
-          case 'high': return s.avgProgress >= 70;
-          case 'medium': return s.avgProgress >= 30 && s.avgProgress < 70;
-          case 'low': return s.avgProgress < 30;
-          default: return true;
-        }
-      });
-    }
-
-    // Exam filter
-    if (examFilter !== 'all') {
-      filtered = filtered.filter((s) => {
-        switch (examFilter) {
-          case 'excellent': return s.avgExamScore >= 85;
-          case 'good': return s.avgExamScore >= 70 && s.avgExamScore < 85;
-          case 'average': return s.avgExamScore >= 50 && s.avgExamScore < 70;
-          case 'weak': return s.avgExamScore < 50 && s.totalExams > 0;
-          case 'no_exams': return s.totalExams === 0;
-          default: return true;
-        }
-      });
-    }
-
-    // Attendance mode filter
     if (attendanceModeFilter !== 'all') {
       filtered = filtered.filter((s) => s.attendance_mode === attendanceModeFilter);
     }
 
-    // Governorate filter
-    if (governorateFilter !== 'all') {
-      filtered = filtered.filter((s) => s.governorate === governorateFilter);
-    }
-
     setFilteredStudents(filtered);
-  }, [searchTerm, academicYearFilter, languageTrackFilter, progressFilter, examFilter, attendanceModeFilter, governorateFilter, students]);
+  }, [searchTerm, academicYearFilter, attendanceModeFilter, students]);
 
   const clearFilters = () => {
     setSearchTerm('');
     setAcademicYearFilter('all');
-    setLanguageTrackFilter('all');
-    setProgressFilter('all');
-    setExamFilter('all');
     setAttendanceModeFilter('all');
-    setGovernorateFilter('all');
   };
 
-  // Handle opening the mode change dialog
   const openModeDialog = (student: EnrichedStudent, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedStudent(student);
@@ -276,7 +221,6 @@ export default function Students() {
     setModeDialogOpen(true);
   };
 
-  // Handle updating attendance mode
   const handleUpdateMode = async () => {
     if (!selectedStudent) return;
     
@@ -289,7 +233,6 @@ export default function Students() {
 
       if (error) throw error;
 
-      // Update local state
       setStudents(prev => prev.map(s => 
         s.user_id === selectedStudent.user_id 
           ? { ...s, attendance_mode: newMode }
@@ -313,24 +256,30 @@ export default function Students() {
     }
   };
 
-  // Get mode icon
   const getModeIcon = (mode: AttendanceMode) => {
     switch (mode) {
-      case 'online': return <Wifi className="h-3 w-3" />;
-      case 'center': return <Building2 className="h-3 w-3" />;
-      case 'hybrid': return <Shuffle className="h-3 w-3" />;
+      case 'online': return Wifi;
+      case 'center': return Building2;
+      case 'hybrid': return Shuffle;
     }
   };
 
-  // Get mode color
-  const getModeVariant = (mode: AttendanceMode): "default" | "secondary" | "outline" => {
+  const getModeColor = (mode: AttendanceMode) => {
     switch (mode) {
-      case 'online': return 'secondary';
-      case 'center': return 'default';
-      case 'hybrid': return 'outline';
+      case 'online': return 'text-blue-500';
+      case 'center': return 'text-green-500';
+      case 'hybrid': return 'text-purple-500';
     }
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return 'text-green-600';
+    if (score >= 70) return 'text-blue-600';
+    if (score >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const hasActiveFilters = academicYearFilter !== 'all' || attendanceModeFilter !== 'all';
 
   if (authLoading || roleLoading) {
     return (
@@ -344,218 +293,152 @@ export default function Students() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 pt-24">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {isRTL ? 'إدارة الطلاب' : 'Student Management'}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {isRTL ? `${filteredStudents.length} طالب` : `${filteredStudents.length} students`}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button 
-              variant="outline" 
-              onClick={() => setImportDialogOpen(true)}
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              {isRTL ? 'استيراد طلاب' : 'Import Students'}
-            </Button>
-            {/* Only show export button if user has permission */}
-            {!exportRoleLoading && canExport() && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    disabled={exporting || students.length === 0}
-                    className="gap-2"
-                    title={students.length === 0 ? (isRTL ? 'لا يوجد طلاب للتصدير' : 'No students to export') : undefined}
-                  >
-                    <Download className="h-4 w-4" />
-                    {exporting 
-                      ? (exportProgress || (isRTL ? 'جاري التصدير...' : 'Exporting...'))
-                      : (isRTL ? 'تصدير التحليلات' : 'Export Analytics')}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
-                  <DropdownMenuItem onClick={() => exportStudents('xlsx')} className="gap-2">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    {isRTL ? 'Excel (متعدد الأوراق)' : 'Excel (Multi-sheet)'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportStudents('csv')} className="gap-2">
-                    <FileText className="h-4 w-4" />
-                    {isRTL ? 'CSV (ملف واحد)' : 'CSV (Single file)'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-
-        {/* Filters */}
-        <StudentFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          academicYearFilter={academicYearFilter}
-          onAcademicYearFilterChange={setAcademicYearFilter}
-          languageTrackFilter={languageTrackFilter}
-          onLanguageTrackFilterChange={setLanguageTrackFilter}
-          progressFilter={progressFilter}
-          onProgressFilterChange={setProgressFilter}
-          examFilter={examFilter}
-          onExamFilterChange={setExamFilter}
-          attendanceModeFilter={attendanceModeFilter}
-          onAttendanceModeFilterChange={setAttendanceModeFilter}
-          governorateFilter={governorateFilter}
-          onGovernorateFilterChange={setGovernorateFilter}
+      <main className="container mx-auto px-3 sm:px-4 py-4 pt-20">
+        {/* Mobile-First Header */}
+        <AssistantPageHeader
+          title={isRTL ? 'إدارة الطلاب' : 'Students'}
+          subtitle={`${filteredStudents.length} ${isRTL ? 'طالب' : 'students'}`}
+          backHref="/assistant"
           isRTL={isRTL}
-          onClearFilters={clearFilters}
+          icon={User}
+          actions={
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setImportDialogOpen(true)}
+                className="h-8 w-8"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+              {!exportRoleLoading && canExport() && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      disabled={exporting || students.length === 0}
+                      className="h-8 w-8"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={isRTL ? 'start' : 'end'}>
+                    <DropdownMenuItem onClick={() => exportStudents('xlsx')} className="gap-2">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      {isRTL ? 'Excel' : 'Excel'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportStudents('csv')} className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      {isRTL ? 'CSV' : 'CSV'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          }
         />
 
-        {/* Students List */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
-            </div>
-          ) : filteredStudents.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {isRTL ? 'لا يوجد طلاب' : 'No students found'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'الطالب' : 'Student'}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'الهاتف' : 'Phone'}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'المجموعة' : 'Group'}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {t('attendance.mode')}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground hidden md:table-cell">
-                      {isRTL ? 'التقدم' : 'Progress'}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground hidden lg:table-cell">
-                      {isRTL ? 'الامتحانات' : 'Exams'}
-                    </th>
-                    <th className="px-6 py-4 text-start text-sm font-medium text-muted-foreground">
-                      {isRTL ? 'الإجراءات' : 'Actions'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredStudents.map((student) => {
-                    const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
-                    
-                    const getScoreColor = (score: number) => {
-                      if (score >= 85) return 'text-green-600';
-                      if (score >= 70) return 'text-blue-600';
-                      if (score >= 50) return 'text-yellow-600';
-                      return 'text-red-600';
-                    };
-                    
-                    return (
-                      <tr 
-                        key={student.user_id} 
-                        className="hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/assistant/students/${student.short_id}`)}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-5 w-5 text-primary" />
-                            </div>
-                            <span className="font-medium text-foreground">
-                              {student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            <span dir="ltr">{student.phone || '-'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {groupLabel ? (
-                            <Badge variant="secondary" className="font-normal">
-                              <GraduationCap className="h-3 w-3 me-1" />
-                              {groupLabel}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <Badge 
-                            variant={getModeVariant(student.attendance_mode)}
-                            className="cursor-pointer hover:opacity-80 transition-opacity gap-1"
-                            onClick={(e) => openModeDialog(student, e)}
-                          >
-                            {getModeIcon(student.attendance_mode)}
-                            {t(`mode.${student.attendance_mode}`)}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 hidden md:table-cell">
-                          <div className="flex items-center gap-2">
-                            <Progress value={student.avgProgress} className="w-16 h-2" />
-                            <span className="text-sm text-muted-foreground">{student.avgProgress}%</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 hidden lg:table-cell">
-                          {student.totalExams > 0 ? (
-                            <div className="flex items-center gap-2">
-                              <Award className={`h-4 w-4 ${getScoreColor(student.avgExamScore)}`} />
-                              <span className={`font-medium ${getScoreColor(student.avgExamScore)}`}>
-                                {student.avgExamScore}%
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                ({student.totalExams} {isRTL ? 'امتحان' : 'exams'})
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">
-                              {isRTL ? 'لا توجد امتحانات' : 'No exams'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/assistant/students/${student.short_id}`);
-                            }}
-                          >
-                            {isRTL ? 'عرض التفاصيل' : 'View Details'}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* Status Summary */}
+        <StatusSummaryCard
+          primaryText={`${students.length} ${isRTL ? 'طالب مسجل' : 'registered'}`}
+          secondaryText={students.filter(s => s.enrollmentCount > 0).length > 0 
+            ? `${students.filter(s => s.enrollmentCount > 0).length} ${isRTL ? 'مشترك' : 'enrolled'}`
+            : undefined}
+          isRTL={isRTL}
+          className="mb-4"
+        />
 
-        {/* Attendance Mode Change Dialog */}
+        {/* Search & Filters */}
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder={isRTL ? 'ابحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
+          filters={[
+            {
+              value: academicYearFilter,
+              onChange: setAcademicYearFilter,
+              options: [
+                { value: 'all', label: isRTL ? 'كل السنوات' : 'All Years' },
+                { value: 'second_secondary', label: isRTL ? 'تانية ثانوي' : '2nd Sec' },
+                { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
+              ],
+            },
+            {
+              value: attendanceModeFilter,
+              onChange: setAttendanceModeFilter,
+              options: [
+                { value: 'all', label: isRTL ? 'كل الأنماط' : 'All Modes' },
+                { value: 'online', label: isRTL ? 'أونلاين' : 'Online' },
+                { value: 'center', label: isRTL ? 'سنتر' : 'Center' },
+                { value: 'hybrid', label: isRTL ? 'مختلط' : 'Hybrid' },
+              ],
+            },
+          ]}
+          onClearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+          isRTL={isRTL}
+        />
+
+        {/* Students List - Mobile Cards */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <EmptyState
+            icon={User}
+            title={isRTL ? 'لا يوجد طلاب' : 'No students found'}
+            description={searchTerm || hasActiveFilters 
+              ? (isRTL ? 'جرب تعديل البحث أو الفلاتر' : 'Try adjusting your search or filters')
+              : undefined}
+            actionLabel={hasActiveFilters ? (isRTL ? 'مسح الفلاتر' : 'Clear Filters') : undefined}
+            onAction={hasActiveFilters ? clearFilters : undefined}
+          />
+        ) : (
+          <div className="space-y-2">
+            {filteredStudents.map((student) => {
+              const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
+              const ModeIcon = getModeIcon(student.attendance_mode);
+              
+              return (
+                <MobileDataCard
+                  key={student.user_id}
+                  title={student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
+                  subtitle={student.phone || undefined}
+                  badge={groupLabel || undefined}
+                  badgeVariant="default"
+                  icon={User}
+                  iconColor="text-primary"
+                  metadata={[
+                    { icon: ModeIcon, label: t(`mode.${student.attendance_mode}`) },
+                    ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
+                    ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
+                  ]}
+                  onClick={() => navigate(`/assistant/students/${student.short_id}`)}
+                  actions={[
+                    { 
+                      icon: ChevronLeft, 
+                      onClick: () => navigate(`/assistant/students/${student.short_id}`), 
+                      variant: 'ghost' as const,
+                      className: isRTL ? '' : 'rotate-180'
+                    }
+                  ]}
+                  isRTL={isRTL}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* Floating Import Button */}
+        <FloatingActionButton
+          icon={Upload}
+          onClick={() => setImportDialogOpen(true)}
+          label={isRTL ? 'استيراد' : 'Import'}
+        />
+
+        {/* Attendance Mode Dialog */}
         <Dialog open={modeDialogOpen} onOpenChange={setModeDialogOpen}>
           <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -566,10 +449,6 @@ export default function Students() {
             </DialogHeader>
             
             <div className="space-y-4 py-4">
-              <p className="text-sm text-muted-foreground">
-                {t('mode.changeNote')}
-              </p>
-              
               <div className="grid grid-cols-3 gap-2">
                 {(['online', 'center', 'hybrid'] as AttendanceMode[]).map((mode) => (
                   <Button

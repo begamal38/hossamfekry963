@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Video, Trash2, Youtube, Pencil, GripVertical, Layers, Clock, Gift, Loader2 } from 'lucide-react';
+import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/layout/Navbar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -19,6 +20,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { generateYouTubeEmbedUrl, isValidYouTubeInput } from '@/lib/youtubeUtils';
+import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader';
+import { MobileDataCard } from '@/components/assistant/MobileDataCard';
+import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+import { EmptyState } from '@/components/assistant/EmptyState';
+import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
+import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 
 interface Course {
   id: string;
@@ -64,8 +71,8 @@ const ManageLessons = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // Simplified form - only essential fields
   const [formData, setFormData] = useState({
     title_ar: '',
     video_url: '',
@@ -143,7 +150,7 @@ const ManageLessons = () => {
     }
   };
 
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('lessons')
@@ -156,7 +163,7 @@ const ManageLessons = () => {
     } catch (error) {
       console.error('Error fetching lessons:', error);
     }
-  };
+  }, [selectedCourse]);
 
   const resetForm = () => {
     setFormData({
@@ -180,13 +187,6 @@ const ManageLessons = () => {
       is_free_lesson: lesson.is_free_lesson || false,
     });
     setShowForm(true);
-    // Scroll to form after state update
-    setTimeout(() => {
-      const formElement = document.getElementById('lesson-form');
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
   };
 
   const handleSubmit = async () => {
@@ -199,7 +199,6 @@ const ManageLessons = () => {
       return;
     }
 
-    // Validate YouTube URL if provided
     if (formData.video_url && !isValidYouTubeInput(formData.video_url)) {
       toast({
         title: isArabic ? 'خطأ' : 'Error',
@@ -210,38 +209,32 @@ const ManageLessons = () => {
     }
 
     try {
-      // Auto-translate Arabic title to English
       const translatedTitle = await translateText(formData.title_ar, 'en');
       const embedUrl = formData.video_url ? generateYouTubeEmbedUrl(formData.video_url) : null;
       
-      // Auto-fetch YouTube metadata for duration
       let durationMinutes = formData.duration_minutes;
       
       if (formData.video_url) {
         setIsFetchingMetadata(true);
         try {
-          console.log('[ManageLessons] Fetching YouTube metadata...');
           const { data: metadataResult, error: metadataError } = await supabase.functions.invoke('youtube-metadata', {
             body: { videoUrl: formData.video_url }
           });
           
           if (!metadataError && metadataResult?.duration_minutes) {
             durationMinutes = metadataResult.duration_minutes;
-            console.log('[ManageLessons] Auto-extracted duration:', durationMinutes, 'minutes');
-          } else {
-            console.log('[ManageLessons] Could not extract duration, using form value');
           }
         } catch (metaError) {
-          console.log('[ManageLessons] Metadata fetch failed, using form duration:', metaError);
+          console.log('[ManageLessons] Metadata fetch failed:', metaError);
         } finally {
           setIsFetchingMetadata(false);
         }
       }
       
       const lessonData = {
-        title: translatedTitle || formData.title_ar, // Use translated or fallback to Arabic
+        title: translatedTitle || formData.title_ar,
         title_ar: formData.title_ar,
-        lesson_type: 'online', // All lessons are video-based
+        lesson_type: 'online',
         video_url: embedUrl,
         duration_minutes: durationMinutes,
         chapter_id: formData.chapter_id || null,
@@ -314,15 +307,22 @@ const ManageLessons = () => {
   };
 
   const selectedCourseName = courses.find(c => c.id === selectedCourse);
-  const filteredLessons = selectedChapter === 'all' 
-    ? lessons 
-    : lessons.filter(l => l.chapter_id === selectedChapter);
+  
+  const filteredLessons = lessons.filter(l => {
+    const matchesChapter = selectedChapter === 'all' || l.chapter_id === selectedChapter;
+    const matchesSearch = !searchTerm || 
+      l.title_ar.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.title.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesChapter && matchesSearch;
+  });
 
   const getChapterName = (chapterId: string | null) => {
     if (!chapterId) return null;
     const chapter = chapters.find(c => c.id === chapterId);
     return chapter ? chapter.title_ar : null;
   };
+
+  const freeLessonsCount = lessons.filter(l => l.is_free_lesson).length;
 
   if (loading || roleLoading) {
     return (
@@ -336,170 +336,209 @@ const ManageLessons = () => {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant/courses')}>
-              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{isArabic ? 'إدارة الحصص' : 'Manage Lessons'}</h1>
-              {selectedCourseName && (
-                <p className="text-muted-foreground text-sm">{isArabic ? selectedCourseName.title_ar : selectedCourseName.title}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild className="gap-2">
+      <main className="container mx-auto px-3 sm:px-4 py-4 pt-20">
+        {/* Mobile-First Header */}
+        <AssistantPageHeader
+          title={isArabic ? 'إدارة الحصص' : 'Manage Lessons'}
+          subtitle={selectedCourseName ? (isArabic ? selectedCourseName.title_ar : selectedCourseName.title) : undefined}
+          backHref="/assistant/courses"
+          isRTL={isRTL}
+          icon={Video}
+          actions={
+            <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
               <Link to={`/assistant/chapters?course_id=${selectedCourse}`}>
-                <Layers className="h-4 w-4" />
+                <Layers className="h-3.5 w-3.5" />
                 {isArabic ? 'الأبواب' : 'Chapters'}
               </Link>
             </Button>
-            <Button onClick={() => setShowForm(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {isArabic ? 'حصة جديدة' : 'New Lesson'}
-            </Button>
-          </div>
+          }
+        />
+
+        {/* Status Summary */}
+        <StatusSummaryCard
+          primaryText={`${lessons.length} ${isArabic ? 'حصة' : 'lessons'}`}
+          secondaryText={freeLessonsCount > 0 ? `${freeLessonsCount} ${isArabic ? 'مجانية' : 'free'}` : undefined}
+          badge={selectedCourseName?.title_ar}
+          badgeVariant="accent"
+          isRTL={isRTL}
+          className="mb-4"
+        />
+
+        {/* Course & Chapter Selectors - Compact */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <Select value={selectedCourse} onValueChange={(val) => {
+            setSelectedCourse(val);
+            setSelectedChapter('all');
+            navigate(`/assistant/lessons?course=${val}`, { replace: true });
+          }}>
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder={isArabic ? "الكورس" : "Course"} />
+            </SelectTrigger>
+            <SelectContent>
+              {courses.map(course => (
+                <SelectItem key={course.id} value={course.id}>
+                  {course.title_ar}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedChapter} onValueChange={setSelectedChapter}>
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder={isArabic ? "الباب" : "Chapter"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isArabic ? 'كل الحصص' : 'All'}</SelectItem>
+              {chapters.map(chapter => (
+                <SelectItem key={chapter.id} value={chapter.id}>
+                  {chapter.title_ar}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Course & Chapter Selectors */}
-        <div className="bg-card border rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">{isArabic ? 'اختر الكورس' : 'Select Course'}</label>
-            <Select value={selectedCourse} onValueChange={(val) => {
-              setSelectedCourse(val);
-              setSelectedChapter('all');
-              navigate(`/assistant/lessons?course=${val}`, { replace: true });
-            }}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map(course => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.title_ar}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">{isArabic ? 'تصفية حسب الباب' : 'Filter by Chapter'}</label>
-            <Select value={selectedChapter} onValueChange={setSelectedChapter}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{isArabic ? 'كل الحصص' : 'All Lessons'}</SelectItem>
-                {chapters.map(chapter => (
-                  <SelectItem key={chapter.id} value={chapter.id}>
-                    {chapter.title_ar}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {/* Search Bar */}
+        <SearchFilterBar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder={isArabic ? 'ابحث في الحصص...' : 'Search lessons...'}
+          isRTL={isRTL}
+        />
 
-        {/* Simplified Add/Edit Lesson Form */}
-        {showForm && (
-          <div id="lesson-form" className="bg-card border rounded-xl p-6 mb-6 scroll-mt-24">
-            <h3 className="font-semibold text-lg mb-4">
-              {editingLesson ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson') : (isArabic ? 'حصة جديدة' : 'New Lesson')}
-            </h3>
-            
-            {/* Guidance Message for Assistant Teacher */}
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-start gap-2">
-              <span className="text-lg">✨</span>
-              <p className="text-sm text-muted-foreground">
-                {isArabic 
-                  ? 'أضف عنوان الحصة ورابط اليوتيوب فقط - المدة تُستخرج تلقائياً من الفيديو!'
-                  : 'Just add title and YouTube URL - duration is auto-extracted from the video!'
-                }
-              </p>
-            </div>
-            
-            {/* Arabic Title - Required */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'عنوان الحصة' : 'Lesson Title'} <span className="text-destructive">*</span>
-              </label>
-              <Input
-                placeholder={isArabic ? "مثال: الباب الأول - الدرس الأول" : "e.g., Chapter 1 - Lesson 1"}
-                value={formData.title_ar}
-                onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
-                className="text-lg"
+        {/* Lessons List - Mobile Cards */}
+        {filteredLessons.length === 0 ? (
+          <EmptyState
+            icon={Video}
+            title={isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
+            description={isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
+            actionLabel={isArabic ? 'إضافة حصة' : 'Add Lesson'}
+            onAction={() => setShowForm(true)}
+          />
+        ) : (
+          <div className="space-y-2">
+            {filteredLessons.map((lesson, index) => (
+              <MobileDataCard
+                key={lesson.id}
+                title={isArabic ? lesson.title_ar : lesson.title}
+                subtitle={getChapterName(lesson.chapter_id) || undefined}
+                badge={lesson.is_free_lesson ? (isArabic ? 'مجانية' : 'Free') : undefined}
+                badgeVariant={lesson.is_free_lesson ? 'success' : undefined}
+                icon={Video}
+                iconColor="text-blue-500"
+                metadata={[
+                  { 
+                    icon: Clock, 
+                    label: `${lesson.duration_minutes || 60} ${isArabic ? 'د' : 'min'}` 
+                  },
+                  ...(lesson.video_url ? [{ icon: Youtube, label: isArabic ? 'فيديو' : 'Video' }] : [])
+                ]}
+                actions={[
+                  { icon: Pencil, onClick: () => handleEdit(lesson), variant: 'ghost' as const },
+                  { icon: Trash2, onClick: () => handleDeleteLesson(lesson.id), variant: 'ghost' as const, className: 'text-destructive' }
+                ]}
+                isRTL={isRTL}
               />
-            </div>
+            ))}
+          </div>
+        )}
 
-            {/* YouTube URL - Required */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Youtube className="h-4 w-4 text-red-500" />
-                <label className="text-sm font-medium">{isArabic ? 'رابط اليوتيوب' : 'YouTube URL'}</label>
-              </div>
-              <Input
-                placeholder={isArabic ? "الصق رابط اليوتيوب هنا (أي صيغة)" : "Paste YouTube URL here (any format)"}
-                value={formData.video_url}
-                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                dir="ltr"
-                className="text-left"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {isArabic 
-                  ? '✨ يدعم جميع صيغ اليوتيوب - المدة تُستخرج تلقائياً' 
-                  : '✨ Supports all YouTube formats - Duration auto-extracted'}
-              </p>
-            </div>
+        {/* Floating Action Button */}
+        <FloatingActionButton
+          icon={Plus}
+          onClick={() => setShowForm(true)}
+          label={isArabic ? 'حصة جديدة' : 'New Lesson'}
+        />
 
-            {/* Duration - Only show when NO valid YouTube URL (manual fallback) */}
-            {(!formData.video_url || !isValidYouTubeInput(formData.video_url)) && (
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4" />
-                  <label className="text-sm font-medium">{isArabic ? 'مدة الحصة (دقيقة)' : 'Duration (minutes)'}</label>
-                </div>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
-                  className="max-w-[150px]"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {isArabic ? 'أضف رابط يوتيوب لاستخراج المدة تلقائياً' : 'Add YouTube URL to auto-extract duration'}
+        {/* Add/Edit Lesson Dialog */}
+        <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
+          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingLesson ? (isArabic ? 'تعديل الحصة' : 'Edit Lesson') : (isArabic ? 'حصة جديدة' : 'New Lesson')}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              {/* Guidance */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-2">
+                <span className="text-lg">✨</span>
+                <p className="text-xs text-muted-foreground">
+                  {isArabic 
+                    ? 'أضف عنوان الحصة ورابط اليوتيوب فقط - المدة تُستخرج تلقائياً!'
+                    : 'Just add title and YouTube URL - duration is auto-extracted!'
+                  }
                 </p>
               </div>
-            )}
+              
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  {isArabic ? 'عنوان الحصة' : 'Lesson Title'} <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  placeholder={isArabic ? "مثال: الباب الأول - الدرس الأول" : "e.g., Chapter 1 - Lesson 1"}
+                  value={formData.title_ar}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                />
+              </div>
 
-            {/* Chapter Selection - Optional */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">
-                <Layers className={`h-4 w-4 inline ${isRTL ? 'ml-1' : 'mr-1'}`} />
-                {isArabic ? 'الباب (اختياري)' : 'Chapter (optional)'}
-              </label>
-              <Select 
-                value={formData.chapter_id || '__none__'} 
-                onValueChange={(val) => setFormData({ ...formData, chapter_id: val === '__none__' ? '' : val })}
-              >
-                <SelectTrigger className="max-w-sm">
-                  <SelectValue placeholder={isArabic ? "اختر باب" : "Select chapter"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">{isArabic ? 'بدون باب' : 'No chapter'}</SelectItem>
-                  {chapters.map(chapter => (
-                    <SelectItem key={chapter.id} value={chapter.id}>
-                      {chapter.title_ar}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {/* YouTube URL */}
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Youtube className="h-4 w-4 text-red-500" />
+                  <label className="text-sm font-medium">{isArabic ? 'رابط اليوتيوب' : 'YouTube URL'}</label>
+                </div>
+                <Input
+                  placeholder={isArabic ? "الصق رابط اليوتيوب هنا" : "Paste YouTube URL here"}
+                  value={formData.video_url}
+                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
 
-            {/* Free Lesson Checkbox */}
-            <div className="mb-6">
-              <label className="flex items-center gap-3 cursor-pointer">
+              {/* Duration - Only if no video */}
+              {(!formData.video_url || !isValidYouTubeInput(formData.video_url)) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Clock className="h-4 w-4" />
+                    <label className="text-sm font-medium">{isArabic ? 'المدة (دقيقة)' : 'Duration (min)'}</label>
+                  </div>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.duration_minutes}
+                    onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 60 })}
+                    className="max-w-[120px]"
+                  />
+                </div>
+              )}
+
+              {/* Chapter Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  {isArabic ? 'الباب (اختياري)' : 'Chapter (optional)'}
+                </label>
+                <Select 
+                  value={formData.chapter_id || '__none__'} 
+                  onValueChange={(val) => setFormData({ ...formData, chapter_id: val === '__none__' ? '' : val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isArabic ? "اختر باب" : "Select chapter"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{isArabic ? 'بدون باب' : 'No chapter'}</SelectItem>
+                    {chapters.map(chapter => (
+                      <SelectItem key={chapter.id} value={chapter.id}>
+                        {chapter.title_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Free Lesson */}
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
                 <input
                   type="checkbox"
                   checked={formData.is_free_lesson}
@@ -508,95 +547,27 @@ const ManageLessons = () => {
                 />
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-500" />
-                  <span className="font-medium">{isArabic ? 'حصة مجانية' : 'Free Lesson'}</span>
+                  <span className="font-medium text-sm">{isArabic ? 'حصة مجانية' : 'Free Lesson'}</span>
                 </div>
               </label>
-              <p className={`text-xs text-muted-foreground mt-1 ${isRTL ? 'mr-8' : 'ml-8'}`}>
-                {isArabic ? 'ستظهر هذه الحصة في قسم الحصص المجانية للجميع' : 'This lesson will appear in the free lessons section for everyone'}
-              </p>
-            </div>
 
-            <div className="flex gap-2">
-              <Button onClick={handleSubmit} size="lg" disabled={isTranslating || isFetchingMetadata}>
-                {(isTranslating || isFetchingMetadata) && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-                {isFetchingMetadata 
-                  ? (isArabic ? 'جاري استخراج المدة...' : 'Extracting duration...')
-                  : isTranslating 
-                    ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
-                    : (editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة الحصة' : 'Add Lesson'))}
-              </Button>
-              <Button variant="outline" onClick={resetForm}>
-                {isArabic ? 'إلغاء' : 'Cancel'}
-              </Button>
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleSubmit} className="flex-1" disabled={isTranslating || isFetchingMetadata}>
+                  {(isTranslating || isFetchingMetadata) && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
+                  {isFetchingMetadata 
+                    ? (isArabic ? 'استخراج المدة...' : 'Extracting...')
+                    : isTranslating 
+                      ? (isArabic ? 'ترجمة...' : 'Translating...') 
+                      : (editingLesson ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة' : 'Add'))}
+                </Button>
+                <Button variant="outline" onClick={resetForm}>
+                  {isArabic ? 'إلغاء' : 'Cancel'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Lessons List */}
-        <div className="bg-card border rounded-xl overflow-hidden">
-          {filteredLessons.length === 0 ? (
-            <div className="p-12 text-center">
-              <Video className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-              <h3 className="font-semibold mb-2">{isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}</h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                {isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
-              </p>
-              <Button onClick={() => setShowForm(true)} size="sm">
-                <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                {isArabic ? 'إضافة حصة' : 'Add Lesson'}
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filteredLessons.map((lesson, index) => (
-                <div key={lesson.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <GripVertical className="h-4 w-4" />
-                      <span className="w-6 text-center font-medium">{index + 1}</span>
-                    </div>
-                    <Video className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium">{isArabic ? lesson.title_ar : lesson.title}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {lesson.duration_minutes || 60} {isArabic ? 'دقيقة' : 'min'}
-                        </span>
-                        {lesson.video_url && (
-                          <span className="flex items-center gap-1 text-red-500">
-                            <Youtube className="h-3 w-3" />
-                            {isArabic ? 'فيديو' : 'Video'}
-                          </span>
-                        )}
-                        {lesson.is_free_lesson && (
-                          <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                            <Gift className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
-                            {isArabic ? 'مجانية' : 'Free'}
-                          </Badge>
-                        )}
-                        {getChapterName(lesson.chapter_id) && (
-                          <Badge variant="outline" className="text-xs">
-                            <Layers className="h-3 w-3 ml-1" />
-                            {getChapterName(lesson.chapter_id)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(lesson)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteLesson(lesson.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
