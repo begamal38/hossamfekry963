@@ -4,14 +4,16 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Gift, Loader2 } from 'lucide-react';
+import { Clock, Play, Gift, Loader2, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useFreeLessons } from '@/hooks/useFreeLessons';
+import { useAuth } from '@/hooks/useAuth';
 
 const FreeLessons: React.FC = () => {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isArabic = language === 'ar';
   
   // Use the centralized free lessons hook - single source of truth
@@ -137,20 +139,34 @@ const FreeLessons: React.FC = () => {
             </>
           )}
 
-          {/* CTA */}
-          <div className="text-center mt-12 animate-fade-in-up animation-delay-400">
-            <p className="text-muted-foreground mb-4">
-              {isArabic 
-                ? 'هل تريد المزيد؟ سجل للوصول إلى جميع الكورسات'
-                : 'Want more? Sign up to access all courses'
-              }
-            </p>
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/auth">
-                {t('nav.signUp')}
-              </Link>
-            </Button>
-          </div>
+          {/* CTA Section - STATE-BASED VISIBILITY */}
+          {!user ? (
+            /* Visitor: Show signup CTA */
+            <div className="text-center mt-12 animate-fade-in-up animation-delay-400">
+              <p className="text-muted-foreground mb-4">
+                {isArabic 
+                  ? 'هل تريد المزيد؟ سجل للوصول إلى جميع الكورسات'
+                  : 'Want more? Sign up to access all courses'
+                }
+              </p>
+              <Button variant="hero" size="lg" asChild>
+                <Link to="/auth">
+                  {t('nav.signUp')}
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            /* Logged-in Student: Show helper text ONLY, NO CTA */
+            <div className="text-center mt-12 animate-fade-in-up animation-delay-400">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-600 rounded-full text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                {isArabic 
+                  ? 'الحصص المجانية متاحة كاملة للحسابات المسجلة'
+                  : 'Free lessons are fully available for registered accounts'
+                }
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
