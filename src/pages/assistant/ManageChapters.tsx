@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Plus, Edit2, Trash2, BookOpen, ChevronRight, GripVertical, Layers, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, BookOpen, ChevronRight, Layers, Loader2 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -18,6 +18,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAutoTranslate } from '@/hooks/useAutoTranslate';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader';
+import { MobileDataCard } from '@/components/assistant/MobileDataCard';
+import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+import { EmptyState } from '@/components/assistant/EmptyState';
+import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 
 interface Course {
   id: string;
@@ -52,7 +57,6 @@ export default function ManageChapters() {
   const [showForm, setShowForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
   
-  // Simplified form - Arabic only
   const [formData, setFormData] = useState({
     title_ar: '',
     order_index: 0,
@@ -97,47 +101,47 @@ export default function ManageChapters() {
     }
   }, [authLoading, roleLoading, hasAccess, searchParams]);
 
-  useEffect(() => {
-    const fetchChapters = async () => {
-      if (!selectedCourse) return;
+  const fetchChapters = useCallback(async () => {
+    if (!selectedCourse) return;
 
-      setLoading(true);
-      
-      const { data: chaptersData, error } = await supabase
-        .from('chapters')
-        .select('*')
-        .eq('course_id', selectedCourse)
-        .order('order_index', { ascending: true });
+    setLoading(true);
+    
+    const { data: chaptersData, error } = await supabase
+      .from('chapters')
+      .select('*')
+      .eq('course_id', selectedCourse)
+      .order('order_index', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching chapters:', error);
-        setLoading(false);
-        return;
-      }
-
-      const { data: lessons } = await supabase
-        .from('lessons')
-        .select('chapter_id')
-        .eq('course_id', selectedCourse);
-
-      const lessonCounts = (lessons || []).reduce((acc, l) => {
-        if (l.chapter_id) {
-          acc[l.chapter_id] = (acc[l.chapter_id] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
-
-      const chaptersWithCounts = (chaptersData || []).map(ch => ({
-        ...ch,
-        lessons_count: lessonCounts[ch.id] || 0,
-      }));
-
-      setChapters(chaptersWithCounts);
+    if (error) {
+      console.error('Error fetching chapters:', error);
       setLoading(false);
-    };
+      return;
+    }
 
-    fetchChapters();
+    const { data: lessons } = await supabase
+      .from('lessons')
+      .select('chapter_id')
+      .eq('course_id', selectedCourse);
+
+    const lessonCounts = (lessons || []).reduce((acc, l) => {
+      if (l.chapter_id) {
+        acc[l.chapter_id] = (acc[l.chapter_id] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const chaptersWithCounts = (chaptersData || []).map(ch => ({
+      ...ch,
+      lessons_count: lessonCounts[ch.id] || 0,
+    }));
+
+    setChapters(chaptersWithCounts);
+    setLoading(false);
   }, [selectedCourse]);
+
+  useEffect(() => {
+    fetchChapters();
+  }, [fetchChapters]);
 
   const resetForm = () => {
     setFormData({
@@ -169,11 +173,10 @@ export default function ManageChapters() {
     }
 
     try {
-      // Auto-translate Arabic title to English
       const translatedTitle = await translateText(formData.title_ar, 'en');
       
       const chapterData = {
-        title: translatedTitle || formData.title_ar, // Use translated or fallback
+        title: translatedTitle || formData.title_ar,
         title_ar: formData.title_ar,
         order_index: formData.order_index,
       };
@@ -206,15 +209,8 @@ export default function ManageChapters() {
         });
       }
 
-      // Refresh chapters
-      const { data } = await supabase
-        .from('chapters')
-        .select('*')
-        .eq('course_id', selectedCourse)
-        .order('order_index', { ascending: true });
-
-      setChapters(data || []);
       resetForm();
+      fetchChapters();
     } catch (error) {
       console.error('Error saving chapter:', error);
       toast({
@@ -253,6 +249,9 @@ export default function ManageChapters() {
     }
   };
 
+  const selectedCourseName = courses.find(c => c.id === selectedCourse);
+  const totalLessons = chapters.reduce((sum, ch) => sum + (ch.lessons_count || 0), 0);
+
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -265,27 +264,30 @@ export default function ManageChapters() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Layers className="h-6 w-6 text-primary" />
-              {isArabic ? 'إدارة الأبواب' : 'Manage Chapters'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isArabic ? 'تنظيم الحصص في أبواب' : 'Organize lessons into chapters'}
-            </p>
-          </div>
-          <Button onClick={() => { resetForm(); setShowForm(true); }} className="gap-2">
-            <Plus className="h-4 w-4" />
-            {isArabic ? 'إضافة باب' : 'Add Chapter'}
-          </Button>
-        </div>
+      <main className="container mx-auto px-3 sm:px-4 py-4 pt-20">
+        {/* Mobile-First Header */}
+        <AssistantPageHeader
+          title={isArabic ? 'إدارة الأبواب' : 'Manage Chapters'}
+          subtitle={isArabic ? 'تنظيم الحصص في أبواب' : 'Organize lessons into chapters'}
+          backHref="/assistant/courses"
+          isRTL={isRTL}
+          icon={Layers}
+        />
+
+        {/* Status Summary */}
+        <StatusSummaryCard
+          primaryText={`${chapters.length} ${isArabic ? 'باب' : 'chapters'}`}
+          secondaryText={totalLessons > 0 ? `${totalLessons} ${isArabic ? 'حصة' : 'lessons'}` : undefined}
+          badge={selectedCourseName?.title_ar}
+          badgeVariant="accent"
+          isRTL={isRTL}
+          className="mb-4"
+        />
 
         {/* Course Selector */}
-        <div className="mb-6">
+        <div className="mb-4">
           <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger className="w-full max-w-sm">
+            <SelectTrigger className="h-10">
               <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
             </SelectTrigger>
             <SelectContent>
@@ -298,15 +300,63 @@ export default function ManageChapters() {
           </Select>
         </div>
 
-        {/* Simplified Add/Edit Form */}
-        {showForm && (
-          <div className="bg-card border border-border rounded-xl p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">
-              {editingChapter ? (isArabic ? 'تعديل الباب' : 'Edit Chapter') : (isArabic ? 'إضافة باب جديد' : 'Add New Chapter')}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Chapters List */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : chapters.length === 0 ? (
+          <EmptyState
+            icon={Layers}
+            title={isArabic ? 'لا توجد أبواب' : 'No chapters'}
+            description={isArabic ? 'أضف أبواباً لتنظيم الحصص' : 'Add chapters to organize lessons'}
+            actionLabel={isArabic ? 'إضافة باب' : 'Add Chapter'}
+            onAction={() => { resetForm(); setShowForm(true); }}
+          />
+        ) : (
+          <div className="space-y-2">
+            {chapters.map((chapter) => (
+              <MobileDataCard
+                key={chapter.id}
+                title={isArabic ? chapter.title_ar : chapter.title}
+                badge={`${chapter.lessons_count || 0} ${isArabic ? 'حصة' : 'lessons'}`}
+                badgeVariant="default"
+                icon={BookOpen}
+                iconColor="text-primary"
+                actions={[
+                  { 
+                    icon: ChevronRight, 
+                    onClick: () => navigate(`/assistant/lessons?chapter_id=${chapter.id}&course=${selectedCourse}`), 
+                    variant: 'outline' as const,
+                    className: isRTL ? 'rotate-180' : ''
+                  },
+                  { icon: Edit2, onClick: () => handleEdit(chapter), variant: 'ghost' as const },
+                  { icon: Trash2, onClick: () => handleDelete(chapter.id), variant: 'ghost' as const, className: 'text-destructive' }
+                ]}
+                isRTL={isRTL}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Floating Action Button */}
+        <FloatingActionButton
+          icon={Plus}
+          onClick={() => { resetForm(); setShowForm(true); }}
+          label={isArabic ? 'إضافة باب' : 'Add Chapter'}
+        />
+
+        {/* Add/Edit Chapter Dialog */}
+        <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
+          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingChapter ? (isArabic ? 'تعديل الباب' : 'Edit Chapter') : (isArabic ? 'إضافة باب جديد' : 'Add New Chapter')}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 py-2">
               <div>
-                <label className="text-sm font-medium mb-1 block">
+                <label className="text-sm font-medium mb-1.5 block">
                   {isArabic ? 'عنوان الباب' : 'Chapter Title'} <span className="text-destructive">*</span>
                 </label>
                 <Input
@@ -314,14 +364,13 @@ export default function ManageChapters() {
                   onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
                   placeholder={isArabic ? "مثال: الباب الأول - الكيمياء العضوية" : "e.g., Chapter 1 - Organic Chemistry"}
                   required
-                  className="text-lg"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isTranslating}>
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={isTranslating} className="flex-1">
                   {isTranslating && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
                   {isTranslating 
-                    ? (isArabic ? 'جاري الترجمة...' : 'Translating...') 
+                    ? (isArabic ? 'ترجمة...' : 'Translating...') 
                     : (editingChapter ? (isArabic ? 'تحديث' : 'Update') : (isArabic ? 'إضافة' : 'Add'))}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -329,74 +378,8 @@ export default function ManageChapters() {
                 </Button>
               </div>
             </form>
-          </div>
-        )}
-
-        {/* Chapters List */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : chapters.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-12 text-center">
-            <Layers className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {isArabic ? 'لا توجد أبواب' : 'No chapters'}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {isArabic ? 'أضف أبواباً لتنظيم الحصص' : 'Add chapters to organize lessons'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {chapters.map((chapter) => (
-              <div
-                key={chapter.id}
-                className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 hover:border-primary/50 transition-colors"
-              >
-                <div className="text-muted-foreground cursor-move">
-                  <GripVertical className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground">
-                    {isArabic ? chapter.title_ar : chapter.title}
-                  </h3>
-                </div>
-                <Badge variant="secondary">
-                  <BookOpen className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
-                  {chapter.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <Link to={`/assistant/lessons?chapter_id=${chapter.id}&course=${selectedCourse}`}>
-                      {isArabic ? 'الحصص' : 'Lessons'}
-                      <ChevronRight className={`h-4 w-4 ${isRTL ? 'mr-1 rotate-180' : 'ml-1'}`} />
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(chapter)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(chapter.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

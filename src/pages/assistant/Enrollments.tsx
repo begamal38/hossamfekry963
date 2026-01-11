@@ -439,19 +439,16 @@ const Enrollments = () => {
                       isRTL={isRTL}
                       metadata={[
                         {
-                          label: isRTL ? 'التاريخ' : 'Date',
-                          value: new Date(enrollment.enrolled_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
+                          label: new Date(enrollment.enrolled_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
                             month: 'short',
                             day: 'numeric'
                           }),
                           icon: Calendar,
                         },
                         ...(enrollment.profile?.phone ? [{
-                          label: isRTL ? 'الهاتف' : 'Phone',
-                          value: enrollment.profile.phone,
+                          label: enrollment.profile.phone,
                         }] : []),
                       ]}
-                      actions={renderEnrollmentActions(enrollment)}
                     />
                   );
                 })}

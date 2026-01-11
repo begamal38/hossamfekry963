@@ -3,39 +3,55 @@ import { LucideIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+
+interface MetadataItem {
+  label: string;
+  icon?: LucideIcon;
+  className?: string;
+}
+
+interface ActionItem {
+  icon: LucideIcon;
+  onClick: () => void;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  className?: string;
+  label?: string;
+}
 
 interface MobileDataCardProps {
-  /** Main title */
   title: string;
-  /** Subtitle or secondary info */
   subtitle?: string;
-  /** Badge text */
   badge?: string;
-  /** Badge variant */
-  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
-  /** Badge custom class */
+  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent';
   badgeClassName?: string;
-  /** Icon for the card */
   icon?: LucideIcon;
-  /** Icon color class */
   iconColor?: string;
-  /** Icon background color class */
   iconBgColor?: string;
-  /** Additional metadata items */
-  metadata?: Array<{ label: string; value: string; icon?: LucideIcon }>;
-  /** Action buttons */
-  actions?: React.ReactNode;
-  /** Link to navigate */
+  metadata?: MetadataItem[];
+  actions?: ActionItem[];
   href?: string;
-  /** RTL mode */
   isRTL?: boolean;
-  /** Click handler */
   onClick?: () => void;
-  /** Additional class names */
   className?: string;
-  /** Children content */
   children?: React.ReactNode;
 }
+
+const badgeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  default: 'default',
+  secondary: 'secondary',
+  destructive: 'destructive',
+  outline: 'outline',
+  success: 'secondary',
+  warning: 'secondary',
+  accent: 'secondary',
+};
+
+const badgeClassMap: Record<string, string> = {
+  success: 'bg-green-500/10 text-green-600 border-green-500/20',
+  warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  accent: 'bg-primary/10 text-primary border-primary/20',
+};
 
 export const MobileDataCard: React.FC<MobileDataCardProps> = ({
   title,
@@ -63,16 +79,13 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
       )}
       onClick={onClick}
     >
-      {/* Header Row */}
       <div className="flex items-start gap-3">
-        {/* Icon */}
         {Icon && (
           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", iconBgColor)}>
             <Icon className={cn("w-5 h-5", iconColor)} />
           </div>
         )}
         
-        {/* Main Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -82,14 +95,20 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
               )}
             </div>
             
-            {/* Badge & Arrow */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {badge && (
-                <Badge variant={badgeVariant} className={cn("text-[10px] sm:text-xs", badgeClassName)}>
+                <Badge 
+                  variant={badgeVariantMap[badgeVariant] || 'default'} 
+                  className={cn(
+                    "text-[10px] sm:text-xs",
+                    badgeClassMap[badgeVariant],
+                    badgeClassName
+                  )}
+                >
                   {badge}
                 </Badge>
               )}
-              {(href || onClick) && (
+              {(href || onClick) && !actions && (
                 isRTL ? (
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 ) : (
@@ -99,30 +118,40 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
             </div>
           </div>
           
-          {/* Metadata */}
           {metadata && metadata.length > 0 && (
             <div className="flex flex-wrap gap-3 mt-2">
               {metadata.map((item, index) => (
-                <div key={index} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div key={index} className={cn("flex items-center gap-1 text-xs text-muted-foreground", item.className)}>
                   {item.icon && <item.icon className="w-3 h-3" />}
-                  <span className="text-muted-foreground">{item.label}:</span>
-                  <span className="text-foreground font-medium">{item.value}</span>
+                  <span>{item.label}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* Actions */}
+        {actions && actions.length > 0 && (
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {actions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant || 'ghost'}
+                size="icon"
+                className={cn("h-8 w-8", action.className)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  action.onClick();
+                }}
+              >
+                <action.icon className="w-4 h-4" />
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
       
-      {/* Children content */}
       {children}
-      
-      {/* Actions */}
-      {actions && (
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-          {actions}
-        </div>
-      )}
     </div>
   );
 
