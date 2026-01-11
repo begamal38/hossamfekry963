@@ -88,26 +88,29 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
     return null;
   }
 
-  // Get state-specific text using translation keys
+  // Get state-specific text - hardcoded Arabic copy per spec
   const getText = () => {
     if (userType === 'visitor') {
       if (isFocusActive) {
         return {
-          title: `${t('preview.quick')} 👀`,
-          subtitle: t('preview.getIdea'),
-          timer: `${t('preview.remaining')}: ${formatTime(remainingSeconds)}`,
+          // Spec: "معاينة سريعة للحصة 👀" + "المتبقي من المعاينة: {mm:ss}"
+          title: 'معاينة سريعة للحصة 👀',
+          subtitle: null,
+          timer: `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`,
         };
       } else {
         return {
           title: t('focus.paused'),
           subtitle: t('focus.resumeVideo'),
-          timer: `${t('system.remaining')}: ${formatTime(remainingSeconds)}`,
+          timer: `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`,
         };
       }
     } else if (userType === 'student') {
+      // Logged-in student (not enrolled) - FREE TRIAL
       if (isFocusActive) {
         return {
-          title: `${t('preview.stayFocused')} 👌`,
+          // Spec: "دي حصة مجانية — تقدر تشوفها كاملة"
+          title: 'دي حصة مجانية — تقدر تشوفها كاملة 👌',
           subtitle: null,
           timer: null,
         };
@@ -119,10 +122,11 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
         };
       }
     } else {
-      // Enrolled
+      // Enrolled student
       if (isFocusActive) {
         return {
-          title: t('focus.active'),
+          // Spec: "وضع التركيز نشط"
+          title: 'وضع التركيز نشط',
           subtitle: null,
           timer: null,
         };

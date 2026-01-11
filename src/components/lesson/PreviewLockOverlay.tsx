@@ -14,7 +14,7 @@ interface PreviewLockOverlayProps {
  * Uses centralized translation keys for consistency
  */
 export const PreviewLockOverlay: React.FC<PreviewLockOverlayProps> = ({ className }) => {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
 
   return (
     <div 
@@ -29,19 +29,19 @@ export const PreviewLockOverlay: React.FC<PreviewLockOverlayProps> = ({ classNam
         <Lock className="w-8 h-8 text-primary" />
       </div>
       
-      {/* Message */}
+      {/* Message - Spec: "انتهت المعاينة" + "سجّل حسابك علشان تكمل المحتوى كامل." */}
       <h3 className="text-xl font-bold text-foreground mb-2 text-center px-4">
-        {t('preview.wasQuick')}
+        انتهت المعاينة
       </h3>
       <p className="text-muted-foreground text-center mb-6 px-4">
-        {t('preview.signupToContinue')}
+        سجّل حسابك علشان تكمل المحتوى كامل.
       </p>
       
-      {/* CTA Button */}
+      {/* CTA Button - Spec: "إنشاء حساب" */}
       <Button size="lg" asChild className="gap-2">
         <Link to="/auth?mode=signup">
           <UserPlus className="w-5 h-5" />
-          {t('auth.createAccount')}
+          إنشاء حساب
         </Link>
       </Button>
     </div>

@@ -476,10 +476,11 @@ const translations: Record<Language, Record<string, string>> = {
     'preview.locked': 'Preview locked',
     'preview.getIdea': 'Get a feel for the teaching style before signing up',
     'preview.wasQuick': 'This was a quick lesson preview',
-    'preview.signupToContinue': 'Create account to continue with free lessons',
+    'preview.signupToContinue': 'Create account to continue the full content',
     'preview.freeLesson': 'Free Lesson',
     'preview.thisIsFree': 'This is a free lesson',
     'preview.stayFocused': 'Free lesson — stay focused',
+    'preview.freeLessonFull': 'This is a free lesson — you can watch it completely',
 
     // ══════════════════════════════════════════════════════════════════════════
     // SYSTEM MESSAGES (EXTENDED)
@@ -997,10 +998,11 @@ const translations: Record<Language, Record<string, string>> = {
     'preview.locked': 'المعاينة مقفولة',
     'preview.getIdea': 'بتاخد فكرة عن أسلوب الشرح قبل التسجيل',
     'preview.wasQuick': 'دي كانت معاينة سريعة للحصة',
-    'preview.signupToContinue': 'سجّل حسابك وكمّل الحصص المجانية كاملة',
+    'preview.signupToContinue': 'سجّل حسابك علشان تكمل المحتوى كامل.',
     'preview.freeLesson': 'حصة مجانية',
     'preview.thisIsFree': 'دي حصة مجانية',
     'preview.stayFocused': 'دي حصة مجانية — ركّز مع الشرح',
+    'preview.freeLessonFull': 'دي حصة مجانية — تقدر تشوفها كاملة',
 
     // ══════════════════════════════════════════════════════════════════════════
     // SYSTEM MESSAGES (EXTENDED)
