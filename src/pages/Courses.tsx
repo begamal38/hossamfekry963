@@ -16,6 +16,7 @@ import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/
 import { filterCoursesForStudents, isCoursePreview } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { useEngagementSafe } from '@/components/consent';
+import { cn } from '@/lib/utils';
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
   'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
   'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
@@ -337,14 +338,19 @@ const Courses: React.FC = () => {
               ))}
             </select>
 
-            <Button 
-              variant={showFreeOnly ? 'default' : 'outline'} 
-              className="gap-2"
-              onClick={() => setShowFreeOnly(!showFreeOnly)}
-            >
-              <Filter className="w-4 h-4" />
-              {isArabic ? 'المجانية فقط' : 'Free Only'}
-            </Button>
+            <div className="relative group">
+              {showFreeOnly && (
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-lg blur-md opacity-50 group-hover:opacity-80 animate-pulse transition-opacity duration-300" />
+              )}
+              <Button 
+                variant={showFreeOnly ? 'default' : 'outline'} 
+                className={cn("gap-2", showFreeOnly && "relative shadow-lg")}
+                onClick={() => setShowFreeOnly(!showFreeOnly)}
+              >
+                <Filter className="w-4 h-4" />
+                {isArabic ? 'المجانية فقط' : 'Free Only'}
+              </Button>
+            </div>
           </div>
 
           {/* User's Grade Courses */}

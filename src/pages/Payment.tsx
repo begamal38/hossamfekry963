@@ -231,14 +231,17 @@ const Payment: React.FC = () => {
                 : 'After transfer, send receipt screenshot on WhatsApp'}
             </p>
             
-            {/* SINGLE CTA */}
-            <Button 
-              onClick={handleWhatsAppContact}
-              className="w-full h-12 sm:h-14 text-base font-bold rounded-xl"
-            >
-              <MessageCircle className="w-5 h-5 me-2" />
-              {isArabic ? 'تواصل مع المدرس المساعد' : 'Contact Assistant'}
-            </Button>
+            {/* SINGLE CTA with Glow Effect */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
+              <Button 
+                onClick={handleWhatsAppContact}
+                className="relative w-full h-12 sm:h-14 text-base font-bold rounded-xl shadow-lg"
+              >
+                <MessageCircle className="w-5 h-5 me-2" />
+                {isArabic ? 'تواصل مع المدرس المساعد' : 'Contact Assistant'}
+              </Button>
+            </div>
           </div>
           
           {/* CONTEXT: Platform Features - Collapsed by default on mobile */}

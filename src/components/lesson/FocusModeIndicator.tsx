@@ -165,19 +165,20 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
   
   const statusLabels: Record<FocusState, string> = {
     FOCUS_IDLE: isArabic ? 'جاهز' : 'Ready',
-    FOCUS_ACTIVE: isArabic ? 'وضع التركيز' : 'Focus Mode',
+    FOCUS_ACTIVE: isArabic ? 'وضع التركيز: مفعّل' : 'Focus Mode: Active',
     FOCUS_PAUSED: isArabic ? 'متوقف' : 'Paused',
     FOCUS_COMPLETED: isArabic ? 'مكتمل' : 'Completed',
   };
 
   return (
-    <div className={cn("relative flex items-center gap-3", className)}>
+    <div className={cn("relative flex items-center gap-3", className)} dir="ltr">
       {/* Main indicator - Focus Mode: ON badge */}
       <div 
         className={cn(
           "flex items-center gap-2.5 px-3.5 py-2 rounded-full",
           "bg-card/90 backdrop-blur-md border shadow-lg",
           "transition-all duration-700 ease-out",
+          "focus-mode-expand-animation",
           isPaused 
             ? "border-muted/50 opacity-60" 
             : "border-primary/30 shadow-primary/10 focus-mode-on-badge"
@@ -201,14 +202,14 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
           />
         </span>
 
-        {/* Status text - "Focus Mode: ON" style */}
+        {/* Status text - "Focus Mode: Active" style - Always LTR */}
         <span className={cn(
           "text-sm font-medium transition-colors duration-300",
           isPaused ? "text-muted-foreground" : "text-foreground"
         )}>
           {isPaused 
             ? (isArabic ? 'متوقف' : 'Paused')
-            : (isArabic ? 'وضع التركيز: مفعّل' : 'Focus Mode: ON')
+            : (isArabic ? 'وضع التركيز: مفعّل' : 'Focus Mode: Active')
           }
         </span>
 
