@@ -86,20 +86,26 @@ export const CourseCard = React.memo<CourseCardProps>(({
   return (
     <div 
       className={cn(
-        "group bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300",
-        // Desktop: hover effects
-        "md:hover:shadow-xl md:hover:-translate-y-1 md:hover:border-primary/20",
+        "group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300",
+        // Desktop: hover effects with glow
+        "md:hover:shadow-xl md:hover:-translate-y-1 md:hover:border-primary/30",
         // Mobile: optimized spacing and touch targets
         "active:scale-[0.98] touch-manipulation",
         `animate-fade-in-up animation-delay-${((index % 3) + 1) * 100}`
       )}
     >
+      {/* Glow effect on hover - Desktop only */}
+      <div className={cn(
+        "absolute -inset-0.5 bg-gradient-to-r from-primary/40 via-accent/30 to-primary/40 rounded-2xl opacity-0 blur-md transition-opacity duration-500",
+        "hidden md:block md:group-hover:opacity-70"
+      )} />
       {/* Course Cover Image - 16:9 aspect ratio on mobile, fixed height on desktop */}
       <div className={cn(
         "relative overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10",
         // Mobile: 16:9 aspect ratio for consistent marketing appearance
         "aspect-video md:aspect-auto md:h-44",
-        isPreview && "opacity-75"
+        isPreview && "opacity-75",
+        "z-10" // Above glow layer
       )}>
         {/* Course Cover Image - Always show the cover or fallback */}
         <img 
@@ -162,8 +168,8 @@ export const CourseCard = React.memo<CourseCardProps>(({
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 md:p-5 space-y-3">
+      {/* Content - Above glow layer */}
+      <div className="relative z-10 p-4 md:p-5 space-y-3 bg-card">
         {/* Grade Category Chip */}
         <Badge variant="outline" className="text-xs font-medium">
           {isArabic ? gradeInfo?.ar : gradeInfo?.en}
