@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { DeviceManagement } from '@/components/settings/DeviceManagement';
+import { GoogleAccountLinking } from '@/components/settings/GoogleAccountLinking';
 import { useUserRole } from '@/hooks/useUserRole';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
@@ -445,6 +446,13 @@ const Settings: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {/* Google Account Linking Section - Only for students */}
+          {isStudent() && (
+            <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-275">
+              <GoogleAccountLinking />
+            </div>
+          )}
 
           {/* Device Management Section - Only for students */}
           {isStudent() && (
