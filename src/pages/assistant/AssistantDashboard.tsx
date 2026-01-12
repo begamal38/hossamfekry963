@@ -69,6 +69,7 @@ export default function AssistantDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const hasAccess = canAccessDashboard();
 
@@ -107,7 +108,8 @@ export default function AssistantDashboard() {
         { count: examsCount },
         { count: attendanceCount },
         { data: examResults },
-        { count: newStudentsCount }
+        { count: newStudentsCount },
+        { data: conversations }
       ] = await Promise.all([
         supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
         supabase.from('course_enrollments').select('status'),
@@ -115,7 +117,8 @@ export default function AssistantDashboard() {
         supabase.from('exams').select('*', { count: 'exact', head: true }),
         supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
         supabase.from('exam_results').select('score, exams:exam_id(max_score)'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString())
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString()),
+        supabase.from('conversations').select('unread_count_assistant').eq('assistant_teacher_id', user.id)
       ]);
 
       const totalEnrollments = enrollments?.length || 0;
@@ -128,6 +131,10 @@ export default function AssistantDashboard() {
             return sum + ((r.score / maxScore) * 100);
           }, 0) / examResults!.length)
         : 0;
+
+      // Calculate unread messages
+      const totalUnread = (conversations || []).reduce((sum, c) => sum + (c.unread_count_assistant || 0), 0);
+      setUnreadMessages(totalUnread);
 
       setStats({
         totalStudents: studentsCount || 0,
@@ -193,6 +200,7 @@ export default function AssistantDashboard() {
       href: '/assistant/messages',
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
+      badge: unreadMessages > 0 ? (unreadMessages > 9 ? '9+' : String(unreadMessages)) : undefined,
     },
     {
       icon: Send,
