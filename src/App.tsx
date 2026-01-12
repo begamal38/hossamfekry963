@@ -49,6 +49,7 @@ const CenterGroups = lazy(() => import("./pages/assistant/CenterGroups"));
 const CenterSessions = lazy(() => import("./pages/assistant/CenterSessions"));
 const ManageExams = lazy(() => import("./pages/assistant/ManageExams"));
 const ExamResults = lazy(() => import("./pages/assistant/ExamResults"));
+const AssistantMessages = lazy(() => import("./pages/assistant/Messages"));
 
 const queryClient = new QueryClient();
 
@@ -306,6 +307,17 @@ const App = () => (
                         allow={({ canAccessDashboard }) => canAccessDashboard()}
                       >
                         <ExamResults />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/messages"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <AssistantMessages />
                       </RequireResolvedAccess>
                     }
                   />

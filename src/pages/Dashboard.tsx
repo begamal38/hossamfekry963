@@ -17,6 +17,7 @@ import {
   Clock,
   CheckCircle2,
   CreditCard,
+  MessageCircle,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -38,6 +39,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
+import { StudentChatButton } from '@/components/messaging/StudentChatButton';
 
 // Attendance mode config
 const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
@@ -365,7 +367,12 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Quick Actions Strip */}
-          <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-6" />
+          <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-4" />
+
+          {/* Contact Assistant Button */}
+          <div className="mb-6">
+            <StudentChatButton isRTL={isArabic} className="w-full justify-center" />
+          </div>
 
           {/* Stats Cards - Vodafone Style */}
           <div className="grid grid-cols-2 gap-3 mb-6">
