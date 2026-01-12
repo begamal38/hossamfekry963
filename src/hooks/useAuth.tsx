@@ -54,6 +54,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Handle Google OAuth success events
+        if (event === 'SIGNED_IN' && session?.user) {
+          const provider = session.user.app_metadata?.provider;
+          if (provider === 'google') {
+            // Check if this is a new user (created_at === updated_at within 5 seconds)
+            const createdAt = new Date(session.user.created_at || 0).getTime();
+            const now = Date.now();
+            const isNewUser = (now - createdAt) < 10000; // Within 10 seconds = new registration
+            
+            // Store event for analytics (silent)
+            if (isNewUser) {
+              console.log('google_register_success', { user_id: session.user.id, timestamp: now });
+            } else {
+              console.log('google_login_success', { user_id: session.user.id, timestamp: now });
+            }
+          }
+        }
       }
     );
 
