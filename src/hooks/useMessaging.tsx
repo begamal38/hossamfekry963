@@ -378,6 +378,64 @@ export const useMessaging = () => {
     }
   }, [user, isStudent, getAvailableAssistantTeacher]);
 
+  // Create or get conversation with a specific student (for assistant teachers)
+  const getOrCreateConversationWithStudent = useCallback(async (studentId: string) => {
+    if (!user || !isAssistantTeacher()) return null;
+    
+    try {
+      // Check if conversation exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('student_id', studentId)
+        .eq('assistant_teacher_id', user.id)
+        .maybeSingle();
+      
+      if (fetchError) throw fetchError;
+      
+      if (existing) {
+        // Fetch student name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', studentId)
+          .maybeSingle();
+        
+        return {
+          ...existing,
+          student_name: profile?.full_name || 'طالب'
+        };
+      }
+      
+      // Create new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          student_id: studentId,
+          assistant_teacher_id: user.id
+        })
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      // Fetch student name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', studentId)
+        .maybeSingle();
+      
+      return {
+        ...newConv,
+        student_name: profile?.full_name || 'طالب'
+      };
+    } catch (err) {
+      console.error('Error getting/creating conversation with student:', err);
+      return null;
+    }
+  }, [user, isAssistantTeacher]);
+
   return {
     conversations,
     messages,
@@ -390,6 +448,7 @@ export const useMessaging = () => {
     sendMessage,
     getOrCreateConversation,
     getAvailableAssistantTeacher,
-    getStudentConversation
+    getStudentConversation,
+    getOrCreateConversationWithStudent
   };
 };

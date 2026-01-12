@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, ArrowRight } from 'lucide-react';
+import { MessageCircle, ArrowRight, Plus } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { ConversationList } from '@/components/messaging/ConversationList';
 import { ChatWindow } from '@/components/messaging/ChatWindow';
+import { NewConversationDialog } from '@/components/messaging/NewConversationDialog';
 import { useMessaging, Conversation } from '@/hooks/useMessaging';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -25,10 +26,12 @@ export default function AssistantMessages() {
     loading,
     fetchConversations,
     fetchMessages,
-    sendMessage
+    sendMessage,
+    getOrCreateConversationWithStudent
   } = useMessaging();
 
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const [newConversationOpen, setNewConversationOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 768);
@@ -66,6 +69,15 @@ export default function AssistantMessages() {
     setCurrentConversation(null);
   }, [setCurrentConversation]);
 
+  const handleStartNewConversation = useCallback(async (studentId: string) => {
+    const conv = await getOrCreateConversationWithStudent(studentId);
+    if (conv) {
+      setCurrentConversation(conv);
+      await fetchMessages(conv.id);
+      await fetchConversations();
+    }
+  }, [getOrCreateConversationWithStudent, setCurrentConversation, fetchMessages, fetchConversations]);
+
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -96,18 +108,27 @@ export default function AssistantMessages() {
           <main className="pt-20">
             <div className="container mx-auto px-4 max-w-2xl">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-6">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-                  <ArrowRight className={cn("w-5 h-5", !isRTL && "rotate-180")} />
-                </Button>
-                <div>
-                  <h1 className="text-xl font-bold text-foreground">
-                    {isRTL ? 'رسائل الطلاب' : 'Student Messages'}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    {isRTL ? 'تواصل مع طلابك' : 'Communicate with your students'}
-                  </p>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
+                    <ArrowRight className={cn("w-5 h-5", !isRTL && "rotate-180")} />
+                  </Button>
+                  <div>
+                    <h1 className="text-xl font-bold text-foreground">
+                      {isRTL ? 'رسائل الطلاب' : 'Student Messages'}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      {isRTL ? 'تواصل مع طلابك' : 'Communicate with your students'}
+                    </p>
+                  </div>
                 </div>
+                <Button 
+                  size="icon" 
+                  onClick={() => setNewConversationOpen(true)}
+                  className="rounded-full"
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
               </div>
 
               {/* Conversations List */}
@@ -123,6 +144,13 @@ export default function AssistantMessages() {
             </div>
           </main>
         )}
+
+        <NewConversationDialog
+          open={newConversationOpen}
+          onOpenChange={setNewConversationOpen}
+          onSelectStudent={handleStartNewConversation}
+          isRTL={isRTL}
+        />
       </div>
     );
   }
@@ -135,18 +163,24 @@ export default function AssistantMessages() {
       <main className="pt-20 pb-8">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-              <ArrowRight className={cn("w-5 h-5", !isRTL && "rotate-180")} />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                {isRTL ? 'رسائل الطلاب' : 'Student Messages'}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {isRTL ? 'تواصل مع طلابك' : 'Communicate with your students'}
-              </p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
+                <ArrowRight className={cn("w-5 h-5", !isRTL && "rotate-180")} />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {isRTL ? 'رسائل الطلاب' : 'Student Messages'}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {isRTL ? 'تواصل مع طلابك' : 'Communicate with your students'}
+                </p>
+              </div>
             </div>
+            <Button onClick={() => setNewConversationOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              {isRTL ? 'محادثة جديدة' : 'New Conversation'}
+            </Button>
           </div>
 
           {/* Split View */}
@@ -189,18 +223,29 @@ export default function AssistantMessages() {
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     {isRTL ? 'اختر محادثة' : 'Select a conversation'}
                   </h3>
-                  <p className="text-sm text-muted-foreground max-w-sm">
+                  <p className="text-sm text-muted-foreground max-w-sm mb-4">
                     {isRTL 
-                      ? 'اختر محادثة من القائمة للبدء في التواصل مع الطالب'
-                      : 'Choose a conversation from the list to start chatting with the student'
+                      ? 'اختر محادثة من القائمة أو ابدأ محادثة جديدة'
+                      : 'Choose a conversation from the list or start a new one'
                     }
                   </p>
+                  <Button variant="outline" onClick={() => setNewConversationOpen(true)} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    {isRTL ? 'محادثة جديدة' : 'New Conversation'}
+                  </Button>
                 </div>
               )}
             </div>
           </div>
         </div>
       </main>
+
+      <NewConversationDialog
+        open={newConversationOpen}
+        onOpenChange={setNewConversationOpen}
+        onSelectStudent={handleStartNewConversation}
+        isRTL={isRTL}
+      />
     </div>
   );
 }
