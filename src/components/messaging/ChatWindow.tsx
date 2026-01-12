@@ -103,12 +103,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Send className="w-8 h-8 text-primary" />
             </div>
+            <p className="text-foreground font-medium mb-2">
+              {isRTL ? 'اكتب رسالتك للمدرس المساعد هنا…' : 'Write your message to the assistant teacher here...'}
+            </p>
             <p className="text-muted-foreground text-sm">
-              {isRTL ? 'ابدأ المحادثة بإرسال رسالة' : 'Start the conversation by sending a message'}
+              {isRTL ? 'المدرس المساعد سيرد عليك في أقرب وقت.' : 'The assistant teacher will respond as soon as possible.'}
             </p>
           </div>
         ) : (
@@ -155,7 +158,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               value={newMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={isRTL ? 'اكتب رسالتك...' : 'Type a message...'}
+              placeholder={isRTL ? 'اكتب رسالتك للمدرس المساعد هنا…' : 'Write your message here...'}
               className={cn(
                 "w-full resize-none rounded-xl border border-input bg-background px-4 py-2.5 text-sm",
                 "focus:outline-none focus:ring-2 focus:ring-ring",

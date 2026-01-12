@@ -212,23 +212,43 @@ export const useMessaging = () => {
     }
   }, [user, isStudent]);
 
-  // Get first available assistant teacher (for students to message)
-  const getFirstAssistantTeacher = useCallback(async () => {
+  // Get available assistant teacher for student messaging
+  // Priority: 1) Previously linked assistant, 2) Any available assistant
+  const getAvailableAssistantTeacher = useCallback(async () => {
+    if (!user) return null;
+    
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'assistant_teacher')
+      // First, check if student already has an existing conversation
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('assistant_teacher_id')
+        .eq('student_id', user.id)
         .limit(1)
         .maybeSingle();
       
+      if (existingConv?.assistant_teacher_id) {
+        return existingConv.assistant_teacher_id;
+      }
+      
+      // Otherwise, get any available assistant teacher
+      const { data: assistants, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'assistant_teacher');
+      
       if (error) throw error;
-      return data?.user_id || null;
+      
+      // Return the first assistant found
+      if (assistants && assistants.length > 0) {
+        return assistants[0].user_id;
+      }
+      
+      return null;
     } catch (err) {
       console.error('Error fetching assistant teacher:', err);
       return null;
     }
-  }, []);
+  }, [user]);
 
   // Subscribe to new messages in real-time
   useEffect(() => {
@@ -292,6 +312,72 @@ export const useMessaging = () => {
     };
   }, [user, fetchConversations]);
 
+  // Get student's conversation (create if needed with auto-assigned assistant)
+  const getStudentConversation = useCallback(async () => {
+    if (!user || !isStudent()) return null;
+    
+    try {
+      // Check if student already has a conversation
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('student_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingConv) {
+        // Fetch assistant name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', existingConv.assistant_teacher_id)
+          .maybeSingle();
+        
+        return {
+          ...existingConv,
+          assistant_name: profile?.full_name || 'المدرس المساعد'
+        };
+      }
+      
+      // No existing conversation - find an assistant and create one
+      const assistantId = await getAvailableAssistantTeacher();
+      
+      if (!assistantId) {
+        // Even without an assistant, we can still return a placeholder
+        // This should rarely happen in a real system
+        console.warn('No assistant teacher found in system');
+        return null;
+      }
+      
+      // Create new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          student_id: user.id,
+          assistant_teacher_id: assistantId
+        })
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      // Fetch assistant name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', assistantId)
+        .maybeSingle();
+      
+      return {
+        ...newConv,
+        assistant_name: profile?.full_name || 'المدرس المساعد'
+      };
+    } catch (err) {
+      console.error('Error getting student conversation:', err);
+      return null;
+    }
+  }, [user, isStudent, getAvailableAssistantTeacher]);
+
   return {
     conversations,
     messages,
@@ -303,6 +389,7 @@ export const useMessaging = () => {
     fetchMessages,
     sendMessage,
     getOrCreateConversation,
-    getFirstAssistantTeacher
+    getAvailableAssistantTeacher,
+    getStudentConversation
   };
 };

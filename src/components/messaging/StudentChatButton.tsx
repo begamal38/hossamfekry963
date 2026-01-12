@@ -20,32 +20,34 @@ export const StudentChatButton: React.FC<StudentChatButtonProps> = ({
     totalUnread,
     fetchMessages,
     sendMessage,
-    getOrCreateConversation,
-    getFirstAssistantTeacher,
+    getStudentConversation,
     loading
   } = useMessaging();
 
   const [open, setOpen] = useState(false);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [initializing, setInitializing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const initializeConversation = useCallback(async () => {
     setInitializing(true);
+    setError(null);
     try {
-      const assistantId = await getFirstAssistantTeacher();
-      if (assistantId) {
-        const conv = await getOrCreateConversation(assistantId);
-        if (conv) {
-          setConversation(conv);
-          await fetchMessages(conv.id);
-        }
+      const conv = await getStudentConversation();
+      if (conv) {
+        setConversation(conv);
+        await fetchMessages(conv.id);
+      } else {
+        // Very rare edge case - show helpful message
+        setError('جاري تجهيز المحادثة...');
       }
     } catch (err) {
       console.error('Error initializing conversation:', err);
+      setError('حدث خطأ، يرجى المحاولة مرة أخرى');
     } finally {
       setInitializing(false);
     }
-  }, [getFirstAssistantTeacher, getOrCreateConversation, fetchMessages]);
+  }, [getStudentConversation, fetchMessages]);
 
   useEffect(() => {
     if (open && !conversation) {
@@ -94,13 +96,27 @@ export const StudentChatButton: React.FC<StudentChatButtonProps> = ({
             loading={loading}
             isRTL={isRTL}
           />
+        ) : error ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <MessageCircle className="w-8 h-8 text-primary" />
+            </div>
+            <p className="text-muted-foreground">{error}</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={initializeConversation}
+            >
+              {isRTL ? 'إعادة المحاولة' : 'Retry'}
+            </Button>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <MessageCircle className="w-8 h-8 text-primary" />
             </div>
             <p className="text-muted-foreground">
-              {isRTL ? 'لا يوجد مدرس مساعد متاح حالياً' : 'No assistant teacher available'}
+              {isRTL ? 'اكتب رسالتك للمدرس المساعد هنا…' : 'Write your message to the assistant teacher here...'}
             </p>
           </div>
         )}
