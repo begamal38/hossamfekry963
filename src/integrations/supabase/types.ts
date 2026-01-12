@@ -1272,10 +1272,14 @@ export type Database = {
         Row: {
           academic_year: string | null
           attendance_mode: Database["public"]["Enums"]["attendance_mode"]
+          auth_methods: string[] | null
           avatar_url: string | null
           created_at: string
           email: string | null
           full_name: string | null
+          google_email: string | null
+          google_id: string | null
+          google_linked_at: string | null
           governorate: string | null
           grade: string | null
           is_suspended: boolean
@@ -1289,10 +1293,14 @@ export type Database = {
         Insert: {
           academic_year?: string | null
           attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          auth_methods?: string[] | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          google_email?: string | null
+          google_id?: string | null
+          google_linked_at?: string | null
           governorate?: string | null
           grade?: string | null
           is_suspended?: boolean
@@ -1306,10 +1314,14 @@ export type Database = {
         Update: {
           academic_year?: string | null
           attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          auth_methods?: string[] | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          google_email?: string | null
+          google_id?: string | null
+          google_linked_at?: string | null
           governorate?: string | null
           grade?: string | null
           is_suspended?: boolean
