@@ -134,6 +134,14 @@ export const Footer: React.FC = () => {
           <p className="text-sm text-muted-foreground">
             Hossam Fekry © {currentYear} — {t('footer.rights')}
           </p>
+          <a 
+            href="https://wa.me/201000788628"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block mt-2 text-[0.7rem] text-muted-foreground/60 hover:text-muted-foreground/80 transition-opacity"
+          >
+            Powered by Belal Gamal
+          </a>
         </div>
       </div>
     </footer>
