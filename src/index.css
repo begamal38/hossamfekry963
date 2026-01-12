@@ -494,6 +494,26 @@
   animation: focus-dot-breathe 7.5s ease-in-out infinite;
 }
 
+/* Focus Mode expand animation - starts expanded then shrinks to normal */
+@keyframes focus-mode-expand {
+  0% { 
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+  30% {
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.focus-mode-expand-animation {
+  animation: focus-mode-expand 0.8s ease-out forwards;
+}
+
 @keyframes focus-breathe {
   0%, 100% { 
     transform: scale(1); 
