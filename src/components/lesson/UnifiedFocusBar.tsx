@@ -88,35 +88,37 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
     return null;
   }
 
-  // Get state-specific text - hardcoded Arabic copy per spec
+  // Get state-specific text - uses translation system
   const getText = () => {
     if (userType === 'visitor') {
       if (isFocusActive) {
         return {
-          // Spec: "معاينة سريعة للحصة 👀" + "المتبقي من المعاينة: {mm:ss}"
-          title: 'معاينة سريعة للحصة 👀',
+          title: isRTL ? 'معاينة سريعة للحصة 👀' : 'Quick Lesson Preview 👀',
           subtitle: null,
-          timer: `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`,
+          timer: isRTL 
+            ? `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`
+            : `Preview remaining: ${formatTime(remainingSeconds)}`,
         };
       } else {
         return {
-          title: t('focus.paused'),
-          subtitle: t('focus.resumeVideo'),
-          timer: `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`,
+          title: isRTL ? 'متوقف مؤقتاً' : 'Paused',
+          subtitle: isRTL ? 'شغّل الفيديو للمتابعة' : 'Play video to continue',
+          timer: isRTL 
+            ? `المتبقي من المعاينة: ${formatTime(remainingSeconds)}`
+            : `Preview remaining: ${formatTime(remainingSeconds)}`,
         };
       }
     } else if (userType === 'student') {
       // Logged-in student (not enrolled) - FREE TRIAL
       if (isFocusActive) {
         return {
-          // Spec: "دي حصة مجانية — تقدر تشوفها كاملة"
-          title: 'دي حصة مجانية — تقدر تشوفها كاملة 👌',
+          title: isRTL ? 'دي حصة مجانية — تقدر تشوفها كاملة 👌' : 'This is a free lesson — watch it fully 👌',
           subtitle: null,
           timer: null,
         };
       } else {
         return {
-          title: t('focus.paused'),
+          title: isRTL ? 'متوقف مؤقتاً' : 'Paused',
           subtitle: null,
           timer: null,
         };
@@ -125,14 +127,13 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
       // Enrolled student
       if (isFocusActive) {
         return {
-          // Spec: "وضع التركيز نشط"
-          title: 'وضع التركيز نشط',
+          title: isRTL ? 'وضع التركيز نشط' : 'Focus Mode Active',
           subtitle: null,
           timer: null,
         };
       } else {
         return {
-          title: t('focus.paused'),
+          title: isRTL ? 'متوقف مؤقتاً' : 'Paused',
           subtitle: null,
           timer: null,
         };
@@ -153,10 +154,11 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
 
   return (
     <div
-      dir={isRTL ? 'rtl' : 'ltr'}
+      dir="ltr"
       className={cn(
         "flex items-center gap-2 transition-all duration-300 rounded-full",
         "border backdrop-blur-sm cursor-pointer select-none",
+        "focus-mode-expand-animation",
         isFocusActive
           ? isWarning
             ? "bg-destructive/10 border-destructive/30"
