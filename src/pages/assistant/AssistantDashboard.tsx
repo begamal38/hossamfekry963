@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Bell,
   Settings,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -187,9 +188,9 @@ export default function AssistantDashboard() {
       bgColor: 'bg-blue-500/10',
     },
     {
-      icon: Plus,
-      label: isRTL ? 'حصة جديدة' : 'New Lesson',
-      href: '/assistant/lessons?action=add',
+      icon: MessageCircle,
+      label: isRTL ? 'الرسائل' : 'Messages',
+      href: '/assistant/messages',
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
     },

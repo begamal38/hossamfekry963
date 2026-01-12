@@ -319,6 +319,42 @@ export type Database = {
           },
         ]
       }
+      conversations: {
+        Row: {
+          assistant_teacher_id: string
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          student_id: string
+          unread_count_assistant: number | null
+          unread_count_student: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assistant_teacher_id: string
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          student_id: string
+          unread_count_assistant?: number | null
+          unread_count_student?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assistant_teacher_id?: string
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          student_id?: string
+          unread_count_assistant?: number | null
+          unread_count_student?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       course_activity_summaries: {
         Row: {
           avg_session_gap_hours: number | null
@@ -1044,6 +1080,44 @@ export type Database = {
             columns: ["linked_exam_id"]
             isOneToOne: false
             referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message_text: string
+          read_at: string | null
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message_text: string
+          read_at?: string | null
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message_text?: string
+          read_at?: string | null
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
