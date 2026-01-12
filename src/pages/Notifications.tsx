@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -590,6 +591,8 @@ export default function Notifications() {
           })()}
         </DialogContent>
       </Dialog>
+      
+      <Footer />
     </div>
   );
 }
