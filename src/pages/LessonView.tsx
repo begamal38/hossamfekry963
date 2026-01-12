@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -798,8 +799,8 @@ export default function LessonView() {
           </div>
         </header>
 
-        {/* Content Area */}
-        <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
+        {/* Content Area - Centered and optimized for desktop */}
+        <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl lg:max-w-3xl xl:max-w-4xl">
           {/* Video Player Section */}
           <section className="mb-8" aria-labelledby="video-section-title">
             <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
@@ -835,16 +836,20 @@ export default function LessonView() {
             </div>
             
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
-              /* Video Container - YouTube IFrame API Player */
-              <div className="relative w-full rounded-xl overflow-hidden bg-black shadow-lg" style={{ paddingBottom: '56.25%' }}>
-                <div 
-                  ref={playerContainerRef}
-                  className="absolute inset-0 w-full h-full"
-                />
-                {/* Preview Lock Overlay for visitors when timer expires */}
-                {!user && lesson.is_free_lesson && previewTimer.isLocked && (
-                  <PreviewLockOverlay />
-                )}
+              /* Video Container - YouTube IFrame API Player with Premium Glow Border */
+              <div className="relative w-full max-w-3xl mx-auto">
+                {/* Glowing Border Effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 via-primary/30 to-primary/50 rounded-2xl blur-md opacity-75 animate-pulse" />
+                <div className="relative rounded-xl overflow-hidden bg-black shadow-2xl ring-1 ring-primary/20" style={{ paddingBottom: '56.25%' }}>
+                  <div 
+                    ref={playerContainerRef}
+                    className="absolute inset-0 w-full h-full"
+                  />
+                  {/* Preview Lock Overlay for visitors when timer expires */}
+                  {!user && lesson.is_free_lesson && previewTimer.isLocked && (
+                    <PreviewLockOverlay />
+                  )}
+                </div>
               </div>
             ) : (
               /* Empty/Error State */
@@ -1090,6 +1095,8 @@ export default function LessonView() {
           </Button>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 }
