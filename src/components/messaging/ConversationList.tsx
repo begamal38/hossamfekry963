@@ -2,8 +2,13 @@ import React from 'react';
 import { MessageCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Conversation } from '@/hooks/useMessaging';
-import { format, isToday, isYesterday } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { format } from 'date-fns';
+// @ts-ignore - date-fns imports
+import { isToday } from 'date-fns/isToday.js';
+// @ts-ignore
+import { isYesterday } from 'date-fns/isYesterday.js';
+// @ts-ignore
+import { ar } from 'date-fns/locale/ar.js';
 
 interface ConversationListProps {
   conversations: Conversation[];

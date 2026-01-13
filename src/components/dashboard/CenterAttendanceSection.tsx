@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+// @ts-ignore - date-fns locale import
+import { ar } from 'date-fns/locale/ar.js';
 
 interface AttendanceRecord {
   id: string;

@@ -86,16 +86,11 @@ const Auth = () => {
   const inputIconPadding = isRTL ? 'pr-10' : 'pl-10';
   const textStartAlign = isRTL ? 'text-right' : 'text-left';
 
-  // POST-LOGIN ROUTING: Wait for roles then redirect appropriately
+  // POST-LOGIN ROUTING: ALL users go to home page "/"
+  // No role-based auto-redirects - user chooses where to go
   useEffect(() => {
     // No user = no redirect, stay on auth page
     if (!user) return;
-    
-    // Wait for role loading to complete before redirecting
-    if (roleLoading || !hasAttemptedFetch) return;
-
-    // Refresh roles once to ensure we have the latest
-    refreshRoles();
     
     // Check for explicit redirect param first
     const redirect = searchParams.get('redirect');
@@ -104,15 +99,9 @@ const Auth = () => {
       return;
     }
     
-    // Assistant teachers and admins go to their dashboard
-    if (isAssistantTeacher() || isAdmin()) {
-      navigate('/assistant', { replace: true });
-      return;
-    }
-    
-    // Students and other users go to home page
+    // ALL users go to home page after login
     navigate('/', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, navigate, searchParams, isAssistantTeacher, isAdmin, refreshRoles]);
+  }, [user, navigate, searchParams]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
