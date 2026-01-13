@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Phone, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
@@ -21,8 +21,8 @@ import {
 } from '@/components/ui/select';
 
 // Validation schemas
-const emailSchema = z.string().email('Invalid email address').max(255);
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters').max(72);
+const emailSchema = z.string().email('البريد الإلكتروني غير صحيح').max(255);
+const passwordSchema = z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل').max(72);
 // Quadruple name validation: minimum 4 words
 const nameSchema = z.string()
   .min(8, 'الاسم قصير جداً')
@@ -80,6 +80,10 @@ const Auth = () => {
   const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const iconSideClass = isRTL ? 'right-3' : 'left-3';
+  const inputIconPadding = isRTL ? 'pr-10' : 'pl-10';
+  const textStartAlign = isRTL ? 'text-right' : 'text-left';
 
   // POST-LOGIN ROUTING: ALL users go to home page "/"
   // No role-based auto-redirects - user chooses where to go
@@ -226,47 +230,29 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              variant: 'destructive',
-              title: 'Login Failed',
-              description: 'Invalid email or password. Please try again.',
-            });
-          } else {
-            toast({
-              variant: 'destructive',
-              title: 'Login Failed',
-              description: error.message,
-            });
-          }
-        } else {
-          // Redirect will happen automatically via useEffect after roles are loaded
+          const isInvalid = error.message.includes('Invalid login credentials');
+          toast({
+            variant: 'destructive',
+            title: 'فشل تسجيل الدخول',
+            description: isInvalid ? 'الإيميل أو كلمة المرور غير صحيحة.' : (error.message || 'حصلت مشكلة، حاول مرة أخرى.'),
+          });
         }
       } else {
         const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              variant: 'destructive',
-              title: 'Signup Failed',
-              description: 'This email is already registered. Please login instead.',
-            });
-          } else {
-            toast({
-              variant: 'destructive',
-              title: 'Signup Failed',
-              description: error.message,
-            });
-          }
-        } else {
-          // Redirect will happen automatically via useEffect (new users go to student dashboard)
+          const already = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered');
+          toast({
+            variant: 'destructive',
+            title: 'فشل إنشاء الحساب',
+            description: already ? 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.' : (error.message || 'حصلت مشكلة، حاول مرة أخرى.'),
+          });
         }
       }
     } catch (err) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        title: 'خطأ',
+        description: 'حصلت مشكلة، حاول مرة أخرى.',
       });
     } finally {
       setLoading(false);
@@ -279,16 +265,15 @@ const Auth = () => {
 
   if (isPostLoginLoading) {
     return (
-      <div className={cn("min-h-screen bg-gradient-hero flex items-center justify-center p-4", isRTL && "rtl")}>
+      <div
+        dir={isRTL ? 'rtl' : 'ltr'}
+        lang="ar"
+        className={cn("min-h-screen bg-gradient-hero flex items-center justify-center p-4", isRTL && "rtl")}
+      >
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-pulse-glow animation-delay-200" />
-        
+
         <div className="relative text-center">
-          <img 
-            src={logo} 
-            alt="Hossam Fekry" 
-            className="h-16 w-auto mx-auto mb-6"
-          />
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
@@ -300,31 +285,22 @@ const Auth = () => {
   }
 
   return (
-    <div className={cn("min-h-screen bg-background flex flex-col", isRTL && "rtl")}>
+    <div dir={isRTL ? 'rtl' : 'ltr'} lang="ar" className={cn("min-h-screen bg-background flex flex-col", isRTL && "rtl")}>
+      <Navbar />
       {/* Mobile-first header with gradient - Vodafone inspired */}
-      <div className="bg-gradient-to-br from-primary via-primary to-accent pt-safe-top pb-8 px-4 rounded-b-[2rem] relative overflow-hidden">
+      <div className="pt-16 bg-gradient-to-br from-primary via-primary to-accent pt-safe-top pb-8 px-4 rounded-b-[2rem] relative overflow-hidden">
         {/* Abstract shapes for visual interest */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-4 left-4 w-20 h-20 bg-white/5 rounded-full" />
-        
+
         <div className="relative z-10 pt-4">
-          <Link to="/" className="inline-block mb-6">
-            <img 
-              src={logo} 
-              alt="Hossam Fekry" 
-              className="h-12 w-auto brightness-0 invert"
-            />
-          </Link>
-          
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            {isForgotPassword 
-              ? 'استعادة كلمة المرور'
-              : isLogin ? 'أهلاً بيك! 👋' : 'ابدأ رحلتك 🚀'}
+            {isForgotPassword ? 'استعادة كلمة المرور' : isLogin ? 'أهلاً بيك!' : 'ابدأ رحلتك'}
           </h1>
           <p className="text-white/80 text-sm md:text-base">
             {isForgotPassword
-              ? 'هنبعتلك رابط لإعادة تعيين الباسورد'
-              : isLogin 
+              ? 'هنبعتلك رابط لإعادة تعيين كلمة المرور'
+              : isLogin
                 ? 'سجّل دخولك وكمّل مذاكرتك'
                 : 'سجّل في ثواني وابدأ تعلم الكيمياء'}
           </p>
@@ -340,13 +316,18 @@ const Auth = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Mail
+                    className={cn(
+                      "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                      iconSideClass
+                    )}
+                  />
                   <Input
                     type="email"
                     placeholder="أدخل بريدك الإلكتروني"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={cn("pl-10 h-12 text-base", errors.email && "border-destructive")}
+                    className={cn(inputIconPadding, "h-12 text-base", errors.email && "border-destructive")}
                   />
                 </div>
                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -456,13 +437,18 @@ const Auth = () => {
                   ⚠️ اكتب اسمك زي ما هو في البطاقة
                 </p>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <User
+                    className={cn(
+                      "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                      iconSideClass
+                    )}
+                  />
                   <Input
                     type="text"
                     placeholder="الاسم الأول + الأب + الجد + العائلة"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className={cn("pl-10 h-12 text-base rounded-xl", errors.name && "border-destructive")}
+                    className={cn(inputIconPadding, "h-12 text-base rounded-xl", errors.name && "border-destructive")}
                   />
                 </div>
                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
@@ -473,16 +459,21 @@ const Auth = () => {
             {!isLogin && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">رقم الواتساب</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="tel"
-                    placeholder="01xxxxxxxxx"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={cn("pl-10 h-12 text-base rounded-xl", errors.phone && "border-destructive")}
-                  />
-                </div>
+                 <div className="relative">
+                   <Phone
+                     className={cn(
+                       "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                       iconSideClass
+                     )}
+                   />
+                   <Input
+                     type="tel"
+                     placeholder="01xxxxxxxxx"
+                     value={phone}
+                     onChange={(e) => setPhone(e.target.value)}
+                     className={cn(inputIconPadding, "h-12 text-base rounded-xl", errors.phone && "border-destructive")}
+                   />
+                 </div>
                 {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
               </div>
             )}
@@ -578,13 +569,18 @@ const Auth = () => {
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                    iconSideClass
+                  )}
+                />
                 <Input
                   type="email"
                   placeholder="example@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={cn("pl-10 h-12 text-base rounded-xl", errors.email && "border-destructive")}
+                  className={cn(inputIconPadding, "h-12 text-base rounded-xl", errors.email && "border-destructive")}
                 />
               </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -594,18 +590,31 @@ const Auth = () => {
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">كلمة المرور</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Lock
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                    iconSideClass
+                  )}
+                />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="6 أحرف على الأقل"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={cn("pl-10 pr-10 h-12 text-base rounded-xl", errors.password && "border-destructive")}
+                  className={cn(
+                    inputIconPadding,
+                    isRTL ? 'pl-10' : 'pr-10',
+                    "h-12 text-base rounded-xl",
+                    errors.password && "border-destructive"
+                  )}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1",
+                    isRTL ? 'left-3' : 'right-3'
+                  )}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -614,7 +623,7 @@ const Auth = () => {
               
               {/* Forgot Password Link - Only show on login */}
               {isLogin && (
-                <div className="text-left">
+                <div className={textStartAlign}>
                   <button
                     type="button"
                     onClick={() => {
@@ -657,7 +666,7 @@ const Auth = () => {
                   setIsLogin(!isLogin);
                   setErrors({});
                 }}
-                className="mr-2 text-primary font-semibold hover:underline"
+                className={cn(isRTL ? 'ml-2' : 'mr-2', 'text-primary font-semibold hover:underline')}
               >
                 {isLogin ? 'سجّل دلوقتي' : 'سجّل دخول'}
               </button>
