@@ -138,8 +138,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // Send the user back to /auth so we can route them by role reliably
-        redirectTo: `${window.location.origin}/auth`,
+        // After Google login, always return to the home page.
+        // Role-based routing happens AFTER auth + role resolution.
+        redirectTo: `${window.location.origin}/`,
       }
     });
     return { error: error as Error | null };
