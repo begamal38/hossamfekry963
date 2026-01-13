@@ -49,6 +49,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     resetFocus,
     showRandomMessage,
     showSegmentComplete,
+    showTimeMilestone,
     getFocusStats,
   } = useFocusMode(lessonId);
   
@@ -57,6 +58,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
   const sessionStartTimeRef = useRef<number | null>(null);
   const totalPausedTimeRef = useRef<number>(0);
   const pauseStartRef = useRef<number | null>(null);
+  const shownMilestonesRef = useRef<Set<number>>(new Set());
 
   // Track paused time
   useEffect(() => {
@@ -95,6 +97,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
       sessionStartTimeRef.current = null;
       totalPausedTimeRef.current = 0;
       pauseStartRef.current = null;
+      shownMilestonesRef.current = new Set();
     },
     getSessionData: (): FocusSessionResult | null => {
       const stats = getFocusStats();
@@ -124,6 +127,33 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
       lastSegmentCountRef.current = session.completedSegments;
     }
   }, [session?.completedSegments, showSegmentComplete, isArabic]);
+
+  // Show time milestone messages at 1, 5, 10, 15, 30, 45, 60 minutes
+  useEffect(() => {
+    if (!isActive || !showMessages) return;
+    
+    const milestones = [1, 5, 10, 15, 30, 45, 60];
+    
+    const checkMilestones = () => {
+      const stats = getFocusStats();
+      if (!stats) return;
+      
+      const currentMinutes = stats.totalMinutes;
+      
+      for (const milestone of milestones) {
+        if (currentMinutes >= milestone && !shownMilestonesRef.current.has(milestone)) {
+          shownMilestonesRef.current.add(milestone);
+          showTimeMilestone(milestone, isArabic);
+          break; // Only show one milestone at a time
+        }
+      }
+    };
+    
+    // Check every 5 seconds for milestone completion
+    const interval = setInterval(checkMilestones, 5000);
+    
+    return () => clearInterval(interval);
+  }, [isActive, showMessages, getFocusStats, showTimeMilestone, isArabic]);
 
   // Show random messages at random intervals (6-10 minutes) - ONLY when active
   useEffect(() => {

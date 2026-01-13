@@ -412,8 +412,6 @@ const ManageLessons = () => {
             icon={Video}
             title={isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
             description={isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
-            actionLabel={isArabic ? 'إضافة حصة' : 'Add Lesson'}
-            onAction={() => setShowForm(true)}
           />
         ) : (
           <div className="space-y-2">

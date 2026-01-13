@@ -418,8 +418,6 @@ const Enrollments = () => {
                   ? (isRTL ? 'جرب تغيير الفلاتر' : 'Try adjusting filters')
                   : (isRTL ? 'أضف اشتراك جديد للبدء' : 'Add a new enrollment to get started')
                 }
-                actionLabel={!hasActiveFilters ? (isRTL ? 'تسجيل طالب' : 'Enroll Student') : undefined}
-                onAction={!hasActiveFilters ? () => setShowManualEnroll(true) : undefined}
               />
             ) : (
               <div className="space-y-3">
