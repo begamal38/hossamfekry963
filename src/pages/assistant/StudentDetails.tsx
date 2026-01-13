@@ -310,14 +310,14 @@ export default function StudentDetails() {
 
       setAttendanceStats(stats);
 
-      // Fetch exam results
+      // Fetch exam results from exam_attempts (auto-corrected)
       const { data: examData, error: examError } = await supabase
-        .from('exam_results')
+        .from('exam_attempts')
         .select(`
           id,
           score,
-          notes,
-          created_at,
+          total_questions,
+          completed_at,
           exams:exam_id (
             id,
             title,
@@ -331,17 +331,25 @@ export default function StudentDetails() {
           )
         `)
         .eq('user_id', targetUserId)
-        .order('created_at', { ascending: false });
+        .eq('is_completed', true)
+        .order('completed_at', { ascending: false });
 
       if (examError) throw examError;
 
-      const formattedExams = (examData || []).map(e => ({
-        ...e,
-        exam: {
-          ...(e.exams as any),
-          course: (e.exams as any)?.courses
-        }
-      }));
+      const formattedExams = (examData || []).map(e => {
+        const maxScore = (e.exams as any)?.max_score || 100;
+        const percentageScore = Math.round((e.score / e.total_questions) * maxScore);
+        return {
+          id: e.id,
+          score: percentageScore,
+          notes: null,
+          created_at: e.completed_at,
+          exam: {
+            ...(e.exams as any),
+            course: (e.exams as any)?.courses
+          }
+        };
+      });
       setExamResults(formattedExams);
 
       // Fetch student notes

@@ -116,7 +116,7 @@ export default function AssistantDashboard() {
         supabase.from('lessons').select('*', { count: 'exact', head: true }),
         supabase.from('exams').select('*', { count: 'exact', head: true }),
         supabase.from('lesson_attendance').select('*', { count: 'exact', head: true }),
-        supabase.from('exam_results').select('score, exams:exam_id(max_score)'),
+        supabase.from('exam_attempts').select('score, total_questions, exams:exam_id(max_score)').eq('is_completed', true),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo.toISOString()),
         supabase.from('conversations').select('unread_count_assistant').eq('assistant_teacher_id', user.id)
       ]);
@@ -128,7 +128,8 @@ export default function AssistantDashboard() {
       const avgExamScore = (examResults || []).length > 0
         ? Math.round((examResults || []).reduce((sum, r) => {
             const maxScore = (r.exams as any)?.max_score || 100;
-            return sum + ((r.score / maxScore) * 100);
+            const percentageScore = (r.score / r.total_questions) * maxScore;
+            return sum + ((percentageScore / maxScore) * 100);
           }, 0) / examResults!.length)
         : 0;
 

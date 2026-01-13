@@ -102,7 +102,7 @@ export default function ExamResults() {
       if (examError) throw examError;
       setExam(examData);
 
-      // Fetch attempts with profiles
+      // Fetch attempts - using exam_attempts table which has detailed answer data
       const { data: attemptsData, error: attemptsError } = await supabase
         .from('exam_attempts')
         .select('*')
@@ -110,7 +110,10 @@ export default function ExamResults() {
         .eq('is_completed', true)
         .order('completed_at', { ascending: false });
 
-      if (attemptsError) throw attemptsError;
+      if (attemptsError) {
+        console.error('Error fetching exam_attempts:', attemptsError);
+        throw attemptsError;
+      }
 
       // Fetch profiles for each attempt
       const userIds = [...new Set(attemptsData?.map(a => a.user_id) || [])];
