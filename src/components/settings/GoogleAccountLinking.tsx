@@ -275,79 +275,26 @@ export const GoogleAccountLinking: React.FC = () => {
         تسجيل الدخول
       </h2>
 
-      {state.isLinked ? (
-        // Linked State
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-              <Check className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-foreground flex items-center gap-2">
-                الحساب مربوط بـ Google ✔️
-              </p>
-              {state.googleEmail && (
-                <p className="text-sm text-muted-foreground">{state.googleEmail}</p>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              دلوقتي تقدر تسجل دخول باستخدام الإيميل والباسورد أو Google.
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={handleUnlinkGoogle}
-            disabled={unlinking}
-            className="w-full gap-2 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50 hover:bg-destructive/10"
-          >
-            {unlinking ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                جاري إلغاء الربط...
-              </>
-            ) : (
-              <>
-                <Link2Off className="w-4 h-4" />
-                إلغاء الربط
-              </>
-            )}
-          </Button>
+      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-xl border border-border">
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <AlertCircle className="w-5 h-5 text-muted-foreground" />
         </div>
-      ) : (
-        // Not Linked State
-        <div className="space-y-4">
-          <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
-            <Chrome className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <div className="space-y-1">
+          <p className="font-medium text-foreground">ربط الحساب مع Google غير متاح حالياً</p>
+          <p className="text-sm text-muted-foreground">
+            حالياً النظام لا يدعم ربط حساب Google بحساب موجود. لو تحب تستخدم Google، استخدم تسجيل الدخول بـ Google من صفحة الدخول.
+          </p>
+          {state.isLinked && (
             <p className="text-sm text-muted-foreground">
-              ده بيسهّل عليك تسجيل الدخول من غير باسورد.
+              ملاحظة: حسابك ظاهر كـ «مربوط» بالفعل{state.googleEmail ? ` (${state.googleEmail})` : ''}.
             </p>
-          </div>
-
-          <Button
-            onClick={handleLinkGoogle}
-            disabled={linking}
-            className="w-full gap-2"
-            size="lg"
-          >
-            {linking ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                جاري الربط...
-              </>
-            ) : (
-              <>
-                <Link2 className="w-4 h-4" />
-                ربط الحساب مع Google
-              </>
-            )}
-          </Button>
+          )}
         </div>
-      )}
+      </div>
+
+      <div className="text-xs text-muted-foreground">
+        تم إيقاف زر الربط داخل الإعدادات لتجنب ظهور رسالة الخطأ.
+      </div>
     </div>
   );
 };
