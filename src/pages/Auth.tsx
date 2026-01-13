@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
@@ -309,59 +310,74 @@ const Auth = () => {
       
       {/* Main content area - pulled up to overlap header */}
       <div className="flex-1 px-4 -mt-4 pb-8">
-        <div className="bg-card rounded-2xl shadow-lg border border-border p-5 md:p-6 max-w-md mx-auto">
-          {isForgotPassword ? (
-            /* Forgot Password Form */
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
-                <div className="relative">
-                  <Mail
-                    className={cn(
-                      "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
-                      iconSideClass
-                    )}
-                  />
-                  <Input
-                    type="email"
-                    placeholder="أدخل بريدك الإلكتروني"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={cn(inputIconPadding, "h-12 text-base", errors.email && "border-destructive")}
-                  />
+        <div className="bg-card rounded-2xl shadow-lg border border-border p-5 md:p-6 max-w-md mx-auto overflow-hidden">
+          <AnimatePresence mode="wait">
+            {isForgotPassword ? (
+              /* Forgot Password Form */
+              <motion.form
+                key="forgot-password"
+                initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                onSubmit={handleForgotPassword}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
+                  <div className="relative">
+                    <Mail
+                      className={cn(
+                        "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground",
+                        iconSideClass
+                      )}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="أدخل بريدك الإلكتروني"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={cn(inputIconPadding, "h-12 text-base", errors.email && "border-destructive")}
+                    />
+                  </div>
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
 
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full h-12 text-base font-semibold rounded-xl"
-                disabled={resetLoading}
-              >
-                {resetLoading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    جاري الإرسال...
-                  </span>
-                ) : (
-                  'إرسال رابط الاستعادة'
-                )}
-              </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full h-12 text-base font-semibold rounded-xl"
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      جاري الإرسال...
+                    </span>
+                  ) : (
+                    'إرسال رابط الاستعادة'
+                  )}
+                </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsForgotPassword(false);
-                  setErrors({});
-                }}
-                className="w-full text-center text-primary font-medium hover:underline py-2"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setErrors({});
+                  }}
+                  className="w-full text-center text-primary font-medium hover:underline py-2"
+                >
+                  ← العودة لتسجيل الدخول
+                </button>
+              </motion.form>
+            ) : (
+              <motion.div
+                key={isLogin ? 'login' : 'signup'}
+                initial={{ opacity: 0, x: isRTL ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
               >
-                ← العودة لتسجيل الدخول
-              </button>
-            </form>
-          ) : (
-            <>
               {/* Google Sign In - Featured prominently for signup */}
               {!isLogin && (
                 <div className="mb-5 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/20">
@@ -672,8 +688,9 @@ const Auth = () => {
               </button>
             </p>
           </div>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Back to Home - subtle */}
