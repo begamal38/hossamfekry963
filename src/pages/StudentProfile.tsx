@@ -138,12 +138,14 @@ export default function StudentProfile() {
       }));
       setEnrollments(formattedEnrollments);
 
-      // Fetch exam results
+      // Fetch exam results from exam_attempts (auto-corrected results)
       const { data: examData, error: examError } = await supabase
-        .from('exam_results')
+        .from('exam_attempts')
         .select(`
           id,
           score,
+          total_questions,
+          completed_at,
           exams:exam_id (
             title,
             title_ar,
@@ -155,16 +157,23 @@ export default function StudentProfile() {
           )
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('is_completed', true)
+        .order('completed_at', { ascending: false });
 
       if (examError) throw examError;
-      const formattedExams = (examData || []).map(e => ({
-        ...e,
-        exam: {
-          ...(e.exams as any),
-          course: (e.exams as any)?.courses
-        }
-      }));
+      const formattedExams = (examData || []).map(e => {
+        const maxScore = (e.exams as any)?.max_score || 100;
+        const percentageScore = Math.round((e.score / e.total_questions) * maxScore);
+        return {
+          id: e.id,
+          score: percentageScore,
+          exam: {
+            ...(e.exams as any),
+            max_score: maxScore,
+            course: (e.exams as any)?.courses
+          }
+        };
+      });
       setExamResults(formattedExams);
 
       // Fetch attendance count

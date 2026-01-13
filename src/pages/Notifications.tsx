@@ -60,7 +60,7 @@ const getActionUrl = (notification: Notification): string | null => {
   
   // Exam notifications
   if (notification.exam_id) {
-    return `/exams/${notification.exam_id}`;
+    return `/exam/${notification.exam_id}`;
   }
   
   // Course notifications
