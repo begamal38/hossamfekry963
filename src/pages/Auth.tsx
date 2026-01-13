@@ -658,15 +658,15 @@ const Auth = () => {
 
           {/* Toggle Auth Mode */}
           <div className="mt-5 pt-4 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              {isLogin ? 'مش معانا لسه؟' : 'عندك حساب؟'}
+            <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1 flex-wrap">
+              <span>{isLogin ? 'مش معانا لسه؟' : 'عندك حساب؟'}</span>
               <button
                 type="button"
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setErrors({});
                 }}
-                className={cn(isRTL ? 'ml-2' : 'mr-2', 'text-primary font-semibold hover:underline')}
+                className="text-primary font-semibold hover:underline"
               >
                 {isLogin ? 'سجّل دلوقتي' : 'سجّل دخول'}
               </button>
