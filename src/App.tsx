@@ -12,7 +12,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SessionProtectionProvider } from "@/components/session/SessionProtectionProvider";
 import { SystemFeedbackProvider } from "@/components/ui/SystemFeedback";
 import { SmartEngagementProvider } from "@/components/consent";
-import GovernorateCheck from "@/components/profile/GovernorateCheck";
+import ProfileCompletionCheck from "@/components/profile/ProfileCompletionCheck";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import Index from "./pages/Index";
 
@@ -67,7 +67,7 @@ const App = () => (
         <ThemeProvider>
           <SessionProtectionProvider>
             <SmartEngagementProvider>
-              <GovernorateCheck>
+              <ProfileCompletionCheck>
                 <TooltipProvider>
                   <SystemFeedbackProvider>
                     <Toaster />
@@ -339,7 +339,7 @@ const App = () => (
                     </BrowserRouter>
                   </SystemFeedbackProvider>
                 </TooltipProvider>
-              </GovernorateCheck>
+              </ProfileCompletionCheck>
             </SmartEngagementProvider>
           </SessionProtectionProvider>
         </ThemeProvider>
