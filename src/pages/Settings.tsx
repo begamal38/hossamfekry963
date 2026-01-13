@@ -447,12 +447,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          {/* Google Account Linking Section - Only for students */}
-          {isStudent() && (
-            <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-275">
-              <GoogleAccountLinking />
-            </div>
-          )}
+          {/* Google Account Linking Section - Hidden: Manual identity linking not available in Lovable Cloud */}
 
           {/* Device Management Section - Only for students */}
           {isStudent() && (
