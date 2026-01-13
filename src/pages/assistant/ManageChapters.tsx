@@ -310,8 +310,6 @@ export default function ManageChapters() {
             icon={Layers}
             title={isArabic ? 'لا توجد أبواب' : 'No chapters'}
             description={isArabic ? 'أضف أبواباً لتنظيم الحصص' : 'Add chapters to organize lessons'}
-            actionLabel={isArabic ? 'إضافة باب' : 'Add Chapter'}
-            onAction={() => { resetForm(); setShowForm(true); }}
           />
         ) : (
           <div className="space-y-2">

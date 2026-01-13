@@ -327,8 +327,6 @@ export default function ManageCourses() {
                 icon={BookOpen}
                 title={isArabic ? 'لا توجد كورسات بعد' : 'No courses yet'}
                 description={isArabic ? 'ابدأ بإضافة أول كورس' : 'Start by adding your first course'}
-                actionLabel={isArabic ? 'إضافة كورس' : 'Add Course'}
-                onAction={() => setShowForm(true)}
               />
             ) : (
               <div className="space-y-3">

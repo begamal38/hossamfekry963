@@ -44,6 +44,29 @@ const FOCUS_MESSAGES_EN = [
 const SEGMENT_COMPLETE_AR = '20 دقيقة تركيز اتحسبت 💪';
 const SEGMENT_COMPLETE_EN = '20 minutes of focus completed 💪';
 
+// Time milestone messages
+const TIME_MILESTONE_MESSAGES_AR: Record<number, string> = {
+  1: 'دقيقة واحدة مركز ⏱️',
+  5: '5 دقائق تركيز! أنت ماشي كويس 🎯',
+  10: '10 دقائق! تركيزك ممتاز 💪',
+  15: '15 دقيقة! أنت بطل 🏆',
+  20: '20 دقيقة كاملة! 🔥',
+  30: 'نص ساعة تركيز! أداء رائع ⭐',
+  45: '45 دقيقة! شغل جامد 💎',
+  60: 'ساعة كاملة! إنجاز كبير 🎉',
+};
+
+const TIME_MILESTONE_MESSAGES_EN: Record<number, string> = {
+  1: '1 minute focused ⏱️',
+  5: '5 minutes focused! Great start 🎯',
+  10: '10 minutes! Excellent focus 💪',
+  15: '15 minutes! You\'re a champion 🏆',
+  20: '20 minutes complete! 🔥',
+  30: '30 minutes focused! Amazing ⭐',
+  45: '45 minutes! Incredible work 💎',
+  60: '1 hour focused! Major achievement 🎉',
+};
+
 export const useFocusMode = (lessonId?: string) => {
   const [state, setState] = useState<FocusModeState>({
     focusState: 'FOCUS_IDLE',
@@ -86,6 +109,14 @@ export const useFocusMode = (lessonId?: string) => {
   // Show segment completion message
   const showSegmentComplete = useCallback((isArabic: boolean) => {
     showMessage(isArabic ? SEGMENT_COMPLETE_AR : SEGMENT_COMPLETE_EN, 4000);
+  }, [showMessage]);
+
+  // Show time milestone message
+  const showTimeMilestone = useCallback((minutes: number, isArabic: boolean) => {
+    const messages = isArabic ? TIME_MILESTONE_MESSAGES_AR : TIME_MILESTONE_MESSAGES_EN;
+    if (messages[minutes]) {
+      showMessage(messages[minutes], 4000);
+    }
   }, [showMessage]);
 
   // START: When video starts playing
@@ -269,6 +300,7 @@ export const useFocusMode = (lessonId?: string) => {
     resetFocus,
     showRandomMessage,
     showSegmentComplete,
+    showTimeMilestone,
     getFocusStats,
   };
 };

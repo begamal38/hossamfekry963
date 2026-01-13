@@ -757,8 +757,6 @@ export default function ManageExams() {
                       ? (isArabic ? 'جرب تغيير الفلاتر' : 'Try adjusting filters')
                       : (isArabic ? 'أضف أول امتحان' : 'Add your first exam')
                     }
-                    actionLabel={!hasActiveFilters ? (isArabic ? 'إضافة امتحان' : 'Add Exam') : undefined}
-                    onAction={!hasActiveFilters ? () => setShowExamForm(true) : undefined}
                   />
                 ) : (
                   <div className="space-y-3">
