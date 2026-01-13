@@ -4,13 +4,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Message } from '@/hooks/useMessaging';
-import { format } from 'date-fns';
-// @ts-ignore - date-fns imports
-import { isToday } from 'date-fns/isToday.js';
-// @ts-ignore
-import { isYesterday } from 'date-fns/isYesterday.js';
-// @ts-ignore
-import { ar } from 'date-fns/locale/ar.js';
+import { format, isToday, isYesterday } from 'date-fns';
+import { ar } from 'date-fns/locale/ar';
 
 interface ChatWindowProps {
   conversationId: string;
