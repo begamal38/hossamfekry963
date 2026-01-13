@@ -10,19 +10,15 @@ interface CookieConsentProps {
 }
 
 export const CookieConsent = ({ status, onAccept, onDecline }: CookieConsentProps) => {
-  const [isVisible, setIsVisible] = useState(false);
-  
+  // Auto-accept cookies silently without showing the banner
   useEffect(() => {
-    // Show banner after a short delay if consent is pending
     if (status === 'pending') {
-      const timer = setTimeout(() => setIsVisible(true), 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setIsVisible(false);
+      onAccept();
     }
-  }, [status]);
+  }, [status, onAccept]);
 
-  if (!isVisible) return null;
+  // Never show the banner - cookies are auto-accepted
+  return null;
 
   return (
     <AnimatePresence>
