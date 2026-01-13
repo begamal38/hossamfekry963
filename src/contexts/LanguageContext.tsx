@@ -1062,8 +1062,29 @@ const translations: Record<Language, Record<string, string>> = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Detect browser/device language preference
+const getBrowserLanguage = (): Language => {
+  if (typeof navigator !== 'undefined') {
+    const browserLang = navigator.language || (navigator as any).userLanguage;
+    // Check if browser language starts with 'ar' (Arabic)
+    if (browserLang && browserLang.toLowerCase().startsWith('ar')) {
+      return 'ar';
+    }
+  }
+  return 'en';
+};
+
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Check localStorage first, then fall back to browser preference
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('language') as Language;
+      if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
+        return savedLang;
+      }
+    }
+    return getBrowserLanguage();
+  });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -1073,13 +1094,10 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
-      setLanguage(savedLang);
-    } else {
-      setLanguage('en');
-    }
-  }, []);
+    // Apply language direction on mount
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
 
   const t = (key: string): string => {
     return translations[language][key] || key;
