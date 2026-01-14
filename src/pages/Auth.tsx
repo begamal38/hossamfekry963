@@ -21,20 +21,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Validation schemas
-const emailSchema = z.string().email('البريد الإلكتروني غير صحيح').max(255);
-const passwordSchema = z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل').max(72);
-// Quadruple name validation: minimum 4 words
-const nameSchema = z.string()
-  .min(8, 'الاسم قصير جداً')
-  .max(100, 'الاسم طويل جداً')
-  .refine(
-    (name) => name.trim().split(/\s+/).filter(word => word.length > 0).length >= 4,
-    { message: 'يرجى إدخال الاسم الرباعي كاملاً (4 كلمات على الأقل)' }
-  );
-// Egyptian phone: exactly 11 digits starting with 01 followed by 0, 1, 2, or 5
-const phoneSchema = z.string()
-  .regex(/^01[0125][0-9]{8}$/, 'رقم الموبايل غير صحيح - يجب أن يكون 11 رقم');
+// Validation schemas (localized)
+// NOTE: These are declared inside the component so they can react to language changes.
+const createEmailSchema = (msg: string) => z.string().email(msg).max(255);
+const createPasswordSchema = (minMsg: string) => z.string().min(6, minMsg).max(72);
+const createNameSchema = (minMsg: string, maxMsg: string, refineMsg: string) =>
+  z
+    .string()
+    .min(8, minMsg)
+    .max(100, maxMsg)
+    .refine(
+      (name) => name.trim().split(/\s+/).filter((word) => word.length > 0).length >= 4,
+      { message: refineMsg }
+    );
+const createPhoneSchema = (msg: string) => z.string().regex(/^01[0125][0-9]{8}$/, msg);
 
 // Academic year options
 const ACADEMIC_YEAR_OPTIONS = [
@@ -77,16 +77,28 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { loading: roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin } = useUserRole();
-  const { t, isRTL } = useLanguage();
+  const { loading: roleLoading, hasAttemptedFetch } = useUserRole();
+  const { t, isRTL, language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const tr = (ar: string, en: string) => (isRTL ? ar : en);
+
+  // Localized validation schemas
+  const emailSchema = createEmailSchema(tr('البريد الإلكتروني غير صحيح', 'Invalid email address')).max(255);
+  const passwordSchema = createPasswordSchema(tr('كلمة المرور لازم تكون 6 أحرف على الأقل', 'Password must be at least 6 characters'));
+  const nameSchema = createNameSchema(
+    tr('الاسم قصير جداً', 'Name is too short'),
+    tr('الاسم طويل جداً', 'Name is too long'),
+    tr('من فضلك اكتب الاسم الرباعي (4 كلمات على الأقل)', 'Please enter your full name (at least 4 words)')
+  );
+  const phoneSchema = createPhoneSchema(tr('رقم الموبايل غير صحيح - لازم يكون 11 رقم', 'Invalid phone number (must be 11 digits)'));
 
   const iconSideClass = isRTL ? 'right-3' : 'left-3';
   const inputIconPadding = isRTL ? 'pr-10' : 'pl-10';
   const textStartAlign = isRTL ? 'text-right' : 'text-left';
 
-  // إظهار أخطاء تسجيل الدخول بجوجل لو رجعت في الرابط (بدون ما يبان Toast)
+  // Show Google OAuth errors returned in URL params (localized)
   useEffect(() => {
     const searchParamsObj = new URLSearchParams(window.location.search);
     const hashParamsObj = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
@@ -105,20 +117,20 @@ const Auth = () => {
 
     toast({
       variant: 'destructive',
-      title: 'فشل تسجيل الدخول',
+      title: tr('فشل تسجيل الدخول', 'Sign in failed'),
       description:
         decodeURIComponent(errorDescription || '') ||
-        'حصلت مشكلة أثناء تسجيل الدخول، جرّب تاني.',
+        tr('حصلت مشكلة أثناء تسجيل الدخول، جرّب تاني.', 'Something went wrong while signing in. Please try again.'),
     });
 
-    // تنظيف الرابط عشان مايتكررش التوست
+    // Clean URL so toast doesn't repeat
     try {
       searchParamsObj.delete('error');
       searchParamsObj.delete('error_code');
       searchParamsObj.delete('error_description');
       const nextSearch = searchParamsObj.toString();
 
-      // امسح الـ hash كمان (لو الخطأ جاي من هناك)
+      // Clear hash as well (if error came from there)
       if (window.location.hash) {
         window.history.replaceState(null, '', `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}`);
       }
@@ -127,7 +139,7 @@ const Auth = () => {
     } catch {
       // ignore
     }
-  }, [navigate, toast]);
+  }, [navigate, toast, tr]);
 
   // بعد تسجيل الدخول: كل المستخدمين يروحوا للصفحة الرئيسية
   useEffect(() => {
@@ -164,7 +176,7 @@ const Auth = () => {
 
       // Phone is REQUIRED for signup
       if (!phone || phone.trim() === '') {
-        newErrors.phone = 'رقم الموبايل مطلوب';
+        newErrors.phone = tr('رقم الواتساب مطلوب', 'Phone number is required');
       } else {
         const phoneResult = phoneSchema.safeParse(phone.trim());
         if (!phoneResult.success) {
@@ -173,15 +185,15 @@ const Auth = () => {
       }
 
       if (!academicYear) {
-        newErrors.academicYear = 'يرجى اختيار الصف الدراسي';
+        newErrors.academicYear = tr('يرجى اختيار الصف الدراسي', 'Please select your grade');
       }
 
       if (!languageTrack) {
-        newErrors.languageTrack = 'يرجى اختيار نوع التعليم';
+        newErrors.languageTrack = tr('يرجى اختيار نوع التعليم', 'Please select your track');
       }
 
       if (!governorate) {
-        newErrors.governorate = 'يرجى اختيار المحافظة';
+        newErrors.governorate = tr('يرجى اختيار المحافظة', 'Please select your governorate');
       }
     }
     
@@ -195,29 +207,29 @@ const Auth = () => {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        // Handle specific Google OAuth errors in Arabic
-        let errorMessage = 'حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.';
-        
+        // Handle specific Google OAuth errors (localized)
+        let errorMessage = tr('حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.', 'Something went wrong. Please try again.');
+
         if (error.message.includes('popup_closed')) {
-          errorMessage = 'تم إغلاق نافذة تسجيل الدخول. حاول مرة أخرى.';
+          errorMessage = tr('تم إغلاق نافذة تسجيل الدخول. حاول مرة أخرى.', 'The sign-in window was closed. Please try again.');
         } else if (error.message.includes('access_denied')) {
-          errorMessage = 'تم رفض الوصول. يرجى المحاولة مرة أخرى.';
-        } else if (error.message.includes('network')) {
-          errorMessage = 'خطأ في الاتصال. تحقق من اتصالك بالإنترنت.';
+          errorMessage = tr('تم رفض الوصول. يرجى المحاولة مرة أخرى.', 'Access denied. Please try again.');
+        } else if (error.message.toLowerCase().includes('network')) {
+          errorMessage = tr('خطأ في الاتصال. تحقق من اتصالك بالإنترنت.', 'Network error. Please check your connection.');
         }
-        
+
         toast({
           variant: 'destructive',
-          title: 'فشل تسجيل الدخول بـ Google',
+          title: tr('فشل تسجيل الدخول بـ Google', 'Google sign-in failed'),
           description: errorMessage,
         });
       }
-      // Success is handled by OAuth redirect - no need for toast here
-    } catch (err) {
+      // Success is handled by OAuth redirect
+    } catch {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.',
+        title: tr('خطأ', 'Error'),
+        description: tr('حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
       });
     } finally {
       setGoogleLoading(false);
@@ -242,15 +254,15 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: 'تم الإرسال',
-        description: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+        title: tr('تم الإرسال', 'Sent'),
+        description: tr('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني', 'We sent a password reset link to your email.'),
       });
       setIsForgotPassword(false);
     } catch (err: any) {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: err.message || 'فشل في إرسال رابط إعادة التعيين',
+        title: tr('خطأ', 'Error'),
+        description: err.message || tr('فشل في إرسال رابط إعادة التعيين', 'Failed to send reset link'),
       });
     } finally {
       setResetLoading(false);
@@ -271,8 +283,10 @@ const Auth = () => {
           const isInvalid = error.message.includes('Invalid login credentials');
           toast({
             variant: 'destructive',
-            title: 'فشل تسجيل الدخول',
-            description: isInvalid ? 'الإيميل أو كلمة المرور غير صحيحة.' : (error.message || 'حصلت مشكلة، حاول مرة أخرى.'),
+            title: tr('فشل تسجيل الدخول', 'Sign in failed'),
+            description: isInvalid
+              ? tr('الإيميل أو كلمة المرور غير صحيحة.', 'Email or password is incorrect.')
+              : error.message || tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
           });
         }
       } else {
@@ -281,16 +295,18 @@ const Auth = () => {
           const already = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered');
           toast({
             variant: 'destructive',
-            title: 'فشل إنشاء الحساب',
-            description: already ? 'هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.' : (error.message || 'حصلت مشكلة، حاول مرة أخرى.'),
+            title: tr('فشل إنشاء الحساب', 'Sign up failed'),
+            description: already
+              ? tr('هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.', 'This email is already registered. Please sign in.')
+              : error.message || tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
           });
         }
       }
-    } catch (err) {
+    } catch {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'حصلت مشكلة، حاول مرة أخرى.',
+        title: tr('خطأ', 'Error'),
+        description: tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
       });
     } finally {
       setLoading(false);
@@ -305,7 +321,7 @@ const Auth = () => {
     return (
       <div
         dir={isRTL ? 'rtl' : 'ltr'}
-        lang="ar"
+        lang={language}
         className={cn("min-h-screen bg-gradient-hero flex items-center justify-center p-4", isRTL && "rtl")}
       >
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
@@ -315,17 +331,17 @@ const Auth = () => {
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">جاري تحميل حسابك...</h2>
-          <p className="text-muted-foreground">يرجى الانتظار لحظة</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">{tr('جاري تحميل حسابك...', 'Loading your account...')}</h2>
+          <p className="text-muted-foreground">{tr('يرجى الانتظار لحظة', 'Please wait a moment')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} lang="ar" className={cn("min-h-screen bg-background flex flex-col", isRTL && "rtl")}>
+    <div dir={isRTL ? 'rtl' : 'ltr'} lang={language} className={cn("min-h-screen bg-background flex flex-col", isRTL && "rtl")}>
       <Navbar />
-      {/* Mobile-first header with gradient - Vodafone inspired */}
+      {/* Mobile-first header with gradient */}
       <div className="pt-16 bg-gradient-to-br from-primary via-primary to-accent pt-safe-top pb-8 px-4 rounded-b-[2rem] relative overflow-hidden">
         {/* Abstract shapes for visual interest */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -333,14 +349,18 @@ const Auth = () => {
 
         <div className="relative z-10 pt-4">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            {isForgotPassword ? 'استعادة كلمة المرور' : isLogin ? 'أهلاً بيك!' : 'ابدأ رحلتك'}
+            {isForgotPassword
+              ? tr('استعادة كلمة المرور', 'Reset password')
+              : isLogin
+                ? tr('أهلاً بيك!', 'Welcome back!')
+                : tr('ابدأ رحلتك', 'Start your journey')}
           </h1>
           <p className="text-white/80 text-sm md:text-base">
             {isForgotPassword
-              ? 'هنبعتلك رابط لإعادة تعيين كلمة المرور'
+              ? tr('هنبعتلك رابط لإعادة تعيين كلمة المرور', 'We’ll email you a link to reset your password')
               : isLogin
-                ? 'سجّل دخولك وكمّل مذاكرتك'
-                : 'سجّل في ثواني وابدأ تعلم الكيمياء'}
+                ? tr('سجّل دخولك وكمّل مذاكرتك', 'Sign in and continue your study')
+                : tr('سجّل في ثواني وابدأ تعلم الكيمياء', 'Sign up in seconds and start learning chemistry')}
           </p>
         </div>
       </div>
@@ -361,7 +381,7 @@ const Auth = () => {
                 className="space-y-4"
               >
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
+                  <label className="text-sm font-medium text-foreground">{tr('البريد الإلكتروني', 'Email')}</label>
                   <div className="relative">
                     <Mail
                       className={cn(
@@ -371,7 +391,7 @@ const Auth = () => {
                     />
                     <Input
                       type="email"
-                      placeholder="أدخل بريدك الإلكتروني"
+                      placeholder={tr('أدخل بريدك الإلكتروني', 'Enter your email')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={cn(inputIconPadding, "h-12 text-base", errors.email && "border-destructive")}
@@ -389,10 +409,10 @@ const Auth = () => {
                   {resetLoading ? (
                     <span className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      جاري الإرسال...
+                      {tr('جاري الإرسال...', 'Sending...')}
                     </span>
                   ) : (
-                    'إرسال رابط الاستعادة'
+                    tr('إرسال رابط الاستعادة', 'Send reset link')
                   )}
                 </Button>
 
@@ -404,7 +424,7 @@ const Auth = () => {
                   }}
                   className="w-full text-center text-primary font-medium hover:underline py-2"
                 >
-                  ← العودة لتسجيل الدخول
+                  {tr('← العودة لتسجيل الدخول', '← Back to sign in')}
                 </button>
               </motion.form>
             ) : (
@@ -442,7 +462,7 @@ const Auth = () => {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
                     )}
-                    التسجيل بـ Google
+                    {tr('التسجيل بـ Google', 'Sign up with Google')}
                   </Button>
                 </div>
               )}
@@ -466,7 +486,7 @@ const Auth = () => {
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                   )}
-                  الدخول بـ Google
+                  {tr('الدخول بـ Google', 'Continue with Google')}
                 </Button>
               )}
 
@@ -476,7 +496,7 @@ const Auth = () => {
                 </div>
                 <div className="relative flex justify-center text-xs">
                   <span className="px-3 bg-card text-muted-foreground">
-                    {isLogin ? 'أو بالإيميل' : 'أو سجّل بالإيميل'}
+                    {isLogin ? tr('أو بالإيميل', 'Or with email') : tr('أو سجّل بالإيميل', 'Or sign up with email')}
                   </span>
                 </div>
               </div>
@@ -485,9 +505,9 @@ const Auth = () => {
             {/* Full Name - Only for Signup */}
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">الاسم الرباعي</label>
+                <label className="text-sm font-medium text-foreground">{tr('الاسم الرباعي', 'Full name')}</label>
                 <p className="text-xs text-muted-foreground">
-                  ⚠️ اكتب اسمك زي ما هو في البطاقة
+                  {tr('⚠️ اكتب اسمك زي ما هو في البطاقة', '⚠️ Use your official full name')}
                 </p>
                 <div className="relative">
                   <User
@@ -498,7 +518,7 @@ const Auth = () => {
                   />
                   <Input
                     type="text"
-                    placeholder="الاسم الأول + الأب + الجد + العائلة"
+                    placeholder={tr('الاسم الأول + الأب + الجد + العائلة', 'First + Father + Grandfather + Family')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className={cn(inputIconPadding, "h-12 text-base rounded-xl", errors.name && "border-destructive")}
@@ -511,7 +531,7 @@ const Auth = () => {
             {/* Phone - Only for Signup */}
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">رقم الواتساب</label>
+                <label className="text-sm font-medium text-foreground">{tr('رقم الواتساب', 'WhatsApp number')}</label>
                  <div className="relative">
                    <Phone
                      className={cn(
@@ -521,7 +541,7 @@ const Auth = () => {
                    />
                    <Input
                      type="tel"
-                     placeholder="01xxxxxxxxx"
+                     placeholder={tr('01xxxxxxxxx', '01xxxxxxxxx')}
                      value={phone}
                      onChange={(e) => setPhone(e.target.value)}
                      className={cn(inputIconPadding, "h-12 text-base rounded-xl", errors.phone && "border-destructive")}
@@ -536,7 +556,7 @@ const Auth = () => {
               <div className="space-y-3">
                 {/* Academic Year Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">الصف الدراسي</label>
+                  <label className="text-sm font-medium text-foreground">{tr('الصف الدراسي', 'Grade')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {ACADEMIC_YEAR_OPTIONS.map((option) => (
                       <button
@@ -550,7 +570,7 @@ const Auth = () => {
                             : "border-border bg-background hover:border-primary/50"
                         )}
                       >
-                        {option.labelAr}
+                        {isRTL ? option.labelAr : option.labelEn}
                       </button>
                     ))}
                   </div>
@@ -559,7 +579,7 @@ const Auth = () => {
 
                 {/* Language Track Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">نوع التعليم</label>
+                  <label className="text-sm font-medium text-foreground">{tr('نوع التعليم', 'Track')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {LANGUAGE_TRACK_OPTIONS.map((option) => (
                       <button
@@ -573,7 +593,7 @@ const Auth = () => {
                             : "border-border bg-background hover:border-primary/50"
                         )}
                       >
-                        {option.labelAr}
+                        {isRTL ? option.labelAr : option.labelEn}
                       </button>
                     ))}
                   </div>
@@ -584,16 +604,16 @@ const Auth = () => {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    المحافظة
+                    {tr('المحافظة', 'Governorate')}
                   </label>
                   <Select value={governorate} onValueChange={setGovernorate}>
                     <SelectTrigger className={cn("h-12 rounded-xl text-base", errors.governorate && "border-destructive")}>
-                      <SelectValue placeholder="اختر محافظتك" />
+                      <SelectValue placeholder={tr('اختر محافظتك', 'Select your governorate')} />
                     </SelectTrigger>
                     <SelectContent>
                       {EGYPTIAN_GOVERNORATES.map((gov) => (
                         <SelectItem key={gov.value} value={gov.value}>
-                          {gov.label_ar}
+                          {isRTL ? gov.label_ar : gov.label_en}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -604,23 +624,23 @@ const Auth = () => {
                 {/* Selected Group Preview */}
                 {academicYear && languageTrack && (
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground">مجموعتك:</p>
+                    <p className="text-xs text-muted-foreground">{tr('مجموعتك:', 'Your group:')}</p>
                     <p className="font-bold text-primary">
-                      {getGroupLabel(academicYear, languageTrack, true)}
+                      {getGroupLabel(academicYear, languageTrack, isRTL)}
                     </p>
                   </div>
                 )}
 
                 {/* Warning note - compact */}
                 <p className="text-xs text-muted-foreground text-center">
-                  ⚠️ لا يمكن تغيير المجموعة بعد التسجيل
+                  {tr('⚠️ لا يمكن تغيير المجموعة بعد التسجيل', '⚠️ You can’t change your group after sign up')}
                 </p>
               </div>
             )}
 
             {/* Email */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
+              <label className="text-sm font-medium text-foreground">{tr('البريد الإلكتروني', 'Email')}</label>
               <div className="relative">
                 <Mail
                   className={cn(
@@ -641,7 +661,7 @@ const Auth = () => {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">كلمة المرور</label>
+              <label className="text-sm font-medium text-foreground">{tr('كلمة المرور', 'Password')}</label>
               <div className="relative">
                 <Lock
                   className={cn(
@@ -651,7 +671,7 @@ const Auth = () => {
                 />
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="6 أحرف على الأقل"
+                  placeholder={tr('6 أحرف على الأقل', 'At least 6 characters')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={cn(
@@ -685,7 +705,7 @@ const Auth = () => {
                     }}
                     className="text-sm text-primary hover:underline"
                   >
-                    نسيت كلمة المرور؟
+                    {tr('نسيت كلمة المرور؟', 'Forgot password?')}
                   </button>
                 </div>
               )}
@@ -701,10 +721,10 @@ const Auth = () => {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  {isLogin ? 'جاري الدخول...' : 'جاري التسجيل...'}
+                  {isLogin ? tr('جاري الدخول...', 'Signing in...') : tr('جاري التسجيل...', 'Creating account...')}
                 </span>
               ) : (
-                isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'
+                isLogin ? tr('تسجيل الدخول', 'Sign in') : tr('إنشاء حساب', 'Create account')
               )}
             </Button>
           </form>
@@ -712,7 +732,7 @@ const Auth = () => {
           {/* Toggle Auth Mode */}
           <div className="mt-5 pt-4 border-t border-border text-center">
             <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1 flex-wrap">
-              <span>{isLogin ? 'مش معانا لسه؟' : 'عندك حساب؟'}</span>
+              <span>{isLogin ? tr('مش معانا لسه؟', 'New here?') : tr('عندك حساب؟', 'Already have an account?')}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -721,7 +741,7 @@ const Auth = () => {
                 }}
                 className="text-primary font-semibold hover:underline"
               >
-                {isLogin ? 'سجّل دلوقتي' : 'سجّل دخول'}
+                {isLogin ? tr('سجّل دلوقتي', 'Create an account') : tr('سجّل دخول', 'Sign in')}
               </button>
             </p>
           </div>
@@ -733,7 +753,7 @@ const Auth = () => {
         {/* Back to Home - subtle */}
         <div className="mt-4 text-center">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            ← الرجوع للرئيسية
+            {tr('← الرجوع للرئيسية', '← Back to home')}
           </Link>
         </div>
       </div>
