@@ -164,6 +164,64 @@
 
   body {
     @apply bg-background text-foreground font-cairo antialiased overflow-x-hidden;
+    position: relative;
+  }
+  
+  /* Blue indigo edge reflections - 20% coverage */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  
+  /* Left edge glow */
+  body::before {
+    top: 0;
+    left: 0;
+    width: 25%;
+    height: 100%;
+    background: radial-gradient(
+      ellipse 80% 100% at 0% 50%,
+      hsl(var(--primary) / 0.08) 0%,
+      hsl(var(--primary) / 0.04) 30%,
+      transparent 70%
+    );
+  }
+  
+  /* Right edge glow */
+  body::after {
+    top: 0;
+    right: 0;
+    width: 25%;
+    height: 100%;
+    background: radial-gradient(
+      ellipse 80% 100% at 100% 50%,
+      hsl(var(--primary) / 0.08) 0%,
+      hsl(var(--primary) / 0.04) 30%,
+      transparent 70%
+    );
+  }
+  
+  /* Dark mode - more visible blue reflections */
+  .dark body::before {
+    background: radial-gradient(
+      ellipse 80% 100% at 0% 50%,
+      hsl(var(--primary) / 0.12) 0%,
+      hsl(var(--primary) / 0.06) 30%,
+      transparent 70%
+    );
+  }
+  
+  .dark body::after {
+    background: radial-gradient(
+      ellipse 80% 100% at 100% 50%,
+      hsl(var(--primary) / 0.12) 0%,
+      hsl(var(--primary) / 0.06) 30%,
+      transparent 70%
+    );
   }
 }
 
