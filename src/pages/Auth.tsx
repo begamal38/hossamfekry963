@@ -440,10 +440,10 @@ const Auth = () => {
                 <div className="mb-5 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">⚡</span>
-                    <span className="text-sm font-semibold text-foreground">أسرع طريقة للتسجيل</span>
+                    <span className="text-sm font-semibold text-foreground">{tr('أسرع طريقة للتسجيل', 'Fastest way to sign up')}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">
-                    سجّل بحسابك في Google في ثانية واحدة - من غير باسورد!
+                    {tr('سجّل بحسابك في Google في ثانية واحدة - من غير باسورد!', 'Sign up with your Google account in one second - no password needed!')}
                   </p>
                   <Button
                     type="button"

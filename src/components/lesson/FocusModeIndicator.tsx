@@ -53,6 +53,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     getFocusStats,
   } = useFocusMode(lessonId);
   
+  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSegmentCountRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number | null>(null);
   const totalPausedTimeRef = useRef<number>(0);
@@ -154,7 +155,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     return () => clearInterval(interval);
   }, [isActive, showMessages, getFocusStats, showTimeMilestone, isArabic]);
 
-  // Show random motivational messages every 5 minutes - ONLY when active
+  // Show random motivational messages at random intervals (4-6 minutes) - ONLY when active
   useEffect(() => {
     if (isActive && showMessages) {
       // Show initial message after 30 seconds
@@ -162,16 +163,24 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         showRandomMessage(isArabic);
       }, 30000);
 
-      // Then show messages exactly every 5 minutes (300000ms)
-      const interval = setInterval(() => {
-        if (!document.hidden && isActive) {
-          showRandomMessage(isArabic);
-        }
-      }, 300000); // 5 minutes
+      // Schedule next message at random interval (4-6 minutes = 240000-360000ms)
+      const scheduleNextMessage = () => {
+        const randomDelay = Math.random() * (360000 - 240000) + 240000; // 4-6 minutes
+        return setTimeout(() => {
+          if (!document.hidden && isActive) {
+            showRandomMessage(isArabic);
+          }
+          messageIntervalRef.current = scheduleNextMessage();
+        }, randomDelay);
+      };
+
+      messageIntervalRef.current = scheduleNextMessage();
 
       return () => {
         clearTimeout(initialTimeout);
-        clearInterval(interval);
+        if (messageIntervalRef.current) {
+          clearTimeout(messageIntervalRef.current);
+        }
       };
     }
   }, [isActive, showMessages, showRandomMessage, isArabic]);
