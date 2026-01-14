@@ -1063,47 +1063,50 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 // Detect browser/device language preference
+// NOTE: المنصة عربية أولاً (RTL) — لا نعرض الإنجليزية في واجهة المستخدم.
 const getBrowserLanguage = (): Language => {
-  if (typeof navigator !== 'undefined') {
-    const browserLang = navigator.language || (navigator as any).userLanguage;
-    // Check if browser language starts with 'ar' (Arabic)
-    if (browserLang && browserLang.toLowerCase().startsWith('ar')) {
-      return 'ar';
-    }
-  }
-  return 'en';
+  // Keep helper for internal use, but UI always defaults to Arabic.
+  return 'ar';
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Check localStorage first, then fall back to browser preference
+    // Arabic-first: always start in Arabic even if localStorage contains English.
     if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('language') as Language;
-      if (savedLang && (savedLang === 'en' || savedLang === 'ar')) {
-        return savedLang;
+      try {
+        localStorage.setItem('language', 'ar');
+      } catch {
+        // ignore
       }
     }
-    return getBrowserLanguage();
+    return 'ar';
   });
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('language', lang);
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
+    // Guard: never allow switching UI away from Arabic.
+    const nextLang: Language = lang === 'ar' ? 'ar' : 'ar';
+    setLanguageState(nextLang);
+    try {
+      localStorage.setItem('language', nextLang);
+    } catch {
+      // ignore
+    }
+    document.documentElement.dir = 'rtl';
+    document.documentElement.lang = 'ar';
   };
 
   useEffect(() => {
     // Apply language direction on mount
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    document.documentElement.dir = 'rtl';
+    document.documentElement.lang = 'ar';
   }, [language]);
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    // Always serve Arabic strings to UI
+    return translations.ar[key] || key;
   };
 
-  const isRTL = language === 'ar';
+  const isRTL = true;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>
