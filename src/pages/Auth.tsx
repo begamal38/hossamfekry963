@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
@@ -77,14 +78,13 @@ const Auth = () => {
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { loading: roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin } = useUserRole();
+  const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // المنصة عربية أولاً: صفحة الدخول/التسجيل RTL دائماً
-  const isRTL = true;
-  const iconSideClass = 'right-3';
-  const inputIconPadding = 'pr-10';
-  const textStartAlign = 'text-right';
+  const iconSideClass = isRTL ? 'right-3' : 'left-3';
+  const inputIconPadding = isRTL ? 'pr-10' : 'pl-10';
+  const textStartAlign = isRTL ? 'text-right' : 'text-left';
 
   // إظهار أخطاء تسجيل الدخول بجوجل لو رجعت في الرابط (بدون ما يبان Toast)
   useEffect(() => {
