@@ -40,6 +40,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
 import { StudentChatButton } from '@/components/messaging/StudentChatButton';
+import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
 
 // Attendance mode config
 const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
@@ -546,6 +547,9 @@ const Dashboard: React.FC = () => {
         </main>
       </PullToRefresh>
       <Footer />
+      
+      {/* First-time user welcome onboarding */}
+      <WelcomeOnboarding />
     </div>
   );
 };

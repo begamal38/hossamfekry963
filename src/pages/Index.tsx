@@ -8,6 +8,7 @@ import { PressSection } from '@/components/home/PressSection';
 import { SocialProofSection } from '@/components/home/SocialProofSection';
 import { TechnologySection } from '@/components/home/TechnologySection';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
 
 const Index: React.FC = () => {
   // Scroll to top on mount
@@ -45,6 +46,9 @@ const Index: React.FC = () => {
         <PressSection />
       </main>
       <Footer />
+      
+      {/* First-time user welcome onboarding (shows only once after signup) */}
+      <WelcomeOnboarding />
     </div>
   );
 };
