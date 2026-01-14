@@ -55,6 +55,7 @@ import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { toast } from 'sonner';
 import { UserType } from '@/hooks/useUnifiedFocusState';
 import { useEngagementSafe } from '@/components/consent';
+import { cn } from '@/lib/utils';
 
 const getYouTubeVideoId = extractYouTubeVideoId;
 
@@ -1086,13 +1087,17 @@ export default function LessonView() {
           </nav>
         </div>
 
-        {/* Floating Lesson List Button */}
-        <div className="fixed bottom-4 right-4 z-40">
+        {/* Floating Lesson List Button - Mobile-first positioning */}
+        <div className={cn(
+          "fixed z-50",
+          "bottom-24 md:bottom-8",
+          isRTL ? "left-4 md:left-8" : "right-4 md:right-8"
+        )}>
           <Button 
             size="sm" 
             variant="secondary"
             onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
-            className="shadow-lg gap-2"
+            className="shadow-lg shadow-black/10 gap-2"
           >
             <BookOpen className="w-4 h-4" />
             {courseLessons.length} {isArabic ? 'حصص' : 'lessons'}
