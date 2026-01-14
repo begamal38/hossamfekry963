@@ -53,7 +53,6 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     getFocusStats,
   } = useFocusMode(lessonId);
   
-  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSegmentCountRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number | null>(null);
   const totalPausedTimeRef = useRef<number>(0);
@@ -155,7 +154,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     return () => clearInterval(interval);
   }, [isActive, showMessages, getFocusStats, showTimeMilestone, isArabic]);
 
-  // Show random messages at random intervals (6-10 minutes) - ONLY when active
+  // Show random motivational messages every 5 minutes - ONLY when active
   useEffect(() => {
     if (isActive && showMessages) {
       // Show initial message after 30 seconds
@@ -163,24 +162,16 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         showRandomMessage(isArabic);
       }, 30000);
 
-      // Then show messages at random intervals (6-10 minutes)
-      const scheduleNextMessage = () => {
-        const randomDelay = Math.random() * (600000 - 360000) + 360000;
-        return setTimeout(() => {
-          if (!document.hidden && isActive) {
-            showRandomMessage(isArabic);
-          }
-          messageIntervalRef.current = scheduleNextMessage();
-        }, randomDelay);
-      };
-
-      messageIntervalRef.current = scheduleNextMessage();
+      // Then show messages exactly every 5 minutes (300000ms)
+      const interval = setInterval(() => {
+        if (!document.hidden && isActive) {
+          showRandomMessage(isArabic);
+        }
+      }, 300000); // 5 minutes
 
       return () => {
         clearTimeout(initialTimeout);
-        if (messageIntervalRef.current) {
-          clearTimeout(messageIntervalRef.current);
-        }
+        clearInterval(interval);
       };
     }
   }, [isActive, showMessages, showRandomMessage, isArabic]);
