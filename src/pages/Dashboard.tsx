@@ -449,6 +449,20 @@ const Dashboard: React.FC = () => {
             )}
           </SectionCard>
 
+          {/* Performance Section - Mobile */}
+          <div className="md:hidden mb-5">
+            <PerformanceChart
+              examScores={examResults.map((r) => ({
+                score: r.score,
+                maxScore: r.exam?.max_score || 100,
+                title: isArabic ? r.exam?.title_ar : r.exam?.title,
+              }))}
+              lessonsCompleted={totalLessonsCompleted}
+              totalLessons={totalLessons}
+              compact
+            />
+          </div>
+
           {/* Performance Section - Desktop/Tablet */}
           <div className="hidden md:grid md:grid-cols-2 gap-5 mb-5">
             {/* Overall Progress with Ring */}
@@ -481,7 +495,6 @@ const Dashboard: React.FC = () => {
               }))}
               lessonsCompleted={totalLessonsCompleted}
               totalLessons={totalLessons}
-              attendanceRate={totalLessons > 0 ? Math.round((totalLessonsCompleted / totalLessons) * 100) : 0}
             />
           </div>
 
