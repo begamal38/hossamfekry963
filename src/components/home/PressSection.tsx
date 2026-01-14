@@ -52,7 +52,7 @@ export const PressSection: React.FC = () => {
       preview: isRTL ? 'نظام متابعة فريد يضمن الدرجة النهائية لطلاب الثانوية العامة' : 'A unique follow-up system that guarantees full marks for high school students',
       embedUrl: 'https://alqaheratimes.com/288588/',
       isExternal: true,
-      thumbnail: 'https://alqaheratimes.com/storage/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
+      thumbnail: 'https://alqaheratimes.com/wp-content/uploads/2025/09/%D9%85%D8%B3%D8%AA%D8%B1-%D8%AD%D8%B3%D8%A7%D9%85-%D9%81%D9%83%D8%B1%D9%8A-560x315.png',
     },
     {
       id: 4,
