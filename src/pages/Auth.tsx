@@ -129,7 +129,7 @@ const Auth = () => {
     }
   }, [navigate, toast]);
 
-  // بعد تسجيل الدخول: ننتظر تحميل الدور ثم نوجّه المستخدم صح
+  // بعد تسجيل الدخول: كل المستخدمين يروحوا للصفحة الرئيسية
   useEffect(() => {
     if (!user) return;
 
@@ -140,20 +140,9 @@ const Auth = () => {
       return;
     }
 
-    // مهم جداً: ما نعملش redirect قبل ما الدور يتحسم (عشان ما يحصلش لخبطة/Loop)
-    if (roleLoading || !hasAttemptedFetch) return;
-
-    // قواعد المنصة:
-    // - الطالب -> الرئيسية
-    // - المدرس المساعد/الأدمن -> تحويل آمن للوحة المدرس
-    // Fail-safe: لو الدور مش واضح لأي سبب، اسمح بالدخول (الرئيسية)
-    if (isAssistantTeacher() || isAdmin()) {
-      navigate('/assistant-transition', { replace: true });
-      return;
-    }
-
+    // كل المستخدمين للصفحة الرئيسية - بغض النظر عن الدور
     navigate('/', { replace: true });
-  }, [user, roleLoading, hasAttemptedFetch, searchParams, navigate, isAssistantTeacher, isAdmin]);
+  }, [user, searchParams, navigate]);
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
     

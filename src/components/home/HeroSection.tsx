@@ -55,7 +55,7 @@ export const HeroSection: React.FC = () => {
               </p>
             </div>
 
-            {/* Single CTA - Clear next action */}
+            {/* Single CTA - Clear next action based on role */}
             <div className="flex justify-center">
               {user ? (
                 isStaff ? (
@@ -67,8 +67,8 @@ export const HeroSection: React.FC = () => {
                   </Button>
                 ) : (
                   <Button variant="hero" size="lg" asChild>
-                    <Link to="/courses">
-                      {t('hero.cta_courses')}
+                    <Link to="/platform">
+                      {t('hero.cta_platform')}
                       <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
                   </Button>
