@@ -535,6 +535,22 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.forgotPassword': 'Forgot Password?',
     'auth.noAccount': "Don't have an account?",
     'auth.hasAccount': 'Already have an account?',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ONBOARDING / FREE TRIAL
+    // ══════════════════════════════════════════════════════════════════════════
+    'onboarding.welcome': 'Welcome 👋',
+    'onboarding.welcomeSubtitle': 'Don\'t worry... you can try the platform and see the teaching style before you decide.',
+    'onboarding.startTrial': 'Start Trial',
+    'onboarding.trialGuidance': 'Watch the free lesson and decide if the teaching style works for you.',
+    'onboarding.skip': 'Skip',
+    'onboarding.later': 'Later',
+    'onboarding.next': 'Next',
+    'onboarding.freeLessonsAvailable': 'Free lessons are fully available for registered accounts',
+    'onboarding.previewMode': 'Preview Mode',
+    'onboarding.previewExplain': 'You can preview 3 minutes of each lesson. Sign up to watch full lessons for free.',
+    'onboarding.signupForFull': 'Liked the lessons? Sign up for unlimited access',
+    'onboarding.createFreeAccount': 'Create Free Account',
   },
 
   ar: {
@@ -1057,6 +1073,22 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.forgotPassword': 'نسيت كلمة السر؟',
     'auth.noAccount': 'معندكش حساب؟',
     'auth.hasAccount': 'عندك حساب بالفعل؟',
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ONBOARDING / FREE TRIAL
+    // ══════════════════════════════════════════════════════════════════════════
+    'onboarding.welcome': 'أهلاً بيك 👋',
+    'onboarding.welcomeSubtitle': 'خلّيك مطمّن… تقدر تجرب المنصة وتشوف أسلوب الشرح قبل ما تقرر تكمل.',
+    'onboarding.startTrial': 'ابدأ التجربة',
+    'onboarding.trialGuidance': 'شوف الحصة التجريبية وقرر بنفسك لو الشرح مناسبك ولا لأ.',
+    'onboarding.skip': 'تخطي',
+    'onboarding.later': 'لاحقاً',
+    'onboarding.next': 'التالي',
+    'onboarding.freeLessonsAvailable': 'الحصص المجانية متاحة كاملة للحسابات المسجلة',
+    'onboarding.previewMode': 'وضع المعاينة',
+    'onboarding.previewExplain': 'تقدر تشوف 3 دقائق من كل حصة كمعاينة. سجّل حسابك عشان تشوف الحصص كاملة مجانًا.',
+    'onboarding.signupForFull': 'عجبتك الحصص؟ سجل حساب واستمتع بالمحتوى كامل بدون قيود',
+    'onboarding.createFreeAccount': 'إنشاء حساب مجاني',
   },
 };
 

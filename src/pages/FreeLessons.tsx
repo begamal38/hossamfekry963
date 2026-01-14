@@ -4,7 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Gift, Loader2, CheckCircle2 } from 'lucide-react';
+import { Clock, Play, Gift, Loader2, CheckCircle2, UserPlus, Eye } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useFreeLessons } from '@/hooks/useFreeLessons';
@@ -53,6 +53,27 @@ const FreeLessons: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* User state-based info banner */}
+          {!user ? (
+            /* Visitor: Explain preview limit calmly */
+            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-fade-in-up animation-delay-100">
+              <div className="flex items-start gap-3">
+                <Eye className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-1">
+                    {isArabic ? 'وضع المعاينة' : 'Preview Mode'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isArabic 
+                      ? 'تقدر تشوف 3 دقائق من كل حصة كمعاينة. سجّل حسابك عشان تشوف الحصص كاملة مجانًا.'
+                      : 'You can preview 3 minutes of each lesson. Sign up to watch full lessons for free.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -125,13 +146,14 @@ const FreeLessons: React.FC = () => {
             <div className="mt-8 p-5 bg-card rounded-2xl border border-border text-center animate-fade-in-up animation-delay-400">
               <p className="text-sm text-muted-foreground mb-4">
                 {isArabic 
-                  ? 'عجبتك الحصص؟ سجل حساب واستمتع بالمحتوى كامل'
-                  : 'Liked the lessons? Sign up for full access'
+                  ? 'عجبتك الحصص؟ سجل حساب واستمتع بالمحتوى كامل بدون قيود'
+                  : 'Liked the lessons? Sign up for unlimited access'
                 }
               </p>
-              <Button variant="hero" asChild>
-                <Link to="/auth">
-                  {t('nav.signUp')}
+              <Button variant="hero" asChild className="gap-2">
+                <Link to="/auth?mode=signup">
+                  <UserPlus className="w-4 h-4" />
+                  {isArabic ? 'إنشاء حساب مجاني' : 'Create Free Account'}
                 </Link>
               </Button>
             </div>
@@ -141,8 +163,8 @@ const FreeLessons: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500/10 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4" />
                 {isArabic 
-                  ? 'أنت مسجل — شاهد كل الحصص المجانية بدون قيود'
-                  : 'You\'re registered — watch all free lessons without limits'
+                  ? 'الحصص المجانية متاحة كاملة للحسابات المسجلة'
+                  : 'Free lessons are fully available for registered accounts'
                 }
               </div>
             </div>

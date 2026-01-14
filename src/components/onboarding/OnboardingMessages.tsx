@@ -100,10 +100,11 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
       subtitle: 'هنا تقدر تجرب أسلوب الشرح وطريقة المنصة قبل ما تقرر تكمل.',
       cta: null,
     },
+    // Visitor (NOT logged in) on free lesson
     free_lesson_intro: {
       icon: Play,
-      title: 'دي حصة مجانية',
-      subtitle: 'عشان تاخد فكرة عن أسلوب الشرح. لو الشرح مناسبك، تقدر تكمل باقي المحتوى بعد الاشتراك.',
+      title: 'معاينة سريعة للحصة',
+      subtitle: 'بتاخد فكرة عن أسلوب الشرح. سجّل حسابك عشان تكمل المحتوى كامل.',
       cta: null,
     },
     after_completion: {
@@ -112,17 +113,17 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
       subtitle: 'كمل باقي الحصص بنفس الأسلوب.',
       cta: (courseId || courseSlug) ? { label: 'عرض الكورس', action: handleCourseNavigation } : null,
     },
-    // Free Trial guidance for logged-in students
+    // Logged-in student (NOT enrolled) watching free lesson
     free_trial_guidance: {
       icon: BookOpen,
-      title: 'دي حصة مجانية',
-      subtitle: 'عشان تتعرف على أسلوب الشرح وطريقة المنصة.',
+      title: 'دي حصتك التجريبية',
+      subtitle: 'تقدر تشوفها كاملة بدون قيود — جرب أسلوب الشرح وقرر بنفسك.',
       cta: null,
     },
-    // Free Trial completion for logged-in students
+    // Logged-in student finished free lesson
     free_trial_complete: {
       icon: CheckCircle,
-      title: 'لو الشرح مناسبك',
+      title: 'عجبك الشرح؟',
       subtitle: 'تقدر تكمل باقي المحتوى بعد الاشتراك في الكورس.',
       cta: (courseId || courseSlug) ? { label: 'عرض الكورس', action: handleCourseNavigation } : null,
     },
