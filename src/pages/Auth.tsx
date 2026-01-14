@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
@@ -77,32 +76,84 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { roles, refreshRoles, isAssistantTeacher, isAdmin, loading: roleLoading, hasAttemptedFetch } = useUserRole();
-  const { t, isRTL } = useLanguage();
+  const { loading: roleLoading, hasAttemptedFetch, isAssistantTeacher, isAdmin } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const iconSideClass = isRTL ? 'right-3' : 'left-3';
-  const inputIconPadding = isRTL ? 'pr-10' : 'pl-10';
-  const textStartAlign = isRTL ? 'text-right' : 'text-left';
+  // المنصة عربية أولاً: صفحة الدخول/التسجيل RTL دائماً
+  const isRTL = true;
+  const iconSideClass = 'right-3';
+  const inputIconPadding = 'pr-10';
+  const textStartAlign = 'text-right';
 
-  // POST-LOGIN ROUTING: ALL users go to home page "/"
-  // No role-based auto-redirects - user chooses where to go
+  // إظهار أخطاء تسجيل الدخول بجوجل لو رجعت في الرابط (بدون ما يبان Toast)
   useEffect(() => {
-    // No user = no redirect, stay on auth page
+    const searchParamsObj = new URLSearchParams(window.location.search);
+    const hashParamsObj = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+
+    const error =
+      searchParamsObj.get('error') ||
+      searchParamsObj.get('error_code') ||
+      hashParamsObj.get('error') ||
+      hashParamsObj.get('error_code');
+
+    const errorDescription =
+      searchParamsObj.get('error_description') ||
+      hashParamsObj.get('error_description');
+
+    if (!error && !errorDescription) return;
+
+    toast({
+      variant: 'destructive',
+      title: 'فشل تسجيل الدخول',
+      description:
+        decodeURIComponent(errorDescription || '') ||
+        'حصلت مشكلة أثناء تسجيل الدخول، جرّب تاني.',
+    });
+
+    // تنظيف الرابط عشان مايتكررش التوست
+    try {
+      searchParamsObj.delete('error');
+      searchParamsObj.delete('error_code');
+      searchParamsObj.delete('error_description');
+      const nextSearch = searchParamsObj.toString();
+
+      // امسح الـ hash كمان (لو الخطأ جاي من هناك)
+      if (window.location.hash) {
+        window.history.replaceState(null, '', `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}`);
+      }
+
+      navigate(`/auth${nextSearch ? `?${nextSearch}` : ''}`, { replace: true });
+    } catch {
+      // ignore
+    }
+  }, [navigate, toast]);
+
+  // بعد تسجيل الدخول: ننتظر تحميل الدور ثم نوجّه المستخدم صح
+  useEffect(() => {
     if (!user) return;
-    
-    // Check for explicit redirect param first
+
+    // لو فيه redirect صريح (مثلاً صفحة طلبت تسجيل دخول)
     const redirect = searchParams.get('redirect');
     if (redirect) {
       navigate(redirect, { replace: true });
       return;
     }
-    
-    // ALL users go to home page after login
-    navigate('/', { replace: true });
-  }, [user, navigate, searchParams]);
 
+    // مهم جداً: ما نعملش redirect قبل ما الدور يتحسم (عشان ما يحصلش لخبطة/Loop)
+    if (roleLoading || !hasAttemptedFetch) return;
+
+    // قواعد المنصة:
+    // - الطالب -> الرئيسية
+    // - المدرس المساعد/الأدمن -> تحويل آمن للوحة المدرس
+    // Fail-safe: لو الدور مش واضح لأي سبب، اسمح بالدخول (الرئيسية)
+    if (isAssistantTeacher() || isAdmin()) {
+      navigate('/assistant-transition', { replace: true });
+      return;
+    }
+
+    navigate('/', { replace: true });
+  }, [user, roleLoading, hasAttemptedFetch, searchParams, navigate, isAssistantTeacher, isAdmin]);
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
     
