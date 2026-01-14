@@ -3,7 +3,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ExternalLink, Newspaper, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useState } from 'react';
+import Autoplay from 'embla-carousel-autoplay';
+import { useCallback, useEffect, useState, useRef } from 'react';
 
 interface PressArticle {
   id: number;
@@ -17,12 +18,19 @@ interface PressArticle {
 
 export const PressSection: React.FC = () => {
   const { isRTL } = useLanguage();
+  
+  // Autoplay plugin with 3.5 second delay
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
+  
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     loop: true, 
     align: 'start',
     direction: isRTL ? 'rtl' : 'ltr',
     slidesToScroll: 1,
-  });
+  }, [autoplayPlugin.current]);
+  
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
 
