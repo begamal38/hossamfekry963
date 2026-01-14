@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Sparkles, Play, CheckCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type MessageType = 'welcome' | 'free_lesson_intro' | 'after_completion' | 'free_trial_guidance' | 'free_trial_complete';
 
@@ -47,6 +48,7 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
   className,
 }) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
@@ -132,7 +134,9 @@ export const OnboardingMessages: React.FC<OnboardingMessagesProps> = ({
   return (
     <div
       className={cn(
-        "fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-40",
+        "fixed z-50",
+        // Mobile-first: higher to avoid bottom nav, lower on desktop
+        isMobile ? "bottom-24 left-4 right-4" : "bottom-6 left-auto right-6 max-w-sm",
         "bg-card border border-border rounded-xl shadow-lg p-4",
         "transform transition-all duration-300 ease-out",
         exiting ? "translate-y-4 opacity-0" : "translate-y-0 opacity-100",
