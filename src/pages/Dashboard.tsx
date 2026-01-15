@@ -121,6 +121,10 @@ const Dashboard: React.FC = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [nextLessonId, setNextLessonId] = useState<string | null>(null);
+  
+  // Get badge counts - MUST be before any early returns (React hooks rules)
+  const { count: availableExamsCount } = useAvailableExamsCount();
+  const { count: unreadMessagesCount } = useUnreadMessagesCount();
 
   // Scroll to top on mount
   useEffect(() => {
@@ -293,9 +297,7 @@ const Dashboard: React.FC = () => {
     return 'progress';
   };
 
-  // Get badge counts
-  const { count: availableExamsCount } = useAvailableExamsCount();
-  const { count: unreadMessagesCount } = useUnreadMessagesCount();
+  // Quick actions for student - Ana Vodafone style (max 5 items)
 
   // Quick actions for student - Ana Vodafone style (max 5 items)
   // Removed duplicate "My Courses" since it's shown in section below
