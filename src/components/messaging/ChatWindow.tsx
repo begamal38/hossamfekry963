@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Message } from '@/hooks/useMessaging';
 import { format, isToday, isYesterday } from 'date-fns';
-import ar from 'date-fns/locale/ar';
+import { ar } from 'date-fns/locale/ar';
 
 interface ChatWindowProps {
   conversationId: string;

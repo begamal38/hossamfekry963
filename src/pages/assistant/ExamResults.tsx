@@ -33,8 +33,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import ar from 'date-fns/locale/ar';
-import enUS from 'date-fns/locale/en-US';
+import { ar } from 'date-fns/locale/ar';
+import { enUS } from 'date-fns/locale/en-US';
 
 interface Exam {
   id: string;
