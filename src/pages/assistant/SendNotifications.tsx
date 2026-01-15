@@ -15,7 +15,9 @@ import {
   AlertTriangle,
   Search,
   Check,
-  X
+  X,
+  UserX,
+  Loader2
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -40,7 +42,7 @@ type NotificationType =
   | 'attendance_followup'
   | 'system_message';
 
-type TargetType = 'all' | 'course' | 'lesson' | 'user' | 'grade' | 'attendance_mode' | 'custom';
+type TargetType = 'all' | 'course' | 'lesson' | 'user' | 'grade' | 'attendance_mode' | 'custom' | 'not_enrolled';
 
 interface Course {
   id: string;
@@ -73,73 +75,56 @@ interface Student {
 
 const NOTIFICATION_TYPES: {
   value: NotificationType;
-  labelEn: string;
   labelAr: string;
   icon: typeof Bell;
 }[] = [
-  { value: 'course_announcement', labelEn: 'Course Announcement', labelAr: 'إعلان كورس', icon: BookOpen },
-  { value: 'lesson_available', labelEn: 'Lesson Available', labelAr: 'حصة متاحة', icon: Video },
-  { value: 'lesson_reminder', labelEn: 'Lesson Reminder', labelAr: 'تذكير حصة', icon: Bell },
-  { value: 'exam_available', labelEn: 'Exam Available', labelAr: 'امتحان متاح', icon: FileText },
-  { value: 'exam_reminder', labelEn: 'Exam Reminder', labelAr: 'تذكير امتحان', icon: Bell },
-  { value: 'attendance_followup', labelEn: 'Attendance Follow-up', labelAr: 'متابعة حضور', icon: Users },
-  { value: 'system_message', labelEn: 'System Message', labelAr: 'رسالة من النظام', icon: MessageSquare },
+  { value: 'course_announcement', labelAr: 'إعلان كورس', icon: BookOpen },
+  { value: 'lesson_available', labelAr: 'حصة متاحة', icon: Video },
+  { value: 'lesson_reminder', labelAr: 'تذكير حصة', icon: Bell },
+  { value: 'exam_available', labelAr: 'امتحان متاح', icon: FileText },
+  { value: 'exam_reminder', labelAr: 'تذكير امتحان', icon: Bell },
+  { value: 'attendance_followup', labelAr: 'متابعة حضور', icon: Users },
+  { value: 'system_message', labelAr: 'رسالة من النظام', icon: MessageSquare },
 ];
 
 const MESSAGE_TEMPLATES: {
   type: NotificationType;
-  titleEn: string;
   titleAr: string;
-  messageEn: string;
   messageAr: string;
 }[] = [
   {
     type: 'course_announcement',
-    titleEn: 'New Course Available',
     titleAr: 'كورس جديد متاح',
-    messageEn: 'A new course has been added. Check it out!',
     messageAr: 'تم إضافة كورس جديد. شوفه دلوقتي!',
   },
   {
     type: 'lesson_available',
-    titleEn: 'New Lesson Available',
     titleAr: 'حصة جديدة متاحة',
-    messageEn: 'A new lesson is ready for you.',
     messageAr: 'حصة جديدة مستنياك.',
   },
   {
     type: 'lesson_reminder',
-    titleEn: 'Lesson Reminder',
     titleAr: 'تذكير بالحصة',
-    messageEn: "Don't forget to complete your lesson.",
     messageAr: 'متنساش تخلص الحصة.',
   },
   {
     type: 'exam_available',
-    titleEn: 'Exam Ready',
     titleAr: 'الامتحان جاهز',
-    messageEn: 'Your exam is now available. Good luck!',
     messageAr: 'الامتحان بتاعك جاهز. بالتوفيق!',
   },
   {
     type: 'exam_reminder',
-    titleEn: 'Exam Reminder',
     titleAr: 'تذكير بالامتحان',
-    messageEn: "Don't forget your upcoming exam.",
     messageAr: 'متنساش الامتحان.',
   },
   {
     type: 'attendance_followup',
-    titleEn: 'Attendance Update',
     titleAr: 'تحديث الحضور',
-    messageEn: 'Your attendance has been recorded.',
     messageAr: 'تم تسجيل حضورك.',
   },
   {
     type: 'system_message',
-    titleEn: 'Important Notice',
     titleAr: 'إشعار مهم',
-    messageEn: 'Please check this important update.',
     messageAr: 'من فضلك شوف التحديث ده.',
   },
 ];
@@ -168,10 +153,10 @@ export default function SendNotifications() {
   const [filterCondition, setFilterCondition] = useState<'not_taken' | 'below_score' | 'above_score'>('not_taken');
   const [filterScore, setFilterScore] = useState<number>(50);
   
-  const [titleEn, setTitleEn] = useState('');
+  // Only Arabic fields - English will be auto-translated
   const [titleAr, setTitleAr] = useState('');
-  const [messageEn, setMessageEn] = useState('');
   const [messageAr, setMessageAr] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
   
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -183,6 +168,7 @@ export default function SendNotifications() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [notEnrolledStudents, setNotEnrolledStudents] = useState<Student[]>([]);
 
   useEffect(() => {
     if (!roleLoading && !canAccessDashboard()) {
@@ -202,6 +188,8 @@ export default function SendNotifications() {
   useEffect(() => {
     if (targetType === 'custom' || targetType === 'user') {
       filterStudentsList();
+    } else if (targetType === 'not_enrolled') {
+      fetchNotEnrolledStudents();
     }
   }, [studentSearch, allStudents, targetType, filterExam, filterCondition, filterScore]);
 
@@ -230,6 +218,40 @@ export default function SendNotifications() {
     
     setLessons(lessonsRes.data || []);
     setExams(examsRes.data || []);
+  };
+
+  // Fetch students who are NOT enrolled in any course
+  const fetchNotEnrolledStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      // Get all enrolled user IDs
+      const { data: enrollments } = await supabase
+        .from('course_enrollments')
+        .select('user_id');
+      
+      const enrolledUserIds = new Set((enrollments || []).map(e => e.user_id));
+      
+      // Filter students who are not enrolled
+      const notEnrolled = allStudents.filter(s => !enrolledUserIds.has(s.user_id));
+      
+      // Apply search filter
+      let filtered = notEnrolled;
+      if (studentSearch) {
+        const search = studentSearch.toLowerCase();
+        filtered = notEnrolled.filter(s => 
+          s.full_name?.toLowerCase().includes(search) ||
+          s.email?.toLowerCase().includes(search) ||
+          s.phone?.includes(search)
+        );
+      }
+      
+      setNotEnrolledStudents(filtered);
+      setFilteredStudents(filtered);
+    } catch (error) {
+      console.error('Error fetching not enrolled students:', error);
+    } finally {
+      setLoadingStudents(false);
+    }
   };
 
   const filterStudentsList = async () => {
@@ -291,9 +313,7 @@ export default function SendNotifications() {
   const applyTemplate = (type: NotificationType) => {
     const template = MESSAGE_TEMPLATES.find(t => t.type === type);
     if (template) {
-      setTitleEn(template.titleEn);
       setTitleAr(template.titleAr);
-      setMessageEn(template.messageEn);
       setMessageAr(template.messageAr);
     }
   };
@@ -315,27 +335,48 @@ export default function SendNotifications() {
   };
 
   const getGradeLabel = (grade: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      'second_arabic': { en: '2nd Secondary - Arabic', ar: 'تانية ثانوي - عربي' },
-      'second_languages': { en: '2nd Secondary - Languages', ar: 'تانية ثانوي - لغات' },
-      'third_arabic': { en: '3rd Secondary - Arabic', ar: 'تالته ثانوي - عربي' },
-      'third_languages': { en: '3rd Secondary - Languages', ar: 'تالته ثانوي - لغات' },
+    const labels: Record<string, string> = {
+      'second_arabic': 'تانية ثانوي - عربي',
+      'second_languages': 'تانية ثانوي - لغات',
+      'third_arabic': 'تالته ثانوي - عربي',
+      'third_languages': 'تالته ثانوي - لغات',
     };
-    return isArabic ? labels[grade]?.ar : labels[grade]?.en || grade;
+    return labels[grade] || grade;
   };
 
   const getModeLabel = (mode: string) => {
-    const labels: Record<string, { en: string; ar: string }> = {
-      'online': { en: 'Online', ar: 'أونلاين' },
-      'center': { en: 'Center', ar: 'سنتر' },
-      'hybrid': { en: 'Hybrid', ar: 'هجين' },
+    const labels: Record<string, string> = {
+      'online': 'أونلاين',
+      'center': 'سنتر',
+      'hybrid': 'هجين',
     };
-    return isArabic ? labels[mode]?.ar : labels[mode]?.en || mode;
+    return labels[mode] || mode;
+  };
+
+  // Translate Arabic text to English
+  const translateToEnglish = async (text: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-content', {
+        body: { text, targetLanguage: 'en' }
+      });
+      
+      if (error) {
+        console.error('Translation error:', error);
+        return text; // Fallback to original
+      }
+      
+      return data?.translatedText || text;
+    } catch (err) {
+      console.error('Translation failed:', err);
+      return text;
+    }
   };
 
   const sendEmailNotifications = async (
     studentIds: string[],
     targetType: string,
+    titleEn: string,
+    messageEn: string,
     targetValue?: string
   ) => {
     try {
@@ -370,10 +411,8 @@ export default function SendNotifications() {
         console.log('[SendNotifications] Email result:', data);
         if (data?.emails_sent > 0) {
           toast({
-            title: isArabic ? 'تم إرسال البريد' : 'Emails Sent',
-            description: isArabic 
-              ? `تم إرسال ${data.emails_sent} بريد إلكتروني`
-              : `${data.emails_sent} emails sent successfully`,
+            title: 'تم إرسال البريد',
+            description: `تم إرسال ${data.emails_sent} بريد إلكتروني`,
           });
         }
       }
@@ -384,10 +423,10 @@ export default function SendNotifications() {
   };
 
   const handleSend = async () => {
-    if (!titleEn || !titleAr || !messageEn || !messageAr) {
+    if (!titleAr || !messageAr) {
       toast({
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'من فضلك املأ كل الحقول' : 'Please fill all fields',
+        title: 'خطأ',
+        description: 'من فضلك املأ العنوان والرسالة',
         variant: 'destructive',
       });
       return;
@@ -396,8 +435,8 @@ export default function SendNotifications() {
     // Validate target selection
     if (targetType === 'user' && selectedStudents.length === 0) {
       toast({
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'من فضلك اختار طالب واحد على الأقل' : 'Please select at least one student',
+        title: 'خطأ',
+        description: 'من فضلك اختار طالب واحد على الأقل',
         variant: 'destructive',
       });
       return;
@@ -405,17 +444,36 @@ export default function SendNotifications() {
 
     if (targetType === 'custom' && selectedStudents.length === 0) {
       toast({
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'من فضلك اختار طلاب من القائمة' : 'Please select students from the list',
+        title: 'خطأ',
+        description: 'من فضلك اختار طلاب من القائمة',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (targetType === 'not_enrolled' && selectedStudents.length === 0) {
+      toast({
+        title: 'خطأ',
+        description: 'من فضلك اختار طلاب غير مشتركين',
         variant: 'destructive',
       });
       return;
     }
 
     setSending(true);
+    setIsTranslating(true);
+
     try {
+      // Auto-translate to English
+      const [titleEn, messageEn] = await Promise.all([
+        translateToEnglish(titleAr),
+        translateToEnglish(messageAr)
+      ]);
+      
+      setIsTranslating(false);
+
       // For multiple students, we need to create multiple notifications or use target_type 'user' with multiple inserts
-      if ((targetType === 'user' || targetType === 'custom') && selectedStudents.length > 0) {
+      if ((targetType === 'user' || targetType === 'custom' || targetType === 'not_enrolled') && selectedStudents.length > 0) {
         // Send individual notifications to selected students
         const notifications = selectedStudents.map(studentId => ({
           type: notificationType,
@@ -434,13 +492,11 @@ export default function SendNotifications() {
         if (error) throw error;
 
         // Send email notifications to selected students (non-blocking)
-        sendEmailNotifications(selectedStudents, 'user');
+        sendEmailNotifications(selectedStudents, 'user', titleEn, messageEn);
 
         toast({
-          title: isArabic ? 'تم الإرسال' : 'Sent',
-          description: isArabic 
-            ? `تم إرسال الإشعار لـ ${selectedStudents.length} طالب`
-            : `Notification sent to ${selectedStudents.length} students`,
+          title: 'تم الإرسال',
+          description: `تم إرسال الإشعار لـ ${selectedStudents.length} طالب`,
         });
       } else {
         // Regular notification (all, course, lesson, grade, attendance_mode)
@@ -479,18 +535,16 @@ export default function SendNotifications() {
         if (error) throw error;
 
         // Send email notifications (non-blocking)
-        sendEmailNotifications([], emailTargetType, emailTargetValue);
+        sendEmailNotifications([], emailTargetType, titleEn, messageEn, emailTargetValue);
 
         toast({
-          title: isArabic ? 'تم الإرسال' : 'Sent',
-          description: isArabic ? 'تم إرسال الإشعار بنجاح' : 'Notification sent successfully',
+          title: 'تم الإرسال',
+          description: 'تم إرسال الإشعار بنجاح',
         });
       }
 
       // Reset form
-      setTitleEn('');
       setTitleAr('');
-      setMessageEn('');
       setMessageAr('');
       setTargetType('all');
       setSelectedCourse('');
@@ -503,12 +557,13 @@ export default function SendNotifications() {
     } catch (error) {
       console.error('Error sending notification:', error);
       toast({
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'فشل إرسال الإشعار' : 'Failed to send notification',
+        title: 'خطأ',
+        description: 'فشل إرسال الإشعار',
         variant: 'destructive',
       });
     } finally {
       setSending(false);
+      setIsTranslating(false);
     }
   };
 
@@ -521,22 +576,22 @@ export default function SendNotifications() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav" dir="rtl">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-            <ArrowLeft className={cn("h-5 w-5", isRTL && "rotate-180")} />
+            <ArrowLeft className="h-5 w-5 rotate-180" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Send className="h-6 w-6 text-primary" />
-              {isArabic ? 'إرسال إشعار' : 'Send Notification'}
+              إرسال إشعار
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isArabic ? 'أرسل إشعارات للطلاب' : 'Send notifications to students'}
+              أرسل إشعارات للطلاب
             </p>
           </div>
         </div>
@@ -545,7 +600,7 @@ export default function SendNotifications() {
           {/* Notification Type */}
           <div className="bg-card border rounded-xl p-4">
             <label className="block text-sm font-medium mb-3">
-              {isArabic ? 'نوع الإشعار' : 'Notification Type'}
+              نوع الإشعار
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {NOTIFICATION_TYPES.map(type => {
@@ -565,7 +620,7 @@ export default function SendNotifications() {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    <span className="truncate">{isArabic ? type.labelAr : type.labelEn}</span>
+                    <span className="truncate">{type.labelAr}</span>
                   </button>
                 );
               })}
@@ -575,17 +630,18 @@ export default function SendNotifications() {
           {/* Target Selection */}
           <div className="bg-card border rounded-xl p-4">
             <label className="block text-sm font-medium mb-3">
-              {isArabic ? 'أرسل إلى' : 'Send To'}
+              أرسل إلى
             </label>
             <div className="flex flex-wrap gap-2 mb-4">
               {[
-                { value: 'all', labelEn: 'All Students', labelAr: 'كل الطلاب', icon: Users },
-                { value: 'grade', labelEn: 'By Grade', labelAr: 'المرحلة', icon: GraduationCap },
-                { value: 'attendance_mode', labelEn: 'By Mode', labelAr: 'نوع الحضور', icon: MapPin },
-                { value: 'course', labelEn: 'Course', labelAr: 'كورس', icon: BookOpen },
-                { value: 'lesson', labelEn: 'Lesson', labelAr: 'حصة', icon: Video },
-                { value: 'user', labelEn: 'Students', labelAr: 'طلاب', icon: User },
-                { value: 'custom', labelEn: 'Custom Filter', labelAr: 'فلتر مخصص', icon: AlertTriangle },
+                { value: 'all', labelAr: 'كل الطلاب', icon: Users },
+                { value: 'not_enrolled', labelAr: 'غير المشتركين', icon: UserX },
+                { value: 'grade', labelAr: 'المرحلة', icon: GraduationCap },
+                { value: 'attendance_mode', labelAr: 'نوع الحضور', icon: MapPin },
+                { value: 'course', labelAr: 'كورس', icon: BookOpen },
+                { value: 'lesson', labelAr: 'حصة', icon: Video },
+                { value: 'user', labelAr: 'طلاب', icon: User },
+                { value: 'custom', labelAr: 'فلتر مخصص', icon: AlertTriangle },
               ].map(target => {
                 const Icon = target.icon;
                 return (
@@ -603,11 +659,21 @@ export default function SendNotifications() {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    {isArabic ? target.labelAr : target.labelEn}
+                    {target.labelAr}
                   </button>
                 );
               })}
             </div>
+
+            {/* Not Enrolled Info */}
+            {targetType === 'not_enrolled' && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  سيتم إرسال الإشعار للطلاب المسجلين في المنصة ولكن غير مشتركين في أي كورس. 
+                  عدد الطلاب: <strong>{notEnrolledStudents.length}</strong>
+                </p>
+              </div>
+            )}
 
             {/* Grade selector */}
             {targetType === 'grade' && (
@@ -656,10 +722,10 @@ export default function SendNotifications() {
                 onChange={(e) => setSelectedCourse(e.target.value)}
                 className="w-full px-4 py-2 bg-background border border-input rounded-lg mb-3"
               >
-                <option value="">{isArabic ? 'اختار الكورس' : 'Select Course'}</option>
+                <option value="">اختار الكورس</option>
                 {courses.map(course => (
                   <option key={course.id} value={course.id}>
-                    {isArabic ? course.title_ar : course.title}
+                    {course.title_ar}
                   </option>
                 ))}
               </select>
@@ -672,10 +738,10 @@ export default function SendNotifications() {
                 onChange={(e) => setSelectedLesson(e.target.value)}
                 className="w-full px-4 py-2 bg-background border border-input rounded-lg"
               >
-                <option value="">{isArabic ? 'اختار الحصة' : 'Select Lesson'}</option>
+                <option value="">اختار الحصة</option>
                 {lessons.map(lesson => (
                   <option key={lesson.id} value={lesson.id}>
-                    {isArabic ? lesson.title_ar : lesson.title}
+                    {lesson.title_ar}
                   </option>
                 ))}
               </select>
@@ -685,17 +751,17 @@ export default function SendNotifications() {
             {targetType === 'custom' && selectedCourse && (
               <div className="space-y-3 border-t pt-3 mt-3">
                 <p className="text-sm font-medium text-muted-foreground">
-                  {isArabic ? 'فلترة حسب الامتحان' : 'Filter by Exam'}
+                  فلترة حسب الامتحان
                 </p>
                 <select
                   value={filterExam}
                   onChange={(e) => setFilterExam(e.target.value)}
                   className="w-full px-4 py-2 bg-background border border-input rounded-lg"
                 >
-                  <option value="">{isArabic ? 'اختار الامتحان' : 'Select Exam'}</option>
+                  <option value="">اختار الامتحان</option>
                   {exams.map(exam => (
                     <option key={exam.id} value={exam.id}>
-                      {isArabic ? exam.title_ar : exam.title}
+                      {exam.title_ar}
                     </option>
                   ))}
                 </select>
@@ -711,7 +777,7 @@ export default function SendNotifications() {
                           : "border-border hover:border-destructive/50"
                       )}
                     >
-                      {isArabic ? 'ما دخلوش الامتحان' : "Didn't take exam"}
+                      ما دخلوش الامتحان
                     </button>
                     <button
                       onClick={() => setFilterCondition('below_score')}
@@ -722,7 +788,7 @@ export default function SendNotifications() {
                           : "border-border hover:border-orange-500/50"
                       )}
                     >
-                      {isArabic ? 'درجة أقل من' : 'Score below'}
+                      درجة أقل من
                     </button>
                     <button
                       onClick={() => setFilterCondition('above_score')}
@@ -733,14 +799,14 @@ export default function SendNotifications() {
                           : "border-border hover:border-green-500/50"
                       )}
                     >
-                      {isArabic ? 'درجة أعلى من' : 'Score above'}
+                      درجة أعلى من
                     </button>
                   </div>
                 )}
 
                 {filterExam && (filterCondition === 'below_score' || filterCondition === 'above_score') && (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm">{isArabic ? 'النسبة:' : 'Percentage:'}</span>
+                    <span className="text-sm">النسبة:</span>
                     <input
                       type="number"
                       min={0}
@@ -755,39 +821,39 @@ export default function SendNotifications() {
               </div>
             )}
 
-            {/* Student selector for user/custom target */}
-            {(targetType === 'user' || targetType === 'custom') && (
+            {/* Student selector for user/custom/not_enrolled target */}
+            {(targetType === 'user' || targetType === 'custom' || targetType === 'not_enrolled') && (
               <div className="mt-4 border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">
-                    {isArabic ? 'اختار الطلاب' : 'Select Students'}
+                    اختار الطلاب
                     {selectedStudents.length > 0 && (
-                      <Badge variant="secondary" className="ml-2">
+                      <Badge variant="secondary" className="mr-2">
                         {selectedStudents.length}
                       </Badge>
                     )}
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={selectAllFiltered}>
-                      <Check className="h-3 w-3 mr-1" />
-                      {isArabic ? 'اختار الكل' : 'Select All'}
+                      <Check className="h-3 w-3 ml-1" />
+                      اختار الكل
                     </Button>
                     {selectedStudents.length > 0 && (
                       <Button variant="ghost" size="sm" onClick={clearSelection}>
-                        <X className="h-3 w-3 mr-1" />
-                        {isArabic ? 'إلغاء' : 'Clear'}
+                        <X className="h-3 w-3 ml-1" />
+                        إلغاء
                       </Button>
                     )}
                   </div>
                 </div>
                 
                 <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder={isArabic ? 'ابحث بالاسم أو الإيميل أو التليفون...' : 'Search by name, email, or phone...'}
+                    placeholder="ابحث بالاسم أو الإيميل أو التليفون..."
                     value={studentSearch}
                     onChange={(e) => setStudentSearch(e.target.value)}
-                    className="pl-10"
+                    className="pr-10"
                   />
                 </div>
 
@@ -799,7 +865,7 @@ export default function SendNotifications() {
                   <div className="max-h-60 overflow-y-auto border rounded-lg divide-y">
                     {filteredStudents.length === 0 ? (
                       <div className="p-4 text-center text-muted-foreground text-sm">
-                        {isArabic ? 'لا توجد نتائج' : 'No results found'}
+                        لا توجد نتائج
                       </div>
                     ) : (
                       filteredStudents.map(student => (
@@ -813,7 +879,7 @@ export default function SendNotifications() {
                         >
                           <div>
                             <p className="font-medium text-sm">
-                              {student.full_name || (isArabic ? 'بدون اسم' : 'No name')}
+                              {student.full_name || 'بدون اسم'}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {student.email} {student.phone && `• ${student.phone}`}
@@ -841,25 +907,17 @@ export default function SendNotifications() {
             )}
           </div>
 
-          {/* Message Content */}
+          {/* Message Content - Arabic Only */}
           <div className="bg-card border rounded-xl p-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'العنوان (إنجليزي)' : 'Title (English)'}
-              </label>
-              <input
-                type="text"
-                value={titleEn}
-                onChange={(e) => setTitleEn(e.target.value)}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg"
-                placeholder="Notification title..."
-                dir="ltr"
-              />
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-400">
+                اكتب الرسالة بالعربي وهيتم ترجمتها للإنجليزي تلقائياً عند الإرسال
+              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'العنوان (عربي)' : 'Title (Arabic)'}
+                العنوان
               </label>
               <input
                 type="text"
@@ -873,25 +931,12 @@ export default function SendNotifications() {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'الرسالة (إنجليزي)' : 'Message (English)'}
-              </label>
-              <textarea
-                value={messageEn}
-                onChange={(e) => setMessageEn(e.target.value)}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg min-h-[80px]"
-                placeholder="Your message..."
-                dir="ltr"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'الرسالة (عربي)' : 'Message (Arabic)'}
+                الرسالة
               </label>
               <textarea
                 value={messageAr}
                 onChange={(e) => setMessageAr(e.target.value)}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg min-h-[80px]"
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg min-h-[100px]"
                 placeholder="رسالتك..."
                 dir="rtl"
               />
@@ -907,13 +952,13 @@ export default function SendNotifications() {
           >
             {sending ? (
               <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {isArabic ? 'جاري الإرسال...' : 'Sending...'}
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {isTranslating ? 'جاري الترجمة...' : 'جاري الإرسال...'}
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Send className="h-5 w-5" />
-                {isArabic ? 'إرسال الإشعار' : 'Send Notification'}
+                إرسال الإشعار
                 {selectedStudents.length > 0 && (
                   <Badge variant="secondary" className="bg-white/20">
                     {selectedStudents.length}
