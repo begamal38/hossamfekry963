@@ -455,6 +455,9 @@ const translations: Record<Language, Record<string, string>> = {
     'campaigns.followTitle': 'Follow Us on Facebook',
     'campaigns.followDesc': 'Join our Facebook community and be the first to know about exclusive offers and discounts',
     'campaigns.visitPage': 'Visit Our Page',
+    'campaigns.openPost': 'Open the post on Facebook',
+    'campaigns.nextTitle': 'Where do you want to go next?',
+    'campaigns.nextSubtitle': 'Quick links to important parts of the platform',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOCUS MODE (UNIFIED TERMINOLOGY)
@@ -996,6 +999,9 @@ const translations: Record<Language, Record<string, string>> = {
     'campaigns.followTitle': 'تابعنا على فيسبوك',
     'campaigns.followDesc': 'انضم لمجتمعنا على فيسبوك وكن أول من يعرف عن العروض والخصومات الحصرية',
     'campaigns.visitPage': 'زور صفحتنا',
+    'campaigns.openPost': 'افتح المنشور على فيسبوك',
+    'campaigns.nextTitle': 'تحب تروح فين بعد كده؟',
+    'campaigns.nextSubtitle': 'روابط سريعة لأهم حاجات في المنصة',
 
     // ══════════════════════════════════════════════════════════════════════════
     // FOCUS MODE (UNIFIED TERMINOLOGY)
