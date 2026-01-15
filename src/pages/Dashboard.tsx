@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActionsStrip';
+import { SmartContextCard } from '@/components/dashboard/SmartContextCard';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
@@ -245,21 +246,32 @@ const Dashboard: React.FC = () => {
     : null;
   const currentCourseProgress = currentCourse?.progress || 0;
 
-  // Quick actions for student
+  // Determine smart card type based on user state
+  const getSmartCardType = (): 'new_user' | 'resume' | 'inactive' | 'progress' => {
+    if (enrolledCourses.length === 0) {
+      return 'new_user';
+    }
+    if (totalLessonsCompleted > 0 && currentCourse) {
+      return 'resume';
+    }
+    return 'progress';
+  };
+
+  // Quick actions for student - Ana Vodafone style (max 5 items)
   const quickActions: QuickAction[] = [
     {
-      icon: Play,
-      label: isArabic ? 'استكمل الحصة' : 'Resume',
-      href: currentCourse ? `/course/${currentCourse.course_id}` : '/courses',
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
-    {
       icon: BookOpen,
-      label: isArabic ? 'الحصص المجانية' : 'Free Lessons',
+      label: isArabic ? 'حصص مجانية' : 'Free Lessons',
       href: '/free-lessons',
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
+    },
+    {
+      icon: Layers,
+      label: isArabic ? 'كورساتي' : 'My Courses',
+      href: '/courses',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       icon: Award,
@@ -269,22 +281,15 @@ const Dashboard: React.FC = () => {
       bgColor: 'bg-purple-500/10',
     },
     {
-      icon: Bell,
-      label: isArabic ? 'الإشعارات' : 'Notifications',
-      href: '/notifications',
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-500/10',
-    },
-    {
-      icon: CreditCard,
-      label: isArabic ? 'الاشتراكات' : 'Subscriptions',
-      href: '/payment',
+      icon: MessageCircle,
+      label: isArabic ? 'الرسائل' : 'Messages',
+      href: '/settings',
       color: 'text-blue-600',
       bgColor: 'bg-blue-500/10',
     },
     {
       icon: User,
-      label: isArabic ? 'حسابي' : 'Account',
+      label: isArabic ? 'الحساب' : 'Account',
       href: '/settings',
       color: 'text-muted-foreground',
       bgColor: 'bg-muted',
@@ -301,74 +306,92 @@ const Dashboard: React.FC = () => {
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
         <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
           <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
-          {/* Welcome Header - Compact */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                {hasValidName
-                  ? `${isArabic ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
-                  : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
-              </h1>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {groupLabel && (
-                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                    {groupLabel}
-                  </Badge>
-                )}
-                {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[10px] gap-1 px-2 py-0.5",
-                      ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color
-                    )}
+          {/* Hero Header - Personalized Ana Vodafone Style */}
+          <div className="bg-gradient-to-br from-primary/5 via-card to-accent/5 rounded-2xl border border-border p-4 sm:p-5 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-muted-foreground mb-1">
+                  {isArabic ? 'جاهز تكمل مذاكرة النهارده؟' : 'Ready to continue today?'}
+                </p>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+                  {hasValidName
+                    ? `${isArabic ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
+                    : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
+                </h1>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {groupLabel && (
+                    <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                      {groupLabel}
+                    </Badge>
+                  )}
+                  {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] gap-1 px-2 py-0.5",
+                        ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color
+                      )}
+                    >
+                      {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, {
+                        className: 'w-2.5 h-2.5',
+                      })}
+                      {isArabic
+                        ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar
+                        : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+                <Link to="/settings">
+                  <Settings className="w-5 h-5" />
+                </Link>
+              </Button>
+            </div>
+            
+            {/* Progress summary in hero */}
+            {enrolledCourses.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">
+                    {isArabic ? 'التقدم الكلي' : 'Overall Progress'}
+                  </span>
+                  <span className="font-bold text-foreground">{overallProgress}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${overallProgress}%` }}
+                  />
+                </div>
+                {currentCourse && (
+                  <Button 
+                    asChild 
+                    className="w-full mt-4 gap-2"
                   >
-                    {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, {
-                      className: 'w-2.5 h-2.5',
-                    })}
-                    {isArabic
-                      ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar
-                      : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
-                  </Badge>
+                    <Link to={`/course/${currentCourse.course_id}`}>
+                      <Play className="w-4 h-4" />
+                      {isArabic ? 'استكمل الحصة' : 'Continue Lesson'}
+                    </Link>
+                  </Button>
                 )}
               </div>
-            </div>
-            <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
-              <Link to="/settings">
-                <Settings className="w-5 h-5" />
-              </Link>
-            </Button>
+            )}
           </div>
 
-          {/* Status Summary Card */}
-          {enrolledCourses.length > 0 && currentCourse ? (
-            <StatusSummaryCard
-              primaryText={currentCourseTitle || (isArabic ? 'الكورس الحالي' : 'Current Course')}
-              secondaryText={isArabic 
-                ? `${currentCourse.completed_lessons || 0} من ${currentCourse.course?.lessons_count || 0} حصة مكتملة`
-                : `${currentCourse.completed_lessons || 0} of ${currentCourse.course?.lessons_count || 0} lessons completed`
-              }
-              progress={currentCourseProgress}
-              badge={isArabic ? 'الكورس النشط' : 'Active Course'}
-              badgeVariant="success"
-              href={`/course/${currentCourse.course_id}`}
-              isRTL={isArabic}
-              className="mb-5"
-            />
-          ) : (
-            <StatusSummaryCard
-              primaryText={isArabic ? 'ابدأ رحلتك التعليمية' : 'Start Your Learning Journey'}
-              secondaryText={isArabic ? 'اختار الكورس الأول ليك وابدأ دلوقتي' : 'Choose your first course and begin today'}
-              badge={isArabic ? 'جديد' : 'New'}
-              badgeVariant="accent"
-              href="/courses"
-              isRTL={isArabic}
-              className="mb-5"
-            />
-          )}
+          {/* Quick Actions Strip - Ana Vodafone Grid */}
+          <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-5" />
 
-          {/* Quick Actions Strip */}
-          <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-4" />
+          {/* Smart Context Card - "Made for YOU" */}
+          <SmartContextCard
+            type={getSmartCardType()}
+            isRTL={isArabic}
+            courseName={currentCourseTitle || undefined}
+            courseId={currentCourse?.course_id}
+            lessonsCompleted={currentCourse?.completed_lessons || 0}
+            totalLessons={currentCourse?.course?.lessons_count || 0}
+            className="mb-5"
+          />
 
           {/* Contact Assistant Button */}
           <div className="mb-6">
