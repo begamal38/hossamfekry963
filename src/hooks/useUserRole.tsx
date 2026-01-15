@@ -6,7 +6,7 @@ type AppRole = 'admin' | 'assistant_teacher' | 'student';
 
 // Simple in-memory cache to avoid re-fetching roles on every route change (prevents flashing loaders).
 let roleCache: { userId: string; roles: AppRole[]; fetchedAt: number } | null = null;
-const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
+const ROLE_CACHE_TTL_MS = 60 * 1000; // 1 minute - faster refresh for role changes
 
 // Export cache clear function for sign out
 export const clearRoleCache = () => {
@@ -88,9 +88,37 @@ export const useUserRole = () => {
     }
   }, [authLoading, session, user]);
 
+  // Initial fetch
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
+  // Subscribe to role changes in realtime
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('user-roles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_roles',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Clear cache and refetch when role changes
+          roleCache = null;
+          fetchRoles();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchRoles]);
 
   const roleSet = useMemo(() => new Set(roles), [roles]);
 
