@@ -3,7 +3,7 @@ import { MessageCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { Conversation } from '@/hooks/useMessaging';
 import { format, isToday, isYesterday } from 'date-fns';
-import { ar } from 'date-fns/locale/ar';
+import ar from 'date-fns/locale/ar';
 
 interface ConversationListProps {
   conversations: Conversation[];

@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ar } from 'date-fns/locale/ar';
+import ar from 'date-fns/locale/ar';
 
 interface CenterGroup {
   id: string;
