@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Megaphone, Play } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Facebook video embeds - ordered newest to oldest (using show_text=0 like hossamfikry.com)
 const campaignEmbeds = [
@@ -46,9 +47,10 @@ const campaignEmbeds = [
 interface VideoCardProps {
   embed: typeof campaignEmbeds[0];
   index: number;
+  t: (key: string) => string;
 }
 
-const VideoCard = ({ embed, index }: VideoCardProps) => {
+const VideoCard = ({ embed, index, t }: VideoCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -66,7 +68,7 @@ const VideoCard = ({ embed, index }: VideoCardProps) => {
             className="w-full flex items-center justify-center bg-muted/30 aspect-video"
           >
             <p className="text-muted-foreground text-sm">
-              هذا المحتوى غير متاح حاليًا
+              {t('campaigns.unavailable')}
             </p>
           </div>
         </div>
@@ -128,7 +130,11 @@ const VideoSkeleton = ({ index }: { index: number }) => (
   </div>
 );
 
-const EmptyState = () => (
+interface EmptyStateProps {
+  t: (key: string) => string;
+}
+
+const EmptyState = ({ t }: EmptyStateProps) => (
   <div className="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center">
     <div className="relative">
       {/* Glow behind icon */}
@@ -138,15 +144,16 @@ const EmptyState = () => (
       </div>
     </div>
     <p className="text-xl font-medium text-foreground mb-2">
-      سيتم إضافة الحملات قريبًا
+      {t('campaigns.empty')}
     </p>
     <p className="text-muted-foreground text-sm">
-      تابعنا على فيسبوك لمشاهدة أحدث الحملات
+      {t('campaigns.emptySubtitle')}
     </p>
   </div>
 );
 
 const Campaigns = () => {
+  const { t, isRTL, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -155,7 +162,11 @@ const Campaigns = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav" dir="rtl">
+    <div 
+      className="min-h-screen bg-background pb-mobile-nav" 
+      dir={isRTL ? 'rtl' : 'ltr'}
+      lang={language}
+    >
       <Navbar />
       
       <main className="pt-24 pb-16">
@@ -166,15 +177,15 @@ const Campaigns = () => {
             <div className="relative inline-flex items-center justify-center mb-6">
               <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl scale-150" />
               <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Play className="w-7 h-7 text-primary-foreground fill-primary-foreground mr-[-2px]" />
+                <Play className="w-7 h-7 text-primary-foreground fill-primary-foreground" style={{ marginInlineStart: '2px' }} />
               </div>
             </div>
             
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              حملاتنا الإعلانية
+              {t('campaigns.title')}
             </h1>
             <p className="text-muted-foreground text-base md:text-lg max-w-md mx-auto">
-              شوف إعلاناتنا اللي الطلبة شافوها وتفاعلوا معاها
+              {t('campaigns.subtitle')}
             </p>
             
             {/* Decorative line */}
@@ -194,11 +205,11 @@ const Campaigns = () => {
               ))
             ) : campaignEmbeds.length === 0 ? (
               // Empty state
-              <EmptyState />
+              <EmptyState t={t} />
             ) : (
               // Video cards with staggered animation
               campaignEmbeds.map((embed, index) => (
-                <VideoCard key={embed.id} embed={embed} index={index} />
+                <VideoCard key={embed.id} embed={embed} index={index} t={t} />
               ))
             )}
           </div>
@@ -207,16 +218,16 @@ const Campaigns = () => {
           {!isLoading && campaignEmbeds.length > 0 && (
             <div className="text-center mt-12 animate-fade-in" style={{ animationDelay: '700ms' }}>
               <p className="text-muted-foreground text-sm">
-                تابعنا على{' '}
+                {t('campaigns.followUs')}{' '}
                 <a 
                   href="https://www.facebook.com/mr.hossamfekry" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:underline font-medium"
                 >
-                  فيسبوك
+                  {t('campaigns.facebook')}
                 </a>
-                {' '}لمشاهدة المزيد
+                {' '}{t('campaigns.seeMore')}
               </p>
             </div>
           )}
