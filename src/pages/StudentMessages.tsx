@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import ar from 'date-fns/locale/ar';
 
 interface Message {
   id: string;
