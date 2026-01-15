@@ -195,14 +195,25 @@ export default function SendNotifications() {
 
   const fetchData = async () => {
     try {
+      // Fetch staff user IDs to exclude from student lists
+      const { data: staffRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['assistant_teacher', 'admin']);
+      
+      const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
+
       const [coursesRes, studentsRes] = await Promise.all([
         supabase.from('courses').select('id, title, title_ar'),
         supabase.from('profiles').select('user_id, full_name, email, grade, attendance_mode, phone'),
       ]);
 
+      // Filter out staff from student lists
+      const studentsOnly = (studentsRes.data || []).filter(s => !staffUserIds.has(s.user_id));
+
       setCourses(coursesRes.data || []);
-      setAllStudents(studentsRes.data || []);
-      setFilteredStudents(studentsRes.data || []);
+      setAllStudents(studentsOnly);
+      setFilteredStudents(studentsOnly);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

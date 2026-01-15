@@ -201,18 +201,21 @@ serve(async (req: Request): Promise<Response> => {
     // Get target users based on targeting
     let userIds: string[] = [];
 
+    // First, get all assistant teachers and admins to exclude them from ALL notifications
+    const { data: staffRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["assistant_teacher", "admin"]);
+    
+    const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
+
     // If direct student_ids provided (from SendNotifications for individual targeting)
     if (student_ids && student_ids.length > 0) {
-      userIds = student_ids;
-      console.log(`[send-notification-email] Using provided student_ids: ${userIds.length} students`);
+      // Filter out any staff that might have been included
+      userIds = student_ids.filter((id: string) => !staffUserIds.has(id));
+      console.log(`[send-notification-email] Using provided student_ids (after staff filter): ${userIds.length} students`);
     } else {
-      // First, get all assistant teachers and admins to exclude them
-      const { data: staffRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ["assistant_teacher", "admin"]);
-      
-      const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
+      // staffUserIds already fetched above
 
       if (target_type === "all") {
         // Get all student users (excluding staff)

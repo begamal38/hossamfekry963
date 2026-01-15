@@ -37,15 +37,26 @@ export const useMessaging = () => {
   const [totalUnread, setTotalUnread] = useState(0);
 
   // Fetch conversations
+  // For students: only their conversations
+  // For assistant teachers: ALL conversations (shared team inbox)
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('conversations')
         .select('*')
         .order('last_message_at', { ascending: false });
+      
+      // Students only see their own conversations
+      // Assistant teachers see ALL conversations (team inbox)
+      if (isStudent()) {
+        query = query.eq('student_id', user.id);
+      }
+      // Assistant teachers see all - no filter needed
+      
+      const { data, error } = await query;
       
       if (error) throw error;
 
@@ -68,6 +79,7 @@ export const useMessaging = () => {
       setConversations(conversationsWithNames);
 
       // Calculate total unread
+      // For assistant teachers, show combined unread from all conversations
       const unread = conversationsWithNames.reduce((sum, c) => {
         if (isStudent()) return sum + c.unread_count_student;
         if (isAssistantTeacher()) return sum + c.unread_count_assistant;
