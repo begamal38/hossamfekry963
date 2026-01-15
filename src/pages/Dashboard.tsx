@@ -42,6 +42,8 @@ import { cn } from '@/lib/utils';
 import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
 import { StudentChatButton } from '@/components/messaging/StudentChatButton';
 import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
+import { useAvailableExamsCount } from '@/hooks/useAvailableExamsCount';
+import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 
 // Attendance mode config
 const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
@@ -257,6 +259,10 @@ const Dashboard: React.FC = () => {
     return 'progress';
   };
 
+  // Get badge counts
+  const { count: availableExamsCount } = useAvailableExamsCount();
+  const { count: unreadMessagesCount } = useUnreadMessagesCount();
+
   // Quick actions for student - Ana Vodafone style (max 5 items)
   const quickActions: QuickAction[] = [
     {
@@ -279,6 +285,7 @@ const Dashboard: React.FC = () => {
       href: '/exams',
       color: 'text-purple-600',
       bgColor: 'bg-purple-500/10',
+      badge: availableExamsCount > 0 ? (availableExamsCount > 9 ? '9+' : String(availableExamsCount)) : undefined,
     },
     {
       icon: MessageCircle,
@@ -286,6 +293,7 @@ const Dashboard: React.FC = () => {
       href: '/messages',
       color: 'text-blue-600',
       bgColor: 'bg-blue-500/10',
+      badge: unreadMessagesCount > 0 ? (unreadMessagesCount > 9 ? '9+' : String(unreadMessagesCount)) : undefined,
     },
     {
       icon: User,

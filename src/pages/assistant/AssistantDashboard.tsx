@@ -33,6 +33,7 @@ import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActi
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { ConversionInsightsCard } from '@/components/assistant/ConversionInsightsCard';
+import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 
 interface Stats {
   totalStudents: number;
@@ -69,7 +70,7 @@ export default function AssistantDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const { count: unreadMessages } = useUnreadMessagesCount();
 
   const hasAccess = canAccessDashboard();
 
@@ -133,9 +134,7 @@ export default function AssistantDashboard() {
           }, 0) / examResults!.length)
         : 0;
 
-      // Calculate unread messages
-      const totalUnread = (conversations || []).reduce((sum, c) => sum + (c.unread_count_assistant || 0), 0);
-      setUnreadMessages(totalUnread);
+      // Unread messages now handled by useUnreadMessagesCount hook
 
       setStats({
         totalStudents: studentsCount || 0,
