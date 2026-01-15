@@ -276,14 +276,14 @@ const Dashboard: React.FC = () => {
     {
       icon: Award,
       label: isArabic ? 'الامتحانات' : 'Exams',
-      href: '/courses',
+      href: '/exams',
       color: 'text-purple-600',
       bgColor: 'bg-purple-500/10',
     },
     {
       icon: MessageCircle,
       label: isArabic ? 'الرسائل' : 'Messages',
-      href: '/settings',
+      href: '/messages',
       color: 'text-blue-600',
       bgColor: 'bg-blue-500/10',
     },

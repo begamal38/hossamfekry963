@@ -33,6 +33,8 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const Install = lazy(() => import("./pages/Install"));
 const TakeExam = lazy(() => import("./pages/TakeExam"));
+const StudentExams = lazy(() => import("./pages/StudentExams"));
+const StudentMessages = lazy(() => import("./pages/StudentMessages"));
 
 // Assistant pages
 const AssistantDashboard = lazy(() => import("./pages/assistant/AssistantDashboard"));
@@ -140,6 +142,28 @@ const App = () => (
                         allow={({ hasRole }) => hasRole("student")}
                       >
                         <StudentProfile />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/exams"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <StudentExams />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/messages"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ hasRole }) => hasRole("student")}
+                      >
+                        <StudentMessages />
                       </RequireResolvedAccess>
                     }
                   />
