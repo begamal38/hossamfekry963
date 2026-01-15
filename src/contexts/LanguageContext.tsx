@@ -441,14 +441,17 @@ const translations: Record<Language, Record<string, string>> = {
     'about.message.cta': 'And if you are ready to start right, he is with you.',
 
     // ══════════════════════════════════════════════════════════════════════════
-    // CAMPAIGNS
+    // CAMPAIGNS PAGE
     // ══════════════════════════════════════════════════════════════════════════
-    'campaigns.followUs': 'Follow us on Facebook',
-    'campaigns.title': 'Our Campaigns',
-    'campaigns.subtitle': 'Follow our latest offers and news through our Facebook posts',
+    'campaigns.title': 'Our Ad Campaigns',
+    'campaigns.subtitle': 'Watch our ads that students saw and engaged with',
+    'campaigns.empty': 'Campaigns coming soon',
+    'campaigns.emptySubtitle': 'Follow us on Facebook to see the latest campaigns',
+    'campaigns.unavailable': 'This content is currently unavailable',
+    'campaigns.followUs': 'Follow us on',
+    'campaigns.facebook': 'Facebook',
+    'campaigns.seeMore': 'to see more',
     'campaigns.facebookBanner': 'Follow our official Facebook page for the latest updates and offers',
-    'campaigns.note': 'Note: Replace the post URLs above with your actual Facebook post URLs',
-    'campaigns.howToGet': 'You can get the post URL by clicking on the post date and copying the link',
     'campaigns.followTitle': 'Follow Us on Facebook',
     'campaigns.followDesc': 'Join our Facebook community and be the first to know about exclusive offers and discounts',
     'campaigns.visitPage': 'Visit Our Page',
@@ -979,14 +982,17 @@ const translations: Record<Language, Record<string, string>> = {
     'about.message.cta': 'ولو جاهز تبدأ صح، هو معاك.',
 
     // ══════════════════════════════════════════════════════════════════════════
-    // CAMPAIGNS
+    // CAMPAIGNS PAGE
     // ══════════════════════════════════════════════════════════════════════════
-    'campaigns.followUs': 'تابعنا على فيسبوك',
     'campaigns.title': 'حملاتنا الإعلانية',
-    'campaigns.subtitle': 'تابع آخر العروض والأخبار من خلال منشوراتنا على فيسبوك',
+    'campaigns.subtitle': 'شوف إعلاناتنا اللي الطلبة شافوها وتفاعلوا معاها',
+    'campaigns.empty': 'سيتم إضافة الحملات قريبًا',
+    'campaigns.emptySubtitle': 'تابعنا على فيسبوك لمشاهدة أحدث الحملات',
+    'campaigns.unavailable': 'هذا المحتوى غير متاح حاليًا',
+    'campaigns.followUs': 'تابعنا على',
+    'campaigns.facebook': 'فيسبوك',
+    'campaigns.seeMore': 'لمشاهدة المزيد',
     'campaigns.facebookBanner': 'تابعنا على صفحتنا الرسمية على فيسبوك للحصول على آخر التحديثات والعروض',
-    'campaigns.note': 'ملاحظة: استبدل روابط المنشورات أعلاه بروابط منشوراتك الفعلية من فيسبوك',
-    'campaigns.howToGet': 'يمكنك الحصول على رابط المنشور من خلال الضغط على تاريخ المنشور ونسخ الرابط',
     'campaigns.followTitle': 'تابعنا على فيسبوك',
     'campaigns.followDesc': 'انضم لمجتمعنا على فيسبوك وكن أول من يعرف عن العروض والخصومات الحصرية',
     'campaigns.visitPage': 'زور صفحتنا',
