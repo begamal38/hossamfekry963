@@ -92,13 +92,15 @@ export function RequireResolvedAccess({
     if (!user) return !requireAuth;
     if (!allow) return true;
 
-    // FAIL-SAFE: If roles are missing/empty after force unblock, allow access
-    if (forceUnblock && roles.length === 0) {
-      console.warn('[Auth] Force unblock active with no roles - allowing access');
+    // CRITICAL FAIL-SAFE: If forceUnblock is active, ALWAYS allow
+    // This prevents white screen when role fetch is delayed/failed
+    if (forceUnblock) {
+      console.warn('[Auth] Force unblock active - allowing access unconditionally');
       return true;
     }
 
     // FAIL-SAFE: If roles array is empty/missing after attempted fetch, allow access
+    // This handles cases where role fetch failed or is delayed
     const rolesMissing = hasAttemptedFetch && roles.length === 0;
     if (rolesMissing) {
       console.warn('[Auth] User has no roles after fetch - allowing access as fail-safe');
