@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Play, Loader2, CheckCircle, BookOpen } from 'lucide-react';
+import { Clock, Play, Loader2, CheckCircle, BookOpen, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -30,6 +30,7 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   slug: string | null;
+  enrolled_count?: number; // Number of enrolled students
 }
 
 interface CourseCardProps {
@@ -188,7 +189,7 @@ export const CourseCard = React.memo<CourseCardProps>(({
         )}
 
         {/* Meta info row */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center flex-wrap gap-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-primary/60" />
             <span>{course.duration_hours || 0} {isArabic ? 'ساعة' : 'hrs'}</span>
@@ -197,6 +198,12 @@ export const CourseCard = React.memo<CourseCardProps>(({
             <Play className="w-4 h-4 text-primary/60" />
             <span>{course.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}</span>
           </div>
+          {(course.enrolled_count !== undefined && course.enrolled_count > 0) && (
+            <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-primary/60" />
+              <span>{course.enrolled_count} {isArabic ? 'طالب' : 'students'}</span>
+            </div>
+          )}
         </div>
 
         {/* CTA Button - varies based on context */}

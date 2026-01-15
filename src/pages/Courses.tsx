@@ -39,6 +39,7 @@ interface Course {
   duration_hours: number;
   slug: string | null;
   is_hidden?: boolean;
+  enrolled_count?: number;
 }
 
 interface Enrollment {
@@ -81,7 +82,31 @@ const Courses: React.FC = () => {
           .order('created_at', { ascending: false });
 
         if (coursesError) throw coursesError;
-        setCourses(coursesData || []);
+        
+        let courses = coursesData || [];
+
+        // Fetch enrollment counts for all courses
+        if (courses.length > 0) {
+          const courseIds = courses.map(c => c.id);
+          const { data: enrollmentCounts } = await supabase
+            .from('course_enrollments')
+            .select('course_id')
+            .in('course_id', courseIds);
+          
+          // Count enrollments per course
+          const countMap = new Map<string, number>();
+          (enrollmentCounts || []).forEach(e => {
+            countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
+          });
+          
+          // Add enrolled_count to each course
+          courses = courses.map(course => ({
+            ...course,
+            enrolled_count: countMap.get(course.id) || 0
+          }));
+        }
+        
+        setCourses(courses);
 
         // Fetch user profile and enrollments if logged in
         if (user) {
