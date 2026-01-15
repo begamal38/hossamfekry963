@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   CreditCard,
   MessageCircle,
+  Sparkles,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -119,6 +120,7 @@ const Dashboard: React.FC = () => {
     avgSessionMinutes: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nextLessonId, setNextLessonId] = useState<string | null>(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -204,6 +206,38 @@ const Dashboard: React.FC = () => {
           avgSessionMinutes: focusData.length > 0 ? Math.round(totalActive / 60 / focusData.length) : 0,
         });
       }
+
+      // Find the next lesson to continue (first incomplete lesson in current course)
+      if (enrollmentsData && enrollmentsData.length > 0) {
+        const firstCourse = enrollmentsData[0];
+        const courseId = firstCourse.course_id;
+        
+        // Get completed lessons for this course
+        const { data: completedLessons } = await supabase
+          .from('lesson_completions')
+          .select('lesson_id')
+          .eq('user_id', user.id);
+        
+        const completedLessonIds = new Set((completedLessons || []).map(l => l.lesson_id));
+        
+        // Get all lessons for this course ordered by order_index
+        const { data: courseLessons } = await supabase
+          .from('lessons')
+          .select('id, order_index')
+          .eq('course_id', courseId)
+          .order('order_index', { ascending: true });
+        
+        if (courseLessons && courseLessons.length > 0) {
+          // Find the first incomplete lesson
+          const nextLesson = courseLessons.find(l => !completedLessonIds.has(l.id));
+          if (nextLesson) {
+            setNextLessonId(nextLesson.id);
+          } else {
+            // All lessons completed, go to first lesson
+            setNextLessonId(courseLessons[0].id);
+          }
+        }
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -264,20 +298,14 @@ const Dashboard: React.FC = () => {
   const { count: unreadMessagesCount } = useUnreadMessagesCount();
 
   // Quick actions for student - Ana Vodafone style (max 5 items)
+  // Removed duplicate "My Courses" since it's shown in section below
   const quickActions: QuickAction[] = [
     {
-      icon: BookOpen,
+      icon: Sparkles,
       label: isArabic ? 'حصص مجانية' : 'Free Lessons',
       href: '/free-lessons',
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
-    },
-    {
-      icon: Layers,
-      label: isArabic ? 'كورساتي' : 'My Courses',
-      href: '/courses',
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
     },
     {
       icon: Award,
@@ -377,7 +405,7 @@ const Dashboard: React.FC = () => {
                     asChild 
                     className="w-full mt-4 gap-2"
                   >
-                    <Link to={`/course/${currentCourse.course_id}`}>
+                    <Link to={nextLessonId ? `/lesson/${nextLessonId}` : `/course/${currentCourse.course_id}`}>
                       <Play className="w-4 h-4" />
                       {isArabic ? 'استكمل الحصة' : 'Continue Lesson'}
                     </Link>

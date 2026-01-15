@@ -70,12 +70,22 @@ interface Chapter {
   order_index: number;
 }
 
+interface Lesson {
+  id: string;
+  title: string;
+  title_ar: string;
+  course_id: string;
+  chapter_id: string | null;
+  order_index: number;
+}
+
 interface Exam {
   id: string;
   title: string;
   title_ar: string;
   course_id: string;
   chapter_id: string | null;
+  lesson_id?: string | null;
   max_score: number;
   status: ExamStatus;
   pass_mark: number;
@@ -119,6 +129,7 @@ export default function ManageExams() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -133,6 +144,8 @@ export default function ManageExams() {
   const [examForm, setExamForm] = useState({
     title_ar: '',
     chapter_id: '',
+    lesson_id: '',
+    exam_scope: 'chapter' as 'chapter' | 'lesson',
     pass_mark: 60,
     time_limit_minutes: '',
     max_attempts: 1,
@@ -197,6 +210,22 @@ export default function ManageExams() {
     }
   }, [selectedCourse]);
 
+  const fetchLessons = useCallback(async () => {
+    if (!selectedCourse) return;
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('id, title, title_ar, course_id, chapter_id, order_index')
+        .eq('course_id', selectedCourse)
+        .order('order_index');
+
+      if (error) throw error;
+      setLessons(data || []);
+    } catch (error) {
+      console.error('Error fetching lessons:', error);
+    }
+  }, [selectedCourse]);
+
   const fetchExams = useCallback(async () => {
     if (!selectedCourse) return;
     try {
@@ -227,13 +256,14 @@ export default function ManageExams() {
         
         return { 
           ...exam, 
+          lesson_id: null,
           questions_count: questionsRes.count || 0,
           attempts_count: attemptsRes.count || 0
-        };
+        } as Exam;
       }));
 
-      setExams(examsWithCounts as Exam[]);
-      setFilteredExams(examsWithCounts as Exam[]);
+      setExams(examsWithCounts);
+      setFilteredExams(examsWithCounts);
     } catch (error) {
       console.error('Error fetching exams:', error);
     }
@@ -264,9 +294,10 @@ export default function ManageExams() {
   useEffect(() => {
     if (selectedCourse) {
       fetchChapters();
+      fetchLessons();
       fetchExams();
     }
-  }, [selectedCourse, selectedChapter, fetchChapters, fetchExams]);
+  }, [selectedCourse, selectedChapter, fetchChapters, fetchLessons, fetchExams]);
 
   useEffect(() => {
     if (selectedExamId) {
@@ -307,11 +338,11 @@ export default function ManageExams() {
     try {
       const translatedTitle = await translateText(examForm.title_ar, 'en');
       
-      const examData = {
+      const examData: Record<string, unknown> = {
         title_ar: examForm.title_ar,
         title: translatedTitle || examForm.title_ar,
         course_id: selectedCourse,
-        chapter_id: examForm.chapter_id || null,
+        chapter_id: examForm.exam_scope === 'chapter' && examForm.chapter_id ? examForm.chapter_id : null,
         pass_mark: examForm.pass_mark,
         time_limit_minutes: examForm.time_limit_minutes ? parseInt(examForm.time_limit_minutes) : null,
         max_attempts: examForm.max_attempts,
@@ -325,17 +356,46 @@ export default function ManageExams() {
           .eq('id', editingExam.id);
 
         if (error) throw error;
+        
+        // If scope is lesson, link exam to lesson
+        if (examForm.exam_scope === 'lesson' && examForm.lesson_id) {
+          await supabase
+            .from('lessons')
+            .update({ linked_exam_id: editingExam.id })
+            .eq('id', examForm.lesson_id);
+        }
+        
         toast({ title: isArabic ? 'تم التحديث' : 'Updated' });
       } else {
-        const { error } = await supabase
+        const insertData = {
+          title_ar: examForm.title_ar,
+          title: (examData.title as string) || examForm.title_ar,
+          course_id: selectedCourse,
+          chapter_id: examForm.exam_scope === 'chapter' && examForm.chapter_id ? examForm.chapter_id : null,
+          pass_mark: examForm.pass_mark,
+          time_limit_minutes: examForm.time_limit_minutes ? parseInt(examForm.time_limit_minutes) : null,
+          max_attempts: examForm.max_attempts,
+          show_results: examForm.show_results,
+          max_score: 100,
+          status: 'draft' as ExamStatus,
+        };
+        
+        const { data: newExam, error } = await supabase
           .from('exams')
-          .insert({
-            ...examData,
-            max_score: 100,
-            status: 'draft' as ExamStatus,
-          });
+          .insert(insertData)
+          .select('id')
+          .single();
 
         if (error) throw error;
+        
+        // If scope is lesson, link exam to lesson
+        if (examForm.exam_scope === 'lesson' && examForm.lesson_id && newExam) {
+          await supabase
+            .from('lessons')
+            .update({ linked_exam_id: newExam.id })
+            .eq('id', examForm.lesson_id);
+        }
+        
         toast({ title: isArabic ? 'تم الإنشاء' : 'Created' });
       }
 
@@ -511,6 +571,8 @@ export default function ManageExams() {
     setExamForm({
       title_ar: '',
       chapter_id: '',
+      lesson_id: '',
+      exam_scope: 'chapter',
       pass_mark: 60,
       time_limit_minutes: '',
       max_attempts: 1,
@@ -532,11 +594,18 @@ export default function ManageExams() {
     });
   };
 
-  const startEditExam = (exam: Exam) => {
+  const startEditExam = async (exam: Exam) => {
     setEditingExam(exam);
+    
+    // Check if this exam is linked to a lesson
+    const linkedLesson = lessons.find(l => l.id === exam.lesson_id);
+    const hasLinkedLesson = !!linkedLesson;
+    
     setExamForm({
       title_ar: exam.title_ar,
       chapter_id: exam.chapter_id || '',
+      lesson_id: linkedLesson?.id || '',
+      exam_scope: hasLinkedLesson ? 'lesson' : 'chapter',
       pass_mark: exam.pass_mark,
       time_limit_minutes: exam.time_limit_minutes?.toString() || '',
       max_attempts: exam.max_attempts,
@@ -568,6 +637,12 @@ export default function ManageExams() {
     if (!chapterId) return isArabic ? 'بدون باب' : 'No Chapter';
     const chapter = chapters.find(c => c.id === chapterId);
     return chapter ? (isArabic ? chapter.title_ar : chapter.title) : '';
+  };
+
+  const getLessonName = (lessonId: string | null) => {
+    if (!lessonId) return '';
+    const lesson = lessons.find(l => l.id === lessonId);
+    return lesson ? (isArabic ? lesson.title_ar : lesson.title) : '';
   };
 
   const getSelectedExam = () => exams.find(e => e.id === selectedExamId);
@@ -837,26 +912,88 @@ export default function ManageExams() {
               />
             </div>
 
+            {/* Exam Scope Selection - Chapter or Lesson */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                {isArabic ? 'الباب' : 'Chapter'}
+                {isArabic ? 'نوع الامتحان' : 'Exam Scope'}
               </label>
-              <Select 
-                value={examForm.chapter_id} 
-                onValueChange={(value) => setExamForm(prev => ({ ...prev, chapter_id: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isArabic ? "اختر الباب (اختياري)" : "Select chapter (optional)"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {chapters.map(chapter => (
-                    <SelectItem key={chapter.id} value={chapter.id}>
-                      {isArabic ? chapter.title_ar : chapter.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExamForm(prev => ({ ...prev, exam_scope: 'chapter', lesson_id: '' }))}
+                  className={cn(
+                    "h-11 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2",
+                    examForm.exam_scope === 'chapter'
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {isArabic ? 'على باب' : 'Per Chapter'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExamForm(prev => ({ ...prev, exam_scope: 'lesson', chapter_id: '' }))}
+                  className={cn(
+                    "h-11 rounded-lg border-2 font-medium transition-all flex items-center justify-center gap-2",
+                    examForm.exam_scope === 'lesson'
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <Play className="w-4 h-4" />
+                  {isArabic ? 'على حصة' : 'Per Lesson'}
+                </button>
+              </div>
             </div>
+
+            {/* Chapter Selection - shown when scope is chapter */}
+            {examForm.exam_scope === 'chapter' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'الباب' : 'Chapter'}
+                </label>
+                <Select 
+                  value={examForm.chapter_id} 
+                  onValueChange={(value) => setExamForm(prev => ({ ...prev, chapter_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isArabic ? "اختر الباب" : "Select chapter"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chapters.map(chapter => (
+                      <SelectItem key={chapter.id} value={chapter.id}>
+                        {isArabic ? chapter.title_ar : chapter.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Lesson Selection - shown when scope is lesson */}
+            {examForm.exam_scope === 'lesson' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'الحصة' : 'Lesson'}
+                </label>
+                <Select 
+                  value={examForm.lesson_id} 
+                  onValueChange={(value) => setExamForm(prev => ({ ...prev, lesson_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isArabic ? "اختر الحصة" : "Select lesson"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {lessons.map(lesson => (
+                      <SelectItem key={lesson.id} value={lesson.id}>
+                        {isArabic ? lesson.title_ar : lesson.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
