@@ -1,49 +1,202 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Megaphone, Facebook } from 'lucide-react';
+import { Megaphone } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-declare global {
-  interface Window {
-    FB: {
-      XFBML: {
-        parse: () => void;
-      };
-    };
-  }
+// Campaign data with metadata - sorted newest to oldest by publishDate
+interface Campaign {
+  id: string;
+  videoUrl: string;
+  publishDate: string; // ISO date string for sorting
+  campaignType: 'traffic' | 'awareness' | 'free_trial';
+  targetGrade: 'second_secondary_languages' | 'third_secondary_languages';
+  status: 'active' | 'ended';
 }
 
-const Campaigns = () => {
-  const { t, isRTL } = useLanguage();
+const campaignsData: Campaign[] = [
+  {
+    id: '1',
+    videoUrl: 'https://www.facebook.com/share/v/1GEZxLGqjC/',
+    publishDate: '2025-01-15',
+    campaignType: 'awareness' as const,
+    targetGrade: 'third_secondary_languages' as const,
+    status: 'active' as const,
+  },
+  {
+    id: '2',
+    videoUrl: 'https://www.facebook.com/share/v/1EyXUbUz6b/',
+    publishDate: '2025-01-12',
+    campaignType: 'traffic' as const,
+    targetGrade: 'third_secondary_languages' as const,
+    status: 'active' as const,
+  },
+  {
+    id: '3',
+    videoUrl: 'https://www.facebook.com/share/v/17vsujXPGJ/',
+    publishDate: '2025-01-10',
+    campaignType: 'free_trial' as const,
+    targetGrade: 'second_secondary_languages' as const,
+    status: 'active' as const,
+  },
+  {
+    id: '4',
+    videoUrl: 'https://www.facebook.com/share/v/1CaEUm7BRk/',
+    publishDate: '2025-01-08',
+    campaignType: 'awareness' as const,
+    targetGrade: 'third_secondary_languages' as const,
+    status: 'ended' as const,
+  },
+  {
+    id: '5',
+    videoUrl: 'https://www.facebook.com/share/v/1A8wThsHhU/',
+    publishDate: '2025-01-05',
+    campaignType: 'traffic' as const,
+    targetGrade: 'second_secondary_languages' as const,
+    status: 'ended' as const,
+  },
+  {
+    id: '6',
+    videoUrl: 'https://www.facebook.com/share/v/1AQ1Xb7Upi/',
+    publishDate: '2025-01-03',
+    campaignType: 'free_trial' as const,
+    targetGrade: 'third_secondary_languages' as const,
+    status: 'ended' as const,
+  },
+  {
+    id: '7',
+    videoUrl: 'https://www.facebook.com/share/v/17y6ePUgzv/',
+    publishDate: '2025-01-01',
+    campaignType: 'awareness' as const,
+    targetGrade: 'second_secondary_languages' as const,
+    status: 'ended' as const,
+  },
+];
 
-  // Facebook post URLs - يمكنك تغيير هذه الروابط بروابط المنشورات الفعلية
-  const facebookPosts = [
-    'https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3D123456789%26id%3D123456789',
-    'https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3D123456789%26id%3D123456789',
-    'https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fpermalink.php%3Fstory_fbid%3D123456789%26id%3D123456789',
-  ];
+// Sort campaigns newest to oldest
+const campaigns = [...campaignsData].sort(
+  (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+);
+
+const getCampaignTypeLabel = (type: Campaign['campaignType']): string => {
+  const labels: Record<Campaign['campaignType'], string> = {
+    traffic: 'Traffic',
+    awareness: 'Awareness',
+    free_trial: 'Free Trial',
+  };
+  return labels[type];
+};
+
+const getTargetGradeLabel = (grade: Campaign['targetGrade']): string => {
+  const labels: Record<Campaign['targetGrade'], string> = {
+    second_secondary_languages: 'تانية ثانوي لغات',
+    third_secondary_languages: 'تالتة ثانوي لغات',
+  };
+  return labels[grade];
+};
+
+const getStatusLabel = (status: Campaign['status']): string => {
+  return status === 'active' ? 'نشطة' : 'منتهية';
+};
+
+const getStatusColor = (status: Campaign['status']): string => {
+  return status === 'active' 
+    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+    : 'bg-muted text-muted-foreground';
+};
+
+// Convert Facebook share URL to embed URL
+const getEmbedUrl = (shareUrl: string): string => {
+  const encodedUrl = encodeURIComponent(shareUrl);
+  return `https://www.facebook.com/plugins/video.php?href=${encodedUrl}&show_text=false&width=560`;
+};
+
+interface CampaignCardProps {
+  campaign: Campaign;
+}
+
+const CampaignCard = ({ campaign }: CampaignCardProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {/* Video Embed Container */}
+      <div className="relative w-full aspect-video bg-muted">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Skeleton className="w-full h-full" />
+          </div>
+        )}
+        <iframe
+          src={getEmbedUrl(campaign.videoUrl)}
+          width="100%"
+          height="100%"
+          style={{ border: 'none', overflow: 'hidden' }}
+          scrolling="no"
+          frameBorder="0"
+          allowFullScreen
+          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          className="absolute inset-0 w-full h-full"
+          onLoad={() => setIsLoading(false)}
+        />
+      </div>
+
+      {/* Campaign Metadata */}
+      <div className="p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {/* Campaign Type */}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+            {getCampaignTypeLabel(campaign.campaignType)}
+          </span>
+          
+          {/* Target Grade */}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+            {getTargetGradeLabel(campaign.targetGrade)}
+          </span>
+          
+          {/* Status */}
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+            {getStatusLabel(campaign.status)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CampaignSkeleton = () => (
+  <div className="bg-card border border-border rounded-2xl overflow-hidden">
+    <Skeleton className="w-full aspect-video" />
+    <div className="p-4">
+      <div className="flex gap-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-28 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyState = () => (
+  <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <Megaphone className="w-8 h-8 text-muted-foreground" />
+    </div>
+    <p className="text-lg text-muted-foreground">
+      سيتم إضافة الحملات قريبًا
+    </p>
+  </div>
+);
+
+const Campaigns = () => {
+  const { isRTL } = useLanguage();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load Facebook SDK
-    const loadFacebookSDK = () => {
-      if (document.getElementById('facebook-jssdk')) {
-        if (window.FB) {
-          window.FB.XFBML.parse();
-        }
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.id = 'facebook-jssdk';
-      script.src = 'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v18.0';
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      document.body.appendChild(script);
-    };
-
-    loadFacebookSDK();
+    // Simulate initial load
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -51,81 +204,35 @@ const Campaigns = () => {
       <Navbar />
       
       <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4">
-          {/* Hero Section */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full mb-6">
-              <Megaphone className="w-5 h-5" />
-              <span className="text-sm font-medium">
-                {t('campaigns.followUs')}
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              {t('campaigns.title')}
+        <div className="container mx-auto px-4 max-w-3xl">
+          {/* Page Header - Simple & Clean */}
+          <header className="text-center mb-10">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+              حملاتنا الإعلانية
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t('campaigns.subtitle')}
+            <p className="text-muted-foreground text-base md:text-lg">
+              شوف إعلاناتنا اللي الطلبة شافوها وتفاعلوا معاها
             </p>
-          </div>
+          </header>
 
-          {/* Facebook Info Banner */}
-          <div className="bg-gradient-to-r from-blue-600/10 via-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-2xl p-6 mb-12 flex items-center justify-center gap-4">
-            <Facebook className="w-8 h-8 text-blue-600" />
-            <p className="text-foreground">
-              {t('campaigns.facebookBanner')}
-            </p>
-          </div>
-
-          {/* Facebook Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {facebookPosts.map((postUrl, index) => (
-              <div 
-                key={index}
-                className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-shadow"
-              >
-                <iframe
-                  src={postUrl}
-                  width="100%"
-                  height="500"
-                  style={{ border: 'none', overflow: 'hidden' }}
-                  scrolling="no"
-                  frameBorder="0"
-                  allowFullScreen
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                  className="w-full"
-                ></iframe>
-              </div>
-            ))}
-          </div>
-
-          {/* Placeholder Message */}
-          <div className="mt-12 text-center bg-muted/50 rounded-2xl p-8">
-            <p className="text-muted-foreground mb-4">
-              {t('campaigns.note')}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t('campaigns.howToGet')}
-            </p>
-          </div>
-
-          {/* CTA Section */}
-          <div className="mt-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 md:p-12 text-center text-white">
-            <Facebook className="w-16 h-16 mx-auto mb-6 opacity-90" />
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              {t('campaigns.followTitle')}
-            </h2>
-            <p className="mb-6 opacity-90 max-w-xl mx-auto">
-              {t('campaigns.followDesc')}
-            </p>
-            <a 
-              href="https://facebook.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors"
-            >
-              <Facebook className="w-5 h-5" />
-              {t('campaigns.visitPage')}
-            </a>
+          {/* Campaign Feed */}
+          <div className="space-y-6">
+            {isLoading ? (
+              // Loading Skeletons
+              <>
+                <CampaignSkeleton />
+                <CampaignSkeleton />
+                <CampaignSkeleton />
+              </>
+            ) : campaigns.length === 0 ? (
+              // Empty State
+              <EmptyState />
+            ) : (
+              // Campaign Cards - Sorted newest to oldest
+              campaigns.map((campaign) => (
+                <CampaignCard key={campaign.id} campaign={campaign} />
+              ))
+            )}
           </div>
         </div>
       </main>
