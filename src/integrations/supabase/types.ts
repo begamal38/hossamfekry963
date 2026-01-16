@@ -1432,6 +1432,42 @@ export type Database = {
         }
         Relationships: []
       }
+      top_students: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          display_month: string
+          display_order: number
+          id: string
+          is_active: boolean
+          student_name_ar: string
+          student_name_en: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          display_month: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          student_name_ar: string
+          student_name_en: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          display_month?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          student_name_ar?: string
+          student_name_en?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           browser_info: string | null
