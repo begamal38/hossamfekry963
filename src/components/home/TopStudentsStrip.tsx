@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getLocalizedDisplayName } from '@/lib/arabicNameLocalization';
 
 interface TopStudent {
   id: string;
@@ -186,7 +185,7 @@ export const TopStudentsStrip: React.FC = () => {
             >
               <Star className="w-3 h-3 md:w-4 md:h-4 text-amber-500 fill-amber-500/50 flex-shrink-0" />
               <span className="truncate max-w-[100px] md:max-w-none">
-                {getLocalizedDisplayName(student.student_name_ar, student.student_name_en, isArabic)}
+                {isArabic ? student.student_name_ar : (student.student_name_en || student.student_name_ar)}
               </span>
             </div>
           ))}
