@@ -32,66 +32,87 @@ export const CoursesSection: React.FC = () => {
   const { ref: headerRef, isVisible: headerVisible } = useScrollFadeIn(0.05);
   const { ref: cardsRef, isVisible: cardsVisible } = useScrollFadeIn(0.05);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        // Home should always show courses if any exist.
-        // 1) Prefer primary (2026 structure)
-        const primaryRes = await supabase
+  const fetchCourses = async () => {
+    try {
+      // Home should always show courses if any exist.
+      // 1) Prefer primary (2026 structure)
+      const primaryRes = await supabase
+        .from('courses')
+        .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
+        .eq('is_primary', true)
+        .order('grade', { ascending: true })
+        .limit(4);
+
+      if (primaryRes.error) throw primaryRes.error;
+
+      let coursesData = primaryRes.data || [];
+      
+      if (coursesData.length === 0) {
+        // 2) Fallback: show any non-hidden courses (protects against misconfigured is_primary)
+        const fallbackRes = await supabase
           .from('courses')
           .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
-          .eq('is_primary', true)
-          .order('grade', { ascending: true })
+          .eq('is_hidden', false)
+          .order('created_at', { ascending: false })
           .limit(4);
 
-        if (primaryRes.error) throw primaryRes.error;
-
-        let coursesData = primaryRes.data || [];
-        
-        if (coursesData.length === 0) {
-          // 2) Fallback: show any non-hidden courses (protects against misconfigured is_primary)
-          const fallbackRes = await supabase
-            .from('courses')
-            .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
-            .eq('is_hidden', false)
-            .order('created_at', { ascending: false })
-            .limit(4);
-
-          if (fallbackRes.error) throw fallbackRes.error;
-          coursesData = fallbackRes.data || [];
-        }
-
-        // Fetch enrollment counts for each course
-        if (coursesData.length > 0) {
-          const courseIds = coursesData.map(c => c.id);
-          const { data: enrollmentCounts } = await supabase
-            .from('course_enrollments')
-            .select('course_id')
-            .in('course_id', courseIds);
-          
-          // Count enrollments per course
-          const countMap = new Map<string, number>();
-          (enrollmentCounts || []).forEach(e => {
-            countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
-          });
-          
-          // Add enrolled_count to each course
-          coursesData = coursesData.map(course => ({
-            ...course,
-            enrolled_count: countMap.get(course.id) || 0
-          }));
-        }
-
-        setCourses(coursesData);
-      } catch (err) {
-        console.error('Error fetching courses:', err);
-        setCourses([]);
-      } finally {
-        setLoading(false);
+        if (fallbackRes.error) throw fallbackRes.error;
+        coursesData = fallbackRes.data || [];
       }
-    };
 
+      // Fetch enrollment counts for each course
+      if (coursesData.length > 0) {
+        const courseIds = coursesData.map(c => c.id);
+        const { data: enrollmentCounts } = await supabase
+          .from('course_enrollments')
+          .select('course_id')
+          .in('course_id', courseIds);
+        
+        // Count enrollments per course
+        const countMap = new Map<string, number>();
+        (enrollmentCounts || []).forEach(e => {
+          countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
+        });
+        
+        // Add enrolled_count to each course
+        coursesData = coursesData.map(course => ({
+          ...course,
+          enrolled_count: countMap.get(course.id) || 0
+        }));
+      }
+
+      setCourses(coursesData);
+    } catch (err) {
+      console.error('Error fetching courses:', err);
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCourses();
+
+    // Subscribe to realtime enrollment changes
+    const channel = supabase
+      .channel('home-enrollments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'course_enrollments'
+        },
+        () => {
+          // Refetch to update enrollment counts
+          fetchCourses();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
