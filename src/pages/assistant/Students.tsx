@@ -188,6 +188,35 @@ export default function Students() {
   useEffect(() => {
     if (!roleLoading && canAccessDashboard()) {
       fetchStudents();
+
+      // Subscribe to realtime updates for student data
+      const channel = supabase
+        .channel('students-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'course_enrollments' },
+          () => fetchStudents()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'lesson_completions' },
+          () => fetchStudents()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'exam_attempts' },
+          () => fetchStudents()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          () => fetchStudents()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user, roleLoading, canAccessDashboard, fetchStudents]);
 
