@@ -116,8 +116,8 @@ export const CoursesSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-muted/30" style={{ contain: 'layout' }} aria-labelledby="courses-heading">
-      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
+    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-muted/30 section-with-depth" style={{ contain: 'layout' }} aria-labelledby="courses-heading">
+      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12 relative z-10">
         {/* Header with fade-in */}
         <div 
           ref={headerRef}

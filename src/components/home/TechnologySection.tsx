@@ -42,8 +42,8 @@ export const TechnologySection: React.FC = () => {
   ];
 
   return (
-    <section className="py-14 md:py-18 bg-muted/20" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="container mx-auto px-4">
+    <section className="py-14 md:py-18 bg-muted/20 section-with-depth" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="container mx-auto px-4 relative z-10">
         
         {/* Section Header with Fade-in */}
         <div 
@@ -72,7 +72,8 @@ export const TechnologySection: React.FC = () => {
               className={cn(
                 "flex flex-col gap-3 p-5 rounded-xl",
                 "bg-background border border-border/50",
-                "hover:border-primary/20 transition-all duration-500",
+                "shadow-card hover:shadow-elevated hover:border-primary/20",
+                "transition-all duration-500",
                 gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
               style={{ transitionDelay: `${idx * 100}ms` }}

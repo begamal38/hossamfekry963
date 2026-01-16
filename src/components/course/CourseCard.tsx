@@ -88,8 +88,10 @@ export const CourseCard = React.memo<CourseCardProps>(({
     <div 
       className={cn(
         "group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300",
+        // Enhanced shadow system for depth
+        "shadow-card hover:shadow-elevated",
         // Desktop: hover effects with glow
-        "md:hover:shadow-xl md:hover:-translate-y-1 md:hover:border-primary/30",
+        "md:hover:-translate-y-1 md:hover:border-primary/30",
         // Mobile: optimized spacing and touch targets
         "active:scale-[0.98] touch-manipulation",
         `animate-fade-in-up animation-delay-${((index % 3) + 1) * 100}`

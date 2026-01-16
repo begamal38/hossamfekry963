@@ -105,11 +105,15 @@ export const TopStudentsStrip: React.FC = () => {
 
   return (
     <section 
-      className="relative py-6 md:py-8 overflow-hidden bg-gradient-to-r from-primary/5 via-background to-primary/5"
+      className="relative py-6 md:py-8 overflow-hidden bg-gradient-to-r from-primary/5 via-background to-primary/5 shadow-section"
       aria-label={isArabic ? 'أوائل الطلاب' : 'Top Students'}
     >
+      {/* Subtle side accents for brand depth */}
+      <div className="absolute inset-y-0 left-0 w-16 md:w-24 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-16 md:w-24 bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
+      
       {/* Header - Dynamic Month */}
-      <div className="container mx-auto px-4 mb-4">
+      <div className="container mx-auto px-4 mb-4 relative z-10">
         <div className="flex items-center justify-center gap-2 text-center">
           <Trophy className="w-5 h-5 text-amber-500 flex-shrink-0" />
           <h3 className="text-sm md:text-base font-bold text-foreground whitespace-nowrap">

@@ -55,8 +55,8 @@ export const SocialProofSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 md:py-20 bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="container mx-auto px-4">
+    <section className="py-16 md:py-20 bg-background section-with-depth" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="container mx-auto px-4 relative z-10">
         
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             HIGHLIGHTED METRIC - One number with human story (Fade-in)
