@@ -104,8 +104,8 @@ export const PressSection: React.FC = () => {
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-16 bg-muted/30" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
-      <div className="container mx-auto px-4">
+    <section className="py-16 bg-muted/30 section-with-depth" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
+      <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -160,7 +160,7 @@ export const PressSection: React.FC = () => {
                     rel="noopener noreferrer"
                     className="block group"
                   >
-                    <div className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border/50 h-full">
+                    <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 border border-border/50 h-full hover:-translate-y-1">
                       {/* Thumbnail - fixed dimensions */}
                       <div className="relative h-48 overflow-hidden bg-muted">
                         {article.thumbnail ? (

@@ -62,10 +62,21 @@
     --gradient-glow: radial-gradient(circle, hsl(209 70% 60% / 0.3) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(209 60% 96%) 0%, hsl(0 0% 100%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(209 56% 46% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(209 56% 46% / 0.1), 0 2px 4px -2px hsl(209 56% 46% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(209 56% 46% / 0.1), 0 4px 6px -4px hsl(209 56% 46% / 0.1);
+    /* Enhanced Shadow System - Indigo tinted for brand presence */
+    --shadow-xs: 0 1px 2px 0 hsl(209 56% 46% / 0.04);
+    --shadow-sm: 0 1px 3px 0 hsl(209 56% 46% / 0.06), 0 1px 2px -1px hsl(209 56% 46% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(209 56% 46% / 0.08), 0 2px 4px -2px hsl(209 56% 46% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(209 56% 46% / 0.1), 0 4px 6px -4px hsl(209 56% 46% / 0.08);
+    --shadow-xl: 0 20px 25px -5px hsl(209 56% 46% / 0.1), 0 8px 10px -6px hsl(209 56% 46% / 0.08);
+    --shadow-2xl: 0 25px 50px -12px hsl(209 56% 46% / 0.15);
+    
+    /* Card & Section shadows with brand tint */
+    --shadow-card: 0 1px 3px hsl(209 56% 46% / 0.06), 0 4px 12px hsl(209 56% 46% / 0.08);
+    --shadow-section: 0 -1px 0 hsl(209 56% 46% / 0.05), 0 8px 24px -8px hsl(209 56% 46% / 0.12);
+    --shadow-elevated: 0 4px 16px hsl(209 56% 46% / 0.1), 0 12px 32px -8px hsl(209 56% 46% / 0.15);
+    
+    /* Indigo edge accent intensity */
+    --edge-accent-intensity: 0.12;
     --shadow-glow: 0 0 40px hsl(209 70% 60% / 0.4);
 
     --sidebar-background: 0 0% 98%;
@@ -123,11 +134,22 @@
     --gradient-glow: radial-gradient(circle, hsl(209 80% 65% / 0.2) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 8%) 100%);
 
-    /* Shadows - dark mode */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    /* Enhanced Shadow System - Dark mode with indigo glow */
+    --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(209 70% 55% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.35), 0 2px 4px -2px hsl(209 70% 55% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(209 70% 55% / 0.15);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(209 70% 55% / 0.15);
+    --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
     --shadow-glow: 0 0 40px hsl(209 80% 65% / 0.25);
+    
+    /* Card & Section shadows - dark mode with subtle indigo glow */
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 4px 12px hsl(0 0% 0% / 0.2), 0 0 0 1px hsl(209 70% 55% / 0.08);
+    --shadow-section: 0 -1px 0 hsl(209 70% 55% / 0.1), 0 8px 24px -8px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.3), 0 12px 32px -8px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(209 70% 55% / 0.1);
+    
+    /* Indigo edge accent intensity - stronger in dark mode */
+    --edge-accent-intensity: 0.2;
 
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 0 0% 95%;
@@ -241,6 +263,56 @@
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
+  
+  /* Enhanced shadow utilities */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-section {
+    box-shadow: var(--shadow-section);
+  }
+  
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Indigo edge accent for sections */
+  .section-with-depth {
+    position: relative;
+    box-shadow: var(--shadow-section);
+  }
+  
+  .section-with-depth::before,
+  .section-with-depth::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 120px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .section-with-depth::before {
+    left: 0;
+    background: linear-gradient(
+      to right,
+      hsl(var(--primary) / var(--edge-accent-intensity)) 0%,
+      hsl(var(--primary) / calc(var(--edge-accent-intensity) * 0.5)) 30%,
+      transparent 100%
+    );
+  }
+  
+  .section-with-depth::after {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      hsl(var(--primary) / var(--edge-accent-intensity)) 0%,
+      hsl(var(--primary) / calc(var(--edge-accent-intensity) * 0.5)) 30%,
+      transparent 100%
+    );
+  }
 
   .glow-effect {
     position: relative;
@@ -270,6 +342,48 @@
   /* Add padding to main content to account for bottom nav on mobile */
   .pb-mobile-nav {
     @apply pb-20 md:pb-0;
+  }
+  
+  /* Card with brand shadow */
+  .card-depth {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  
+  .card-depth:hover {
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
+  }
+  
+  /* Section divider with indigo accent */
+  .section-divider {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      hsl(var(--primary) / 0.15) 20%,
+      hsl(var(--primary) / 0.25) 50%,
+      hsl(var(--primary) / 0.15) 80%,
+      transparent 100%
+    );
+  }
+  
+  .section-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      hsl(var(--primary) / 0.1),
+      transparent
+    );
+    filter: blur(4px);
   }
 }
 

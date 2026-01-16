@@ -13,7 +13,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color }) => (
-  <div className="bg-card rounded-2xl border border-border p-6 2xl:p-8 3xl:p-10 hover:shadow-lg transition-shadow duration-300">
+  <div className="bg-card rounded-2xl border border-border p-6 2xl:p-8 3xl:p-10 shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
     <div className={cn("w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl flex items-center justify-center mb-4 2xl:mb-6", color)}>
       {icon}
     </div>
@@ -57,8 +57,8 @@ export const ProgressPreviewSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-background" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
-      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12">
+    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-background section-with-depth" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
+      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12 relative z-10">
         <div className="text-center mb-16 2xl:mb-20 3xl:mb-24">
           <h2 className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
             {isRTL ? 'شوف وصلت لفين 🚀' : 'Track Your Progress 🚀'}
@@ -74,7 +74,7 @@ export const ProgressPreviewSection: React.FC = () => {
 
         <div className="max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl mx-auto">
           {/* Overall Progress */}
-          <div className="bg-card rounded-2xl border border-border p-8 2xl:p-10 3xl:p-12 mb-8 2xl:mb-10">
+          <div className="bg-card rounded-2xl border border-border p-8 2xl:p-10 3xl:p-12 mb-8 2xl:mb-10 shadow-card">
             <div className="flex items-center justify-between mb-4 2xl:mb-6">
               <div className="flex items-center gap-3 2xl:gap-4">
                 <div className="w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl bg-gradient-to-r from-primary to-accent flex items-center justify-center">
