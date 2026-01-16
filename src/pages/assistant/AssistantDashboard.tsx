@@ -210,6 +210,13 @@ export default function AssistantDashboard() {
   // Quick actions for assistant
   const quickActions: QuickAction[] = [
     {
+      icon: Award,
+      label: 'Top Students',
+      href: '/assistant/top-students',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+    },
+    {
       icon: Users,
       label: isRTL ? 'الطلاب' : 'Students',
       href: '/assistant/students',
@@ -459,21 +466,6 @@ export default function AssistantDashboard() {
                   </div>
                 </div>
 
-                {/* Social & Engagement Section */}
-                <div>
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                    <Award className="h-3.5 w-3.5" />
-                    {isRTL ? 'التحفيز والتفاعل' : 'Engagement'}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
-                      <Link to="/assistant/top-students">
-                        <Award className="h-3.5 w-3.5 mr-2" />
-                        {isRTL ? 'أوائل الطلاب' : 'Top Students'}
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
 
                 {/* Center Section */}
                 <div>
