@@ -35,6 +35,7 @@ import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard'
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
 import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
+import { ExamHistorySection } from '@/components/dashboard/ExamHistorySection';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,11 +90,13 @@ interface EnrolledCourse {
 interface ExamResult {
   id: string;
   score: number;
+  created_at: string;
   exam: {
     id: string;
     title: string;
     title_ar: string;
     max_score: number;
+    pass_mark: number;
     course: {
       title: string;
       title_ar: string;
@@ -168,24 +171,27 @@ const Dashboard: React.FC = () => {
       if (enrollmentsError) throw enrollmentsError;
       setEnrolledCourses((enrollmentsData || []) as unknown as EnrolledCourse[]);
 
-      // Fetch exam results for this user
+      // Fetch exam results for this user with more details
       const { data: examResultsData, error: examResultsError } = await supabase
         .from('exam_results')
         .select(`
           id,
           score,
+          created_at,
           exam:exams (
             id,
             title,
             title_ar,
             max_score,
+            pass_mark,
             course:courses (
               title,
               title_ar
             )
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (examResultsError) throw examResultsError;
       setExamResults((examResultsData || []) as unknown as ExamResult[]);
@@ -510,6 +516,14 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </SectionCard>
+
+          {/* Exam History Section - NEW */}
+          <div className="mb-5">
+            <ExamHistorySection 
+              examResults={examResults}
+              isArabic={isArabic}
+            />
+          </div>
 
           {/* Performance Section - Mobile */}
           <div className="md:hidden mb-5">
