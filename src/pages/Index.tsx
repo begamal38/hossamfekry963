@@ -8,6 +8,7 @@ import { PressSection } from '@/components/home/PressSection';
 import { SocialProofSection } from '@/components/home/SocialProofSection';
 import { TechnologySection } from '@/components/home/TechnologySection';
 import { TopStudentsStrip } from '@/components/home/TopStudentsStrip';
+import { IndigoAccentStrip } from '@/components/home/IndigoAccentStrip';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
 
@@ -34,17 +35,26 @@ const Index: React.FC = () => {
         {/* 2. Social Proof: Story-based trust (scroll reveal) */}
         <SocialProofSection />
         
+        {/* Indigo accent for visual interest */}
+        <IndigoAccentStrip variant="glow" />
+        
         {/* Top Students Strip - Social proof between sections */}
         <TopStudentsStrip />
         
         {/* 3. Technology: Platform strength - Focus Mode, structure */}
         <TechnologySection />
         
+        {/* Indigo wave accent */}
+        <IndigoAccentStrip variant="wave" />
+        
         {/* 4. Courses: أعمل إيه دلوقتي؟ - Clear next action */}
         <CoursesSection />
         
         {/* Top Students Strip - Repeat for visibility */}
         <TopStudentsStrip />
+        
+        {/* Subtle gradient accent */}
+        <IndigoAccentStrip variant="gradient" />
         
         {/* 5. Progress: What you'll achieve (depth on scroll) */}
         <ProgressPreviewSection />
