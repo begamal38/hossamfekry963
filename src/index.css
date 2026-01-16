@@ -1232,12 +1232,50 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TOP STUDENTS STRIP - Horizontal Scrolling Animation
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes scroll-ltr {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+@keyframes scroll-rtl {
+  0% {
+    transform: translateX(-33.333%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-ltr {
+  animation: scroll-ltr 30s linear infinite;
+}
+
+.animate-scroll-rtl {
+  animation: scroll-rtl 30s linear infinite;
+}
+
+/* Pause on hover */
+.animate-scroll-ltr:hover,
+.animate-scroll-rtl:hover {
+  animation-play-state: paused;
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse-slow,
   .animate-float-slow-reverse,
   .animate-electron-orbit-slow,
-  .animate-star-twinkle {
+  .animate-star-twinkle,
+  .animate-scroll-ltr,
+  .animate-scroll-rtl {
     animation: none !important;
   }
 }

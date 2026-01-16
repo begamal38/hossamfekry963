@@ -7,6 +7,7 @@ import { ProgressPreviewSection } from '@/components/home/ProgressPreviewSection
 import { PressSection } from '@/components/home/PressSection';
 import { SocialProofSection } from '@/components/home/SocialProofSection';
 import { TechnologySection } from '@/components/home/TechnologySection';
+import { TopStudentsStrip } from '@/components/home/TopStudentsStrip';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
 
@@ -33,11 +34,17 @@ const Index: React.FC = () => {
         {/* 2. Social Proof: Story-based trust (scroll reveal) */}
         <SocialProofSection />
         
+        {/* Top Students Strip - Social proof between sections */}
+        <TopStudentsStrip />
+        
         {/* 3. Technology: Platform strength - Focus Mode, structure */}
         <TechnologySection />
         
         {/* 4. Courses: أعمل إيه دلوقتي؟ - Clear next action */}
         <CoursesSection />
+        
+        {/* Top Students Strip - Repeat for visibility */}
+        <TopStudentsStrip />
         
         {/* 5. Progress: What you'll achieve (depth on scroll) */}
         <ProgressPreviewSection />

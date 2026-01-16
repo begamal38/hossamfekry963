@@ -35,6 +35,8 @@ const Install = lazy(() => import("./pages/Install"));
 const TakeExam = lazy(() => import("./pages/TakeExam"));
 const StudentExams = lazy(() => import("./pages/StudentExams"));
 const StudentMessages = lazy(() => import("./pages/StudentMessages"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 // Assistant pages
 const AssistantDashboard = lazy(() => import("./pages/assistant/AssistantDashboard"));
@@ -52,6 +54,7 @@ const CenterSessions = lazy(() => import("./pages/assistant/CenterSessions"));
 const ManageExams = lazy(() => import("./pages/assistant/ManageExams"));
 const ExamResults = lazy(() => import("./pages/assistant/ExamResults"));
 const AssistantMessages = lazy(() => import("./pages/assistant/Messages"));
+const TopStudents = lazy(() => import("./pages/assistant/TopStudents"));
 
 const queryClient = new QueryClient();
 
@@ -117,6 +120,8 @@ const App = () => (
                   <Route path="/campaigns" element={<Campaigns />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/install" element={<Install />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
 
                   <Route
                     path="/settings"
@@ -342,6 +347,17 @@ const App = () => (
                         allow={({ canAccessDashboard }) => canAccessDashboard()}
                       >
                         <AssistantMessages />
+                      </RequireResolvedAccess>
+                    }
+                  />
+                  <Route
+                    path="/assistant/top-students"
+                    element={
+                      <RequireResolvedAccess
+                        requireAuth
+                        allow={({ canAccessDashboard }) => canAccessDashboard()}
+                      >
+                        <TopStudents />
                       </RequireResolvedAccess>
                     }
                   />
