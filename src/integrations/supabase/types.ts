@@ -1560,6 +1560,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_enrollment_progress: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "assistant_teacher" | "student"

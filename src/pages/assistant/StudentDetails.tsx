@@ -203,6 +203,39 @@ export default function StudentDetails() {
     }
   }, [studentId, roleLoading]);
 
+  // Subscribe to realtime updates for this student's data
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`student-details-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'course_enrollments', filter: `user_id=eq.${userId}` },
+        () => fetchStudentData(userId)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lesson_completions', filter: `user_id=eq.${userId}` },
+        () => fetchStudentData(userId)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'focus_sessions', filter: `user_id=eq.${userId}` },
+        () => fetchStudentData(userId)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'exam_attempts', filter: `user_id=eq.${userId}` },
+        () => fetchStudentData(userId)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   // Resolve short_id to user_id
   const resolveAndFetchStudent = async () => {
     if (!studentId) return;
