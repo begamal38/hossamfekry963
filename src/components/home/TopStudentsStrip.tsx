@@ -93,19 +93,17 @@ export const TopStudentsStrip: React.FC = () => {
   // Create duplicated list for seamless scrolling (3x for smooth loop)
   const duplicatedStudents = [...students, ...students, ...students];
 
-  // Dynamic animation class based on device and direction
+  // Dynamic animation class based on direction (single responsive class)
   const getAnimationClass = () => {
     if (isPaused) return '';
-    
-    if (isMobile) {
-      return isRTL ? 'animate-scroll-rtl-mobile' : 'animate-scroll-ltr-mobile';
-    }
     return isRTL ? 'animate-scroll-rtl' : 'animate-scroll-ltr';
   };
 
   return (
     <section 
-      className="relative py-4 md:py-8 overflow-hidden bg-gradient-to-r from-primary/5 via-background to-primary/5 shadow-section"
+      className={cn(
+        "relative isolate z-20 py-4 md:py-8 overflow-visible bg-gradient-to-r from-primary/5 via-background to-primary/5 shadow-section"
+      )}
       aria-label={isArabic ? 'أوائل الطلاب' : 'Top Students'}
       style={{ 
         display: 'block', 

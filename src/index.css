@@ -1369,11 +1369,21 @@
 }
 
 .animate-scroll-ltr {
-  animation: scroll-ltr 30s linear infinite;
+  animation: scroll-ltr 55s linear infinite;
 }
 
 .animate-scroll-rtl {
-  animation: scroll-rtl 30s linear infinite;
+  animation: scroll-rtl 55s linear infinite;
+}
+
+/* Mobile: slower + more readable */
+@media (max-width: 768px) {
+  .animate-scroll-ltr {
+    animation-duration: 75s;
+  }
+  .animate-scroll-rtl {
+    animation-duration: 75s;
+  }
 }
 
 /* Pause on hover */
