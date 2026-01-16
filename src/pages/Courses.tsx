@@ -71,70 +71,91 @@ const Courses: React.FC = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Fetch user profile and courses
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch courses
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('courses')
-          .select('*')
-          .order('created_at', { ascending: false });
+  const fetchData = async () => {
+    try {
+      // Fetch courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (coursesError) throw coursesError;
+      if (coursesError) throw coursesError;
+      
+      let courses = coursesData || [];
+
+      // Fetch enrollment counts for all courses
+      if (courses.length > 0) {
+        const courseIds = courses.map(c => c.id);
+        const { data: enrollmentCounts } = await supabase
+          .from('course_enrollments')
+          .select('course_id')
+          .in('course_id', courseIds);
         
-        let courses = coursesData || [];
-
-        // Fetch enrollment counts for all courses
-        if (courses.length > 0) {
-          const courseIds = courses.map(c => c.id);
-          const { data: enrollmentCounts } = await supabase
-            .from('course_enrollments')
-            .select('course_id')
-            .in('course_id', courseIds);
-          
-          // Count enrollments per course
-          const countMap = new Map<string, number>();
-          (enrollmentCounts || []).forEach(e => {
-            countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
-          });
-          
-          // Add enrolled_count to each course
-          courses = courses.map(course => ({
-            ...course,
-            enrolled_count: countMap.get(course.id) || 0
-          }));
-        }
+        // Count enrollments per course
+        const countMap = new Map<string, number>();
+        (enrollmentCounts || []).forEach(e => {
+          countMap.set(e.course_id, (countMap.get(e.course_id) || 0) + 1);
+        });
         
-        setCourses(courses);
-
-        // Fetch user profile and enrollments if logged in
-        if (user) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('grade, academic_year, language_track')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (profileData) {
-            setUserProfile(profileData);
-          }
-
-          const { data: enrollmentsData } = await supabase
-            .from('course_enrollments')
-            .select('course_id, progress')
-            .eq('user_id', user.id);
-
-          setEnrollments(enrollmentsData || []);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
+        // Add enrolled_count to each course
+        courses = courses.map(course => ({
+          ...course,
+          enrolled_count: countMap.get(course.id) || 0
+        }));
       }
-    };
+      
+      setCourses(courses);
 
+      // Fetch user profile and enrollments if logged in
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('grade, academic_year, language_track')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setUserProfile(profileData);
+        }
+
+        const { data: enrollmentsData } = await supabase
+          .from('course_enrollments')
+          .select('course_id, progress')
+          .eq('user_id', user.id);
+
+        setEnrollments(enrollmentsData || []);
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch user profile and courses with realtime updates
+  useEffect(() => {
     fetchData();
+
+    // Subscribe to realtime enrollment changes
+    const channel = supabase
+      .channel('courses-enrollments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'course_enrollments'
+        },
+        () => {
+          // Refetch to update enrollment counts
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleCourseAction = (courseId: string, isFree: boolean, price: number, courseGrade: string, slug: string | null) => {

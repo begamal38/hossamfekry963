@@ -729,15 +729,16 @@ export default function ManageExams() {
         </Button>
       )}
 
-      {/* Delete - only for draft with no attempts */}
-      {exam.status === 'draft' && (exam.attempts_count || 0) === 0 && (
+      {/* Delete - available for any exam with no attempts */}
+      {(exam.attempts_count || 0) === 0 && (
         <Button 
           variant="ghost" 
           size="sm"
           className="text-destructive hover:text-destructive"
           onClick={() => setConfirmDialog({ open: true, type: 'delete', exam })}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-4 h-4 me-1" />
+          {isArabic ? 'حذف' : 'Delete'}
         </Button>
       )}
     </div>

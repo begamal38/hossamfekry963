@@ -157,6 +157,35 @@ export default function AssistantDashboard() {
   useEffect(() => {
     if (!authLoading && !roleLoading && hasAccess) {
       fetchStats();
+
+      // Subscribe to realtime changes for stats
+      const channel = supabase
+        .channel('assistant-dashboard-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'course_enrollments' },
+          () => fetchStats()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'user_roles' },
+          () => fetchStats()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          () => fetchStats()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'exam_attempts' },
+          () => fetchStats()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [authLoading, roleLoading, hasAccess, fetchStats]);
 
