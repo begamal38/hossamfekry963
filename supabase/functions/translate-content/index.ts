@@ -326,6 +326,44 @@ function applyTerminologyFixes(text: string, targetLanguage: 'en' | 'ar'): strin
   return result;
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// FALLBACK LOCAL TRANSLATION (Dictionary-based)
+// ══════════════════════════════════════════════════════════════════════════
+function localDictionaryTranslation(text: string, targetLanguage: 'en' | 'ar'): string {
+  let result = text;
+  
+  // Get the appropriate dictionaries - sorted by length (longer phrases first)
+  const chemTerms = targetLanguage === 'en' ? CHEMISTRY_TERMS.arToEn : CHEMISTRY_TERMS.enToAr;
+  const eduTerms = targetLanguage === 'en' ? EDUCATIONAL_TERMS.arToEn : EDUCATIONAL_TERMS.enToAr;
+  
+  // Combine and sort by source length (descending) to replace longer phrases first
+  const allTerms: [string, string][] = [
+    ...Object.entries(eduTerms),
+    ...Object.entries(chemTerms),
+  ].sort((a, b) => b[0].length - a[0].length);
+  
+  // Apply all term replacements
+  for (const [source, target] of allTerms) {
+    // Escape special regex characters
+    const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    result = result.replace(regex, target);
+  }
+  
+  // For Arabic to English: Add basic word order adjustment for common patterns
+  if (targetLanguage === 'en') {
+    // Common Arabic patterns that need adjustment
+    result = result
+      .replace(/كورس\s+ال(\w+)\s+ال(\w+)/g, '$1 $2 Course') // "Course Chemistry Complete" style
+      .replace(/العام الدراسي/g, 'Academic Year')
+      .replace(/الفصل الدراسي/g, 'Semester');
+  }
+  
+  console.log(`[FALLBACK] Dictionary translation: "${text.substring(0, 40)}..." -> "${result.substring(0, 40)}..."`);
+  
+  return result;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -456,10 +494,35 @@ serve(async (req) => {
       }
     }
     
-    // All retries exhausted
-    throw lastError || new Error("Translation failed after retries");
+    // All retries exhausted - use fallback dictionary translation
+    console.log('AI gateway unavailable, using local dictionary fallback');
+    const fallbackTranslation = localDictionaryTranslation(text, targetLanguage as 'en' | 'ar');
+    
+    return new Response(JSON.stringify({ 
+      translatedText: fallbackTranslation,
+      fallback: true // Flag to indicate fallback was used
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Translation error:', error);
+    
+    // Even on unexpected errors, try dictionary fallback
+    try {
+      const { text, targetLanguage = 'en' } = await req.clone().json();
+      if (text) {
+        const fallbackTranslation = localDictionaryTranslation(text, targetLanguage as 'en' | 'ar');
+        return new Response(JSON.stringify({ 
+          translatedText: fallbackTranslation,
+          fallback: true
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch {
+      // Fallback parsing failed, return original error
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
