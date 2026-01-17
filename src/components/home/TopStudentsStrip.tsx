@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getLocalizedDisplayName } from '@/lib/arabicNameLocalization';
 
 interface TopStudent {
   id: string;
@@ -94,11 +93,8 @@ export const TopStudentsStrip: React.FC = () => {
   // Create duplicated list for seamless scrolling (3x for smooth loop)
   const duplicatedStudents = [...students, ...students, ...students];
 
-  // Dynamic animation class based on direction (single responsive class)
-  const getAnimationClass = () => {
-    if (isPaused) return '';
-    return isRTL ? 'animate-scroll-rtl' : 'animate-scroll-ltr';
-  };
+  // Dynamic animation class based on direction - ALWAYS runs, no hover dependency
+  const animationClass = isRTL ? 'animate-scroll-rtl' : 'animate-scroll-ltr';
 
   return (
     <section 
@@ -161,11 +157,11 @@ export const TopStudentsStrip: React.FC = () => {
           }}
         />
 
-        {/* Scrolling content */}
+        {/* Scrolling content - ALWAYS auto-scrolls, no hover dependency for start */}
         <div 
           className={cn(
             "flex gap-2 md:gap-5 whitespace-nowrap will-change-transform",
-            getAnimationClass()
+            animationClass
           )}
           style={{
             width: 'max-content',
@@ -185,8 +181,9 @@ export const TopStudentsStrip: React.FC = () => {
               )}
             >
               <Star className="w-3 h-3 md:w-4 md:h-4 text-amber-500 fill-amber-500/50 flex-shrink-0" />
+              {/* ALWAYS show Arabic name - no conversion */}
               <span className="truncate max-w-[100px] md:max-w-none">
-                {getLocalizedDisplayName(student.student_name_ar, student.student_name_en, isArabic)}
+                {student.student_name_ar}
               </span>
             </div>
           ))}
