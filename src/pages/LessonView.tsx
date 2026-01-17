@@ -40,6 +40,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useShortId } from '@/hooks/useShortId';
 import { usePreviewTimer } from '@/hooks/usePreviewTimer';
 import { useFreeAnalytics } from '@/hooks/useFreeAnalytics';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 import { usePageVisibility } from '@/hooks/useUnifiedFocusState';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
@@ -146,6 +147,7 @@ export default function LessonView() {
   // Preview timer for visitors (only active for non-logged-in users on free lessons)
   const previewTimer = usePreviewTimer(lessonId || '');
   const { trackView, updatePreviewTime, markCompleted: markAnalyticsCompleted } = useFreeAnalytics();
+  const { trackViewContent, trackLead } = useFacebookPixel();
 
   // Focus Mode refs and persistence
   const focusModeRef = useRef<FocusModeHandle>(null);
@@ -273,7 +275,14 @@ export default function LessonView() {
       if (!user && lessonData.is_free_lesson) {
         const id = await trackView(lessonId!);
         setAnalyticsId(id);
+        // Track Lead event for Facebook Pixel (free lesson view)
+        const lessonName = isArabic ? lessonData.title_ar : lessonData.title;
+        trackLead(lessonName, 0);
       }
+      
+      // Track ViewContent for all lesson views
+      const lessonTitle = isArabic ? lessonData.title_ar : lessonData.title;
+      trackViewContent(lessonTitle, lessonData.id, 0);
     } catch (error) {
       console.error('Error fetching lesson:', error);
     } finally {
