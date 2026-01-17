@@ -58,12 +58,18 @@ export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellPr
     if (!user) return;
 
     try {
-      // Fetch user's profile to get grade and attendance_mode
+      // Get user creation date - only count notifications created AFTER user joined
+      const userCreatedAt = user.created_at;
+
+      // Fetch user's profile to get grade, attendance_mode, and creation date
       const { data: profile } = await supabase
         .from('profiles')
-        .select('grade, attendance_mode')
+        .select('grade, attendance_mode, created_at')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      // Use profile creation date if available, otherwise use auth user creation date
+      const userJoinDate = profile?.created_at || userCreatedAt;
 
       // Fetch user's course enrollments
       const { data: enrollments } = await supabase
@@ -74,10 +80,11 @@ export const NotificationBell = forwardRef<HTMLButtonElement, NotificationBellPr
 
       const enrolledCourseIds = (enrollments || []).map(e => e.course_id);
 
-      // Get all notifications
+      // Get notifications created AFTER user joined
       const { data: notifications, error: notifError } = await supabase
         .from('notifications')
-        .select('id, target_type, target_id, target_value, course_id');
+        .select('id, target_type, target_id, target_value, course_id')
+        .gte('created_at', userJoinDate);
 
       if (notifError) throw notifError;
 
