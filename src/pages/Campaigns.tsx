@@ -8,48 +8,49 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // Facebook video embeds - ordered newest to oldest
+// Note: Facebook embed automatically shows real engagement (likes, comments, shares)
 const campaignEmbeds = [
   {
     id: '1',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1466086481102708/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=false&width=500',
   },
   {
     id: '2',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1645805469670530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=false&width=500',
   },
   {
     id: '3',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/3216287765309530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=false&width=500',
   },
   {
     id: '4',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/946314697237044/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=false&width=500',
   },
   {
     id: '5',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/740433731779516/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=false&width=500',
   },
   {
     id: '6',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/684687554336661/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=false&width=500',
   },
   {
     id: '7',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1312763949751940/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=true&width=560',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=false&width=500',
   },
 ];
 
@@ -74,7 +75,7 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
           observer.disconnect();
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '100px' }
     );
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
@@ -85,10 +86,9 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
       <div
         ref={cardRef}
         className="group relative animate-fade-in"
-        style={{ animationDelay: `${index * 50}ms` }}
+        style={{ animationDelay: `${index * 30}ms` }}
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 via-primary/30 to-primary/50 rounded-2xl blur-sm opacity-60" />
-        <div className="relative bg-card rounded-2xl overflow-hidden border border-primary/20">
+        <div className="relative bg-card rounded-xl overflow-hidden border border-border">
           <div className="w-full flex items-center justify-center bg-muted/30 aspect-video">
             <p className="text-muted-foreground text-sm">{t('campaigns.unavailable')}</p>
           </div>
@@ -101,13 +101,10 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
     <div
       ref={cardRef}
       className="group relative animate-fade-in"
-      style={{ animationDelay: `${index * 50}ms` }}
+      style={{ animationDelay: `${index * 30}ms` }}
     >
-      {/* Glow effect */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-2xl blur-sm opacity-50 group-hover:opacity-80 transition-opacity duration-300" />
-
-      {/* Card container */}
-      <div className="relative bg-card rounded-2xl overflow-hidden border border-primary/20 group-hover:border-primary/40 transition-all duration-300 shadow-lg group-hover:shadow-primary/20">
+      {/* Card container - compact design */}
+      <div className="relative bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-colors duration-200 shadow-sm hover:shadow-md">
         {/* Show skeleton until iframe is loaded */}
         {(isLoading || !isInView) && (
           <div className="w-full aspect-video">
@@ -119,6 +116,7 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
           <iframe
             src={embed.embedUrl}
             width="100%"
+            height="280"
             style={{
               border: 'none',
               overflow: 'hidden',
@@ -133,21 +131,18 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
               setIsLoading(false);
               setHasError(true);
             }}
-            className="w-full aspect-auto min-h-[400px] md:min-h-[520px]"
           />
         )}
-      </div>
 
-      {/* Safe open action */}
-      <div className="relative mt-3 flex justify-end">
+        {/* Overlay link to open in Facebook */}
         <a
           href={embed.postUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+          className="absolute top-2 end-2 p-2 bg-background/80 backdrop-blur-sm rounded-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-background"
+          title={t('campaigns.openPost')}
         >
-          <ExternalLink className="w-4 h-4" />
-          {t('campaigns.openPost')}
+          <ExternalLink className="w-4 h-4 text-foreground" />
         </a>
       </div>
     </div>
@@ -155,9 +150,8 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
 };
 
 const VideoSkeleton = ({ index }: { index: number }) => (
-  <div className="relative animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
-    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 via-primary/10 to-primary/30 rounded-2xl blur-sm opacity-40" />
-    <div className="relative bg-card rounded-2xl overflow-hidden border border-primary/20">
+  <div className="relative animate-fade-in" style={{ animationDelay: `${index * 30}ms` }}>
+    <div className="relative bg-card rounded-xl overflow-hidden border border-border">
       <Skeleton className="w-full aspect-video" />
     </div>
   </div>
@@ -168,14 +162,11 @@ interface EmptyStateProps {
 }
 
 const EmptyState = ({ t }: EmptyStateProps) => (
-  <div className="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center">
-    <div className="relative">
-      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
-      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-6 border border-primary/30">
-        <Megaphone className="w-10 h-10 text-primary" />
-      </div>
+  <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <Megaphone className="w-8 h-8 text-muted-foreground" />
     </div>
-    <p className="text-xl font-medium text-foreground mb-2">{t('campaigns.empty')}</p>
+    <p className="text-lg font-medium text-foreground mb-1">{t('campaigns.empty')}</p>
     <p className="text-muted-foreground text-sm">{t('campaigns.emptySubtitle')}</p>
   </div>
 );
@@ -185,8 +176,8 @@ const Campaigns = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Much faster initial load - just a frame to let skeleton render
-    const timer = setTimeout(() => setIsLoading(false), 100);
+    // Fast initial load
+    const timer = setTimeout(() => setIsLoading(false), 50);
     return () => clearTimeout(timer);
   }, []);
 
@@ -194,29 +185,21 @@ const Campaigns = () => {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'} lang={language}>
       <Navbar />
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-5xl">
-          {/* Header */}
-          <header className="text-center mb-10">
-            <div className="relative inline-flex items-center justify-center mb-5">
-              <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl scale-150" />
-              <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Play className="w-6 h-6 text-primary-foreground fill-primary-foreground" style={{ marginInlineStart: '2px' }} />
-              </div>
+      <main className="pt-20 pb-12">
+        <div className="container mx-auto px-4 max-w-6xl">
+          {/* Header - compact */}
+          <header className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+              <Play className="w-5 h-5 text-primary" style={{ marginInlineStart: '2px' }} />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{t('campaigns.title')}</h1>
-            <p className="text-muted-foreground text-sm md:text-base max-w-md mx-auto">{t('campaigns.subtitle')}</p>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <div className="h-px w-10 bg-gradient-to-r from-transparent to-primary/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
-              <div className="h-px w-10 bg-gradient-to-l from-transparent to-primary/50" />
-            </div>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-1">{t('campaigns.title')}</h1>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">{t('campaigns.subtitle')}</p>
           </header>
 
-          {/* Video Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Video Grid - 3 columns on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {isLoading ? (
-              Array.from({ length: 4 }).map((_, index) => <VideoSkeleton key={index} index={index} />)
+              Array.from({ length: 6 }).map((_, index) => <VideoSkeleton key={index} index={index} />)
             ) : campaignEmbeds.length === 0 ? (
               <EmptyState t={t} />
             ) : (
@@ -224,37 +207,33 @@ const Campaigns = () => {
             )}
           </div>
 
-          {/* Next actions */}
+          {/* Next actions - compact */}
           {!isLoading && campaignEmbeds.length > 0 && (
-            <section className="mt-10 animate-fade-in" style={{ animationDelay: '400ms' }} aria-label={t('campaigns.nextTitle')}>
-              <div className="relative rounded-2xl border border-primary/15 bg-card overflow-hidden">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/25 via-primary/10 to-primary/25 blur-sm opacity-50" />
-                <div className="relative p-5 md:p-6">
-                  <div className="text-center mb-5">
-                    <h2 className="text-lg md:text-xl font-bold text-foreground">{t('campaigns.nextTitle')}</h2>
-                    <p className="text-xs text-muted-foreground mt-1">{t('campaigns.nextSubtitle')}</p>
-                  </div>
+            <section className="mt-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
+              <div className="rounded-xl border border-border bg-card p-4 md:p-5">
+                <div className="text-center mb-4">
+                  <h2 className="text-base font-semibold text-foreground">{t('campaigns.nextTitle')}</h2>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <Button asChild variant="secondary" className="h-auto py-3 justify-start">
-                      <Link to="/free-lessons" className="w-full flex items-center gap-3">
-                        <BookOpen className="w-5 h-5 text-primary" />
-                        <span className="font-medium text-foreground">{t('nav.freeLessons')}</span>
-                      </Link>
-                    </Button>
-                    <Button asChild variant="secondary" className="h-auto py-3 justify-start">
-                      <Link to="/courses" className="w-full flex items-center gap-3">
-                        <GraduationCap className="w-5 h-5 text-primary" />
-                        <span className="font-medium text-foreground">{t('nav.courses')}</span>
-                      </Link>
-                    </Button>
-                    <Button asChild variant="secondary" className="h-auto py-3 justify-start">
-                      <Link to="/about" className="w-full flex items-center gap-3">
-                        <Info className="w-5 h-5 text-primary" />
-                        <span className="font-medium text-foreground">{t('nav.about')}</span>
-                      </Link>
-                    </Button>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <Button asChild variant="ghost" size="sm" className="h-10 justify-start">
+                    <Link to="/free-lessons" className="w-full flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-primary" />
+                      <span className="text-sm">{t('nav.freeLessons')}</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm" className="h-10 justify-start">
+                    <Link to="/courses" className="w-full flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-primary" />
+                      <span className="text-sm">{t('nav.courses')}</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm" className="h-10 justify-start">
+                    <Link to="/about" className="w-full flex items-center gap-2">
+                      <Info className="w-4 h-4 text-primary" />
+                      <span className="text-sm">{t('nav.about')}</span>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </section>
