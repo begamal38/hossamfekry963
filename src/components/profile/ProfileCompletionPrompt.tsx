@@ -141,7 +141,8 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
     setLoading(true);
     try {
-      const updateData: Record<string, string> = {};
+      // Build update data object - only include fields that are missing AND have values
+      const updateData: Record<string, string | null> = {};
       
       if (missingFields.full_name && fullName.trim()) {
         updateData.full_name = fullName.trim();
@@ -159,12 +160,66 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         updateData.phone = phone.trim();
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('user_id', userId);
+      // Check if there's anything to update
+      if (Object.keys(updateData).length === 0) {
+        toast({
+          title: 'تم الحفظ بنجاح ✅',
+          description: 'بياناتك محدثة بالفعل',
+        });
+        onComplete();
+        return;
+      }
 
-      if (error) throw error;
+      // First, check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking profile:', checkError);
+        throw new Error('network');
+      }
+
+      let saveError;
+
+      if (existingProfile) {
+        // Profile exists - UPDATE it (most common case for Google OAuth)
+        const { error } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('user_id', userId);
+        saveError = error;
+      } else {
+        // Profile doesn't exist - INSERT it (rare edge case)
+        const { error } = await supabase
+          .from('profiles')
+          .insert({ 
+            user_id: userId, 
+            ...updateData 
+          });
+        saveError = error;
+      }
+
+      if (saveError) {
+        console.error('Error saving profile:', saveError);
+        // Parse error type for better messaging
+        if (saveError.code === '42501' || saveError.message?.includes('permission')) {
+          throw new Error('permission');
+        } else if (saveError.code === '23505') {
+          throw new Error('duplicate');
+        } else {
+          throw new Error('save');
+        }
+      }
+
+      // Success - refresh session to ensure auth state is current
+      try {
+        await supabase.auth.refreshSession();
+      } catch {
+        // Non-critical, continue
+      }
 
       toast({
         title: 'تم الحفظ بنجاح ✅',
@@ -173,9 +228,31 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
+      
+      // Provide descriptive error messages based on error type
+      const errorMessage = error instanceof Error ? error.message : 'unknown';
+      let description = '';
+      
+      switch (errorMessage) {
+        case 'network':
+          description = 'تعذر الاتصال بالخادم، تأكد من اتصالك بالإنترنت وحاول مرة أخرى';
+          break;
+        case 'permission':
+          description = 'لا يمكن حفظ البيانات حالياً، يرجى تسجيل الخروج وإعادة تسجيل الدخول';
+          break;
+        case 'duplicate':
+          description = 'البيانات موجودة بالفعل، جاري تحديث الصفحة...';
+          // Auto-refresh on duplicate
+          setTimeout(() => window.location.reload(), 1500);
+          break;
+        case 'save':
+        default:
+          description = 'تعذر حفظ البيانات حالياً، تأكد من اتصالك بالإنترنت أو حاول بعد قليل';
+      }
+      
       toast({
-        title: 'خطأ',
-        description: 'حدث خطأ أثناء الحفظ، حاول مرة أخرى',
+        title: 'تعذر حفظ البيانات',
+        description,
         variant: 'destructive',
       });
     } finally {

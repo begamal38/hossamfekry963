@@ -23,7 +23,7 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
   const [loading, setLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
 
-  const checkProfileCompletion = useCallback(async () => {
+  const checkProfileCompletion = useCallback(async (retryCount = 0) => {
     if (!user || roleLoading) {
       setLoading(false);
       return;
@@ -42,17 +42,47 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         .from('profiles')
         .select('full_name, grade, language_track, governorate, phone')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to handle missing profile gracefully
 
-      if (error) throw error;
+      // If profile doesn't exist yet (can happen briefly after Google OAuth), retry
+      if (!data && !error && retryCount < 3) {
+        console.log('Profile not found, retrying in 1 second...', { retryCount });
+        setTimeout(() => checkProfileCompletion(retryCount + 1), 1000);
+        return;
+      }
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // Don't block on error - just skip the check
+        setMissingFields(null);
+        setLoading(false);
+        setHasChecked(true);
+        return;
+      }
+
+      // If profile still doesn't exist after retries, create a placeholder for the prompt
+      // This handles the edge case where the trigger hasn't fired yet
+      if (!data) {
+        const allMissing: MissingFields = {
+          full_name: true,
+          grade: true,
+          language_track: true,
+          governorate: true,
+          phone: true,
+        };
+        setMissingFields(allMissing);
+        setLoading(false);
+        setHasChecked(true);
+        return;
+      }
 
       // Check which fields are missing
       const missing: MissingFields = {
-        full_name: !data?.full_name || data.full_name.trim() === '',
-        grade: !data?.grade,
-        language_track: !data?.language_track,
-        governorate: !data?.governorate,
-        phone: !data?.phone || data.phone.trim() === '',
+        full_name: !data.full_name || data.full_name.trim() === '',
+        grade: !data.grade,
+        language_track: !data.language_track,
+        governorate: !data.governorate,
+        phone: !data.phone || data.phone.trim() === '',
       };
 
       // If any required field is missing, show the prompt
@@ -60,6 +90,7 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
       setMissingFields(hasMissingFields ? missing : null);
     } catch (error) {
       console.error('Error checking profile completion:', error);
+      // Don't block authentication on profile check errors
       setMissingFields(null);
     } finally {
       setLoading(false);
