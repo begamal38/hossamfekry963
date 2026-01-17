@@ -58,10 +58,18 @@ const TopStudents = lazy(() => import("./pages/assistant/TopStudents"));
 
 const queryClient = new QueryClient();
 
-// Loading fallback component
+// Loading fallback component - language-agnostic pulsing dots
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    <div className="flex items-center gap-2">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
+          style={{ animationDelay: `${i * 150}ms` }}
+        />
+      ))}
+    </div>
   </div>
 );
 

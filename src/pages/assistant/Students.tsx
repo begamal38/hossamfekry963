@@ -324,7 +324,15 @@ export default function Students() {
   if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex items-center gap-2">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
+              style={{ animationDelay: `${i * 150}ms` }}
+            />
+          ))}
+        </div>
       </div>
     );
   }

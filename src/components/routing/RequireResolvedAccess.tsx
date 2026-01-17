@@ -141,16 +141,16 @@ export function RequireResolvedAccess({
   // CRITICAL: Once auth is done, if user exists, unblock within timeout
   if (!authResolved) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-        <Card className="w-full max-w-md p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground">جاري تحميل حسابك...</p>
-              <p className="text-sm text-muted-foreground">يرجى الانتظار لحظة</p>
-            </div>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="flex items-center gap-2">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
+              style={{ animationDelay: `${i * 150}ms` }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -161,26 +161,27 @@ export function RequireResolvedAccess({
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
         <Card className="w-full max-w-md p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground">جاري تحميل حسابك...</p>
-              <p className="text-sm text-muted-foreground">يرجى الانتظار لحظة</p>
+          <div className="flex items-center justify-center py-4">
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
             </div>
           </div>
 
           {timedOut && (
             <div className="mt-5 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                يستغرق الأمر وقتاً أطول من المتوقع
-              </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-center">
                 <Button
                   onClick={async () => {
                     await refreshSession?.();
                     await refreshRoles?.();
                     setTimedOut(false);
-                    setForceUnblock(true); // Force entry on retry
+                    setForceUnblock(true);
                   }}
                 >
                   إعادة المحاولة

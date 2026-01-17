@@ -4,7 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Gift, Loader2, CheckCircle2, UserPlus, Eye } from 'lucide-react';
+import { Clock, Play, Gift, CheckCircle2, UserPlus, Eye } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useFreeLessons } from '@/hooks/useFreeLessons';
@@ -77,7 +77,15 @@ const FreeLessons: React.FC = () => {
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex items-center gap-2">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-3 h-3 rounded-full bg-primary animate-pulse-dot"
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  />
+                ))}
+              </div>
             </div>
           ) : lessons.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-2xl border border-border">
