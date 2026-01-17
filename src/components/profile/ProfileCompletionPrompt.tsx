@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
+import { useNewUserOnboarding } from '@/hooks/useNewUserOnboarding';
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
   const { language } = useLanguage();
   const isRTL = language === 'ar';
   const { toast } = useToast();
+  const { triggerWelcomeAfterProfileComplete } = useNewUserOnboarding();
   
   const [fullName, setFullName] = useState('');
   const [grade, setGrade] = useState('');
@@ -282,6 +284,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         title: 'تم الحفظ بنجاح ✅',
         description: 'تم تحديث بياناتك بنجاح',
       });
+      
+      // Trigger welcome onboarding after successful profile completion
+      triggerWelcomeAfterProfileComplete();
+      
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
