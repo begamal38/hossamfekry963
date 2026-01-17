@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
 import { StudentChatButton } from '@/components/messaging/StudentChatButton';
 import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
+import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useAvailableExamsCount } from '@/hooks/useAvailableExamsCount';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 
@@ -386,11 +387,14 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
-                <Link to="/settings">
-                  <Settings className="w-5 h-5" />
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <PlatformGuidance role="student" isArabic={isArabic} />
+                <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+                  <Link to="/settings">
+                    <Settings className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
             
             {/* Progress summary in hero */}

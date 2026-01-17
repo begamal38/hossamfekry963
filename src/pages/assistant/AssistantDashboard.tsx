@@ -33,6 +33,7 @@ import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActi
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { InfoCard } from '@/components/dashboard/InfoCard';
 import { ConversionInsightsCard } from '@/components/assistant/ConversionInsightsCard';
+import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 
 interface Stats {
@@ -281,6 +282,7 @@ export default function AssistantDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-1">
+              <PlatformGuidance role="assistant_teacher" isArabic={isRTL} />
               <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
                 <Link to="/assistant/notifications">
                   <Bell className="w-5 h-5" />
