@@ -1350,6 +1350,7 @@
    TOP STUDENTS STRIP - Horizontal Scrolling Animation
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* LTR: scroll left (content moves left, appears from right) */
 @keyframes scroll-ltr {
   0% {
     transform: translateX(0);
@@ -1359,37 +1360,41 @@
   }
 }
 
+/* RTL: scroll right (content moves right, appears from left) */
 @keyframes scroll-rtl {
   0% {
-    transform: translateX(-33.333%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(0);
+    transform: translateX(33.333%);
   }
 }
 
+/* Desktop: 80s duration (30-40% slower for readability) */
 .animate-scroll-ltr {
-  animation: scroll-ltr 55s linear infinite;
+  animation: scroll-ltr 80s linear infinite !important;
 }
 
 .animate-scroll-rtl {
-  animation: scroll-rtl 55s linear infinite;
+  animation: scroll-rtl 80s linear infinite !important;
 }
 
-/* Mobile: slower + more readable */
+/* Mobile: 100s duration (even slower for touch screens) */
 @media (max-width: 768px) {
   .animate-scroll-ltr {
-    animation-duration: 75s;
+    animation-duration: 100s !important;
   }
   .animate-scroll-rtl {
-    animation-duration: 75s;
+    animation-duration: 100s !important;
   }
 }
 
-/* Pause on hover */
-.animate-scroll-ltr:hover,
-.animate-scroll-rtl:hover {
-  animation-play-state: paused;
+/* Pause on hover (desktop only) */
+@media (hover: hover) {
+  .animate-scroll-ltr:hover,
+  .animate-scroll-rtl:hover {
+    animation-play-state: paused;
+  }
 }
 
 /* Reduce motion for accessibility */
