@@ -385,52 +385,79 @@ serve(async (req) => {
          ${terminologyGuide}
          Only return the translated text, nothing else. No explanations or notes.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: text }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required." }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    let translatedText = data.choices?.[0]?.message?.content?.trim() || '';
+    // Retry logic with exponential backoff for transient errors
+    const maxRetries = 3;
+    let lastError: Error | null = null;
     
-    // Apply terminology fixes to ensure consistency
-    translatedText = applyTerminologyFixes(translatedText, targetLanguage);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: text }
+            ],
+          }),
+        });
 
-    console.log(`Translated: "${text.substring(0, 50)}..." -> "${translatedText.substring(0, 50)}..."`);
+        if (response.ok) {
+          const data = await response.json();
+          let translatedText = data.choices?.[0]?.message?.content?.trim() || '';
+          
+          // Apply terminology fixes to ensure consistency
+          translatedText = applyTerminologyFixes(translatedText, targetLanguage);
 
-    return new Response(JSON.stringify({ translatedText }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+          console.log(`Translated: "${text.substring(0, 50)}..." -> "${translatedText.substring(0, 50)}..."`);
+
+          return new Response(JSON.stringify({ translatedText }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Handle specific error codes
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "Payment required." }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // For 502/503/504 errors, retry with backoff
+        if (response.status >= 500 && attempt < maxRetries) {
+          const backoffMs = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+          console.log(`AI gateway error ${response.status}, retrying in ${backoffMs}ms (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          continue;
+        }
+        
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
+        lastError = new Error(`AI gateway error: ${response.status}`);
+      } catch (fetchError) {
+        console.error(`Fetch error on attempt ${attempt}:`, fetchError);
+        lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
+        
+        if (attempt < maxRetries) {
+          const backoffMs = Math.pow(2, attempt) * 500;
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+        }
+      }
+    }
+    
+    // All retries exhausted
+    throw lastError || new Error("Translation failed after retries");
   } catch (error) {
     console.error('Translation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
