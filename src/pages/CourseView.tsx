@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useChapterProgress } from '@/hooks/useChapterProgress';
 import { useToast } from '@/hooks/use-toast';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 import { cn } from '@/lib/utils';
 import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
 import { filterLessonsForStudents, hasValidVideo, calculateProgress, isCoursePreview } from '@/lib/contentVisibility';
@@ -83,6 +84,7 @@ export default function CourseView() {
   const { user } = useAuth();
   const { loading: rolesLoading, isAdmin, isAssistantTeacher } = useUserRole();
   const { toast } = useToast();
+  const { trackViewContent, trackSubscribe } = useFacebookPixel();
   const isArabic = language === 'ar';
   
   // Check if courseId is a UUID or slug
@@ -193,6 +195,10 @@ export default function CourseView() {
 
       if (courseError) throw courseError;
       setCourse(courseData);
+
+      // Track ViewContent event for Facebook Pixel
+      const courseName = isArabic ? courseData.title_ar : courseData.title;
+      trackViewContent(courseName, courseData.id, courseData.price || 0);
 
       // VALIDATION: Only restrict by academic path for STUDENTS (not assistants/admins)
       if (user) {
@@ -324,6 +330,10 @@ export default function CourseView() {
       } else {
         setIsEnrolled(true);
         setEnrollmentStatus('active');
+        
+        // Track Subscribe event for Facebook Pixel
+        trackSubscribe(course.price || 0, 'EGP');
+        
         toast({
           title: isArabic ? 'تم الاشتراك!' : 'Enrolled!',
           description: isArabic ? 'تم الاشتراك في الكورس بنجاح' : 'Successfully enrolled in the course',

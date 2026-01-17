@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useFacebookPixel } from '@/hooks/useFacebookPixel';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +81,7 @@ const Auth = () => {
   const { loading: roleLoading, hasAttemptedFetch } = useUserRole();
   const { t, isRTL, language } = useLanguage();
   const { toast } = useToast();
+  const { trackCompleteRegistration } = useFacebookPixel();
   const navigate = useNavigate();
 
   const tr = (ar: string, en: string) => (isRTL ? ar : en);
@@ -300,6 +302,9 @@ const Auth = () => {
               ? tr('هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.', 'This email is already registered. Please sign in.')
               : error.message || tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
           });
+        } else {
+          // Track successful registration with Facebook Pixel
+          trackCompleteRegistration('email');
         }
       }
     } catch {
