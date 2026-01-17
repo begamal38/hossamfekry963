@@ -136,6 +136,18 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
     return Object.keys(newErrors).length === 0;
   };
 
+  // Helper function to compute proper grade value from academic year + language track
+  const computeGradeValue = (academicYear: string, langTrack: string): string => {
+    // DB expects: second_arabic, second_languages, third_arabic, third_languages
+    if (academicYear === 'second_secondary') {
+      return langTrack === 'languages' ? 'second_languages' : 'second_arabic';
+    } else if (academicYear === 'third_secondary') {
+      return langTrack === 'languages' ? 'third_languages' : 'third_arabic';
+    }
+    // Fallback - should not reach here
+    return academicYear;
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -147,17 +159,46 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       if (missingFields.full_name && fullName.trim()) {
         updateData.full_name = fullName.trim();
       }
-      if (missingFields.grade && grade) {
-        updateData.grade = grade;
-      }
-      if (missingFields.language_track && languageTrack) {
+      
+      // Handle grade + language_track combination
+      // The DB constraint requires: second_arabic, second_languages, third_arabic, third_languages
+      if ((missingFields.grade || missingFields.language_track) && grade && languageTrack) {
+        const computedGrade = computeGradeValue(grade, languageTrack);
+        updateData.grade = computedGrade;
         updateData.language_track = languageTrack;
+      } else {
+        // Handle individual field updates if only one is missing
+        if (missingFields.language_track && languageTrack) {
+          updateData.language_track = languageTrack;
+        }
       }
+      
       if (missingFields.governorate && governorate) {
         updateData.governorate = governorate;
       }
+      
+      // Phone number handling with duplicate check
       if (missingFields.phone && phone.trim()) {
-        updateData.phone = phone.trim();
+        const phoneValue = phone.trim();
+        
+        // Check if phone already exists for another user
+        const { data: existingPhone, error: phoneCheckError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('phone', phoneValue)
+          .neq('user_id', userId)
+          .maybeSingle();
+        
+        if (phoneCheckError) {
+          console.error('Error checking phone:', phoneCheckError);
+        } else if (existingPhone) {
+          // Phone belongs to another user
+          setErrors(prev => ({ ...prev, phone: 'رقم الموبايل مستخدم بحساب آخر' }));
+          setLoading(false);
+          return;
+        }
+        
+        updateData.phone = phoneValue;
       }
 
       // Check if there's anything to update
@@ -173,7 +214,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       // First, check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('user_id, phone')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -204,10 +245,26 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
       if (saveError) {
         console.error('Error saving profile:', saveError);
-        // Parse error type for better messaging
-        if (saveError.code === '42501' || saveError.message?.includes('permission')) {
+        
+        // Parse specific constraint errors for better messaging
+        if (saveError.code === '23514') {
+          // Check constraint violation
+          if (saveError.message?.includes('grade_valid')) {
+            throw new Error('grade_invalid');
+          } else if (saveError.message?.includes('phone_format')) {
+            throw new Error('phone_invalid');
+          } else if (saveError.message?.includes('language_track')) {
+            throw new Error('language_invalid');
+          }
+        } else if (saveError.code === '42501' || saveError.message?.includes('permission')) {
           throw new Error('permission');
         } else if (saveError.code === '23505') {
+          // Unique constraint violation
+          if (saveError.message?.includes('phone')) {
+            setErrors(prev => ({ ...prev, phone: 'رقم الموبايل مستخدم بحساب آخر' }));
+            setLoading(false);
+            return;
+          }
           throw new Error('duplicate');
         } else {
           throw new Error('save');
@@ -231,6 +288,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       
       // Provide descriptive error messages based on error type
       const errorMessage = error instanceof Error ? error.message : 'unknown';
+      let title = 'تعذر حفظ البيانات';
       let description = '';
       
       switch (errorMessage) {
@@ -242,16 +300,27 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           break;
         case 'duplicate':
           description = 'البيانات موجودة بالفعل، جاري تحديث الصفحة...';
-          // Auto-refresh on duplicate
           setTimeout(() => window.location.reload(), 1500);
+          break;
+        case 'grade_invalid':
+          title = 'خطأ في الصف الدراسي';
+          description = 'يرجى اختيار الصف الدراسي ونوع التعليم بشكل صحيح';
+          break;
+        case 'phone_invalid':
+          title = 'خطأ في رقم الموبايل';
+          description = 'رقم الموبايل غير صحيح، يجب أن يبدأ بـ 01 ويتكون من 11 رقم';
+          break;
+        case 'language_invalid':
+          title = 'خطأ في نوع التعليم';
+          description = 'يرجى اختيار نوع التعليم (عربي أو لغات)';
           break;
         case 'save':
         default:
-          description = 'تعذر حفظ البيانات حالياً، تأكد من اتصالك بالإنترنت أو حاول بعد قليل';
+          description = 'حدث خطأ مؤقت، حاول لاحقاً';
       }
       
       toast({
-        title: 'تعذر حفظ البيانات',
+        title,
         description,
         variant: 'destructive',
       });
