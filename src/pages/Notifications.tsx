@@ -223,12 +223,18 @@ export default function Notifications() {
     if (!user) return;
 
     try {
+      // Get user creation date - only show notifications created AFTER user joined
+      const userCreatedAt = user.created_at;
+
       // Fetch user's profile to get grade and attendance_mode
       const { data: profile } = await supabase
         .from('profiles')
-        .select('grade, attendance_mode')
+        .select('grade, attendance_mode, created_at')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      // Use profile creation date if available, otherwise use auth user creation date
+      const userJoinDate = profile?.created_at || userCreatedAt;
 
       // Fetch user's course enrollments
       const { data: enrollments } = await supabase
@@ -239,10 +245,11 @@ export default function Notifications() {
 
       const enrolledCourseIds = (enrollments || []).map(e => e.course_id);
 
-      // Fetch notifications - we need to filter based on targeting
+      // Fetch notifications created AFTER user joined - filter at database level for efficiency
       const { data: notificationsData, error: notifError } = await supabase
         .from('notifications')
         .select('*')
+        .gte('created_at', userJoinDate)
         .order('created_at', { ascending: false });
 
       if (notifError) throw notifError;
