@@ -34,7 +34,7 @@ export const InboxEmpty: React.FC<InboxEmptyProps> = ({
     },
     loading: {
       icon: MessageCircle,
-      title: isRTL ? 'جاري التحميل...' : 'Loading...',
+      title: '', // No text - pure visual indicator
       subtitle: '',
     },
   };
@@ -49,7 +49,15 @@ export const InboxEmpty: React.FC<InboxEmptyProps> = ({
     )}>
       <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
         {type === 'loading' ? (
-          <div className="w-6 h-6 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary animate-pulse-dot"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </div>
         ) : (
           <Icon className="w-8 h-8 text-muted-foreground" />
         )}

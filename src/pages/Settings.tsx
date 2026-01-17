@@ -187,7 +187,15 @@ const Settings: React.FC = () => {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="flex items-center gap-2">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
+              style={{ animationDelay: `${i * 150}ms` }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
