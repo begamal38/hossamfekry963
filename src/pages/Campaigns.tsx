@@ -63,11 +63,15 @@ interface VideoCardProps {
 const VideoCard = ({ embed, index, t }: VideoCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+
+  // Render above-the-fold iframes immediately for faster perceived load.
+  const [isInView, setIsInView] = useState(index < 3);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Lazy load: only render iframe when card is in viewport
+  // Lazy load: only render iframe when card is in viewport (skip for first items)
   useEffect(() => {
+    if (isInView) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -75,11 +79,12 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
           observer.disconnect();
         }
       },
-      { rootMargin: '100px' }
+      { rootMargin: "300px" }
     );
+
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [isInView]);
 
   if (hasError) {
     return (
@@ -90,7 +95,7 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
       >
         <div className="relative bg-card rounded-xl overflow-hidden border border-border">
           <div className="w-full flex items-center justify-center bg-muted/30 aspect-video">
-            <p className="text-muted-foreground text-sm">{t('campaigns.unavailable')}</p>
+            <p className="text-muted-foreground text-sm">{t("campaigns.unavailable")}</p>
           </div>
         </div>
       </div>
@@ -117,16 +122,17 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
             src={embed.embedUrl}
             width="100%"
             height="420"
-            loading="lazy"
+            loading={index < 3 ? "eager" : "lazy"}
             style={{
-              border: 'none',
-              overflow: 'hidden',
-              display: isLoading ? 'none' : 'block',
+              border: "none",
+              overflow: "hidden",
+              display: isLoading ? "none" : "block",
             }}
             scrolling="no"
             frameBorder="0"
             allowFullScreen
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+            title={t("campaigns.openPost")}
             onLoad={() => setIsLoading(false)}
             onError={() => {
               setIsLoading(false);
@@ -141,7 +147,7 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-2 end-2 p-2 bg-background/80 backdrop-blur-sm rounded-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-background"
-          title={t('campaigns.openPost')}
+          title={t("campaigns.openPost")}
         >
           <ExternalLink className="w-4 h-4 text-foreground" />
         </a>
@@ -174,13 +180,6 @@ const EmptyState = ({ t }: EmptyStateProps) => (
 
 const Campaigns = () => {
   const { t, isRTL, language } = useLanguage();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Fast initial load
-    const timer = setTimeout(() => setIsLoading(false), 50);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'} lang={language}>
@@ -199,18 +198,18 @@ const Campaigns = () => {
 
           {/* Video Grid - 3 columns on desktop */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, index) => <VideoSkeleton key={index} index={index} />)
-            ) : campaignEmbeds.length === 0 ? (
+            {campaignEmbeds.length === 0 ? (
               <EmptyState t={t} />
             ) : (
-              campaignEmbeds.map((embed, index) => <VideoCard key={embed.id} embed={embed} index={index} t={t} />)
+              campaignEmbeds.map((embed, index) => (
+                <VideoCard key={embed.id} embed={embed} index={index} t={t} />
+              ))
             )}
           </div>
 
           {/* Next actions - compact */}
-          {!isLoading && campaignEmbeds.length > 0 && (
-            <section className="mt-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
+          {campaignEmbeds.length > 0 && (
+            <section className="mt-8 animate-fade-in" style={{ animationDelay: "200ms" }}>
               <div className="rounded-xl border border-border bg-card p-4 md:p-5">
                 <div className="text-center mb-4">
                   <h2 className="text-base font-semibold text-foreground">{t('campaigns.nextTitle')}</h2>
