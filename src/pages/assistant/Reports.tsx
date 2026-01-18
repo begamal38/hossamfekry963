@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Lightbulb, Clock, Play } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Play, Clock, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
 import { Progress } from '@/components/ui/progress';
@@ -8,9 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
-import { ActionableInsights } from '@/components/analytics/ActionableInsights';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SmartInsights } from '@/components/analytics/SmartInsights';
+import { MobileChapterAnalytics } from '@/components/analytics/MobileChapterCard';
+import { MobileExamAnalytics } from '@/components/analytics/MobileExamAnalytics';
+import { MobileMetricCard } from '@/components/analytics/MobileMetricCard';
 import { ChapterAnalytics } from '@/components/analytics/ChapterAnalytics';
 import { ExamAnalytics } from '@/components/analytics/ExamAnalytics';
+import { PulsingDots } from '@/components/ui/PulsingDots';
+import { cn } from '@/lib/utils';
 
 interface CourseStats {
   id: string;
@@ -33,11 +39,13 @@ interface OverallStats {
   totalExamResults: number;
   avgOverallProgress: number;
   avgOverallExamScore: number;
-  // Focus mode stats
+  avgScoreExcludingZero: number; // NEW: exclude zero attempts
   totalFocusSessions: number;
+  meaningfulFocusSessions: number; // NEW: sessions > 2 min
   totalFocusMinutes: number;
   studentsWithFocusSessions: number;
   avgFocusMinutesPerStudent: number;
+  studentsWatchingNotTesting: number; // NEW: watch but don't test
 }
 
 interface TopStudent {
@@ -62,6 +70,7 @@ export default function Reports() {
   const navigate = useNavigate();
   const { language, isRTL } = useLanguage();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
+  const isMobile = useIsMobile();
   const isArabic = language === 'ar';
 
   const [loading, setLoading] = useState(true);
@@ -88,7 +97,6 @@ export default function Reports() {
 
   const fetchReportData = async () => {
     try {
-      // First, get student user IDs from user_roles
       const { data: studentRoles } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -124,7 +132,6 @@ export default function Reports() {
         supabase.from('chapter_enrollments').select('*')
       ]);
 
-      // Store in state for useMemo dependencies
       setChapters(chaptersData || []);
       setLessonCompletions(lessonCompletionsData || []);
       setExamAttempts(examAttemptsData || []);
@@ -134,14 +141,10 @@ export default function Reports() {
       setChapterEnrollments(chapterEnrollmentsData || []);
       setExams(examsData || []);
       
-      // Use local variables for calculations in this function
       const lessons = lessonsData || [];
       const enrollments = enrollmentsData || [];
       const exams = examsData || [];
-
-      // Filter profiles to only include students
       const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
-
 
       const activeEnrollments = (enrollments || []).filter(e => e.status === 'active').length;
       const pendingEnrollments = (enrollments || []).filter(e => e.status === 'pending').length;
@@ -150,6 +153,7 @@ export default function Reports() {
         ? Math.round((enrollments || []).reduce((sum, e) => sum + (e.progress || 0), 0) / enrollments!.length)
         : 0;
 
+      // Standard avg score
       const avgExamScore = (examResults || []).length > 0
         ? Math.round((examResults || []).reduce((sum, r) => {
             const maxScore = (r.exams as any)?.max_score || 100;
@@ -157,9 +161,24 @@ export default function Reports() {
           }, 0) / examResults!.length)
         : 0;
 
-      // Calculate focus session stats
+      // NEW: Avg score excluding students with 0 attempts
+      const validResults = (examResults || []).filter(r => r.score > 0);
+      const avgScoreExcludingZero = validResults.length > 0
+        ? Math.round(validResults.reduce((sum, r) => {
+            const maxScore = (r.exams as any)?.max_score || 100;
+            return sum + ((r.score / maxScore) * 100);
+          }, 0) / validResults.length)
+        : 0;
+
+      // Focus session stats
       const allFocusSessions = focusSessionsData || [];
       const totalFocusSessions = allFocusSessions.length;
+      
+      // NEW: Only count sessions > 2 minutes (120 seconds)
+      const meaningfulFocusSessions = allFocusSessions.filter(
+        s => (s.total_active_seconds || 0) > 120
+      ).length;
+      
       const totalFocusMinutes = Math.round(
         allFocusSessions.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0) / 60
       );
@@ -167,6 +186,13 @@ export default function Reports() {
       const avgFocusMinutesPerStudent = studentsWithFocusSessions > 0 
         ? Math.round(totalFocusMinutes / studentsWithFocusSessions) 
         : 0;
+
+      // NEW: Students who watched but didn't test
+      const studentsWithFocus = new Set(allFocusSessions.map(s => s.user_id));
+      const studentsWithExams = new Set((examAttemptsData || []).map(a => a.user_id));
+      const studentsWatchingNotTesting = [...studentsWithFocus].filter(
+        id => !studentsWithExams.has(id)
+      ).length;
 
       setOverallStats({
         totalStudents: profiles.length,
@@ -178,10 +204,13 @@ export default function Reports() {
         totalExamResults: (examResults || []).length,
         avgOverallProgress: avgProgress,
         avgOverallExamScore: avgExamScore,
+        avgScoreExcludingZero,
         totalFocusSessions,
+        meaningfulFocusSessions,
         totalFocusMinutes,
         studentsWithFocusSessions,
         avgFocusMinutesPerStudent,
+        studentsWatchingNotTesting,
       });
 
       // Calculate course-level stats
@@ -217,11 +246,10 @@ export default function Reports() {
 
       setCourseStats(courseStatsData);
 
-      // Calculate attendance breakdown per lesson (for first 10 lessons)
+      // Attendance breakdown
       const lessonBreakdowns: AttendanceBreakdown[] = (lessons || []).slice(0, 10).map(lesson => {
         const lessonAttendance = (attendance || []).filter(a => a.lesson_id === lesson.id);
         
-        // Get unique users who attended
         const userAttendance = new Map<string, { center: boolean; online: boolean }>();
         lessonAttendance.forEach(a => {
           const existing = userAttendance.get(a.user_id) || { center: false, online: false };
@@ -237,7 +265,6 @@ export default function Reports() {
           else if (att.online) onlineOnly++;
         });
 
-        // Get course enrollments count for this lesson's course
         const courseEnrollments = (enrollments || []).filter(
           e => e.course_id === lesson.course_id && e.status === 'active'
         ).length;
@@ -259,7 +286,7 @@ export default function Reports() {
 
       setAttendanceBreakdown(lessonBreakdowns);
 
-      // Calculate top students
+      // Top students
       const studentScores = new Map<string, { scores: number[], name: string | null }>();
 
       (examResults || []).forEach(result => {
@@ -295,11 +322,10 @@ export default function Reports() {
     }
   };
 
-  // Compute actionable insights data
+  // Insights data with smart metrics
   const insightsData = useMemo(() => {
     if (!overallStats) return null;
 
-    // Calculate lesson drop-offs (lessons with low completion rates)
     const lessonDropoffs = attendanceBreakdown
       .filter(l => l.totalStudents > 0)
       .map(l => ({
@@ -310,7 +336,6 @@ export default function Reports() {
       .filter(l => l.dropoffRate > 20)
       .sort((a, b) => b.dropoffRate - a.dropoffRate);
 
-    // Calculate exam failures
     const examFailures = examAttempts.length > 0 
       ? Object.entries(
           examAttempts.reduce((acc, a) => {
@@ -332,19 +357,16 @@ export default function Reports() {
         .filter(e => e.failRate > 30)
       : [];
 
-    // Low progress students (< 25%)
     const lowProgressStudents = courseStats.reduce((count, course) => {
       return count + (course.avgProgress < 25 ? course.totalStudents : 0);
     }, 0);
 
-    // Chapter progress
     const chapterProgress = chapters.map(ch => ({
       chapterId: ch.id,
       title: isArabic ? ch.title_ar : ch.title,
-      avgProgress: 50 // Placeholder - would need proper calculation
+      avgProgress: 50
     }));
 
-    // Active students today (simplified - users with completions today)
     const today = new Date().toDateString();
     const activeToday = new Set(
       lessonCompletions
@@ -356,34 +378,32 @@ export default function Reports() {
       lessonDropoffs,
       examFailures,
       lowProgressStudents,
-      avgCompletionTime: 0,
       activeStudentsToday: activeToday,
       totalStudents: overallStats.totalStudents,
       chapterProgress,
+      avgScoreExcludingZero: overallStats.avgScoreExcludingZero,
+      meaningfulFocusSessions: overallStats.meaningfulFocusSessions,
+      studentsWatchingNotTesting: overallStats.studentsWatchingNotTesting,
     };
   }, [overallStats, attendanceBreakdown, examAttempts, chapters, lessonCompletions, courseStats, isArabic]);
 
-  // Compute chapter analytics with REAL data
+  // Chapter analytics data
   const chapterAnalyticsData = useMemo(() => {
     return chapters.map(ch => {
       const courseTitle = (ch.course as any)?.title || '';
       const courseTitleAr = (ch.course as any)?.title_ar || '';
       
-      // Get lessons for this chapter
       const chapterLessons = lessons.filter(l => l.chapter_id === ch.id);
       const chapterLessonIds = chapterLessons.map(l => l.id);
       const totalLessons = chapterLessons.length;
       
-      // Get students enrolled in this chapter (via chapter_enrollments or course_enrollments)
       const chapterStudentIds = new Set<string>();
       
-      // First check chapter-level enrollments
       const directChapterEnrolls = chapterEnrollments.filter(
         ce => ce.chapter_id === ch.id && ce.status === 'active'
       );
       directChapterEnrolls.forEach(ce => chapterStudentIds.add(ce.user_id));
       
-      // If no chapter enrollments, fall back to course enrollments
       if (chapterStudentIds.size === 0) {
         const courseEnrolls = enrollments.filter(
           e => e.course_id === ch.course_id && e.status === 'active'
@@ -393,10 +413,8 @@ export default function Reports() {
       
       const totalStudents = chapterStudentIds.size;
       
-      // Calculate average completion for this chapter
       let avgCompletion = 0;
       if (totalLessons > 0 && totalStudents > 0) {
-        // Count completions per student for lessons in this chapter
         const studentCompletions = new Map<string, number>();
         
         lessonCompletions
@@ -410,7 +428,6 @@ export default function Reports() {
             }
           });
         
-        // Calculate completion percentage per student, then average
         let totalCompletionPercent = 0;
         chapterStudentIds.forEach(studentId => {
           const completed = studentCompletions.get(studentId) || 0;
@@ -420,7 +437,6 @@ export default function Reports() {
         avgCompletion = Math.round(totalCompletionPercent / totalStudents);
       }
       
-      // Calculate exam pass rate for chapter exams
       const chapterExams = exams.filter(e => e.chapter_id === ch.id);
       let examPassRate: number | null = null;
       
@@ -442,37 +458,31 @@ export default function Reports() {
         }
       }
       
-      // Calculate REAL focus time from focus_sessions for this chapter's lessons
+      // Focus sessions > 2 min only
       const chapterFocusSessions = focusSessions.filter(
-        fs => chapterLessonIds.includes(fs.lesson_id)
+        fs => chapterLessonIds.includes(fs.lesson_id) && (fs.total_active_seconds || 0) > 120
       );
       
-      // Total active viewing minutes for all students in this chapter
       const totalActiveMinutes = Math.round(
         chapterFocusSessions.reduce((sum, fs) => sum + (fs.total_active_seconds || 0), 0) / 60
       );
       
-      // Students who actually watched (have focus sessions)
       const studentsWithFocus = new Set(
         chapterFocusSessions.map(fs => fs.user_id)
       ).size;
       
-      // Average viewing minutes per student
       const avgViewingMinutes = studentsWithFocus > 0 
         ? Math.round(totalActiveMinutes / studentsWithFocus) 
         : 0;
       
-      // Total expected duration for chapter lessons (in minutes)
       const expectedDuration = chapterLessons.reduce(
         (sum, l) => sum + (l.duration_minutes || 0), 0
       );
       
-      // Viewing coverage: what percentage of expected time students actually watched
       const viewingCoverage = expectedDuration > 0 && studentsWithFocus > 0
         ? Math.min(100, Math.round((avgViewingMinutes / expectedDuration) * 100))
         : 0;
       
-      // Total interruptions in this chapter
       const totalInterruptions = chapterFocusSessions.reduce(
         (sum, fs) => sum + (fs.interruptions || 0), 0
       );
@@ -487,7 +497,6 @@ export default function Reports() {
         avgCompletion,
         totalStudents,
         examPassRate,
-        // New focus-based metrics
         totalActiveMinutes,
         studentsWithFocus,
         avgViewingMinutes,
@@ -496,9 +505,9 @@ export default function Reports() {
         totalInterruptions,
       };
     });
-  }, [chapters, lessons, lessonCompletions, enrollments, chapterEnrollments, exams, examAttempts]);
+  }, [chapters, lessons, lessonCompletions, enrollments, chapterEnrollments, exams, examAttempts, focusSessions]);
 
-  // Compute exam analytics
+  // Exam analytics data
   const examAnalyticsData = useMemo(() => {
     const examStats = new Map<string, {
       title: string;
@@ -566,14 +575,11 @@ export default function Reports() {
     return 'bg-red-500';
   };
 
+  // Loading state - only show if loading > 300ms
   if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot" style={{ animationDelay: `${i * 150}ms` }} />
-          ))}
-        </div>
+        <PulsingDots size="lg" />
       </div>
     );
   }
@@ -582,168 +588,216 @@ export default function Reports() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8 pt-24">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
-              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{isArabic ? 'التقارير والإحصائيات' : 'Reports & Statistics'}</h1>
-              <p className="text-muted-foreground text-sm">
-                {isArabic ? 'نظرة شاملة على أداء الطلاب والحضور' : 'Overview of student performance and attendance'}
+      <main className="container mx-auto px-3 md:px-4 py-6 pt-20 md:pt-24">
+        {/* Header - Compact on mobile */}
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10" onClick={() => navigate('/assistant')}>
+            <ArrowLeft className={cn("h-4 w-4 md:h-5 md:w-5", isRTL && 'rotate-180')} />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl font-bold truncate">
+              {isArabic ? 'التقارير والإحصائيات' : 'Reports & Statistics'}
+            </h1>
+            <p className="text-xs md:text-sm text-muted-foreground truncate">
+              {isArabic ? 'نظرة شاملة على أداء الطلاب' : 'Student performance overview'}
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile: Vertical metric cards */}
+        {isMobile ? (
+          <div className="space-y-2 mb-4">
+            <MobileMetricCard
+              icon={Users}
+              label={isArabic ? 'الطلاب' : 'Students'}
+              value={overallStats?.totalStudents || 0}
+              subValue={`${overallStats?.activeEnrollments || 0} ${isArabic ? 'نشط' : 'active'}`}
+            />
+            <MobileMetricCard
+              icon={TrendingUp}
+              label={isArabic ? 'متوسط التقدم' : 'Avg Progress'}
+              value={`${overallStats?.avgOverallProgress || 0}%`}
+              colorClass={overallStats?.avgOverallProgress && overallStats.avgOverallProgress >= 50 ? 'text-green-600' : 'text-amber-600'}
+              bgClass={overallStats?.avgOverallProgress && overallStats.avgOverallProgress >= 50 ? 'bg-green-500/10' : 'bg-amber-500/10'}
+            />
+            <MobileMetricCard
+              icon={Award}
+              label={isArabic ? 'متوسط الدرجات (فعلي)' : 'Avg Score (active)'}
+              value={`${overallStats?.avgScoreExcludingZero || 0}%`}
+              subValue={isArabic ? 'بدون الصفر' : 'excl. zero'}
+              colorClass={getScoreColor(overallStats?.avgScoreExcludingZero || 0)}
+              bgClass="bg-primary/10"
+            />
+            <MobileMetricCard
+              icon={Eye}
+              label={isArabic ? 'جلسات تركيز فعالة' : 'Meaningful Focus'}
+              value={overallStats?.meaningfulFocusSessions || 0}
+              subValue={isArabic ? '> 2 دقيقة' : '> 2 min'}
+              colorClass="text-green-600"
+              bgClass="bg-green-500/10"
+            />
+          </div>
+        ) : (
+          /* Desktop: Grid stats */
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
+            <div className="bg-card border rounded-xl p-3 md:p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
+                <Users className="h-4 w-4" />
+                <span className="text-xs">{isArabic ? 'الطلاب' : 'Students'}</span>
+              </div>
+              <p className="text-xl md:text-2xl font-bold">{overallStats?.totalStudents || 0}</p>
+            </div>
+
+            <div className="bg-card border rounded-xl p-3 md:p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
+                <BookOpen className="h-4 w-4" />
+                <span className="text-xs">{isArabic ? 'الاشتراكات' : 'Enrollments'}</span>
+              </div>
+              <p className="text-xl md:text-2xl font-bold">{overallStats?.activeEnrollments || 0}</p>
+              <p className="text-xs text-muted-foreground">
+                {overallStats?.pendingEnrollments || 0} {isArabic ? 'معلق' : 'pending'}
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Overall Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-card border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Users className="h-4 w-4" />
-              <span className="text-xs">{isArabic ? 'الطلاب' : 'Students'}</span>
+            <div className="bg-card border rounded-xl p-3 md:p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-xs">{isArabic ? 'متوسط التقدم' : 'Avg Progress'}</span>
+              </div>
+              <p className="text-xl md:text-2xl font-bold">{overallStats?.avgOverallProgress || 0}%</p>
             </div>
-            <p className="text-2xl font-bold">{overallStats?.totalStudents || 0}</p>
-          </div>
 
-          <div className="bg-card border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <BookOpen className="h-4 w-4" />
-              <span className="text-xs">{isArabic ? 'الاشتراكات' : 'Enrollments'}</span>
+            <div className="bg-card border rounded-xl p-3 md:p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
+                <Award className="h-4 w-4" />
+                <span className="text-xs">{isArabic ? 'متوسط الدرجات' : 'Avg Score'}</span>
+              </div>
+              <p className={cn("text-xl md:text-2xl font-bold", getScoreColor(overallStats?.avgScoreExcludingZero || 0))}>
+                {overallStats?.avgScoreExcludingZero || 0}%
+              </p>
+              <p className="text-xs text-muted-foreground">{isArabic ? 'بدون الصفر' : 'excl. zero'}</p>
             </div>
-            <p className="text-2xl font-bold">{overallStats?.activeEnrollments || 0}</p>
-            <p className="text-xs text-muted-foreground">
-              {overallStats?.pendingEnrollments || 0} {isArabic ? 'معلق' : 'pending'}
-            </p>
-          </div>
 
-          <div className="bg-card border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-xs">{isArabic ? 'متوسط التقدم' : 'Avg Progress'}</span>
+            <div className="bg-card border rounded-xl p-3 md:p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
+                <Eye className="h-4 w-4" />
+                <span className="text-xs">{isArabic ? 'تركيز فعال' : 'Real Focus'}</span>
+              </div>
+              <p className="text-xl md:text-2xl font-bold text-green-600">{overallStats?.meaningfulFocusSessions || 0}</p>
+              <p className="text-xs text-muted-foreground">{isArabic ? '> 2 دقيقة' : '> 2 min'}</p>
             </div>
-            <p className="text-2xl font-bold">{overallStats?.avgOverallProgress || 0}%</p>
           </div>
+        )}
 
-          <div className="bg-card border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Award className="h-4 w-4" />
-              <span className="text-xs">{isArabic ? 'متوسط الدرجات' : 'Avg Score'}</span>
-            </div>
-            <p className={`text-2xl font-bold ${getScoreColor(overallStats?.avgOverallExamScore || 0)}`}>
-              {overallStats?.avgOverallExamScore || 0}%
-            </p>
-          </div>
-
-          <div className="bg-card border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="text-xs">{isArabic ? 'الامتحانات' : 'Exams'}</span>
-            </div>
-            <p className="text-2xl font-bold">{overallStats?.totalExamResults || 0}</p>
-          </div>
-        </div>
-
-        {/* Focus Mode Stats Section - Only show when there's meaningful data */}
+        {/* Focus Mode Summary - Compact on mobile */}
         {(overallStats?.totalFocusSessions ?? 0) > 0 && (
-          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Play className="h-5 w-5 text-green-600" />
-              {isArabic ? 'نشاط وضع التركيز' : 'Focus Mode Activity'}
+          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-3 md:p-4 mb-4 md:mb-6">
+            <h2 className="text-sm md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
+              <Play className="h-4 w-4 text-green-600" />
+              {isArabic ? 'نشاط التركيز' : 'Focus Activity'}
             </h2>
             
-            {/* Main Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="bg-background/50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-green-600">{overallStats?.totalFocusSessions || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'جلسة تركيز' : 'Focus Sessions'}</p>
-              </div>
-              <div className="bg-background/50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-green-600">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
+                <p className="text-lg md:text-2xl font-bold text-green-600">
                   {overallStats?.totalFocusMinutes && overallStats.totalFocusMinutes >= 60 
-                    ? `${Math.floor(overallStats.totalFocusMinutes / 60)}h ${overallStats.totalFocusMinutes % 60}m`
+                    ? `${Math.floor(overallStats.totalFocusMinutes / 60)}h`
                     : `${overallStats?.totalFocusMinutes || 0}m`
                   }
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'وقت المشاهدة الفعلي' : 'Actual Watch Time'}</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? 'وقت المشاهدة' : 'Watch Time'}</p>
               </div>
-              <div className="bg-background/50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-green-600">
+              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
+                <p className="text-lg md:text-2xl font-bold text-green-600">
                   {overallStats?.studentsWithFocusSessions || 0}
-                  <span className="text-lg text-muted-foreground">/{overallStats?.totalStudents || 0}</span>
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'طلاب استخدموا وضع التركيز' : 'Students Used Focus'}</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? 'طالب نشط' : 'Active'}</p>
               </div>
-              <div className="bg-background/50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-green-600">{overallStats?.avgFocusMinutesPerStudent || 0}m</p>
-                <p className="text-xs text-muted-foreground mt-1">{isArabic ? 'متوسط/طالب' : 'Avg/Student'}</p>
+              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
+                <p className="text-lg md:text-2xl font-bold">{overallStats?.avgFocusMinutesPerStudent || 0}m</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? 'متوسط/طالب' : 'Avg/Student'}</p>
               </div>
-            </div>
-            
-            {/* Focus Rate Progress Bar */}
-            <div className="bg-background/50 rounded-lg p-4">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">{isArabic ? 'نسبة الطلاب النشطين في وضع التركيز' : 'Students Active in Focus Mode'}</span>
-                <span className="font-semibold text-green-600">
-                  {overallStats?.totalStudents && overallStats.totalStudents > 0 
-                    ? Math.round((overallStats.studentsWithFocusSessions / overallStats.totalStudents) * 100)
-                    : 0}%
-                </span>
+              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
+                <p className={cn(
+                  "text-lg md:text-2xl font-bold",
+                  (overallStats?.studentsWatchingNotTesting || 0) > 3 ? "text-amber-600" : "text-foreground"
+                )}>
+                  {overallStats?.studentsWatchingNotTesting || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">{isArabic ? 'يشاهد فقط' : 'Watch Only'}</p>
               </div>
-              <Progress 
-                value={overallStats?.totalStudents && overallStats.totalStudents > 0 
-                  ? (overallStats.studentsWithFocusSessions / overallStats.totalStudents) * 100
-                  : 0} 
-                className="h-2 [&>div]:bg-green-500" 
-              />
             </div>
           </div>
         )}
 
-        {/* Actionable Insights Section */}
+        {/* Smart Insights - "What should I fix today?" */}
         {insightsData && (
-          <div className="mb-8">
-            <ActionableInsights data={insightsData} isArabic={isArabic} />
+          <div className="mb-4 md:mb-6">
+            <SmartInsights data={insightsData} isArabic={isArabic} />
           </div>
         )}
 
-        {/* Analytics Grid */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <ChapterAnalytics chapters={chapterAnalyticsData} isArabic={isArabic} />
-          <ExamAnalytics exams={examAnalyticsData} isArabic={isArabic} />
-        </div>
+        {/* Analytics - Mobile vs Desktop */}
+        {isMobile ? (
+          <div className="space-y-4 mb-4">
+            <MobileChapterAnalytics chapters={chapterAnalyticsData} isArabic={isArabic} />
+            <MobileExamAnalytics exams={examAnalyticsData} isArabic={isArabic} />
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <ChapterAnalytics chapters={chapterAnalyticsData} isArabic={isArabic} />
+            <ExamAnalytics exams={examAnalyticsData} isArabic={isArabic} />
+          </div>
+        )}
 
-
-        {/* Course Stats */}
-        <div className="bg-card border rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
+        {/* Course Stats - Table on desktop, Cards on mobile */}
+        <div className="bg-card border rounded-xl p-3 md:p-4 mb-4 md:mb-6">
+          <h2 className="text-sm md:text-base font-semibold mb-3 flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
             {isArabic ? 'إحصائيات الكورسات' : 'Course Statistics'}
           </h2>
 
           {courseStats.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              {isArabic ? 'لا توجد كورسات بعد' : 'No courses yet'}
+            <p className="text-sm text-muted-foreground text-center py-3">
+              {isArabic ? 'لا توجد كورسات' : 'No courses yet'}
             </p>
+          ) : isMobile ? (
+            <div className="space-y-2">
+              {courseStats.slice(0, 5).map(course => (
+                <div key={course.id} className="border rounded-lg p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium truncate flex-1">
+                      {isArabic ? course.title_ar : course.title}
+                    </span>
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      {course.totalStudents}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Progress value={course.avgProgress} className="flex-1 h-1.5" />
+                    <span className="text-xs text-muted-foreground">{course.avgProgress}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="border-b">
                   <tr>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">
+                    <th className="text-start py-2 px-2 text-xs font-medium text-muted-foreground">
                       {isArabic ? 'الكورس' : 'Course'}
                     </th>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">
+                    <th className="text-start py-2 px-2 text-xs font-medium text-muted-foreground">
                       {isArabic ? 'الطلاب' : 'Students'}
                     </th>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">
+                    <th className="text-start py-2 px-2 text-xs font-medium text-muted-foreground">
                       {isArabic ? 'الحصص' : 'Lessons'}
                     </th>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground hidden md:table-cell">
+                    <th className="text-start py-2 px-2 text-xs font-medium text-muted-foreground hidden md:table-cell">
                       {isArabic ? 'التقدم' : 'Progress'}
                     </th>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground hidden md:table-cell">
+                    <th className="text-start py-2 px-2 text-xs font-medium text-muted-foreground hidden md:table-cell">
                       {isArabic ? 'متوسط الدرجات' : 'Avg Score'}
                     </th>
                   </tr>
@@ -751,24 +805,24 @@ export default function Reports() {
                 <tbody className="divide-y">
                   {courseStats.map(course => (
                     <tr key={course.id} className="hover:bg-muted/30">
-                      <td className="py-3 px-2 font-medium">
+                      <td className="py-2 px-2 text-sm font-medium">
                         {isArabic ? course.title_ar : course.title}
                       </td>
-                      <td className="py-3 px-2">{course.totalStudents}</td>
-                      <td className="py-3 px-2">{course.totalLessons}</td>
-                      <td className="py-3 px-2 hidden md:table-cell">
+                      <td className="py-2 px-2 text-sm">{course.totalStudents}</td>
+                      <td className="py-2 px-2 text-sm">{course.totalLessons}</td>
+                      <td className="py-2 px-2 hidden md:table-cell">
                         <div className="flex items-center gap-2">
-                          <Progress value={course.avgProgress} className="w-20 h-2" />
-                          <span className="text-sm">{course.avgProgress}%</span>
+                          <Progress value={course.avgProgress} className="w-16 h-1.5" />
+                          <span className="text-xs">{course.avgProgress}%</span>
                         </div>
                       </td>
-                      <td className="py-3 px-2 hidden md:table-cell">
+                      <td className="py-2 px-2 hidden md:table-cell">
                         {course.totalExams > 0 ? (
-                          <span className={`font-medium ${getScoreColor(course.avgExamScore)}`}>
+                          <span className={cn("text-sm font-medium", getScoreColor(course.avgExamScore))}>
                             {course.avgExamScore}%
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </td>
                     </tr>
@@ -779,46 +833,47 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Top Students */}
-        <div className="bg-card border rounded-xl p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Award className="h-5 w-5 text-primary" />
-            {isArabic ? 'أفضل الطلاب (حسب درجات الامتحانات)' : 'Top Students (by Exam Scores)'}
+        {/* Top Students - Compact */}
+        <div className="bg-card border rounded-xl p-3 md:p-4">
+          <h2 className="text-sm md:text-base font-semibold mb-3 flex items-center gap-2">
+            <Award className="h-4 w-4 text-primary" />
+            {isArabic ? 'أفضل الطلاب' : 'Top Students'}
           </h2>
 
           {topStudents.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              {isArabic ? 'لا توجد نتائج امتحانات بعد' : 'No exam results yet'}
+            <p className="text-sm text-muted-foreground text-center py-3">
+              {isArabic ? 'لا توجد نتائج' : 'No exam results yet'}
             </p>
           ) : (
-            <div className="space-y-3">
-              {topStudents.map((student, index) => (
+            <div className="space-y-2">
+              {topStudents.slice(0, isMobile ? 5 : 10).map((student, index) => (
                 <div
                   key={student.user_id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-2 md:p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => navigate(`/assistant/students/${student.user_id}`)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                  <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                    <div className={cn(
+                      "w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0",
                       index < 3 ? 'bg-primary' : 'bg-muted-foreground'
-                    }`}>
+                    )}>
                       {index + 1}
                     </div>
-                    <div>
-                      <p className="font-medium">{student.full_name || (isArabic ? 'بدون اسم' : 'No name')}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{student.full_name || (isArabic ? 'بدون اسم' : 'No name')}</p>
                       <p className="text-xs text-muted-foreground">
                         {student.totalExams} {isArabic ? 'امتحان' : 'exams'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="h-1.5 w-10 md:w-12 rounded-full bg-muted overflow-hidden hidden sm:block">
                       <div
-                        className={`h-full ${getScoreBgColor(student.avgScore)}`}
-                        style={{ width: `${student.avgScore}%` }}
+                        className={getScoreBgColor(student.avgScore)}
+                        style={{ width: `${student.avgScore}%`, height: '100%' }}
                       />
                     </div>
-                    <span className={`font-bold ${getScoreColor(student.avgScore)}`}>
+                    <span className={cn("text-sm font-bold", getScoreColor(student.avgScore))}>
                       {student.avgScore}%
                     </span>
                   </div>
