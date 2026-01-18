@@ -14,43 +14,43 @@ const campaignEmbeds = [
     id: '1',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1466086481102708/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=true&width=500',
   },
   {
     id: '2',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1645805469670530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=true&width=500',
   },
   {
     id: '3',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/3216287765309530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=true&width=500',
   },
   {
     id: '4',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/946314697237044/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=true&width=500',
   },
   {
     id: '5',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/740433731779516/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=true&width=500',
   },
   {
     id: '6',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/684687554336661/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=true&width=500',
   },
   {
     id: '7',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1312763949751940/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=false&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=true&width=500',
   },
 ];
 
@@ -116,7 +116,8 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
           <iframe
             src={embed.embedUrl}
             width="100%"
-            height="280"
+            height="420"
+            loading="lazy"
             style={{
               border: 'none',
               overflow: 'hidden',

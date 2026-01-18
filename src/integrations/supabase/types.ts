@@ -1575,6 +1575,7 @@ export type Database = {
         Args: { _assistant_id: string; _student_id: string }
         Returns: boolean
       }
+      cleanup_orphan_user_rows: { Args: never; Returns: Json }
       generate_course_slug: {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
