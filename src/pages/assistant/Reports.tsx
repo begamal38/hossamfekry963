@@ -142,14 +142,6 @@ export default function Reports() {
       // Filter profiles to only include students
       const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
 
-      // Count attendance by type
-      const centerAttendance = (attendance || []).filter(a => a.attendance_type === 'center').length;
-      const onlineAttendance = (attendance || []).filter(a => a.attendance_type === 'online').length;
-
-      // Count students by attendance mode (only actual students)
-      const onlineStudents = profiles.filter(p => p.attendance_mode === 'online').length;
-      const centerStudents = profiles.filter(p => p.attendance_mode === 'center').length;
-      const hybridStudents = profiles.filter(p => p.attendance_mode === 'hybrid').length;
 
       const activeEnrollments = (enrollments || []).filter(e => e.status === 'active').length;
       const pendingEnrollments = (enrollments || []).filter(e => e.status === 'pending').length;
@@ -268,7 +260,7 @@ export default function Reports() {
       setAttendanceBreakdown(lessonBreakdowns);
 
       // Calculate top students
-      const studentScores = new Map<string, { scores: number[], name: string | null, mode: string }>();
+      const studentScores = new Map<string, { scores: number[], name: string | null }>();
 
       (examResults || []).forEach(result => {
         const maxScore = (result.exams as any)?.max_score || 100;
@@ -279,7 +271,6 @@ export default function Reports() {
           studentScores.set(result.user_id, { 
             scores: [], 
             name: profile?.full_name || null,
-            mode: profile?.attendance_mode || 'online'
           });
         }
         studentScores.get(result.user_id)!.scores.push(percentage);
@@ -291,7 +282,6 @@ export default function Reports() {
           full_name: data.name,
           avgScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length),
           totalExams: data.scores.length,
-          attendance_mode: data.mode,
         }))
         .sort((a, b) => b.avgScore - a.avgScore)
         .slice(0, 10);
@@ -833,6 +823,7 @@ export default function Reports() {
                     </span>
                   </div>
                 </div>
+              ))}
             </div>
           )}
         </div>
