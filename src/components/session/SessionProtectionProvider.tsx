@@ -3,14 +3,10 @@ import { useSessionProtection } from '@/hooks/useSessionProtection';
 
 interface SessionProtectionContextType {
   sessionState: {
-    isNewDevice: boolean;
-    sessionEnded: boolean;
-    endReason: string | null;
-    deviceCount: number;
+    sessionActive: boolean;
   };
   isInitialized: boolean;
   endCurrentSession: () => Promise<void>;
-  checkSessionStatus: () => Promise<void>;
 }
 
 const SessionProtectionContext = createContext<SessionProtectionContextType | null>(null);
