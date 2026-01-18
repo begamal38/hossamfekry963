@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Building, Award, 
-  Mail, Globe, MapPin, Layers, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
+  ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Award, 
+  Mail, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
   Clock, Plus, Trash2, Edit2, Copy, Check, Gauge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,6 @@ interface StudentProfile {
   grade: string | null;
   academic_year: string | null;
   language_track: string | null;
-  attendance_mode: 'online' | 'center' | 'hybrid';
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
@@ -114,12 +113,6 @@ interface LessonFocusDetail {
   sessions: number;
 }
 
-const ATTENDANCE_MODE_CONFIG = {
-  online: { ar: 'أونلاين', en: 'Online', icon: Globe, color: 'text-purple-600 bg-purple-100' },
-  center: { ar: 'سنتر', en: 'Center', icon: MapPin, color: 'text-blue-600 bg-blue-100' },
-  hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600 bg-amber-100' },
-};
-
 const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
   'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
   'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
@@ -161,8 +154,6 @@ export default function StudentDetails() {
   const [lessonFocusDetails, setLessonFocusDetails] = useState<LessonFocusDetail[]>([]);
 
   // Action dialogs
-  const [modeDialogOpen, setModeDialogOpen] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<'online' | 'center' | 'hybrid'>('online');
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -281,9 +272,6 @@ export default function StudentDetails() {
 
       if (profileError) throw profileError;
       setStudent(profileData);
-      if (profileData?.attendance_mode) {
-        setSelectedMode(profileData.attendance_mode);
-      }
 
       // Fetch enrollments with course info
       const { data: enrollmentData, error: enrollmentError } = await supabase
@@ -465,40 +453,6 @@ export default function StudentDetails() {
       });
     } catch (error) {
       console.error('Error logging action:', error);
-    }
-  };
-
-  const handleChangeMode = async () => {
-    if (!userId || !student) return;
-    setActionLoading(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ attendance_mode: selectedMode })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      await logAction('change_attendance_mode', { 
-        from: student.attendance_mode, 
-        to: selectedMode 
-      });
-
-      setStudent({ ...student, attendance_mode: selectedMode });
-      setModeDialogOpen(false);
-      toast({
-        title: isArabic ? 'تم التحديث' : 'Updated',
-        description: isArabic ? 'تم تغيير وضع الحضور بنجاح' : 'Attendance mode changed successfully',
-      });
-    } catch (error) {
-      console.error('Error updating mode:', error);
-      toast({
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'فشل في تحديث وضع الحضور' : 'Failed to update attendance mode',
-        variant: 'destructive',
-      });
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -737,7 +691,6 @@ export default function StudentDetails() {
     );
   }
 
-  const modeConfig = ATTENDANCE_MODE_CONFIG[student.attendance_mode];
   const groupLabel = getGroupLabel();
 
   return (
@@ -784,10 +737,6 @@ export default function StudentDetails() {
                       <Badge variant="secondary" className="mt-2">{groupLabel}</Badge>
                     )}
                   </div>
-                  <Badge className={modeConfig?.color}>
-                    {React.createElement(modeConfig?.icon || Globe, { className: "w-3 h-3 mr-1" })}
-                    {isArabic ? modeConfig?.ar : modeConfig?.en}
-                  </Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 text-sm">
@@ -823,10 +772,6 @@ export default function StudentDetails() {
               {isArabic ? 'إجراءات المساعد' : 'Assistant Actions'}
             </h3>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" size="sm" onClick={() => setModeDialogOpen(true)}>
-                <Layers className="h-4 w-4 mr-2" />
-                {isArabic ? 'تغيير وضع الحضور' : 'Change Attendance Mode'}
-              </Button>
               <Button variant="outline" size="sm" onClick={() => setResetProgressDialogOpen(true)}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {isArabic ? 'إعادة تعيين التقدم' : 'Reset Progress'}
@@ -1099,36 +1044,6 @@ export default function StudentDetails() {
           </div>
         </div>
       </div>
-
-      {/* Change Attendance Mode Dialog */}
-      <Dialog open={modeDialogOpen} onOpenChange={setModeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isArabic ? 'تغيير وضع الحضور' : 'Change Attendance Mode'}</DialogTitle>
-            <DialogDescription>
-              {isArabic ? 'اختر وضع الحضور الجديد للطالب' : 'Select the new attendance mode for this student'}
-            </DialogDescription>
-          </DialogHeader>
-          <Select value={selectedMode} onValueChange={(v: 'online' | 'center' | 'hybrid') => setSelectedMode(v)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="online">{isArabic ? 'أونلاين' : 'Online'}</SelectItem>
-              <SelectItem value="center">{isArabic ? 'سنتر' : 'Center'}</SelectItem>
-              <SelectItem value="hybrid">{isArabic ? 'هجين' : 'Hybrid'}</SelectItem>
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModeDialogOpen(false)}>
-              {isArabic ? 'إلغاء' : 'Cancel'}
-            </Button>
-            <Button onClick={handleChangeMode} disabled={actionLoading}>
-              {actionLoading ? (isArabic ? 'جاري الحفظ...' : 'Saving...') : (isArabic ? 'حفظ' : 'Save')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Suspend/Reactivate Dialog */}
       <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>

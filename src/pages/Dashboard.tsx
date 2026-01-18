@@ -10,9 +10,6 @@ import {
   User,
   ChevronRight,
   ChevronLeft,
-  Globe,
-  MapPin,
-  Layers,
   TrendingUp,
   Clock,
   CheckCircle2,
@@ -34,7 +31,6 @@ import { CourseProgressCard } from '@/components/dashboard/CourseProgressCard';
 import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard';
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
-import { CenterAttendanceSection } from '@/components/dashboard/CenterAttendanceSection';
 import { ExamHistorySection } from '@/components/dashboard/ExamHistorySection';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -47,13 +43,6 @@ import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
 import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useAvailableExamsCount } from '@/hooks/useAvailableExamsCount';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
-
-// Attendance mode config
-const ATTENDANCE_MODE_CONFIG: Record<string, { ar: string; en: string; icon: typeof Globe; color: string }> = {
-  online: { ar: 'أونلاين', en: 'Online', icon: Globe, color: 'text-purple-600' },
-  center: { ar: 'سنتر', en: 'Center', icon: MapPin, color: 'text-blue-600' },
-  hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600' },
-};
 
 // Helper to get full group label
 const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
@@ -71,7 +60,6 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   avatar_url: string | null;
-  attendance_mode: 'online' | 'center' | 'hybrid' | null;
 }
 
 interface EnrolledCourse {
@@ -377,22 +365,6 @@ const Dashboard: React.FC = () => {
                       {groupLabel}
                     </Badge>
                   )}
-                  {profile?.attendance_mode && ATTENDANCE_MODE_CONFIG[profile.attendance_mode] && (
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[10px] gap-1 px-2 py-0.5",
-                        ATTENDANCE_MODE_CONFIG[profile.attendance_mode].color
-                      )}
-                    >
-                      {React.createElement(ATTENDANCE_MODE_CONFIG[profile.attendance_mode].icon, {
-                        className: 'w-2.5 h-2.5',
-                      })}
-                      {isArabic
-                        ? ATTENDANCE_MODE_CONFIG[profile.attendance_mode].ar
-                        : ATTENDANCE_MODE_CONFIG[profile.attendance_mode].en}
-                    </Badge>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -593,12 +565,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Center Attendance Section - only show for center/hybrid students */}
-          {(profile?.attendance_mode === 'center' || profile?.attendance_mode === 'hybrid') && (
-            <div className="mb-5">
-              <CenterAttendanceSection isArabic={isArabic} />
-            </div>
-          )}
 
           {/* Account Card - Mobile optimized */}
           <SectionCard

@@ -45,12 +45,10 @@ const StudentDetails = lazy(() => import("./pages/assistant/StudentDetails"));
 const Enrollments = lazy(() => import("./pages/assistant/Enrollments"));
 const ManageLessons = lazy(() => import("./pages/assistant/ManageLessons"));
 const ManageChapters = lazy(() => import("./pages/assistant/ManageChapters"));
-const RecordAttendance = lazy(() => import("./pages/assistant/RecordAttendance"));
+
 const Reports = lazy(() => import("./pages/assistant/Reports"));
 const ManageCourses = lazy(() => import("./pages/assistant/ManageCourses"));
 const SendNotifications = lazy(() => import("./pages/assistant/SendNotifications"));
-const CenterGroups = lazy(() => import("./pages/assistant/CenterGroups"));
-const CenterSessions = lazy(() => import("./pages/assistant/CenterSessions"));
 const ManageExams = lazy(() => import("./pages/assistant/ManageExams"));
 const ExamResults = lazy(() => import("./pages/assistant/ExamResults"));
 const AssistantMessages = lazy(() => import("./pages/assistant/Messages"));
@@ -269,17 +267,6 @@ const App = () => (
                       </RequireResolvedAccess>
                     }
                   />
-                  <Route
-                    path="/assistant/attendance"
-                    element={
-                      <RequireResolvedAccess
-                        requireAuth
-                        allow={({ canAccessDashboard }) => canAccessDashboard()}
-                      >
-                        <RecordAttendance />
-                      </RequireResolvedAccess>
-                    }
-                  />
                   {/* /assistant/grades route removed - grades come ONLY from exams */}
                   <Route
                     path="/assistant/reports"
@@ -301,28 +288,6 @@ const App = () => (
                       >
                         <SendNotifications />
                       </RequireResolvedAccess>
-                    }
-                  />
-                  <Route
-                    path="/assistant/center-groups"
-                    element={
-                      <RequireResolvedAccess
-                        requireAuth
-                        allow={({ canAccessDashboard }) => canAccessDashboard()}
-                      >
-                        <CenterGroups />
-                      </RequireResolvedAccess>
-                    }
-                  />
-                  <Route
-                    path="/assistant/center-sessions"
-                    element={
-                      <RequireResolvedAccess
-                        requireAuth
-                        allow={({ canAccessDashboard }) => canAccessDashboard()}
-                      >
-                      <CenterSessions />
-                    </RequireResolvedAccess>
                     }
                   />
                   <Route
