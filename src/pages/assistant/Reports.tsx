@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, BookOpen, Award, TrendingUp, Building, Globe, Layers, BarChart3, Lightbulb, Clock, Play } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Lightbulb, Clock, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
 import { Progress } from '@/components/ui/progress';
@@ -29,17 +29,10 @@ interface OverallStats {
   activeEnrollments: number;
   pendingEnrollments: number;
   totalLessons: number;
-  totalCenterAttendance: number;
-  totalOnlineAttendance: number;
   totalExams: number;
   totalExamResults: number;
   avgOverallProgress: number;
   avgOverallExamScore: number;
-  studentsByMode: {
-    online: number;
-    center: number;
-    hybrid: number;
-  };
   // Focus mode stats
   totalFocusSessions: number;
   totalFocusMinutes: number;
@@ -52,7 +45,6 @@ interface TopStudent {
   full_name: string | null;
   avgScore: number;
   totalExams: number;
-  attendance_mode: string;
 }
 
 interface AttendanceBreakdown {
@@ -190,17 +182,10 @@ export default function Reports() {
         activeEnrollments,
         pendingEnrollments,
         totalLessons: (lessons || []).length,
-        totalCenterAttendance: centerAttendance,
-        totalOnlineAttendance: onlineAttendance,
         totalExams: (exams || []).length,
         totalExamResults: (examResults || []).length,
         avgOverallProgress: avgProgress,
         avgOverallExamScore: avgExamScore,
-        studentsByMode: {
-          online: onlineStudents,
-          center: centerStudents,
-          hybrid: hybridStudents,
-        },
         totalFocusSessions,
         totalFocusMinutes,
         studentsWithFocusSessions,
@@ -591,14 +576,6 @@ export default function Reports() {
     return 'bg-red-500';
   };
 
-  const getModeIcon = (mode: string) => {
-    switch (mode) {
-      case 'center': return <Building className="h-3 w-3" />;
-      case 'hybrid': return <Layers className="h-3 w-3" />;
-      default: return <Globe className="h-3 w-3" />;
-    }
-  };
-
   if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -747,124 +724,6 @@ export default function Reports() {
           <ExamAnalytics exams={examAnalyticsData} isArabic={isArabic} />
         </div>
 
-        {/* Attendance Mode Distribution */}
-        <div className="bg-card border rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            {isArabic ? 'توزيع الطلاب حسب نوع الحضور' : 'Students by Attendance Mode'}
-          </h2>
-
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="h-5 w-5 text-purple-600" />
-                <span className="font-medium">{isArabic ? 'أونلاين' : 'Online'}</span>
-              </div>
-              <p className="text-3xl font-bold text-purple-600">{overallStats?.studentsByMode.online || 0}</p>
-              <p className="text-sm text-muted-foreground">
-                {isArabic ? 'سجلات حضور أونلاين' : 'Online attendance records'}: {overallStats?.totalOnlineAttendance || 0}
-              </p>
-            </div>
-
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Building className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">{isArabic ? 'سنتر' : 'Center'}</span>
-              </div>
-              <p className="text-3xl font-bold text-blue-600">{overallStats?.studentsByMode.center || 0}</p>
-              <p className="text-sm text-muted-foreground">
-                {isArabic ? 'سجلات حضور سنتر' : 'Center attendance records'}: {overallStats?.totalCenterAttendance || 0}
-              </p>
-            </div>
-
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Layers className="h-5 w-5 text-amber-600" />
-                <span className="font-medium">{isArabic ? 'هجين' : 'Hybrid'}</span>
-              </div>
-              <p className="text-3xl font-bold text-amber-600">{overallStats?.studentsByMode.hybrid || 0}</p>
-              <p className="text-sm text-muted-foreground">
-                {isArabic ? 'يحضرون سنتر وأونلاين' : 'Attend both center & online'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Breakdown by Lesson */}
-        <div className="bg-card border rounded-xl p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            {isArabic ? 'تفاصيل الحضور حسب الدرس' : 'Attendance Breakdown by Lesson'}
-          </h2>
-
-          {attendanceBreakdown.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              {isArabic ? 'لا توجد بيانات حضور بعد' : 'No attendance data yet'}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b">
-                  <tr>
-                    <th className="text-start py-3 px-2 text-sm font-medium text-muted-foreground">
-                      {isArabic ? 'الدرس' : 'Lesson'}
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">
-                      <div className="flex items-center justify-center gap-1">
-                        <Building className="h-3 w-3" />
-                        {isArabic ? 'سنتر' : 'Center'}
-                      </div>
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-purple-600">
-                      <div className="flex items-center justify-center gap-1">
-                        <Globe className="h-3 w-3" />
-                        {isArabic ? 'أونلاين' : 'Online'}
-                      </div>
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">
-                      <div className="flex items-center justify-center gap-1">
-                        <Layers className="h-3 w-3" />
-                        {isArabic ? 'كلاهما' : 'Both'}
-                      </div>
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-red-600">
-                      {isArabic ? 'غائب' : 'Absent'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {attendanceBreakdown.map(lesson => (
-                    <tr key={lesson.lessonId} className="hover:bg-muted/30">
-                      <td className="py-3 px-2 font-medium">
-                        {isArabic ? lesson.lessonTitleAr : lesson.lessonTitle}
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-                          {lesson.centerCount}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30">
-                          {lesson.onlineCount}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                          {lesson.bothCount}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
-                          {lesson.absentCount}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
 
         {/* Course Stats */}
         <div className="bg-card border rounded-xl p-6 mb-8">
@@ -956,12 +815,7 @@ export default function Reports() {
                       {index + 1}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{student.full_name || (isArabic ? 'بدون اسم' : 'No name')}</p>
-                        <Badge variant="outline" className="text-xs gap-1">
-                          {getModeIcon(student.attendance_mode)}
-                        </Badge>
-                      </div>
+                      <p className="font-medium">{student.full_name || (isArabic ? 'بدون اسم' : 'No name')}</p>
                       <p className="text-xs text-muted-foreground">
                         {student.totalExams} {isArabic ? 'امتحان' : 'exams'}
                       </p>
@@ -979,7 +833,6 @@ export default function Reports() {
                     </span>
                   </div>
                 </div>
-              ))}
             </div>
           )}
         </div>
