@@ -60,8 +60,8 @@ export const Navbar: React.FC = () => {
                 className="h-14 lg:h-16 2xl:h-20 3xl:h-24 w-auto object-contain"
               />
             </Link>
-            {/* Alive indicator - subtle system presence */}
-            {user && <AliveIndicator size="sm" className="hidden sm:flex" />}
+            {/* Alive indicator - desktop only, subtle system presence */}
+            {user && <AliveIndicator size="sm" className="hidden lg:flex" />}
           </div>
 
           {/* Desktop Navigation */}
