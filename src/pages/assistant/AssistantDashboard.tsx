@@ -10,9 +10,6 @@ import {
   FileText, 
   GraduationCap, 
   Send, 
-  MapPin, 
-  Calendar, 
-  ClipboardList, 
   BarChart3,
   CreditCard,
   ChevronDown,
@@ -471,35 +468,6 @@ export default function AssistantDashboard() {
                       <Link to="/assistant/exams">
                         <TrendingUp className="h-3.5 w-3.5 mr-2" />
                         {t('exam.results')}
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-
-
-                {/* Center Section */}
-                <div>
-                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {t('assistant.center')}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
-                      <Link to="/assistant/center-groups">
-                        <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                        {t('assistant.groups')}
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
-                      <Link to="/assistant/center-sessions">
-                        <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                        {t('assistant.sessions')}
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
-                      <Link to="/assistant/attendance">
-                        <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                        {t('assistant.attendance')}
                       </Link>
                     </Button>
                   </div>

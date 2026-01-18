@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, Wifi, Building2, Shuffle, FileSpreadsheet, FileText, ChevronLeft, Plus } from 'lucide-react';
+import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, FileSpreadsheet, FileText, ChevronLeft, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,20 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useStudentExport } from '@/hooks/useStudentExport';
 import { EGYPTIAN_GOVERNORATES, getGovernorateLabel } from '@/constants/governorates';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Database } from '@/integrations/supabase/types';
 import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
@@ -36,7 +27,6 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickEnrollmentDrawer } from '@/components/assistant/QuickEnrollmentDrawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-type AttendanceMode = Database['public']['Enums']['attendance_mode'];
 
 interface Profile {
   user_id: string;
@@ -47,7 +37,6 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   governorate: string | null;
-  attendance_mode: AttendanceMode;
   created_at: string;
 }
 
@@ -89,10 +78,6 @@ export default function Students() {
   
   const { exportStudents, exporting, progress: exportProgress, canExport, roleLoading: exportRoleLoading } = useStudentExport();
   
-  const [modeDialogOpen, setModeDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<EnrichedStudent | null>(null);
-  const [newMode, setNewMode] = useState<AttendanceMode>('online');
-  const [updatingMode, setUpdatingMode] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   // Quick Enrollment state
@@ -101,7 +86,6 @@ export default function Students() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [academicYearFilter, setAcademicYearFilter] = useState('all');
-  const [attendanceModeFilter, setAttendanceModeFilter] = useState('all');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -137,7 +121,7 @@ export default function Students() {
 
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
+        .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, created_at')
         .in('user_id', studentUserIds)
         .neq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -235,75 +219,12 @@ export default function Students() {
       filtered = filtered.filter((s) => s.academic_year === academicYearFilter);
     }
 
-    if (attendanceModeFilter !== 'all') {
-      filtered = filtered.filter((s) => s.attendance_mode === attendanceModeFilter);
-    }
-
     setFilteredStudents(filtered);
-  }, [searchTerm, academicYearFilter, attendanceModeFilter, students]);
+  }, [searchTerm, academicYearFilter, students]);
 
   const clearFilters = () => {
     setSearchTerm('');
     setAcademicYearFilter('all');
-    setAttendanceModeFilter('all');
-  };
-
-  const openModeDialog = (student: EnrichedStudent, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedStudent(student);
-    setNewMode(student.attendance_mode);
-    setModeDialogOpen(true);
-  };
-
-  const handleUpdateMode = async () => {
-    if (!selectedStudent) return;
-    
-    setUpdatingMode(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ attendance_mode: newMode })
-        .eq('user_id', selectedStudent.user_id);
-
-      if (error) throw error;
-
-      setStudents(prev => prev.map(s => 
-        s.user_id === selectedStudent.user_id 
-          ? { ...s, attendance_mode: newMode }
-          : s
-      ));
-
-      toast({
-        title: t('mode.updated'),
-        description: `${selectedStudent.full_name || (isRTL ? 'الطالب' : 'Student')}`,
-      });
-
-      setModeDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating attendance mode:', error);
-      toast({
-        variant: 'destructive',
-        title: t('mode.updateFailed'),
-      });
-    } finally {
-      setUpdatingMode(false);
-    }
-  };
-
-  const getModeIcon = (mode: AttendanceMode) => {
-    switch (mode) {
-      case 'online': return Wifi;
-      case 'center': return Building2;
-      case 'hybrid': return Shuffle;
-    }
-  };
-
-  const getModeColor = (mode: AttendanceMode) => {
-    switch (mode) {
-      case 'online': return 'text-blue-500';
-      case 'center': return 'text-green-500';
-      case 'hybrid': return 'text-purple-500';
-    }
   };
 
   const getScoreColor = (score: number) => {
@@ -319,7 +240,7 @@ export default function Students() {
     setQuickEnrollOpen(true);
   };
 
-  const hasActiveFilters = academicYearFilter !== 'all' || attendanceModeFilter !== 'all';
+  const hasActiveFilters = academicYearFilter !== 'all';
 
   if (authLoading || roleLoading) {
     return (
@@ -412,16 +333,6 @@ export default function Students() {
                 { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
               ],
             },
-            {
-              value: attendanceModeFilter,
-              onChange: setAttendanceModeFilter,
-              options: [
-                { value: 'all', label: isRTL ? 'كل الأنماط' : 'All Modes' },
-                { value: 'online', label: isRTL ? 'أونلاين' : 'Online' },
-                { value: 'center', label: isRTL ? 'سنتر' : 'Center' },
-                { value: 'hybrid', label: isRTL ? 'مختلط' : 'Hybrid' },
-              ],
-            },
           ]}
           onClearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters}
@@ -431,7 +342,15 @@ export default function Students() {
         {/* Students List - Mobile Cards */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-3 h-3 rounded-full bg-primary animate-pulse-dot"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </div>
           </div>
         ) : filteredStudents.length === 0 ? (
           <EmptyState
@@ -447,7 +366,6 @@ export default function Students() {
           <div className="space-y-2">
             {filteredStudents.map((student) => {
               const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
-              const ModeIcon = getModeIcon(student.attendance_mode);
               
               return (
                 <MobileDataCard
@@ -459,7 +377,6 @@ export default function Students() {
                   icon={User}
                   iconColor="text-primary"
                   metadata={[
-                    { icon: ModeIcon, label: t(`mode.${student.attendance_mode}`) },
                     ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
                     ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
                   ]}
@@ -491,48 +408,6 @@ export default function Students() {
           onClick={() => setImportDialogOpen(true)}
           label={isRTL ? 'استيراد' : 'Import'}
         />
-
-        {/* Attendance Mode Dialog */}
-        <Dialog open={modeDialogOpen} onOpenChange={setModeDialogOpen}>
-          <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{t('mode.change')}</DialogTitle>
-              <DialogDescription>
-                {selectedStudent?.full_name || (isRTL ? 'الطالب' : 'Student')}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-3 gap-2">
-                {(['online', 'center', 'hybrid'] as AttendanceMode[]).map((mode) => (
-                  <Button
-                    key={mode}
-                    variant={newMode === mode ? 'default' : 'outline'}
-                    className="flex flex-col items-center gap-2 h-auto py-4"
-                    onClick={() => setNewMode(mode)}
-                  >
-                    {mode === 'online' && <Wifi className="h-5 w-5" />}
-                    {mode === 'center' && <Building2 className="h-5 w-5" />}
-                    {mode === 'hybrid' && <Shuffle className="h-5 w-5" />}
-                    <span className="text-xs">{t(`mode.${mode}`)}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setModeDialogOpen(false)}>
-                {t('system.cancel')}
-              </Button>
-              <Button 
-                onClick={handleUpdateMode} 
-                disabled={updatingMode || newMode === selectedStudent?.attendance_mode}
-              >
-                {updatingMode ? t('system.loading') : t('system.save')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         {/* Student Import Dialog */}
         <StudentImport

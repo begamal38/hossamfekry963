@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   User, Phone, Mail, GraduationCap, Calendar, BookOpen, 
-  Award, Clock, Globe, MapPin, Layers, Settings, Video
+  Award, Clock, Settings, Video
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -22,7 +22,6 @@ interface Profile {
   grade: string | null;
   academic_year: string | null;
   language_track: string | null;
-  attendance_mode: 'online' | 'center' | 'hybrid';
   is_suspended: boolean;
   created_at: string;
 }
@@ -54,11 +53,7 @@ interface ExamResult {
   };
 }
 
-const ATTENDANCE_MODE_CONFIG = {
-  online: { ar: 'أونلاين', en: 'Online', icon: Globe, color: 'text-purple-600 bg-purple-100' },
-  center: { ar: 'سنتر', en: 'Center', icon: MapPin, color: 'text-blue-600 bg-blue-100' },
-  hybrid: { ar: 'هجين', en: 'Hybrid', icon: Layers, color: 'text-amber-600 bg-amber-100' },
-};
+// Removed attendance mode config - unified platform model
 
 const ACADEMIC_YEAR_LABELS: Record<string, { ar: string; en: string }> = {
   'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
@@ -258,7 +253,6 @@ export default function StudentProfile() {
     );
   }
 
-  const modeConfig = ATTENDANCE_MODE_CONFIG[profile.attendance_mode];
   const groupLabel = getGroupLabel();
   const totalLessons = enrollments.reduce((sum, e) => sum + (e.course?.lessons_count || 0), 0);
   const completedLessons = enrollments.reduce((sum, e) => sum + (e.completed_lessons || 0), 0);
@@ -294,10 +288,6 @@ export default function StudentProfile() {
                       <Badge variant="secondary" className="mt-2">{groupLabel}</Badge>
                     )}
                   </div>
-                  <Badge className={modeConfig?.color}>
-                    {React.createElement(modeConfig?.icon || Globe, { className: "w-3 h-3 mr-1" })}
-                    {isArabic ? modeConfig?.ar : modeConfig?.en}
-                  </Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
