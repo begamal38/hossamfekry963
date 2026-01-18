@@ -38,11 +38,13 @@ export const WelcomeOnboarding: React.FC = () => {
 
   useEffect(() => {
     if (shouldShowWelcome) {
-      // Delay showing to let page settle
+      // Delay showing to let profile modal close completely
       const timer = setTimeout(() => {
         setVisible(true);
-      }, 1200);
+      }, 800);
       return () => clearTimeout(timer);
+    } else {
+      setVisible(false);
     }
   }, [shouldShowWelcome]);
 
