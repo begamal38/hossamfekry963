@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Megaphone, Play, BookOpen, GraduationCap, Info, ExternalLink } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -14,43 +13,43 @@ const campaignEmbeds = [
     id: '1',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1466086481102708/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1466086481102708%2F&show_text=false&width=500',
   },
   {
     id: '2',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1645805469670530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1645805469670530%2F&show_text=false&width=500',
   },
   {
     id: '3',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/3216287765309530/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F3216287765309530%2F&show_text=false&width=500',
   },
   {
     id: '4',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/946314697237044/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F946314697237044%2F&show_text=false&width=500',
   },
   {
     id: '5',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/740433731779516/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F740433731779516%2F&show_text=false&width=500',
   },
   {
     id: '6',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/684687554336661/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F684687554336661%2F&show_text=false&width=500',
   },
   {
     id: '7',
     postUrl: 'https://www.facebook.com/mr.hossamfekry/videos/1312763949751940/',
     embedUrl:
-      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=true&width=500',
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fmr.hossamfekry%2Fvideos%2F1312763949751940%2F&show_text=false&width=500',
   },
 ];
 
@@ -61,38 +60,12 @@ interface VideoCardProps {
 }
 
 const VideoCard = ({ embed, index, t }: VideoCardProps) => {
-  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-
-  // Render above-the-fold iframes immediately for faster perceived load.
-  const [isInView, setIsInView] = useState(index < 3);
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // Lazy load: only render iframe when card is in viewport (skip for first items)
-  useEffect(() => {
-    if (isInView) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "300px" }
-    );
-
-    if (cardRef.current) observer.observe(cardRef.current);
-    return () => observer.disconnect();
-  }, [isInView]);
 
   if (hasError) {
     return (
-      <div
-        ref={cardRef}
-        className="group relative animate-fade-in"
-        style={{ animationDelay: `${index * 30}ms` }}
-      >
+      <div ref={cardRef} className="group relative">
         <div className="relative bg-card rounded-xl overflow-hidden border border-border">
           <div className="w-full flex items-center justify-center bg-muted/30 aspect-video">
             <p className="text-muted-foreground text-sm">{t("campaigns.unavailable")}</p>
@@ -103,43 +76,21 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
   }
 
   return (
-    <div
-      ref={cardRef}
-      className="group relative animate-fade-in"
-      style={{ animationDelay: `${index * 30}ms` }}
-    >
-      {/* Card container - compact design */}
-      <div className="relative bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-colors duration-200 shadow-sm hover:shadow-md">
-        {/* Show skeleton until iframe is loaded */}
-        {(isLoading || !isInView) && (
-          <div className="w-full aspect-video">
-            <Skeleton className="w-full h-full" />
-          </div>
-        )}
-
-        {isInView && (
-          <iframe
-            src={embed.embedUrl}
-            width="100%"
-            height="420"
-            loading={index < 3 ? "eager" : "lazy"}
-            style={{
-              border: "none",
-              overflow: "hidden",
-              display: isLoading ? "none" : "block",
-            }}
-            scrolling="no"
-            frameBorder="0"
-            allowFullScreen
-            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-            title={t("campaigns.openPost")}
-            onLoad={() => setIsLoading(false)}
-            onError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-          />
-        )}
+    <div ref={cardRef} className="group relative">
+      <div className="relative bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-colors duration-200">
+        <iframe
+          src={embed.embedUrl}
+          width="100%"
+          height="300"
+          loading="lazy"
+          style={{ border: "none", overflow: "hidden" }}
+          scrolling="no"
+          frameBorder="0"
+          allowFullScreen
+          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          title={t("campaigns.openPost")}
+          onError={() => setHasError(true)}
+        />
 
         {/* Overlay link to open in Facebook */}
         <a
@@ -156,13 +107,6 @@ const VideoCard = ({ embed, index, t }: VideoCardProps) => {
   );
 };
 
-const VideoSkeleton = ({ index }: { index: number }) => (
-  <div className="relative animate-fade-in" style={{ animationDelay: `${index * 30}ms` }}>
-    <div className="relative bg-card rounded-xl overflow-hidden border border-border">
-      <Skeleton className="w-full aspect-video" />
-    </div>
-  </div>
-);
 
 interface EmptyStateProps {
   t: (key: string) => string;
