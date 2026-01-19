@@ -515,6 +515,30 @@ export default function CourseView() {
 
   // Use slug for canonical URL (always present due to NOT NULL constraint)
 
+  // Find last accessed chapter for enrolled students
+  const lastAccessedChapter = useMemo(() => {
+    if (!isEnrolled || chapters.length === 0) return null;
+    
+    // Find the chapter with the most recent incomplete lesson
+    for (let i = chapters.length - 1; i >= 0; i--) {
+      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
+      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
+      const hasComplete = chapterLessons.some(l => attendances.some(a => a.lesson_id === l.id));
+      if (hasIncomplete && hasComplete) {
+        return { chapter: chapters[i], index: i };
+      }
+    }
+    // If all complete or none started, return first incomplete chapter
+    for (let i = 0; i < chapters.length; i++) {
+      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
+      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
+      if (hasIncomplete) {
+        return { chapter: chapters[i], index: i };
+      }
+    }
+    return null;
+  }, [isEnrolled, chapters, lessonsByChapter, attendances]);
+
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
@@ -527,251 +551,339 @@ export default function CourseView() {
       />
       <Navbar />
 
-      <main className="pt-20 pb-16">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-primary/10 to-accent/10 border-b">
-          <div className="container mx-auto px-4 py-8">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/courses')}
-              className="mb-4 gap-2"
-            >
-              <ArrowLeft className={cn("w-4 h-4", isRTL && "rotate-180")} />
-              {isArabic ? 'الكورسات' : 'Courses'}
-            </Button>
+      <main className="pt-16 pb-24">
+        {/* Mobile-First Header - Back Button */}
+        <div className="container mx-auto px-3 sm:px-4 py-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/courses')}
+            className="gap-1.5 text-muted-foreground hover:text-foreground -mx-2"
+          >
+            <ArrowLeft className={cn("w-4 h-4", isRTL && "rotate-180")} />
+            {isArabic ? 'الكورسات' : 'Courses'}
+          </Button>
+        </div>
 
-            <div className="flex flex-col lg:flex-row gap-8">
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge variant="outline">{isArabic ? gradeInfo?.ar : gradeInfo?.en}</Badge>
-                  {course.is_free && (
-                    <Badge className="bg-green-600">{isArabic ? 'مجاني' : 'Free'}</Badge>
-                  )}
-                  {/* Show preview badge for admins viewing preview courses */}
-                  {isPreviewCourse && canBypassRestrictions && (
-                    <Badge className="bg-amber-500 text-white">
-                      {isArabic ? 'معاينة' : 'Preview'}
-                    </Badge>
-                  )}
-                </div>
+        {/* Grade Badge - Vodafone Style */}
+        <div className="container mx-auto px-3 sm:px-4 mb-3">
+          <Badge variant="outline" className="text-sm px-3 py-1">
+            {isArabic ? gradeInfo?.ar : gradeInfo?.en}
+          </Badge>
+        </div>
 
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">
-                  {isArabic ? course.title_ar : course.title}
-                </h1>
-                <p className="text-lg text-muted-foreground mb-6">
-                  {isArabic ? course.description_ar : course.description}
-                </p>
+        {/* Course Title & Description */}
+        <div className="container mx-auto px-3 sm:px-4 mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+            {isArabic ? course.title_ar : course.title}
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            {isArabic ? course.description_ar : course.description}
+          </p>
+        </div>
 
-                <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mb-6">
-                <span className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    {lessons.length} {isArabic ? 'حصة' : 'sessions'}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    {course.duration_hours} {isArabic ? 'ساعة' : 'hours'}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    {isArabic ? 'ثانوية عامة' : 'Thanaweya Amma'}
-                  </span>
-                </div>
+        {/* Course Stats Row - Compact */}
+        <div className="container mx-auto px-3 sm:px-4 mb-5">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4" />
+              {lessons.length} {isArabic ? 'حصة' : 'lessons'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
+              {course.duration_hours} {isArabic ? 'ساعة' : 'hours'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              {isArabic ? 'ثانوية عامة' : 'Thanaweya Amma'}
+            </span>
+          </div>
+        </div>
 
-                {/* Access Blocked Warning - ONLY for students, NEVER for assistants/admins */}
-                {accessBlocked?.blocked && !canBypassRestrictions && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 mb-4">
-                    <p className="text-destructive font-medium">
-                      ⚠️ {accessBlocked.message}
-                    </p>
-                  </div>
-                )}
+        {/* Access Blocked Warning */}
+        {accessBlocked?.blocked && !canBypassRestrictions && (
+          <div className="container mx-auto px-3 sm:px-4 mb-4">
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+              <p className="text-destructive font-medium text-sm">
+                ⚠️ {accessBlocked.message}
+              </p>
+            </div>
+          </div>
+        )}
 
-                {/* Assistant/Admin view - Show management buttons, no enrollment needed */}
-                {canBypassRestrictions ? (
-                  <div className="space-y-3">
-                    <Badge className="bg-secondary text-secondary-foreground">
-                      {isArabic ? 'عرض المدرس' : 'Teacher View'}
-                    </Badge>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        size="lg"
-                        onClick={() => navigate('/assistant/lessons')}
-                        className="gap-2"
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        {isArabic ? 'إدارة الحصص' : 'Manage Sessions'}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        size="lg"
-                        onClick={() => navigate('/assistant/courses')}
-                        className="gap-2"
-                      >
-                        {isArabic ? 'إدارة الكورسات' : 'Manage Courses'}
-                      </Button>
-                    </div>
-                  </div>
-                ) : !isEnrolled ? (
-                  // Student not enrolled - Show payment info section
-                  <div className="space-y-4">
-                    {/* Enrollment CTA Notice */}
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                      <p className="text-sm text-amber-700 dark:text-amber-400">
-                        {isArabic 
-                          ? '📌 اشترك في الكورس لفتح المحتوى والبدء في التعلم'
-                          : '📌 Enroll in this course to unlock content and start learning'
-                        }
-                      </p>
-                    </div>
+        {/* CTA Section - Enrollment Notice */}
+        {!canBypassRestrictions && !isEnrolled && (
+          <div className="container mx-auto px-3 sm:px-4 mb-5">
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+              <p className="text-sm text-primary font-medium flex items-center gap-2">
+                <span className="text-lg">📌</span>
+                {isArabic 
+                  ? 'اشترك في الكورس لفتح المحتوى والبدء في التعلم'
+                  : 'Subscribe to unlock content and start learning'
+                }
+              </p>
+            </div>
+          </div>
+        )}
 
-                    {/* Payment Info Card - For Non-Free Courses */}
-                    {!course.is_free && (
-                      <div className="bg-card border-2 border-primary/20 rounded-xl p-5 space-y-4">
-                        {/* Price Display */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">
-                            {isArabic ? 'سعر الاشتراك' : 'Subscription Price'}
-                          </span>
-                          <div className="text-2xl font-bold text-primary">
-                            {course.price} <span className="text-base">{isArabic ? 'ج.م' : 'EGP'}</span>
-                          </div>
-                        </div>
-
-                        {/* What You Get */}
-                        <div className="border-t pt-3 space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">
-                            {isArabic ? 'الاشتراك يشمل:' : 'Subscription includes:'}
-                          </p>
-                          <ul className="text-sm space-y-1.5">
-                            <li className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                              <span>{lessons.length} {isArabic ? 'حصة فيديو' : 'video lessons'}</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                              <span>{isArabic ? 'امتحانات على كل باب' : 'Chapter exams'}</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                              <span>{isArabic ? 'متابعة التقدم والأداء' : 'Progress tracking'}</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                              <span>{isArabic ? 'دعم مباشر عبر واتساب' : 'Direct WhatsApp support'}</span>
-                            </li>
-                          </ul>
-                        </div>
-
-                        {/* Payment Methods */}
-                        <div className="border-t pt-3">
-                          <p className="text-sm font-medium text-muted-foreground mb-2">
-                            {isArabic ? 'طرق الدفع:' : 'Payment Methods:'}
-                          </p>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            <Badge variant="outline">
-                              {isArabic ? 'فودافون كاش' : 'Vodafone Cash'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {isArabic ? 'إنستاباي' : 'InstaPay'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {isArabic ? 'تحويل بنكي' : 'Bank Transfer'}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {/* WhatsApp Contact */}
-                        <a
-                          href={`https://wa.me/201000000000?text=${encodeURIComponent(
-                            isArabic 
-                              ? `مرحباً، أريد الاشتراك في كورس: ${course.title_ar}`
-                              : `Hello, I want to enroll in course: ${course.title}`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                          </svg>
-                          {isArabic ? 'تواصل عبر واتساب للاشتراك' : 'Contact via WhatsApp to Subscribe'}
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Main CTA Button */}
-                    <Button 
-                      size="lg" 
-                      onClick={handleEnroll}
-                      disabled={enrolling || accessBlocked?.blocked}
-                      className="gap-2 w-full"
-                    >
-                      {accessBlocked?.blocked ? (
-                        isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
-                      ) : enrolling ? (
-                        isArabic ? 'جاري الاشتراك...' : 'Enrolling...'
-                      ) : !user ? (
-                        <>{isArabic ? 'سجّل حسابك وابدأ الكورس' : 'Create Account & Start Course'}</>
-                      ) : course.is_free ? (
-                        <>{isArabic ? 'ابدأ الكورس المجاني' : 'Start Free Course'}</>
-                      ) : (
-                        <>{isArabic ? 'اشترك الآن' : 'Enroll Now'}</>
-                      )}
-                    </Button>
-                  </div>
-                ) : (
-                  // Student enrolled - Show progress
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-primary">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        {isArabic ? 'مشترك' : 'Enrolled'}
-                      </Badge>
-                      {enrollmentStatus === 'pending' && (
-                        <Badge variant="secondary">
-                          {isArabic ? 'في انتظار التفعيل' : 'Pending Activation'}
-                        </Badge>
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>{isArabic ? 'تقدمك' : 'Your Progress'}</span>
-                        <span>{progressData.completed}/{progressData.total} {isArabic ? 'حصة' : 'sessions'}</span>
-                      </div>
-                      <Progress value={progressData.percent} className="h-2" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Course Image - Always show cover or fallback */}
-              <div className="lg:w-80 shrink-0">
+        {/* HERO: Course Cover Image Card - Vodafone Style */}
+        <div className="container mx-auto px-3 sm:px-4 mb-6">
+          <div className="relative bg-gradient-to-br from-primary via-primary to-blue-700 rounded-2xl overflow-hidden shadow-lg">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+            </div>
+            
+            <div className="relative p-4 sm:p-5 flex gap-4">
+              {/* Course Image */}
+              <div className="w-28 sm:w-36 shrink-0">
                 <img 
                   src={course.thumbnail_url || '/images/default-course-cover.svg'} 
                   alt={isArabic ? course.title_ar : course.title}
-                  className={cn(
-                    "w-full aspect-video object-cover rounded-2xl shadow-lg",
-                    !course.thumbnail_url && "opacity-60"
-                  )}
+                  className="w-full aspect-[3/4] object-cover rounded-xl shadow-md"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
                   }}
                 />
               </div>
+              
+              {/* Course Info */}
+              <div className="flex-1 flex flex-col justify-center text-white">
+                <h2 className="text-lg sm:text-xl font-bold mb-1">
+                  {isArabic ? 'كيمياء' : 'Chemistry'}
+                </h2>
+                <p className="text-white/90 text-sm mb-2">
+                  {isArabic ? gradeInfo?.ar : gradeInfo?.en}
+                </p>
+                <p className="text-white/80 text-xs sm:text-sm font-medium mb-1">
+                  {isArabic ? 'مستر حسام فكري' : 'Mr. Hossam Fekry'}
+                </p>
+                <p className="text-white/70 text-xs">
+                  DMT {isArabic ? 'المجال في الكيمياء' : 'Chemistry Expert'}
+                </p>
+                
+                {/* Course Type Badge */}
+                <div className="mt-3">
+                  <span className="inline-block bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
+                    {course.is_free 
+                      ? (isArabic ? 'كورس مجاني' : 'Free Course')
+                      : (isArabic ? 'كورس كامل' : 'Full Course')
+                    }
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Lessons List */}
-        <div className="container mx-auto px-4 py-8">
-          <h2 className="text-2xl font-bold mb-4">
+        {/* ENROLLED STUDENT: Progress & Continue Section */}
+        {isEnrolled && !canBypassRestrictions && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6">
+            <div className="bg-card border rounded-2xl p-4 space-y-4">
+              {/* Enrollment Status */}
+              <div className="flex items-center gap-2">
+                <Badge className="bg-green-600 text-white gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {isArabic ? 'مشترك' : 'Enrolled'}
+                </Badge>
+                {enrollmentStatus === 'pending' && (
+                  <Badge variant="secondary">
+                    {isArabic ? 'في انتظار التفعيل' : 'Pending Activation'}
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Progress Bar */}
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">{isArabic ? 'تقدمك في الكورس' : 'Your Progress'}</span>
+                  <span className="font-semibold">{progressData.completed}/{progressData.total} {isArabic ? 'حصة' : 'lessons'}</span>
+                </div>
+                <Progress value={progressData.percent} className="h-2.5" />
+              </div>
+              
+              {/* Continue Learning CTA */}
+              {lastAccessedChapter && (
+                <div className="pt-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {isArabic ? 'استكمل من حيث توقفت:' : 'Continue where you left off:'}
+                  </p>
+                  <Button 
+                    className="w-full gap-2"
+                    onClick={() => {
+                      // Scroll to the chapter section
+                      const chapterEl = document.getElementById(`chapter-${lastAccessedChapter.chapter.id}`);
+                      if (chapterEl) {
+                        chapterEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                  >
+                    <Play className="w-4 h-4" />
+                    {isArabic 
+                      ? `الباب ${lastAccessedChapter.index + 1}: ${lastAccessedChapter.chapter.title_ar}`
+                      : `Chapter ${lastAccessedChapter.index + 1}: ${lastAccessedChapter.chapter.title}`
+                    }
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PAYMENT SECTION - For Non-Enrolled Users (Paid Courses) */}
+        {!isEnrolled && !canBypassRestrictions && !course.is_free && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6">
+            <div className="bg-card border-2 border-primary/20 rounded-2xl overflow-hidden">
+              {/* Price Header */}
+              <div className="bg-primary/5 p-4 flex items-center justify-between">
+                <span className="text-muted-foreground font-medium">
+                  {isArabic ? 'سعر الاشتراك' : 'Subscription Price'}
+                </span>
+                <div className="text-2xl font-bold text-primary">
+                  {course.price} <span className="text-base font-medium">{isArabic ? 'ج.م' : 'EGP'}</span>
+                </div>
+              </div>
+              
+              {/* Benefits List */}
+              <div className="p-4 space-y-4">
+                <div>
+                  <p className="text-sm font-semibold mb-3">
+                    {isArabic ? 'الاشتراك يشمل:' : 'Subscription includes:'}
+                  </p>
+                  <ul className="space-y-2.5">
+                    <li className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      </div>
+                      <span>{lessons.length} {isArabic ? 'حصة فيديو' : 'video lessons'}</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      </div>
+                      <span>{isArabic ? 'امتحانات على كل باب' : 'Chapter exams'}</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      </div>
+                      <span>{isArabic ? 'متابعة التقدم والأداء' : 'Progress tracking'}</span>
+                    </li>
+                    <li className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      </div>
+                      <span>{isArabic ? 'دعم مباشر عبر واتساب' : 'Direct WhatsApp support'}</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                {/* Payment Methods */}
+                <div className="pt-3 border-t">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {isArabic ? 'طرق الدفع:' : 'Payment Methods:'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {isArabic ? 'فودافون كاش' : 'Vodafone Cash'}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {isArabic ? 'إنستاباي' : 'InstaPay'}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {isArabic ? 'تحويل بنكي' : 'Bank Transfer'}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {/* WhatsApp CTA */}
+                <a
+                  href={`https://wa.me/201000000000?text=${encodeURIComponent(
+                    isArabic 
+                      ? `مرحباً، أريد الاشتراك في كورس: ${course.title_ar}`
+                      : `Hello, I want to enroll in course: ${course.title}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-medium transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  {isArabic ? 'تواصل عبر واتساب للاشتراك' : 'Contact via WhatsApp'}
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main CTA Button - Fixed Bottom for Mobile */}
+        {!isEnrolled && !canBypassRestrictions && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6">
+            <Button 
+              size="lg" 
+              onClick={handleEnroll}
+              disabled={enrolling || accessBlocked?.blocked}
+              className="w-full h-12 text-base font-semibold"
+            >
+              {accessBlocked?.blocked ? (
+                isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
+              ) : enrolling ? (
+                isArabic ? 'جاري التحميل...' : 'Loading...'
+              ) : !user ? (
+                <>{isArabic ? 'سجّل حسابك وابدأ الكورس' : 'Create Account & Start'}</>
+              ) : course.is_free ? (
+                <>{isArabic ? 'ابدأ الكورس المجاني' : 'Start Free Course'}</>
+              ) : (
+                <>{isArabic ? 'اشترك الآن' : 'Subscribe Now'}</>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* ADMIN/ASSISTANT: Management View */}
+        {canBypassRestrictions && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6">
+            <div className="bg-secondary/50 border rounded-xl p-4 space-y-3">
+              <Badge className="bg-secondary text-secondary-foreground">
+                {isArabic ? 'عرض المدرس' : 'Teacher View'}
+              </Badge>
+              {isPreviewCourse && (
+                <Badge className="bg-amber-500 text-white mx-2">
+                  {isArabic ? 'معاينة' : 'Preview'}
+                </Badge>
+              )}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button 
+                  size="sm"
+                  onClick={() => navigate('/assistant/lessons')}
+                  className="gap-1.5"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {isArabic ? 'إدارة الحصص' : 'Manage Lessons'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/assistant/courses')}
+                >
+                  {isArabic ? 'إدارة الكورسات' : 'Manage Courses'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lessons List - Course Content Section */}
+        <div className="container mx-auto px-3 sm:px-4 py-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
             {isArabic ? 'محتوى الكورس' : 'Course Content'}
           </h2>
 
           {/* Guidance for students */}
           {isEnrolled && visibleLessons.length > 0 && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-6">
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-5">
               <p className="text-sm text-muted-foreground">
                 {isArabic 
                   ? '💡 كمّل كل حصص الباب علشان يفتح الامتحان'
@@ -782,7 +894,7 @@ export default function CourseView() {
           )}
 
           {/* Chapter-grouped lessons with exam sections */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             {chapters.length > 0 ? (
               <>
                 {chapters.map((chapter, chapterIndex) => {
@@ -795,29 +907,29 @@ export default function CourseView() {
                   if (chapterLessons.length === 0) return null;
 
                   return (
-                    <div key={chapter.id} className="space-y-4">
+                    <div key={chapter.id} id={`chapter-${chapter.id}`} className="space-y-3">
                       {/* Chapter Header */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Layers className="w-5 h-5 text-primary" />
+                      <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Layers className="w-4 h-4 text-primary" />
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold truncate">
                             {isArabic ? `الباب ${chapterIndex + 1}: ${chapter.title_ar}` : `Chapter ${chapterIndex + 1}: ${chapter.title}`}
                           </h3>
                           {chapterProgressData && (
-                            <p className="text-sm text-muted-foreground">
-                              {chapterProgressData.completedLessons}/{chapterProgressData.totalLessons} {isArabic ? 'حصة مكتملة' : 'lessons completed'}
+                            <p className="text-xs text-muted-foreground">
+                              {chapterProgressData.completedLessons}/{chapterProgressData.totalLessons} {isArabic ? 'حصة مكتملة' : 'completed'}
                               {chapterProgressData.isComplete && (
-                                <CheckCircle2 className="w-4 h-4 text-green-500 inline-block mx-1" />
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 inline-block mx-1" />
                               )}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      {/* Chapter Lessons */}
-                      <div className="space-y-3 mr-6">
+                      {/* Chapter Lessons - Compact Mobile Style */}
+                      <div className="space-y-2">
                         {chapterLessons.map((lesson, index) => {
                           const completed = isLessonCompleted(lesson.id);
                           const canAccess = canAccessLesson(lesson.id, completed);
@@ -827,63 +939,53 @@ export default function CourseView() {
                             <div
                               key={lesson.id}
                               className={cn(
-                                "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
-                                canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer" : "opacity-60"
+                                "flex items-center gap-3 p-3 bg-card border rounded-xl transition-all",
+                                canAccess && hasVideo ? "hover:border-primary/50 cursor-pointer active:scale-[0.99]" : "opacity-60"
                               )}
                               onClick={() => canAccess && hasVideo && navigate(`/lesson/${lesson.short_id}`)}
                             >
                               {/* Lesson Number */}
                               <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                                "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
                                 completed 
                                   ? "bg-green-500 text-white" 
                                   : canAccess && hasVideo
                                   ? "bg-primary/10 text-primary"
                                   : "bg-muted text-muted-foreground"
                               )}>
-                                {completed ? <CheckCircle2 className="w-5 h-5" /> : index + 1}
+                                {completed ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
                               </div>
 
                               {/* Lesson Info */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold truncate">
-                                    {isArabic ? lesson.title_ar : lesson.title}
-                                  </h3>
-                                  {!hasVideo && (
-                                    <Badge variant="secondary" className="text-xs shrink-0">
-                                      <FileVideo className="w-3 h-3 mr-1" />
-                                      {isArabic ? 'قيد الإعداد' : 'Coming Soon'}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                                <h4 className="font-medium text-sm truncate">
+                                  {isArabic ? lesson.title_ar : lesson.title}
+                                </h4>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
                                     {lesson.duration_minutes} {isArabic ? 'دقيقة' : 'min'}
                                   </span>
+                                  {!hasVideo && (
+                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                      {isArabic ? 'قريباً' : 'Soon'}
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
 
-                              {/* Action */}
+                              {/* Action Icon */}
                               <div className="shrink-0">
                                 {!hasVideo ? (
-                                  <Badge variant="outline" className="text-muted-foreground">
-                                    {isArabic ? 'قريباً' : 'Soon'}
-                                  </Badge>
+                                  <Lock className="w-4 h-4 text-muted-foreground/50" />
                                 ) : canAccess ? (
-                                  <Button size="sm" variant={completed ? "secondary" : "default"}>
-                                    {completed ? (
-                                      <>{isArabic ? 'مراجعة' : 'Review'}</>
-                                    ) : (
-                                      <>
-                                        <Play className="w-4 h-4 mr-1" />
-                                        {isArabic ? 'ابدأ' : 'Start'}
-                                      </>
-                                    )}
-                                  </Button>
+                                  completed ? (
+                                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                  ) : (
+                                    <Play className="w-5 h-5 text-primary" />
+                                  )
                                 ) : (
-                                  <Lock className="w-5 h-5 text-muted-foreground" />
+                                  <Lock className="w-4 h-4 text-muted-foreground" />
                                 )}
                               </div>
                             </div>
