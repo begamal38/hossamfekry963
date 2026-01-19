@@ -174,55 +174,9 @@ const Courses: React.FC = () => {
       return;
     }
 
-    // Not logged in:
-    // - Paid course: allow going to payment page directly
-    // - Free course: require login to enroll
-    if (!user) {
-      if (!isFree && price > 0) {
-        navigate(`/payment/${courseId}`);
-        return;
-      }
-
-      toast({
-        title: 'يرجى تسجيل الدخول',
-        description: 'يجب تسجيل الدخول للاشتراك في الكورس',
-      });
-      navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseUrl}`)}`);
-      return;
-    }
-
-    // Already enrolled - go to course
-    if (isEnrolled(courseId)) {
-      navigate(`/course/${courseUrl}`);
-      return;
-    }
-
-    // VALIDATION: Check academic path restrictions for students only
-    if (userProfile) {
-      const coursePath = parseAcademicPath(courseGrade);
-      const validation = canAccessContent(userProfile, {
-        grade: coursePath.grade,
-        language_track: coursePath.track,
-      });
-
-      if (!validation.allowed) {
-        toast({
-          variant: 'destructive',
-          title: isArabic ? 'غير مسموح' : 'Not Allowed',
-          description: isArabic ? validation.messageAr : validation.message,
-        });
-        return;
-      }
-    }
-
-    // If paid course, redirect to payment page
-    if (!isFree && price > 0) {
-      navigate(`/payment/${courseId}`);
-      return;
-    }
-
-    // Free course - enroll directly
-    handleFreeEnroll(courseId);
+    // UNIFIED FLOW: All course interactions lead to Course Content Page
+    // Payment/enrollment actions happen INSIDE the course page
+    navigate(`/course/${courseUrl}`);
   };
 
   const handleFreeEnroll = async (courseId: string) => {
