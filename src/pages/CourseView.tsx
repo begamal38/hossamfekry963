@@ -286,15 +286,8 @@ export default function CourseView() {
   };
 
   const handleEnroll = async () => {
-    // Visitors:
-    // - Paid courses: allow going to payment page directly (sales funnel)
-    // - Free courses: require login to create enrollment
+    // Visitors: Always require login first (return to this page after)
     if (!user) {
-      if (course && !course.is_free && (course.price ?? 0) > 0) {
-        navigate(`/payment/${course.id}`);
-        return;
-      }
-
       navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseId}`)}`);
       return;
     }

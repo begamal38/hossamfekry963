@@ -699,7 +699,7 @@ export default function LessonView() {
               <Button 
                 size="lg" 
                 className="w-full"
-                onClick={() => navigate(`/payment/${course?.id}`)}
+                onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
               >
                 {isArabic ? 'اشترك الآن' : 'Subscribe Now'}
               </Button>
