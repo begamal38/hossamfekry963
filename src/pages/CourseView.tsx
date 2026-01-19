@@ -626,51 +626,97 @@ export default function CourseView() {
           </div>
         )}
 
-        {/* HERO: Course Cover Image Card - Vodafone Style */}
+        {/* HERO: Course Cover Image - Landscape 16:9 */}
+        <div className="container mx-auto px-3 sm:px-4 mb-4">
+          <div className="relative rounded-2xl overflow-hidden shadow-lg">
+            <img 
+              src={course.thumbnail_url || '/images/default-course-cover.svg'} 
+              alt={isArabic ? course.title_ar : course.title}
+              className="w-full aspect-video object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
+              }}
+            />
+            {/* Gradient Overlay for text readability if needed */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+          </div>
+        </div>
+
+        {/* Chemistry Branding Card - حسام فكري */}
         <div className="container mx-auto px-3 sm:px-4 mb-6">
           <div className="relative bg-gradient-to-br from-primary via-primary to-blue-700 rounded-2xl overflow-hidden shadow-lg">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+            {/* Chemistry Pattern Background */}
+            <div className="absolute inset-0 opacity-[0.08]">
+              {/* Molecule shapes */}
+              <svg className="absolute top-2 right-4 w-16 h-16 text-white" viewBox="0 0 100 100" fill="currentColor">
+                <circle cx="50" cy="20" r="8" />
+                <circle cx="30" cy="50" r="8" />
+                <circle cx="70" cy="50" r="8" />
+                <circle cx="50" cy="80" r="8" />
+                <line x1="50" y1="28" x2="35" y2="45" stroke="currentColor" strokeWidth="3" />
+                <line x1="50" y1="28" x2="65" y2="45" stroke="currentColor" strokeWidth="3" />
+                <line x1="35" y1="55" x2="50" y2="72" stroke="currentColor" strokeWidth="3" />
+                <line x1="65" y1="55" x2="50" y2="72" stroke="currentColor" strokeWidth="3" />
+              </svg>
+              <svg className="absolute bottom-3 left-6 w-12 h-12 text-white" viewBox="0 0 100 100" fill="currentColor">
+                <circle cx="25" cy="50" r="10" />
+                <circle cx="75" cy="50" r="10" />
+                <line x1="35" y1="50" x2="65" y2="50" stroke="currentColor" strokeWidth="4" />
+              </svg>
+              {/* Hexagon pattern */}
+              <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 text-white opacity-50" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1">
+                <polygon points="50,5 90,25 90,65 50,85 10,65 10,25" />
+                <polygon points="50,20 75,35 75,55 50,70 25,55 25,35" />
+              </svg>
             </div>
             
-            <div className="relative p-4 sm:p-5 flex gap-4">
-              {/* Course Image */}
-              <div className="w-28 sm:w-36 shrink-0">
-                <img 
-                  src={course.thumbnail_url || '/images/default-course-cover.svg'} 
-                  alt={isArabic ? course.title_ar : course.title}
-                  className="w-full aspect-[3/4] object-cover rounded-xl shadow-md"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
-                  }}
-                />
+            {/* Content */}
+            <div className="relative p-4 sm:p-5">
+              <div className="flex items-center gap-4">
+                {/* Chemistry Icon */}
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 3h6v7l4 8a2 2 0 0 1-1.8 2.9H6.8A2 2 0 0 1 5 18l4-8V3z" />
+                    <path d="M9 3h6" />
+                    <circle cx="12" cy="16" r="1" fill="currentColor" />
+                    <circle cx="9" cy="14" r="0.5" fill="currentColor" />
+                    <circle cx="15" cy="15" r="0.5" fill="currentColor" />
+                  </svg>
+                </div>
+                
+                {/* Course Info */}
+                <div className="flex-1 text-white">
+                  <h2 className="text-lg sm:text-xl font-bold mb-0.5">
+                    {isArabic ? 'كيمياء' : 'Chemistry'}
+                  </h2>
+                  <p className="text-white/90 text-sm">
+                    {isArabic ? gradeInfo?.ar : gradeInfo?.en}
+                  </p>
+                </div>
+                
+                {/* Course Badge */}
+                <span className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-white shrink-0">
+                  {course.is_free 
+                    ? (isArabic ? 'مجاني' : 'Free')
+                    : (isArabic ? 'كورس كامل' : 'Full Course')
+                  }
+                </span>
               </div>
               
-              {/* Course Info */}
-              <div className="flex-1 flex flex-col justify-center text-white">
-                <h2 className="text-lg sm:text-xl font-bold mb-1">
-                  {isArabic ? 'كيمياء' : 'Chemistry'}
-                </h2>
-                <p className="text-white/90 text-sm mb-2">
-                  {isArabic ? gradeInfo?.ar : gradeInfo?.en}
-                </p>
-                <p className="text-white/80 text-xs sm:text-sm font-medium mb-1">
-                  {isArabic ? 'مستر حسام فكري' : 'Mr. Hossam Fekry'}
-                </p>
-                <p className="text-white/70 text-xs">
-                  DMT {isArabic ? 'المجال في الكيمياء' : 'Chemistry Expert'}
-                </p>
-                
-                {/* Course Type Badge */}
-                <div className="mt-3">
-                  <span className="inline-block bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
-                    {course.is_free 
-                      ? (isArabic ? 'كورس مجاني' : 'Free Course')
-                      : (isArabic ? 'كورس كامل' : 'Full Course')
-                    }
-                  </span>
+              {/* Teacher Info */}
+              <div className="mt-3 pt-3 border-t border-white/15">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">HF</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">
+                      {isArabic ? 'مستر حسام فكري' : 'Mr. Hossam Fekry'}
+                    </p>
+                    <p className="text-white/70 text-xs">
+                      DMT {isArabic ? '• المجال في الكيمياء' : '• Chemistry Expert'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
