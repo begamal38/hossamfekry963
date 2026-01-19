@@ -14,7 +14,7 @@ interface StatusSummaryCardProps {
   /** Optional badge text */
   badge?: string;
   /** Badge variant */
-  badgeVariant?: 'default' | 'success' | 'warning' | 'accent';
+  badgeVariant?: 'default' | 'success' | 'stable' | 'warning' | 'danger' | 'critical' | 'accent';
   /** Link destination */
   href?: string;
   /** RTL mode */
@@ -25,8 +25,11 @@ interface StatusSummaryCardProps {
 
 const badgeStyles = {
   default: 'bg-primary/10 text-primary',
-  success: 'bg-green-500/10 text-green-600',
-  warning: 'bg-amber-500/10 text-amber-600',
+  success: 'bg-green-500/10 text-green-600',        // كله تمام
+  stable: 'bg-blue-500/10 text-blue-600',           // كله مستقر
+  warning: 'bg-amber-500/10 text-amber-600',        // محتاج متابعة
+  danger: 'bg-red-500/10 text-red-600',             // فيه مشكلة
+  critical: 'bg-gray-900/90 text-red-400 dark:bg-red-950 dark:text-red-300', // حالة طوارئ
   accent: 'bg-purple-500/10 text-purple-600',
 };
 

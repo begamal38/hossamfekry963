@@ -764,10 +764,15 @@ export default function ManageExams() {
               primaryText={loading ? '...' : `${stats.published} ${isArabic ? 'امتحان منشور' : 'Published'}`}
               secondaryText={stats.draft > 0 
                 ? `${stats.draft} ${isArabic ? 'مسودة' : 'drafts'}`
-                : (isArabic ? 'كل الامتحانات منشورة' : 'All exams published')
+                : (isArabic ? 'كل الامتحانات اتنشرت' : 'All exams published')
               }
-              badge={stats.draft > 0 ? `${stats.draft} ${isArabic ? 'مسودة' : 'draft'}` : undefined}
-              badgeVariant={stats.draft > 0 ? 'warning' : 'success'}
+              badge={stats.draft > 3 
+                ? (isArabic ? 'محتاج متابعة' : 'Needs Attention')
+                : stats.draft > 0 
+                ? (isArabic ? 'كله مستقر' : 'Stable')
+                : (isArabic ? 'كله تمام' : 'All Good')
+              }
+              badgeVariant={stats.draft > 3 ? 'warning' : stats.draft > 0 ? 'stable' : 'success'}
               isRTL={isArabic}
               className="mb-4"
             />

@@ -218,7 +218,7 @@ export const SmartInsights: React.FC<SmartInsightsProps> = ({ data, isArabic }) 
         </h3>
         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
           <p className="text-sm text-green-700 dark:text-green-400">
-            {isArabic ? '✅ كل شيء يبدو جيداً — استمر!' : '✅ Everything looks good — keep going!'}
+            {isArabic ? '✅ كله تمام — كمّل كده!' : '✅ All good — keep going!'}
           </p>
         </div>
       </div>
