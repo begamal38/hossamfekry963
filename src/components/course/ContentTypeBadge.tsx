@@ -10,14 +10,13 @@ interface ContentTypeBadgeProps {
   className?: string;
 }
 
-export const ContentTypeBadge: React.FC<ContentTypeBadgeProps> = ({ 
+const ContentTypeBadgeInner = ({ 
   isFree, 
   variant = 'default',
   className 
-}) => {
+}: ContentTypeBadgeProps) => {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
-
   const sizes = {
     small: 'text-xs px-2 py-0.5',
     default: 'text-sm px-2.5 py-1',
@@ -60,3 +59,6 @@ export const ContentTypeBadge: React.FC<ContentTypeBadgeProps> = ({
     </Badge>
   );
 };
+
+export const ContentTypeBadge = React.memo(ContentTypeBadgeInner);
+ContentTypeBadge.displayName = 'ContentTypeBadge';

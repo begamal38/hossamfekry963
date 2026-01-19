@@ -51,7 +51,7 @@ interface CourseCardProps {
  * Uses course cover image consistently across the platform
  * Mobile-first responsive design with improved touch targets
  */
-export const CourseCard = React.memo<CourseCardProps>(({ 
+const CourseCardInner = ({ 
   course, 
   isArabic: isArabicProp,
   isEnrolled = false, 
@@ -62,7 +62,7 @@ export const CourseCard = React.memo<CourseCardProps>(({
   isPreview = false,
   userGrade = null,
   variant = 'full'
-}) => {
+}: CourseCardProps) => {
   const { language, t } = useLanguage();
   const isArabic = isArabicProp ?? (language === 'ar');
   
@@ -287,8 +287,9 @@ export const CourseCard = React.memo<CourseCardProps>(({
       </div>
     </div>
   );
-});
+};
 
+export const CourseCard = React.memo(CourseCardInner);
 CourseCard.displayName = 'CourseCard';
 
 export default CourseCard;
