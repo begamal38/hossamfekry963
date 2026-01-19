@@ -77,21 +77,32 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     }
   }, [isActive]);
 
-  // Expose video control methods to parent
+  // ═══════════════════════════════════════════════════════════════════
+  // IMPERATIVE HANDLE — STRICT FOCUS ORCHESTRATION
+  // These methods enforce single-execution guards defined in useFocusMode
+  // ═══════════════════════════════════════════════════════════════════
   useImperativeHandle(ref, () => ({
     onVideoPlay: () => {
+      // GUARD: useFocusMode.startFocus() already prevents double-start
+      // - Returns early if focusState === FOCUS_ACTIVE
+      // - Returns early if isCompletedRef === true
       startFocus();
     },
     onVideoPause: () => {
+      // GUARD: useFocusMode.pauseFocus() only executes if FOCUS_ACTIVE
       pauseFocus();
     },
     onVideoEnd: () => {
+      // completeFocus() marks session as FOCUS_COMPLETED
+      // This prevents any future startFocus() calls
       completeFocus();
     },
     onLessonComplete: () => {
+      // Same as onVideoEnd - explicit completion
       completeFocus();
     },
     resetFocus: () => {
+      // Full reset - clears all guards and refs
       resetFocus();
       lastSegmentCountRef.current = 0;
       sessionStartTimeRef.current = null;
@@ -155,18 +166,26 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
     return () => clearInterval(interval);
   }, [isActive, showMessages, getFocusStats, showTimeMilestone, isArabic]);
 
-  // Show random motivational messages at random intervals (4-6 minutes) - ONLY when active
+  // ═══════════════════════════════════════════════════════════════════
+  // MOTIVATIONAL MESSAGES — ONLY WHEN FOCUS_ACTIVE
+  // Show random motivational messages at random intervals (4-6 minutes)
+  // GUARD: Messages only display when isActive AND document.hidden === false
+  // ═══════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (isActive && showMessages) {
       // Show initial message after 30 seconds
       const initialTimeout = setTimeout(() => {
-        showRandomMessage(isArabic);
+        // GUARD: Check visibility before showing message
+        if (!document.hidden) {
+          showRandomMessage(isArabic);
+        }
       }, 30000);
 
       // Schedule next message at random interval (4-6 minutes = 240000-360000ms)
       const scheduleNextMessage = () => {
         const randomDelay = Math.random() * (360000 - 240000) + 240000; // 4-6 minutes
         return setTimeout(() => {
+          // GUARD: Double-check visibility AND active state before showing
           if (!document.hidden && isActive) {
             showRandomMessage(isArabic);
           }
