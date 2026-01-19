@@ -135,7 +135,7 @@ export default function CourseView() {
       }
     });
     
-    return grouped;
+  return grouped;
   }, [visibleLessons, chapters]);
 
   // Calculate progress based on lessons with valid videos only
@@ -143,6 +143,30 @@ export default function CourseView() {
     const completedIds = attendances.map(a => a.lesson_id);
     return calculateProgress(visibleLessons, completedIds);
   }, [visibleLessons, attendances]);
+
+  // Find last accessed chapter for enrolled students - MUST be before any early returns
+  const lastAccessedChapter = useMemo(() => {
+    if (!isEnrolled || chapters.length === 0) return null;
+    
+    // Find the chapter with the most recent incomplete lesson
+    for (let i = chapters.length - 1; i >= 0; i--) {
+      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
+      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
+      const hasComplete = chapterLessons.some(l => attendances.some(a => a.lesson_id === l.id));
+      if (hasIncomplete && hasComplete) {
+        return { chapter: chapters[i], index: i };
+      }
+    }
+    // If all complete or none started, return first incomplete chapter
+    for (let i = 0; i < chapters.length; i++) {
+      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
+      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
+      if (hasIncomplete) {
+        return { chapter: chapters[i], index: i };
+      }
+    }
+    return null;
+  }, [isEnrolled, chapters, lessonsByChapter, attendances]);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -514,30 +538,6 @@ export default function CourseView() {
   const courseDescription = isArabic ? course.description_ar : course.description;
 
   // Use slug for canonical URL (always present due to NOT NULL constraint)
-
-  // Find last accessed chapter for enrolled students
-  const lastAccessedChapter = useMemo(() => {
-    if (!isEnrolled || chapters.length === 0) return null;
-    
-    // Find the chapter with the most recent incomplete lesson
-    for (let i = chapters.length - 1; i >= 0; i--) {
-      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
-      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
-      const hasComplete = chapterLessons.some(l => attendances.some(a => a.lesson_id === l.id));
-      if (hasIncomplete && hasComplete) {
-        return { chapter: chapters[i], index: i };
-      }
-    }
-    // If all complete or none started, return first incomplete chapter
-    for (let i = 0; i < chapters.length; i++) {
-      const chapterLessons = lessonsByChapter[chapters[i].id] || [];
-      const hasIncomplete = chapterLessons.some(l => !attendances.some(a => a.lesson_id === l.id));
-      if (hasIncomplete) {
-        return { chapter: chapters[i], index: i };
-      }
-    }
-    return null;
-  }, [isEnrolled, chapters, lessonsByChapter, attendances]);
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
