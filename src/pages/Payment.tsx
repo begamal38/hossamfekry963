@@ -201,8 +201,16 @@ const Payment: React.FC = () => {
 
   // Primary CTA handler - routes based on course type and user state
   const handlePrimaryCTA = useCallback(() => {
+    // Visitors:
+    // - Paid courses: allow contact without forcing login
+    // - Free courses: require login to enroll
     if (userState === 'visitor') {
-      navigate('/auth');
+      if (isFreeCourse) {
+        navigate('/auth');
+        return;
+      }
+
+      handleWhatsAppContact();
       return;
     }
 
@@ -222,13 +230,15 @@ const Payment: React.FC = () => {
 
   // Get primary CTA config based on user state and course type
   const primaryCTAConfig = useMemo(() => {
-    // VISITOR - always prompt account creation
+    // VISITOR
+    // - Free: prompt account creation
+    // - Paid: allow contact without forcing login
     if (userState === 'visitor') {
       return {
-        label: isFreeCourse 
+        label: isFreeCourse
           ? (isArabic ? 'أنشئ حسابك المجاني للبدء' : 'Create free account to start')
-          : (isArabic ? 'أنشئ حسابك للاشتراك' : 'Create account to enroll'),
-        icon: UserPlus,
+          : (isArabic ? 'تواصل للاشتراك في الكورس' : 'Contact to enroll'),
+        icon: isFreeCourse ? UserPlus : MessageCircle,
         variant: 'default' as const,
         glow: true,
       };
