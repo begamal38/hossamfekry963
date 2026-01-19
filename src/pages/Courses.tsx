@@ -174,11 +174,18 @@ const Courses: React.FC = () => {
       return;
     }
 
-    // Not logged in - redirect to auth
+    // Not logged in:
+    // - Paid course: allow going to payment page directly
+    // - Free course: require login to enroll
     if (!user) {
+      if (!isFree && price > 0) {
+        navigate(`/payment/${courseId}`);
+        return;
+      }
+
       toast({
-        title: isArabic ? 'يرجى تسجيل الدخول' : 'Please sign in',
-        description: isArabic ? 'يجب تسجيل الدخول للاشتراك في الكورس' : 'You need to sign in to enroll in a course',
+        title: 'يرجى تسجيل الدخول',
+        description: 'يجب تسجيل الدخول للاشتراك في الكورس',
       });
       navigate(`/auth?redirect=${encodeURIComponent(`/course/${courseUrl}`)}`);
       return;
