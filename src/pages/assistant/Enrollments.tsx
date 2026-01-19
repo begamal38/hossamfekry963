@@ -379,10 +379,15 @@ const Enrollments = () => {
               primaryText={loading ? '...' : `${stats.active} ${isRTL ? 'اشتراك نشط' : 'Active'}`}
               secondaryText={stats.pending > 0 
                 ? `${stats.pending} ${isRTL ? 'بانتظار التفعيل' : 'pending activation'}`
-                : (isRTL ? 'كل الاشتراكات مُعالجة' : 'All enrollments processed')
+                : (isRTL ? 'كل الاشتراكات اتعالجت' : 'All enrollments processed')
               }
-              badge={stats.pending > 0 ? `${stats.pending} ${isRTL ? 'معلق' : 'pending'}` : undefined}
-              badgeVariant={stats.pending > 0 ? 'warning' : 'success'}
+              badge={stats.pending > 5 
+                ? (isRTL ? 'فيه مشكلة' : 'At Risk')
+                : stats.pending > 0 
+                ? (isRTL ? 'محتاج متابعة' : 'Needs Attention')
+                : (isRTL ? 'كله تمام' : 'All Good')
+              }
+              badgeVariant={stats.pending > 5 ? 'danger' : stats.pending > 0 ? 'warning' : 'success'}
               isRTL={isRTL}
               className="mb-4"
             />

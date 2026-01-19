@@ -308,11 +308,13 @@ export default function AssistantDashboard() {
               ? (isRTL ? `+${stats.newStudentsThisWeek} طالب الأسبوع ده` : `+${stats.newStudentsThisWeek} students this week`)
               : (isRTL ? 'إدارة الطلاب والمحتوى' : 'Manage students & content')
             }
-            badge={stats.pendingEnrollments > 0 
-              ? (isRTL ? `${stats.pendingEnrollments} طلب معلق` : `${stats.pendingEnrollments} pending`)
-              : (isRTL ? 'كل شيء تمام' : 'All good')
+            badge={stats.pendingEnrollments > 5 
+              ? (isRTL ? 'فيه مشكلة' : 'At Risk')
+              : stats.pendingEnrollments > 0 
+              ? (isRTL ? 'محتاج متابعة' : 'Needs Attention')
+              : (isRTL ? 'كله تمام' : 'All Good')
             }
-            badgeVariant={stats.pendingEnrollments > 0 ? 'warning' : 'success'}
+            badgeVariant={stats.pendingEnrollments > 5 ? 'danger' : stats.pendingEnrollments > 0 ? 'warning' : 'success'}
             href="/assistant/students"
             isRTL={isRTL}
             className="mb-5"
