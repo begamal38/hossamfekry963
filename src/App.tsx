@@ -178,17 +178,8 @@ const App = () => (
                       </RequireResolvedAccess>
                     }
                   />
-                  <Route
-                    path="/payment/:courseId"
-                    element={
-                      <RequireResolvedAccess
-                        requireAuth
-                        allow={({ hasRole }) => hasRole("student")}
-                      >
-                        <Payment />
-                      </RequireResolvedAccess>
-                    }
-                  />
+                  {/* Payment page - PUBLIC for sales funnel, no auth required to view */}
+                  <Route path="/payment/:courseId" element={<Payment />} />
                   {/* Assistant Teacher Routes */}
                   <Route
                     path="/assistant"
