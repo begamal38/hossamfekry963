@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useEnrollments } from '@/hooks/useEnrollments';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { 
   MessageCircle, 
   Shield, 
-  CheckCircle, 
   Star, 
   Smartphone,
-  Monitor,
   Brain,
   BookOpen,
   Users,
@@ -22,9 +23,13 @@ import {
   BadgeCheck,
   Lock,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  UserPlus,
+  ArrowLeft,
+  Play
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PulsingDots } from '@/components/ui/PulsingDots';
 
 interface Course {
   id: string;
@@ -48,23 +53,23 @@ const GRADE_OPTIONS: Record<string, string> = {
 // Official WhatsApp number - synced with Footer
 const OFFICIAL_WHATSAPP = '01225565645';
 
+// User state types for CTA logic
+type UserState = 'visitor' | 'registered_not_enrolled' | 'enrolled' | 'staff';
+
 const Payment: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { t, isRTL } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const { isEnrolledIn, loading: enrollmentsLoading } = useEnrollments();
+  const { isStaff, loading: roleLoading } = useUserRole();
+  const { isRTL } = useLanguage();
+  const isMobile = useIsMobile();
   const isArabic = isRTL;
   
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-  }, [user, navigate]);
-
+  // Fetch course data - NO auth required
   useEffect(() => {
     const fetchCourse = async () => {
       if (!courseId) return;
@@ -89,19 +94,107 @@ const Payment: React.FC = () => {
     fetchCourse();
   }, [courseId, isArabic]);
 
+  // Derive user state from hooks - SINGLE SOURCE OF TRUTH
+  const userState = useMemo((): UserState => {
+    // Still loading auth/role data - treat as visitor for now
+    if (authLoading || roleLoading) return 'visitor';
+    
+    // No user = visitor
+    if (!user) return 'visitor';
+    
+    // Staff member (read-only)
+    if (isStaff()) return 'staff';
+    
+    // Check enrollment status (after enrollments load)
+    if (!enrollmentsLoading && courseId && isEnrolledIn(courseId)) {
+      return 'enrolled';
+    }
+    
+    // Registered but not enrolled
+    return 'registered_not_enrolled';
+  }, [user, authLoading, roleLoading, enrollmentsLoading, courseId, isEnrolledIn, isStaff]);
+
+  // Primary CTA - WhatsApp contact (always available)
   const handleWhatsAppContact = () => {
-    const message = encodeURIComponent(
-      isArabic 
-        ? `مرحباً، أريد الاشتراك في كورس: ${course?.title_ar}\nالسعر: ${course?.price} ج.م\nاسمي: ${user?.email}`
-        : `Hello, I want to enroll in: ${course?.title}\nPrice: ${course?.price} EGP\nMy email: ${user?.email}`
-    );
+    const courseName = isArabic ? course?.title_ar : course?.title;
+    const gradeName = GRADE_OPTIONS[course?.grade || ''] || course?.grade;
+    
+    // Build message - include email only if user is logged in
+    const messageParts = [
+      isArabic ? 'مرحباً، أريد الاشتراك في:' : 'Hello, I want to enroll in:',
+      `📚 ${courseName}`,
+      `📊 ${gradeName}`,
+      isArabic ? `💰 السعر: ${course?.price} ج.م` : `💰 Price: ${course?.price} EGP`,
+    ];
+    
+    if (user?.email) {
+      messageParts.push(isArabic ? `📧 الإيميل: ${user.email}` : `📧 Email: ${user.email}`);
+    }
+    
+    messageParts.push('', isArabic ? 'منصة حسام فكري التعليمية' : 'Hossam Fekry Educational Platform');
+    
+    const message = encodeURIComponent(messageParts.join('\n'));
     window.open(`https://wa.me/2${OFFICIAL_WHATSAPP}?text=${message}`, '_blank');
   };
 
+  // Secondary CTA actions based on user state
+  const handleSecondaryCTA = () => {
+    switch (userState) {
+      case 'visitor':
+        navigate('/auth');
+        break;
+      case 'enrolled':
+        navigate(`/course/${courseId}`);
+        break;
+      case 'registered_not_enrolled':
+        // Informational - main action is WhatsApp
+        toast.info(isArabic ? 'تواصل مع المدرس المساعد للاشتراك' : 'Contact assistant to enroll');
+        break;
+      case 'staff':
+        // Read-only - no action
+        break;
+    }
+  };
+
+  // Get secondary CTA config based on user state
+  const secondaryCTAConfig = useMemo(() => {
+    switch (userState) {
+      case 'visitor':
+        return {
+          label: isArabic ? 'أنشئ حسابك بعد الاشتراك' : 'Create account after subscription',
+          icon: UserPlus,
+          variant: 'outline' as const,
+          show: true,
+        };
+      case 'registered_not_enrolled':
+        return {
+          label: isArabic ? 'أكمل التسجيل بعد الدفع' : 'Complete registration after payment',
+          icon: ArrowLeft,
+          variant: 'ghost' as const,
+          show: true,
+        };
+      case 'enrolled':
+        return {
+          label: isArabic ? 'اذهب إلى الكورس' : 'Go to Course',
+          icon: Play,
+          variant: 'secondary' as const,
+          show: true,
+        };
+      case 'staff':
+        return {
+          label: isArabic ? 'عرض فقط' : 'View Only',
+          icon: Shield,
+          variant: 'ghost' as const,
+          show: false, // Hide for staff
+        };
+    }
+  }, [userState, isArabic]);
+
+  // Loading state with pulsing dots
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <PulsingDots />
       </div>
     );
   }
@@ -130,19 +223,25 @@ const Payment: React.FC = () => {
     { icon: Users, text: isArabic ? 'دعم مباشر من المدرسين المساعدين' : 'Direct support from assistants' },
   ];
 
+  const trustSignals = [
+    { label: isArabic ? 'نظام متابعة' : 'Follow-up System' },
+    { label: isArabic ? 'تحليل أداء' : 'Performance Analysis' },
+    { label: isArabic ? 'قياس وقت حقيقي' : 'Real-time Tracking' },
+  ];
+
   return (
-    <div className="min-h-screen bg-muted/30" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-muted/30 pb-safe" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-16">
+      <main className="pt-20 sm:pt-24 pb-28 sm:pb-16">
         <div className="container mx-auto px-4 max-w-2xl">
           
-          {/* STATUS FIRST: أنا فين دلوقتي؟ - Course + Price Card */}
-          <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden mb-6">
+          {/* HERO SECTION - Course + Price Card */}
+          <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden mb-5">
             {/* Course Header */}
-            <div className="p-5 sm:p-6 border-b border-border/50">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 border border-border bg-muted">
+            <div className="p-4 sm:p-6 border-b border-border/50">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 border border-border bg-muted">
                   <img 
                     src={course.thumbnail_url || '/images/default-course-cover.svg'} 
                     alt={isArabic ? course.title_ar : course.title}
@@ -150,17 +249,17 @@ const Payment: React.FC = () => {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-lg sm:text-xl font-bold text-foreground mb-1 leading-tight">
+                  <h1 className="text-base sm:text-xl font-bold text-foreground mb-1 leading-tight">
                     {isArabic ? course.title_ar : course.title}
                   </h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                     {GRADE_OPTIONS[course.grade] || course.grade}
                   </p>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl sm:text-3xl font-bold text-primary">
+                    <span className="text-xl sm:text-3xl font-bold text-primary">
                       {course.price}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs sm:text-sm text-muted-foreground">
                       {isArabic ? 'ج.م' : 'EGP'}
                     </span>
                   </div>
@@ -168,9 +267,9 @@ const Payment: React.FC = () => {
               </div>
             </div>
             
-            {/* Value Proposition - Simple */}
-            <div className="p-4 sm:p-5 bg-primary/5">
-              <p className="text-center text-foreground/90 text-sm leading-relaxed">
+            {/* Value Proposition */}
+            <div className="p-3 sm:p-4 bg-primary/5">
+              <p className="text-center text-foreground/90 text-xs sm:text-sm leading-relaxed">
                 {isArabic 
                   ? 'منصة ذكية بتتابعك خطوة بخطوة — مش مجرد فيديوهات'
                   : 'A smart platform that guides you step by step — not just videos'}
@@ -179,34 +278,34 @@ const Payment: React.FC = () => {
           </div>
           
           {/* Trust Labels - Compact Row */}
-          <div className="flex flex-wrap justify-center gap-2 mb-6">
+          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-5">
             {trustLabels.map((item, index) => (
               <div 
                 key={index}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs"
+                className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-card border border-border text-[10px] sm:text-xs"
               >
-                <item.icon className="w-3.5 h-3.5 text-primary" />
+                <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
                 <span className="text-muted-foreground">{item.label}</span>
               </div>
             ))}
           </div>
 
-          {/* PRIMARY ACTION: أعمل إيه دلوقتي؟ - Payment Methods + CTA */}
-          <div className="bg-card rounded-2xl border border-border p-5 sm:p-6 mb-6">
-            <h2 className="text-base sm:text-lg font-bold text-foreground mb-4 text-center">
+          {/* PAYMENT METHODS + CTA Section */}
+          <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 mb-5">
+            <h2 className="text-sm sm:text-lg font-bold text-foreground mb-3 sm:mb-4 text-center">
               {isArabic ? 'طرق الدفع' : 'Payment Methods'}
             </h2>
             
-            {/* Payment Logos - Simple Row */}
-            <div className="flex flex-wrap justify-center items-center gap-3 mb-5">
-              <div className="flex items-center justify-center w-14 h-9 rounded-lg bg-muted/50 p-1.5">
+            {/* Payment Logos */}
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-4">
+              <div className="flex items-center justify-center w-12 h-8 sm:w-14 sm:h-9 rounded-lg bg-muted/50 p-1">
                 <svg viewBox="0 0 48 48" className="w-full h-full">
                   <path fill="#1565C0" d="M45,35c0,2.209-1.791,4-4,4H7c-2.209,0-4-1.791-4-4V13c0-2.209,1.791-4,4-4h34c2.209,0,4,1.791,4,4V35z"/>
                   <path fill="#FFF" d="M15.186 19l-2.626 7.832c0 0-.667-3.313-.733-3.729-1.495-3.411-3.701-3.221-3.701-3.221L10.726 30v-.002h3.161L18.258 19H15.186zM17.689 30L20.56 30 22.296 19 19.389 19zM38.008 19h-3.021l-4.71 11h2.852l.588-1.571h3.596L37.619 30h2.613L38.008 19zM34.513 26.328l1.563-4.157.818 4.157H34.513zM26.369 22.206c0-.606.498-1.057 1.926-1.057.928 0 1.991.674 1.991.674l.466-2.309c0 0-1.358-.515-2.691-.515-3.019 0-4.576 1.444-4.576 3.272 0 3.306 3.979 2.853 3.979 4.551 0 .291-.231.964-1.888.964-1.662 0-2.759-.609-2.759-.609l-.495 2.216c0 0 1.063.606 3.117.606 2.059 0 4.915-1.54 4.915-3.752C30.354 23.586 26.369 23.394 26.369 22.206z"/>
                   <path fill="#FFC107" d="M12.212,24.945l-0.966-4.748c0,0-0.437-1.029-1.573-1.029c-1.136,0-4.44,0-4.44,0S10.894,20.84,12.212,24.945z"/>
                 </svg>
               </div>
-              <div className="flex items-center justify-center w-14 h-9 rounded-lg bg-muted/50 p-1.5">
+              <div className="flex items-center justify-center w-12 h-8 sm:w-14 sm:h-9 rounded-lg bg-muted/50 p-1">
                 <svg viewBox="0 0 48 48" className="w-full h-full">
                   <path fill="#3F51B5" d="M45,35c0,2.209-1.791,4-4,4H7c-2.209,0-4-1.791-4-4V13c0-2.209,1.791-4,4-4h34c2.209,0,4,1.791,4,4V35z"/>
                   <circle cx="30" cy="24" r="10" fill="#FF9800"/>
@@ -215,60 +314,88 @@ const Payment: React.FC = () => {
                 </svg>
               </div>
               <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10">
-                <Wallet className="w-4 h-4 text-red-500" />
-                <span className="text-[10px] font-bold text-red-500">VF Cash</span>
+                <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
+                <span className="text-[9px] sm:text-[10px] font-bold text-red-500">VF Cash</span>
               </div>
               <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/10">
-                <CreditCard className="w-4 h-4 text-purple-500" />
-                <span className="text-[10px] font-bold text-purple-500">InstaPay</span>
+                <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500" />
+                <span className="text-[9px] sm:text-[10px] font-bold text-purple-500">InstaPay</span>
               </div>
             </div>
             
             {/* Simple instruction */}
-            <p className="text-center text-xs text-muted-foreground mb-5">
+            <p className="text-center text-[10px] sm:text-xs text-muted-foreground mb-4">
               {isArabic 
                 ? 'بعد التحويل، ابعت صورة الإيصال على واتساب'
                 : 'After transfer, send receipt screenshot on WhatsApp'}
             </p>
             
-            {/* SINGLE CTA with Glow Effect */}
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
-              <Button 
-                onClick={handleWhatsAppContact}
-                className="relative w-full h-12 sm:h-14 text-base font-bold rounded-xl shadow-lg"
-              >
-                <MessageCircle className="w-5 h-5 me-2" />
-                {isArabic ? 'تواصل مع المدرس المساعد' : 'Contact Assistant'}
-              </Button>
+            {/* Desktop CTAs - hidden on mobile (sticky bar shown instead) */}
+            <div className="hidden sm:block space-y-3">
+              {/* PRIMARY CTA - WhatsApp */}
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
+                <Button 
+                  onClick={handleWhatsAppContact}
+                  className="relative w-full h-12 sm:h-14 text-sm sm:text-base font-bold rounded-xl shadow-lg"
+                >
+                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 me-2" />
+                  {isArabic ? 'تواصل مع المدرس المساعد' : 'Contact Assistant'}
+                </Button>
+              </div>
+
+              {/* SECONDARY CTA - State-aware */}
+              {secondaryCTAConfig.show && (
+                <Button
+                  variant={secondaryCTAConfig.variant}
+                  onClick={handleSecondaryCTA}
+                  className="w-full h-10 text-sm"
+                  disabled={userState === 'staff'}
+                >
+                  <secondaryCTAConfig.icon className="w-4 h-4 me-2" />
+                  {secondaryCTAConfig.label}
+                </Button>
+              )}
             </div>
           </div>
           
-          {/* CONTEXT: Platform Features - Collapsed by default on mobile */}
-          <details className="bg-card rounded-2xl border border-border overflow-hidden mb-6 group">
-            <summary className="p-4 sm:p-5 cursor-pointer flex items-center justify-between list-none">
-              <span className="font-semibold text-foreground text-sm sm:text-base">
+          {/* Trust Signals - Clean chips */}
+          <div className="flex flex-wrap justify-center gap-2 mb-5">
+            {trustSignals.map((signal, index) => (
+              <span 
+                key={index}
+                className="px-3 py-1 rounded-full bg-accent/20 text-accent-foreground text-[10px] sm:text-xs font-medium"
+              >
+                {signal.label}
+              </span>
+            ))}
+          </div>
+          
+          {/* Platform Features - Collapsed by default on mobile */}
+          <details className="bg-card rounded-2xl border border-border overflow-hidden mb-5 group">
+            <summary className="p-3 sm:p-5 cursor-pointer flex items-center justify-between list-none">
+              <span className="font-semibold text-foreground text-xs sm:text-base">
                 {isArabic ? 'مميزات المنصة' : 'Platform Features'}
               </span>
-              <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform" />
+              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-open:rotate-180 transition-transform" />
             </summary>
-            <div className="px-4 sm:px-5 pb-4 sm:pb-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="px-3 sm:px-5 pb-3 sm:pb-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {platformFeatures.map((feature, index) => (
                 <div 
                   key={index}
-                  className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/50"
+                  className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/50"
                 >
-                  <feature.icon className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span className="text-xs sm:text-sm text-foreground/80">{feature.text}</span>
+                  <feature.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                  <span className="text-[10px] sm:text-sm text-foreground/80">{feature.text}</span>
                 </div>
               ))}
             </div>
           </details>
           
-          {/* Trust Footer - Subtle */}
+          {/* Trust Footer */}
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 text-muted-foreground text-xs">
-              <Shield className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 text-muted-foreground text-[10px] sm:text-xs">
+              <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>
                 {isArabic 
                   ? 'اشتراكك آمن — والمدرسين المساعدين معاك لأي استفسار'
@@ -278,6 +405,35 @@ const Payment: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      {/* MOBILE STICKY CTA BAR */}
+      {isMobile && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 bg-card/95 backdrop-blur-sm border-t border-border px-4 py-3 safe-area-inset-bottom">
+          <div className="flex gap-2 items-center">
+            {/* Primary CTA - WhatsApp (takes most space) */}
+            <Button 
+              onClick={handleWhatsAppContact}
+              className="flex-1 h-11 text-sm font-bold rounded-xl shadow-lg"
+            >
+              <MessageCircle className="w-4 h-4 me-1.5" />
+              {isArabic ? 'تواصل الآن' : 'Contact Now'}
+            </Button>
+            
+            {/* Secondary CTA - Icon only on mobile */}
+            {secondaryCTAConfig.show && userState !== 'staff' && (
+              <Button
+                variant={secondaryCTAConfig.variant}
+                onClick={handleSecondaryCTA}
+                size="icon"
+                className="h-11 w-11 rounded-xl flex-shrink-0"
+                title={secondaryCTAConfig.label}
+              >
+                <secondaryCTAConfig.icon className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>
