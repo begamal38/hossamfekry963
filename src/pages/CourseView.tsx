@@ -292,6 +292,16 @@ export default function CourseView() {
       return;
     }
 
+    // Already enrolled - just navigate to first lesson or stay on page
+    if (isEnrolled) {
+      // Already enrolled, no action needed
+      toast({
+        title: isArabic ? 'أنت مشترك بالفعل!' : 'Already Enrolled!',
+        description: isArabic ? 'يمكنك البدء في مشاهدة الدروس' : 'You can start watching lessons',
+      });
+      return;
+    }
+
     // VALIDATION: Block enrollment if access is blocked
     if (accessBlocked?.blocked) {
       toast({
@@ -302,6 +312,7 @@ export default function CourseView() {
       return;
     }
 
+    // Paid course - go to payment
     if (!course?.is_free && course?.price > 0) {
       navigate(`/payment/${course.id}`);
       return;
