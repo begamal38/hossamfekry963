@@ -119,12 +119,18 @@ export const useFocusMode = (lessonId?: string) => {
     }
   }, [showMessage]);
 
+  // ═══════════════════════════════════════════════════════════════════
   // START: When video starts playing
+  // GUARDS:
+  // - Cannot restart if already completed
+  // - Cannot double-start if already active
+  // - Resumes from pause if previously paused
+  // ═══════════════════════════════════════════════════════════════════
   const startFocus = useCallback(() => {
-    // Cannot restart if already completed
+    // GUARD: Cannot restart if already completed
     if (isCompletedRef.current) return;
     
-    // If already active, do nothing
+    // GUARD: If already active, do nothing (prevents double-start)
     if (state.focusState === 'FOCUS_ACTIVE') return;
     
     // If resuming from pause, just update state
@@ -137,7 +143,7 @@ export const useFocusMode = (lessonId?: string) => {
       return;
     }
     
-    // Fresh start
+    // Fresh start - initialize new session
     const session: FocusSession = {
       startTime: Date.now(),
       totalFocusedTime: 0,
@@ -155,8 +161,12 @@ export const useFocusMode = (lessonId?: string) => {
     });
   }, [state.focusState]);
 
-  // PAUSE: When video is paused or buffering
+  // ═══════════════════════════════════════════════════════════════════
+  // PAUSE: When video is paused, buffering, or page becomes hidden
+  // GUARD: Only executes if currently FOCUS_ACTIVE
+  // ═══════════════════════════════════════════════════════════════════
   const pauseFocus = useCallback(() => {
+    // GUARD: Can only pause if currently active
     if (state.focusState !== 'FOCUS_ACTIVE' || !sessionRef.current) return;
     
     // Accumulate time since last active start
@@ -173,9 +183,13 @@ export const useFocusMode = (lessonId?: string) => {
     }));
   }, [state.focusState]);
 
-  // COMPLETE: When lesson is marked complete or video ends
+  // ═══════════════════════════════════════════════════════════════════
+  // COMPLETE: When lesson is marked complete or video ends naturally
+  // This is the SINGLE WRITE POINT for focus session data
+  // After completion, focus mode CANNOT be restarted for this session
+  // ═══════════════════════════════════════════════════════════════════
   const completeFocus = useCallback(() => {
-    // Save final session data
+    // Accumulate any remaining active time
     if (sessionRef.current && activeStartTimeRef.current) {
       sessionRef.current.totalFocusedTime += Date.now() - activeStartTimeRef.current;
     }
@@ -191,7 +205,7 @@ export const useFocusMode = (lessonId?: string) => {
       });
     }
     
-    // Mark as completed - prevents restart
+    // GUARD: Mark as completed - prevents any restart
     isCompletedRef.current = true;
     activeStartTimeRef.current = null;
     
@@ -202,7 +216,10 @@ export const useFocusMode = (lessonId?: string) => {
     });
   }, [lessonId]);
 
-  // RESET: Allow restart from beginning (e.g., replay)
+  // ═══════════════════════════════════════════════════════════════════
+  // RESET: Allow full restart from beginning (e.g., replay lesson)
+  // Clears all guards and refs for a fresh session
+  // ═══════════════════════════════════════════════════════════════════
   const resetFocus = useCallback(() => {
     sessionRef.current = null;
     activeStartTimeRef.current = null;
@@ -215,10 +232,15 @@ export const useFocusMode = (lessonId?: string) => {
     });
   }, []);
 
-  // Track 20-minute segments - ONLY when FOCUS_ACTIVE
+  // ═══════════════════════════════════════════════════════════════════
+  // SEGMENT TRACKING — 20-minute intervals
+  // GUARD: Time accumulation ONLY when FOCUS_ACTIVE
+  // Segment progress resets on completion or pause
+  // ═══════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (state.focusState === 'FOCUS_ACTIVE') {
       segmentIntervalRef.current = setInterval(() => {
+        // GUARD: Only accumulate if we have active session and start time
         if (sessionRef.current && activeStartTimeRef.current) {
           const currentActiveTime = Date.now() - activeStartTimeRef.current;
           const totalTime = sessionRef.current.totalFocusedTime + currentActiveTime;
@@ -247,7 +269,7 @@ export const useFocusMode = (lessonId?: string) => {
         }
       };
     } else {
-      // Clear interval when not active
+      // GUARD: Clear interval when not active (paused, idle, or completed)
       if (segmentIntervalRef.current) {
         clearInterval(segmentIntervalRef.current);
         segmentIntervalRef.current = null;

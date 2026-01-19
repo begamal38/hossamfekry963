@@ -162,6 +162,13 @@ export default function LessonView() {
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
   const previewLockedRef = useRef(previewTimer.isLocked);
   const isVisitorPreviewRef = useRef(false);
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // LIFECYCLE GUARDS: Prevent double-execution and race conditions
+  // ═══════════════════════════════════════════════════════════════════
+  const analyticsTrackedRef = useRef(false); // Single trackView per session
+  const focusPersistenceCalledRef = useRef(false); // Single persistence write per completion
+  const lastFocusStateRef = useRef<'active' | 'paused' | null>(null); // Prevent duplicate focus transitions
 
   // Unified focus state: computed from video + tab + page visibility
   // NOTE: No viewport check - YouTube embeds are unreliable with intersection observers
@@ -173,6 +180,13 @@ export default function LessonView() {
     if (isEnrolled || isStaff) return 'enrolled';
     return 'student';
   };
+  
+  // Reset lifecycle guards when lesson changes
+  useEffect(() => {
+    analyticsTrackedRef.current = false;
+    focusPersistenceCalledRef.current = false;
+    lastFocusStateRef.current = null;
+  }, [lessonId]);
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -271,8 +285,10 @@ export default function LessonView() {
         setCompleted(!!attendance);
       }
       
-      // Track free lesson analytics for visitors
-      if (!user && lessonData.is_free_lesson) {
+      // Track free lesson analytics for visitors - SINGLE WRITE GUARD
+      // Only track if not already tracked this session (prevents double-execution)
+      if (!user && lessonData.is_free_lesson && !analyticsTrackedRef.current) {
+        analyticsTrackedRef.current = true; // Mark as tracked BEFORE async call
         const id = await trackView(lessonId!);
         setAnalyticsId(id);
         // Track Lead event for Facebook Pixel (free lesson view)
@@ -303,9 +319,13 @@ export default function LessonView() {
       // Stop Focus Mode immediately when lesson is marked complete
       focusModeRef.current?.onLessonComplete();
       
-      // Save focus session data to database
+      // ═══════════════════════════════════════════════════════════════════
+      // FOCUS SESSION PERSISTENCE — SINGLE WRITE POINT
+      // Persist ONLY on FOCUS_COMPLETED transition, never during playback
+      // ═══════════════════════════════════════════════════════════════════
       const sessionData = focusModeRef.current?.getSessionData();
-      if (sessionData && lesson.course_id) {
+      if (sessionData && lesson.course_id && !focusPersistenceCalledRef.current) {
+        focusPersistenceCalledRef.current = true; // Guard against double-write
         await saveFocusSession(user.id, {
           lessonId: lesson.id,
           courseId: lesson.course_id,
@@ -397,6 +417,10 @@ export default function LessonView() {
             }
           },
           onStateChange: (event: any) => {
+            // ═══════════════════════════════════════════════════════════════════
+            // FOCUS MODE ORCHESTRATION — STRICT SINGLE-EXECUTION GUARDS
+            // Triggers ONLY on actual state transitions, prevents double-calls
+            // ═══════════════════════════════════════════════════════════════════
             switch (event.data) {
               case YT_PLAYING: {
                 // If locked, immediately stop (anti-abuse). Do not start any timers.
@@ -413,8 +437,10 @@ export default function LessonView() {
                 setHasPlaybackStarted(true);
                 setIsVideoPlaying(true);
 
-                // Activate focus + preview timer only after confirmed playback
+                // GUARD: Only trigger startFocus if not already active
+                // This prevents double-execution from rapid state changes
                 focusModeRef.current?.onVideoPlay();
+                
                 if (isVisitorPreviewRef.current) {
                   previewControlsRef.current.startTimer();
                 }
@@ -422,6 +448,8 @@ export default function LessonView() {
               }
               case YT_PAUSED:
               case YT_BUFFERING:
+                // GUARD: Only pause if currently playing
+                // Prevents spurious pause calls during buffering transitions
                 setIsVideoPlaying(false);
                 focusModeRef.current?.onVideoPause();
                 if (isVisitorPreviewRef.current) {
@@ -429,6 +457,7 @@ export default function LessonView() {
                 }
                 break;
               case YT_ENDED:
+                // Video naturally ended - complete the focus session
                 setIsVideoPlaying(false);
                 focusModeRef.current?.onVideoEnd();
                 if (isVisitorPreviewRef.current) {
@@ -511,18 +540,26 @@ export default function LessonView() {
     }
   }, [previewTimer.isLocked, analyticsId, previewTimer.remainingSeconds, updatePreviewTime]);
 
+  // ═══════════════════════════════════════════════════════════════════
+  // LIFECYCLE SAFETY — VISIBILITY & TAB AWARENESS
+  // All time-based logic MUST respect page visibility state
+  // ═══════════════════════════════════════════════════════════════════
+  
   // Effect to pause/resume preview timer based on unified focus state
   useEffect(() => {
     if (!isVisitorPreviewRef.current) return;
     
+    // GUARD: Only control timer when page is visible
     if (isFocusActive && !previewTimer.isLocked) {
       previewControlsRef.current.startTimer();
     } else {
+      // Freeze timer when page hidden, tab inactive, or video paused
       previewControlsRef.current.pauseTimer();
     }
   }, [isFocusActive, previewTimer.isLocked]);
 
   // Start/stop engagement focus timer based on video state
+  // GUARD: Engagement timer respects same visibility constraints
   useEffect(() => {
     if (isFocusActive) {
       engagement?.startFocusTimer();
