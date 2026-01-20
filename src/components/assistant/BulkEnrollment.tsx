@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Users, BookOpen, Check, Loader2, AlertCircle, Upload, X, Layers } from 'lucide-react';
+import { Users, BookOpen, Check, Loader2, AlertCircle, Upload, X, Layers, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,6 +56,7 @@ interface Chapter {
 interface BulkEnrollmentProps {
   isArabic?: boolean;
   onEnrollmentComplete?: () => void;
+  showAsFab?: boolean;
 }
 
 type EnrollmentMode = 'select' | 'paste';
@@ -66,6 +68,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
   isArabic = true,
   onEnrollmentComplete,
+  showAsFab = false,
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -475,22 +478,34 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
   const canSubmit = studentsToEnrollCount > 0 && selectedCourseId && 
     (enrollmentTarget === 'course' || selectedChapterIds.size > 0);
 
+  // FAB trigger - opens dialog directly
+  const fabTrigger = showAsFab ? (
+    <FloatingActionButton
+      icon={Plus}
+      onClick={() => setOpen(true)}
+      label={isArabic ? 'تسجيل اشتراك' : 'Enroll'}
+    />
+  ) : null;
+
   return (
     <TooltipProvider>
+      {fabTrigger}
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Users className="w-4 h-4" />
-                {isArabic ? 'اشتراك جماعي' : 'Bulk Enrollment'}
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isArabic ? 'تقدر تضيف أكتر من طالب في خطوة واحدة' : 'Enroll multiple students at once'}</p>
-          </TooltipContent>
-        </Tooltip>
+        {!showAsFab && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  {isArabic ? 'اشتراك جماعي' : 'Bulk Enrollment'}
+                </Button>
+              </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{isArabic ? 'تقدر تضيف أكتر من طالب في خطوة واحدة' : 'Enroll multiple students at once'}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
 
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">

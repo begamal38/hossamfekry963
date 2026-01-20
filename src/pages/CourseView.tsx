@@ -337,9 +337,13 @@ export default function CourseView() {
       return;
     }
 
-    // Paid course - go to payment
+    // Paid course - contact via WhatsApp (no separate payment page)
     if (!course?.is_free && course?.price > 0) {
-      navigate(`/payment/${course.id}`);
+      const courseName = isArabic ? course.title_ar : course.title;
+      const message = encodeURIComponent(
+        `مرحباً، أريد الاشتراك في كورس: ${courseName}\nالسعر: ${course.price} ج.م\nمنصة حسام فكري التعليمية`
+      );
+      window.open(`https://wa.me/2001225565645?text=${message}`, '_blank');
       return;
     }
 
@@ -552,7 +556,7 @@ export default function CourseView() {
       />
       <Navbar />
 
-      <main className="pt-16 pb-24">
+      <main className="pt-16 pb-24 max-w-6xl mx-auto">
         {/* Mobile-First Header - Back Button */}
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <Button 
@@ -627,13 +631,13 @@ export default function CourseView() {
           </div>
         )}
 
-        {/* HERO: Course Cover Image - Landscape 16:9 */}
-        <div className="container mx-auto px-3 sm:px-4 mb-4">
+        {/* HERO: Course Cover Image - Landscape 16:9, constrained for desktop */}
+        <div className="container mx-auto px-3 sm:px-4 mb-4 max-w-4xl">
           <div className="relative rounded-2xl overflow-hidden shadow-lg">
             <img 
               src={course.thumbnail_url || '/images/default-course-cover.svg'} 
               alt={isArabic ? course.title_ar : course.title}
-              className="w-full aspect-video object-cover"
+              className="w-full aspect-video object-cover max-h-80 lg:max-h-96"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/images/default-course-cover.svg';
               }}
@@ -644,7 +648,7 @@ export default function CourseView() {
         </div>
 
         {/* Chemistry Branding Card - حسام فكري */}
-        <div className="container mx-auto px-3 sm:px-4 mb-6">
+        <div className="container mx-auto px-3 sm:px-4 mb-6 max-w-4xl">
           <div className="relative bg-gradient-to-br from-primary via-primary to-blue-700 rounded-2xl overflow-hidden shadow-lg">
             {/* Chemistry Pattern Background */}
             <div className="absolute inset-0 opacity-[0.08]">

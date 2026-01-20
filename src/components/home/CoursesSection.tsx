@@ -35,11 +35,12 @@ export const CoursesSection: React.FC = () => {
   const fetchCourses = async () => {
     try {
       // Home should always show courses if any exist.
-      // 1) Prefer primary (2026 structure)
+      // 1) Prefer primary (2026 structure) - ALSO filter by is_hidden = false
       const primaryRes = await supabase
         .from('courses')
         .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
         .eq('is_primary', true)
+        .eq('is_hidden', false)
         .order('grade', { ascending: true })
         .limit(4);
 

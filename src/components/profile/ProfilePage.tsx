@@ -97,7 +97,7 @@ export const ProfilePage: React.FC = () => {
         {
           icon: CreditCard,
           label: isArabic ? 'الاشتراكات والدفع' : 'Subscriptions & Payments',
-          href: '/payment',
+          href: '/courses',
         },
       ],
     },

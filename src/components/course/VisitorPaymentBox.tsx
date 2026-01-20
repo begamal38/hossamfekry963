@@ -108,7 +108,7 @@ const VisitorPaymentBox = ({ coursePrice, courseTitle, isArabic = true }: Visito
       {/* CTA Section */}
       <div className="p-4 sm:p-6 pt-2">
         <a
-          href={`https://wa.me/201000000000?text=${whatsappMessage}`}
+          href={`https://wa.me/2001225565645?text=${whatsappMessage}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-4 rounded-xl font-semibold text-base sm:text-lg transition-all shadow-lg shadow-green-600/20 hover:shadow-green-600/30"

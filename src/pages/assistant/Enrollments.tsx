@@ -9,7 +9,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { ManualEnrollment } from '@/components/assistant/ManualEnrollment';
+
 import { BulkEnrollment } from '@/components/assistant/BulkEnrollment';
 import { useCourseActivitySummary } from '@/hooks/useCourseActivitySummary';
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
@@ -19,7 +19,7 @@ import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader'
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
-import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+
 
 interface Enrollment {
   id: string;
@@ -53,7 +53,7 @@ const Enrollments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [updating, setUpdating] = useState<string | null>(null);
-  const [showManualEnroll, setShowManualEnroll] = useState(false);
+  
   const { calculateAndFreezeSummary, loading: summaryLoading } = useCourseActivitySummary();
 
   useEffect(() => {
@@ -367,11 +367,6 @@ const Enrollments = () => {
               subtitle={`${filteredEnrollments.length} ${isRTL ? 'اشتراك' : 'enrollments'}`}
               icon={CreditCard}
               isRTL={isRTL}
-              actions={
-                <div className="flex items-center gap-2">
-                  <BulkEnrollment isArabic={isRTL} onEnrollmentComplete={fetchEnrollments} />
-                </div>
-              }
             />
 
             {/* Status Summary */}
@@ -474,22 +469,12 @@ const Enrollments = () => {
         </main>
       </PullToRefresh>
 
-      {/* Floating Action Button */}
-      <FloatingActionButton
-        onClick={() => setShowManualEnroll(true)}
-        label={isRTL ? 'تسجيل طالب' : 'Enroll'}
+      {/* Enrollment Options - Using BulkEnrollment with FAB trigger */}
+      <BulkEnrollment 
+        isArabic={isRTL} 
+        onEnrollmentComplete={fetchEnrollments}
+        showAsFab={true}
       />
-
-      {/* Manual Enrollment Dialog */}
-      {showManualEnroll && (
-        <ManualEnrollment 
-          isArabic={isRTL} 
-          onEnrollmentComplete={() => {
-            setShowManualEnroll(false);
-            fetchEnrollments();
-          }}
-        />
-      )}
     </div>
   );
 };
