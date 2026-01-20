@@ -34,6 +34,7 @@ import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
+import { getSystemStatusText } from '@/lib/statusCopy';
 
 interface Stats {
   totalStudents: number;
@@ -311,11 +312,11 @@ export default function AssistantDashboard() {
                 primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
                 secondaryText={systemStatus.loading 
                   ? '...' 
-                  : systemStatus.description
+                  : getSystemStatusText(systemStatus.statusCode, 'description', isRTL)
                 }
                 badge={systemStatus.loading 
                   ? '...'
-                  : (isRTL ? systemStatus.labelAr : systemStatus.labelEn)
+                  : getSystemStatusText(systemStatus.statusCode, 'label', isRTL)
                 }
                 badgeVariant={systemStatus.level}
                 href="/assistant/students"
