@@ -15,28 +15,25 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type SystemStatusLevel = 'critical' | 'danger' | 'warning' | 'success';
 
+export interface SystemStatusMetrics {
+  totalStudents: number;
+  activeEnrollments: number;
+  meaningfulFocusSessions: number;
+  lessonAttendance: number;
+  totalExamAttempts: number;
+  passedExams: number;
+  failedExams: number;
+  avgExamScore: number;
+  passRate: number;
+}
+
 export interface SystemStatusData {
   level: SystemStatusLevel;
   labelAr: string;
   labelEn: string;
   description: string;
   loading: boolean;
-}
-
-interface StatusMetrics {
-  // Students & Enrollments
-  totalStudents: number;
-  activeEnrollments: number;
-  
-  // Interactions (Real activity indicators)
-  meaningfulFocusSessions: number; // Sessions > 2 minutes
-  lessonAttendance: number;
-  
-  // Exam Performance
-  totalExamAttempts: number;
-  passedExams: number;
-  failedExams: number;
-  avgExamScore: number;
+  metrics: SystemStatusMetrics | null;
 }
 
 // Thresholds for status determination
@@ -62,9 +59,10 @@ export const useSystemStatus = (): SystemStatusData => {
     labelEn: 'Not Activated',
     description: '',
     loading: true,
+    metrics: null,
   });
 
-  const calculateStatus = useCallback((metrics: StatusMetrics): SystemStatusData => {
+  const calculateStatus = useCallback((metrics: SystemStatusMetrics): SystemStatusData => {
     const {
       totalStudents,
       activeEnrollments,
@@ -74,6 +72,7 @@ export const useSystemStatus = (): SystemStatusData => {
       passedExams,
       failedExams,
       avgExamScore,
+      passRate,
     } = metrics;
 
     // Helper to check if system has any real activity
@@ -82,11 +81,6 @@ export const useSystemStatus = (): SystemStatusData => {
       meaningfulFocusSessions >= THRESHOLDS.MIN_FOCUS_SESSIONS ||
       lessonAttendance >= THRESHOLDS.MIN_LESSON_ATTENDANCE;
     const hasExamActivity = totalExamAttempts >= THRESHOLDS.MIN_EXAM_ATTEMPTS;
-
-    // Calculate pass rate
-    const passRate = totalExamAttempts > 0 
-      ? (passedExams / totalExamAttempts) * 100 
-      : 0;
 
     // ═══════════════════════════════════════════════════════════════
     // STATE 1: فشل جماعي (Black/Critical) - System Not Activated
@@ -99,6 +93,7 @@ export const useSystemStatus = (): SystemStatusData => {
         labelEn: 'Not Activated',
         description: 'السيستم لسه متفتحش فعليًا - مفيش تعلم حصل',
         loading: false,
+        metrics,
       };
     }
 
@@ -110,6 +105,7 @@ export const useSystemStatus = (): SystemStatusData => {
         labelEn: 'Not Activated',
         description: 'مفيش طلاب أو اشتراكات نشطة',
         loading: false,
+        metrics,
       };
     }
 
@@ -125,6 +121,7 @@ export const useSystemStatus = (): SystemStatusData => {
           labelEn: 'Critical',
           description: 'فيه شغل بس النتايج سيئة جداً',
           loading: false,
+          metrics,
         };
       }
     }
@@ -139,6 +136,7 @@ export const useSystemStatus = (): SystemStatusData => {
           labelEn: 'Critical',
           description: 'نسبة الرسوب عالية جداً',
           loading: false,
+          metrics,
         };
       }
     }
@@ -155,6 +153,7 @@ export const useSystemStatus = (): SystemStatusData => {
           labelEn: 'Unstable',
           description: 'السيستم شغال بس محتاج ضبط',
           loading: false,
+          metrics,
         };
       }
     }
@@ -167,6 +166,7 @@ export const useSystemStatus = (): SystemStatusData => {
         labelEn: 'Unstable',
         description: 'فيه تفاعل بس محتاج متابعة الامتحانات',
         loading: false,
+        metrics,
       };
     }
 
@@ -180,113 +180,149 @@ export const useSystemStatus = (): SystemStatusData => {
       labelEn: 'Stable',
       description: 'المنصة شغالة صح والنتايج كويسة',
       loading: false,
+      metrics,
     };
   }, []);
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // Fetch all metrics in parallel using EXISTING data only
-        const [
-          { count: studentsCount },
-          { data: enrollments },
-          { count: focusSessionsCount },
-          { count: attendanceCount },
-          { data: examAttempts },
-        ] = await Promise.all([
-          // Total students
-          supabase
-            .from('user_roles')
-            .select('*', { count: 'exact', head: true })
-            .eq('role', 'student'),
-          
-          // Enrollments (to count active)
-          supabase
-            .from('course_enrollments')
-            .select('status'),
-          
-          // Meaningful focus sessions (> 2 minutes = 120 seconds)
-          supabase
-            .from('focus_sessions')
-            .select('*', { count: 'exact', head: true })
-            .gt('total_active_seconds', 120),
-          
-          // Lesson attendance
-          supabase
-            .from('lesson_attendance')
-            .select('*', { count: 'exact', head: true }),
-          
-          // Exam attempts with scores for pass/fail analysis
-          supabase
-            .from('exam_attempts')
-            .select('score, total_questions, is_completed, exams:exam_id(pass_mark, max_score)')
-            .eq('is_completed', true),
-        ]);
+  const fetchMetrics = useCallback(async () => {
+    try {
+      // Fetch all metrics in parallel using EXISTING data only
+      const [
+        { count: studentsCount },
+        { data: enrollments },
+        { count: focusSessionsCount },
+        { count: attendanceCount },
+        { data: examAttempts },
+      ] = await Promise.all([
+        // Total students
+        supabase
+          .from('user_roles')
+          .select('*', { count: 'exact', head: true })
+          .eq('role', 'student'),
+        
+        // Enrollments (to count active)
+        supabase
+          .from('course_enrollments')
+          .select('status'),
+        
+        // Meaningful focus sessions (> 2 minutes = 120 seconds)
+        supabase
+          .from('focus_sessions')
+          .select('*', { count: 'exact', head: true })
+          .gt('total_active_seconds', 120),
+        
+        // Lesson attendance
+        supabase
+          .from('lesson_attendance')
+          .select('*', { count: 'exact', head: true }),
+        
+        // Exam attempts with scores for pass/fail analysis
+        supabase
+          .from('exam_attempts')
+          .select('score, total_questions, is_completed, exams:exam_id(pass_mark, max_score)')
+          .eq('is_completed', true),
+      ]);
 
-        // Calculate derived metrics
-        const activeEnrollments = enrollments?.filter(e => e.status === 'active').length || 0;
+      // Calculate derived metrics
+      const activeEnrollments = enrollments?.filter(e => e.status === 'active').length || 0;
+      
+      // Calculate exam performance
+      const completedAttempts = examAttempts || [];
+      const totalExamAttempts = completedAttempts.length;
+      
+      let passedExams = 0;
+      let failedExams = 0;
+      let totalScore = 0;
+      
+      completedAttempts.forEach((attempt) => {
+        const exam = attempt.exams as any;
+        const passMark = exam?.pass_mark || 50;
+        const maxScore = exam?.max_score || 100;
         
-        // Calculate exam performance
-        const completedAttempts = examAttempts || [];
-        const totalExamAttempts = completedAttempts.length;
-        
-        let passedExams = 0;
-        let failedExams = 0;
-        let totalScore = 0;
-        
-        completedAttempts.forEach((attempt) => {
-          const exam = attempt.exams as any;
-          const passMark = exam?.pass_mark || 50;
-          const maxScore = exam?.max_score || 100;
-          
-          // Calculate percentage score
-          const percentageScore = attempt.total_questions > 0
-            ? (attempt.score / attempt.total_questions) * maxScore
-            : 0;
-          
-          const scorePercent = (percentageScore / maxScore) * 100;
-          totalScore += scorePercent;
-          
-          if (scorePercent >= passMark) {
-            passedExams++;
-          } else {
-            failedExams++;
-          }
-        });
-
-        const avgExamScore = totalExamAttempts > 0 
-          ? Math.round(totalScore / totalExamAttempts) 
+        // Calculate percentage score
+        const percentageScore = attempt.total_questions > 0
+          ? (attempt.score / attempt.total_questions) * maxScore
           : 0;
+        
+        const scorePercent = (percentageScore / maxScore) * 100;
+        totalScore += scorePercent;
+        
+        if (scorePercent >= passMark) {
+          passedExams++;
+        } else {
+          failedExams++;
+        }
+      });
 
-        const metrics: StatusMetrics = {
-          totalStudents: studentsCount || 0,
-          activeEnrollments,
-          meaningfulFocusSessions: focusSessionsCount || 0,
-          lessonAttendance: attendanceCount || 0,
-          totalExamAttempts,
-          passedExams,
-          failedExams,
-          avgExamScore,
-        };
+      const avgExamScore = totalExamAttempts > 0 
+        ? Math.round(totalScore / totalExamAttempts) 
+        : 0;
+      
+      const passRate = totalExamAttempts > 0 
+        ? Math.round((passedExams / totalExamAttempts) * 100)
+        : 0;
 
-        const calculatedStatus = calculateStatus(metrics);
-        setStatus(calculatedStatus);
+      const metrics: SystemStatusMetrics = {
+        totalStudents: studentsCount || 0,
+        activeEnrollments,
+        meaningfulFocusSessions: focusSessionsCount || 0,
+        lessonAttendance: attendanceCount || 0,
+        totalExamAttempts,
+        passedExams,
+        failedExams,
+        avgExamScore,
+        passRate,
+      };
 
-      } catch (error) {
-        console.error('Error fetching system status metrics:', error);
-        // Default to critical on error (pessimistic)
-        setStatus({
-          level: 'critical',
-          labelAr: 'فشل جماعي',
-          labelEn: 'Not Activated',
-          description: 'خطأ في تحميل البيانات',
-          loading: false,
-        });
-      }
-    };
+      const calculatedStatus = calculateStatus(metrics);
+      setStatus(calculatedStatus);
 
-    fetchMetrics();
+    } catch (error) {
+      console.error('Error fetching system status metrics:', error);
+      // Default to critical on error (pessimistic)
+      setStatus({
+        level: 'critical',
+        labelAr: 'فشل جماعي',
+        labelEn: 'Not Activated',
+        description: 'خطأ في تحميل البيانات',
+        loading: false,
+        metrics: null,
+      });
+    }
   }, [calculateStatus]);
+
+  useEffect(() => {
+    fetchMetrics();
+
+    // Subscribe to realtime changes for exam_attempts, lesson_attendance, focus_sessions
+    const channel = supabase
+      .channel('system-status-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'exam_attempts' },
+        () => fetchMetrics()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lesson_attendance' },
+        () => fetchMetrics()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'focus_sessions' },
+        () => fetchMetrics()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'course_enrollments' },
+        () => fetchMetrics()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchMetrics]);
 
   return status;
 };
