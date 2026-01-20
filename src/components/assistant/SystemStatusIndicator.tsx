@@ -4,11 +4,12 @@
  * A visual, expressive status component that communicates system state
  * primarily through color, icon, and visual hierarchy - NOT text.
  * 
+ * NAVIGATION: Always routes to /assistant/reports with focusStatus state.
  * Text is secondary; status must be understandable without reading.
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SystemStatusData } from '@/hooks/useSystemStatus';
@@ -23,7 +24,6 @@ interface SystemStatusIndicatorProps {
   status: SystemStatusData;
   studentCount: number;
   isRTL: boolean;
-  href?: string;
   loading?: boolean;
   className?: string;
 }
@@ -39,14 +39,25 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
   status,
   studentCount,
   isRTL,
-  href = '/assistant/students',
   loading = false,
   className,
 }) => {
+  const navigate = useNavigate();
   const visual = getVisualConfig(status.statusCode);
   const StatusIcon = visual.icon;
   const label = getSystemStatusText(status.statusCode, 'label', isRTL);
   const description = getSystemStatusText(status.statusCode, 'description', isRTL);
+
+  /**
+   * Status Click Handler
+   * ALWAYS navigates to Reports page with focusStatus filter
+   * NEVER navigates to Students page directly
+   */
+  const handleClick = () => {
+    navigate('/assistant/reports', {
+      state: { focusStatus: status.statusCode }
+    });
+  };
 
   // Loading skeleton
   if (status.loading || loading) {
@@ -64,11 +75,15 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
     );
   }
 
-  const content = (
+  return (
     <div
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       className={cn(
         "relative rounded-2xl border border-border bg-card overflow-hidden transition-all",
-        href && "hover:border-primary/40 cursor-pointer hover:shadow-md",
+        "hover:border-primary/40 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50",
         className
       )}
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -104,15 +119,13 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
         </div>
 
         {/* Navigation Arrow */}
-        {href && (
-          <div className="w-6 h-6 rounded-full bg-background/60 flex items-center justify-center">
-            {isRTL ? (
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-        )}
+        <div className="w-6 h-6 rounded-full bg-background/60 flex items-center justify-center">
+          {isRTL ? (
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -142,12 +155,6 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
       </div>
     </div>
   );
-
-  if (href) {
-    return <Link to={href}>{content}</Link>;
-  }
-
-  return content;
 };
 
 export default SystemStatusIndicator;

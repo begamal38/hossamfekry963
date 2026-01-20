@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2 } from 'lucide-react';
+import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,8 @@ import { FloatingActionButton } from '@/components/assistant/FloatingActionButto
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
+import { LessonReorderList } from '@/components/assistant/LessonReorderList';
+import { cn } from '@/lib/utils';
 
 interface Course {
   id: string;
@@ -72,6 +74,7 @@ const ManageLessons = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isReorderMode, setIsReorderMode] = useState(false);
   
   const [formData, setFormData] = useState({
     title_ar: '',
@@ -345,12 +348,23 @@ const ManageLessons = () => {
           isRTL={isRTL}
           icon={Video}
           actions={
-            <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
-              <Link to={`/assistant/chapters?course_id=${selectedCourse}`}>
-                <Layers className="h-3.5 w-3.5" />
-                {isArabic ? 'الأبواب' : 'Chapters'}
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={isReorderMode ? "default" : "outline"} 
+                size="sm" 
+                className={cn("gap-1.5 text-xs", isReorderMode && "bg-primary")}
+                onClick={() => setIsReorderMode(!isReorderMode)}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {isArabic ? 'ترتيب' : 'Reorder'}
+              </Button>
+              <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs">
+                <Link to={`/assistant/chapters?course_id=${selectedCourse}`}>
+                  <Layers className="h-3.5 w-3.5" />
+                  {isArabic ? 'الأبواب' : 'Chapters'}
+                </Link>
+              </Button>
+            </div>
           }
         />
 
@@ -398,47 +412,70 @@ const ManageLessons = () => {
           </Select>
         </div>
 
-        {/* Search Bar */}
-        <SearchFilterBar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchPlaceholder={isArabic ? 'ابحث في الحصص...' : 'Search lessons...'}
-          isRTL={isRTL}
-        />
-
-        {/* Lessons List - Mobile Cards */}
-        {filteredLessons.length === 0 ? (
-          <EmptyState
-            icon={Video}
-            title={isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
-            description={isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
+        {/* Search Bar - Hide in reorder mode */}
+        {!isReorderMode && (
+          <SearchFilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={isArabic ? 'ابحث في الحصص...' : 'Search lessons...'}
+            isRTL={isRTL}
           />
-        ) : (
-          <div className="space-y-2">
-            {filteredLessons.map((lesson, index) => (
-              <MobileDataCard
-                key={lesson.id}
-                title={isArabic ? lesson.title_ar : lesson.title}
-                subtitle={getChapterName(lesson.chapter_id) || undefined}
-                badge={lesson.is_free_lesson ? (isArabic ? 'مجانية' : 'Free') : undefined}
-                badgeVariant={lesson.is_free_lesson ? 'success' : undefined}
-                icon={Video}
-                iconColor="text-blue-500"
-                metadata={[
-                  { 
-                    icon: Clock, 
-                    label: `${lesson.duration_minutes || 60} ${isArabic ? 'د' : 'min'}` 
-                  },
-                  ...(lesson.video_url ? [{ icon: Youtube, label: isArabic ? 'فيديو' : 'Video' }] : [])
-                ]}
-                actions={[
-                  { icon: Pencil, onClick: () => handleEdit(lesson), variant: 'ghost' as const },
-                  { icon: Trash2, onClick: () => handleDeleteLesson(lesson.id), variant: 'ghost' as const, className: 'text-destructive' }
-                ]}
-                isRTL={isRTL}
-              />
-            ))}
+        )}
+
+        {/* Reorder Mode */}
+        {isReorderMode ? (
+          <div className="mb-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <ArrowUpDown className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {isArabic 
+                  ? 'أنت الآن في وضع الترتيب. استخدم الأسهم لتغيير ترتيب الحصص.'
+                  : 'You are in reorder mode. Use arrows to change lesson order.'}
+              </p>
+            </div>
+            <LessonReorderList
+              lessons={filteredLessons}
+              onReorderComplete={fetchLessons}
+              isRTL={isRTL}
+              isArabic={isArabic}
+              getChapterName={getChapterName}
+            />
           </div>
+        ) : (
+          /* Normal Mode - Lessons List */
+          filteredLessons.length === 0 ? (
+            <EmptyState
+              icon={Video}
+              title={isArabic ? 'لا توجد حصص بعد' : 'No lessons yet'}
+              description={isArabic ? 'ابدأ بإضافة أول حصة' : 'Start by adding the first lesson'}
+            />
+          ) : (
+            <div className="space-y-2">
+              {filteredLessons.map((lesson, index) => (
+                <MobileDataCard
+                  key={lesson.id}
+                  title={isArabic ? lesson.title_ar : lesson.title}
+                  subtitle={getChapterName(lesson.chapter_id) || undefined}
+                  badge={lesson.is_free_lesson ? (isArabic ? 'مجانية' : 'Free') : undefined}
+                  badgeVariant={lesson.is_free_lesson ? 'success' : undefined}
+                  icon={Video}
+                  iconColor="text-blue-500"
+                  metadata={[
+                    { 
+                      icon: Clock, 
+                      label: `${lesson.duration_minutes || 60} ${isArabic ? 'د' : 'min'}` 
+                    },
+                    ...(lesson.video_url ? [{ icon: Youtube, label: isArabic ? 'فيديو' : 'Video' }] : [])
+                  ]}
+                  actions={[
+                    { icon: Pencil, onClick: () => handleEdit(lesson), variant: 'ghost' as const },
+                    { icon: Trash2, onClick: () => handleDeleteLesson(lesson.id), variant: 'ghost' as const, className: 'text-destructive' }
+                  ]}
+                  isRTL={isRTL}
+                />
+              ))}
+            </div>
+          )
         )}
 
         {/* Floating Action Button */}
