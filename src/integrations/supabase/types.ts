@@ -1580,6 +1580,25 @@ export type Database = {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
       }
+      get_chapter_progress: {
+        Args: { p_course_id: string; p_user_id?: string }
+        Returns: {
+          chapter_id: string
+          chapter_title: string
+          chapter_title_ar: string
+          completed_lessons: number
+          exam_completed: boolean
+          exam_id: string
+          exam_score: number
+          exam_title: string
+          exam_title_ar: string
+          has_exam: boolean
+          is_complete: boolean
+          order_index: number
+          progress_percent: number
+          total_lessons: number
+        }[]
+      }
       get_course_id_by_short_id: {
         Args: { p_short_id: number }
         Returns: string
