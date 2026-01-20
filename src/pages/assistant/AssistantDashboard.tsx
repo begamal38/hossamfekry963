@@ -25,7 +25,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
-import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickActionsStrip, QuickAction } from '@/components/dashboard/QuickActionsStrip';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { InfoCard } from '@/components/dashboard/InfoCard';
@@ -34,7 +33,7 @@ import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
-import { getSystemStatusText } from '@/lib/statusCopy';
+import { SystemStatusIndicator } from '@/components/assistant/SystemStatusIndicator';
 
 interface Stats {
   totalStudents: number;
@@ -305,22 +304,15 @@ export default function AssistantDashboard() {
             </div>
           </div>
 
-          {/* Status Summary Card - System Status Indicator with Tooltip */}
+          {/* System Status Indicator - Visual State Signal */}
           <SystemStatusTooltip status={systemStatus} isRTL={isRTL}>
             <div>
-              <StatusSummaryCard
-                primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
-                secondaryText={systemStatus.loading 
-                  ? '...' 
-                  : getSystemStatusText(systemStatus.statusCode, 'description', isRTL)
-                }
-                badge={systemStatus.loading 
-                  ? '...'
-                  : getSystemStatusText(systemStatus.statusCode, 'label', isRTL)
-                }
-                badgeVariant={systemStatus.level}
-                href="/assistant/students"
+              <SystemStatusIndicator
+                status={systemStatus}
+                studentCount={stats.totalStudents}
                 isRTL={isRTL}
+                href="/assistant/students"
+                loading={loading}
                 className="mb-5"
               />
             </div>

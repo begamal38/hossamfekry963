@@ -6,6 +6,16 @@
  * UI components consume text through this mapping.
  */
 
+import { 
+  CheckCircle, 
+  AlertTriangle, 
+  XCircle, 
+  PauseCircle, 
+  Activity,
+  FileX,
+  type LucideIcon 
+} from 'lucide-react';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // System Status Types & Copy
 // ═══════════════════════════════════════════════════════════════════════════
@@ -21,6 +31,98 @@ export type SystemStatusCode =
   | 'NEEDS_EXAM_FOLLOWUP'
   | 'STABLE'
   | 'DATA_LOAD_ERROR';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Visual Config Map (LOCKED - Single Source of Truth for Status Visuals)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type StatusEmphasis = 'positive' | 'neutral' | 'warning' | 'attention' | 'critical';
+
+export interface StatusVisualConfig {
+  /** Tailwind color class prefix (e.g., 'green' for text-green-600, bg-green-500) */
+  color: 'green' | 'blue' | 'amber' | 'orange' | 'purple' | 'red' | 'gray';
+  /** Lucide icon component */
+  icon: LucideIcon;
+  /** Visual emphasis level */
+  emphasis: StatusEmphasis;
+  /** Dot color class for the indicator */
+  dotClass: string;
+  /** Background tint class */
+  bgTintClass: string;
+  /** Text color class */
+  textClass: string;
+}
+
+export const STATUS_VISUALS: Record<SystemStatusCode, StatusVisualConfig> = {
+  STABLE: {
+    color: 'green',
+    icon: CheckCircle,
+    emphasis: 'positive',
+    dotClass: 'bg-green-500',
+    bgTintClass: 'bg-green-500/10',
+    textClass: 'text-green-600',
+  },
+  NEEDS_EXAM_FOLLOWUP: {
+    color: 'amber',
+    icon: Activity,
+    emphasis: 'warning',
+    dotClass: 'bg-amber-500',
+    bgTintClass: 'bg-amber-500/10',
+    textClass: 'text-amber-600',
+  },
+  UNSTABLE_RESULTS: {
+    color: 'orange',
+    icon: AlertTriangle,
+    emphasis: 'warning',
+    dotClass: 'bg-orange-500',
+    bgTintClass: 'bg-orange-500/10',
+    textClass: 'text-orange-600',
+  },
+  HIGH_FAILURE_RATE: {
+    color: 'red',
+    icon: XCircle,
+    emphasis: 'critical',
+    dotClass: 'bg-red-500',
+    bgTintClass: 'bg-red-500/10',
+    textClass: 'text-red-600',
+  },
+  CRITICAL_PASS_RATE: {
+    color: 'red',
+    icon: XCircle,
+    emphasis: 'critical',
+    dotClass: 'bg-red-500',
+    bgTintClass: 'bg-red-500/10',
+    textClass: 'text-red-600',
+  },
+  NOT_ACTIVATED: {
+    color: 'gray',
+    icon: PauseCircle,
+    emphasis: 'critical',
+    dotClass: 'bg-gray-800 dark:bg-gray-400',
+    bgTintClass: 'bg-gray-900/10 dark:bg-gray-400/10',
+    textClass: 'text-gray-800 dark:text-gray-300',
+  },
+  NO_STUDENTS_OR_ENROLLMENTS: {
+    color: 'gray',
+    icon: PauseCircle,
+    emphasis: 'critical',
+    dotClass: 'bg-gray-800 dark:bg-gray-400',
+    bgTintClass: 'bg-gray-900/10 dark:bg-gray-400/10',
+    textClass: 'text-gray-800 dark:text-gray-300',
+  },
+  DATA_LOAD_ERROR: {
+    color: 'purple',
+    icon: FileX,
+    emphasis: 'attention',
+    dotClass: 'bg-purple-500',
+    bgTintClass: 'bg-purple-500/10',
+    textClass: 'text-purple-600',
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Copy Mapping (Text is UI-only, separate from visuals)
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface SystemStatusCopy {
   label: { ar: string; en: string };
