@@ -1,6 +1,18 @@
+/**
+ * Reports & Statistics Page
+ * 
+ * This is the System Truth Surface - READ-ONLY, Status-Driven.
+ * 
+ * RULES:
+ * - Consumes useSystemStatus hook directly
+ * - NO new business logic computed here
+ * - All sections explain WHY the current status exists
+ * - Uses same thresholds as Status Engine
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Play, Clock, Eye } from 'lucide-react';
+import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Play, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
 import { Progress } from '@/components/ui/progress';
@@ -9,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSystemStatus, type SystemStatusMetrics } from '@/hooks/useSystemStatus';
 import { SmartInsights } from '@/components/analytics/SmartInsights';
 import { MobileChapterAnalytics } from '@/components/analytics/MobileChapterCard';
 import { MobileExamAnalytics } from '@/components/analytics/MobileExamAnalytics';
@@ -17,6 +30,8 @@ import { ChapterAnalytics } from '@/components/analytics/ChapterAnalytics';
 import { ExamAnalytics } from '@/components/analytics/ExamAnalytics';
 import { PulsingDots } from '@/components/ui/PulsingDots';
 import { ReportsStatusHeader } from '@/components/analytics/ReportsStatusHeader';
+import { StatusEvidenceBlocks } from '@/components/analytics/StatusEvidenceBlocks';
+import { ActionableBreakdown } from '@/components/analytics/ActionableBreakdown';
 import { type SystemStatusCode } from '@/lib/statusCopy';
 import { cn } from '@/lib/utils';
 
@@ -31,41 +46,11 @@ interface CourseStats {
   avgExamScore: number;
 }
 
-interface OverallStats {
-  totalStudents: number;
-  totalEnrollments: number;
-  activeEnrollments: number;
-  pendingEnrollments: number;
-  totalLessons: number;
-  totalExams: number;
-  totalExamResults: number;
-  avgOverallProgress: number;
-  avgOverallExamScore: number;
-  avgScoreExcludingZero: number; // NEW: exclude zero attempts
-  totalFocusSessions: number;
-  meaningfulFocusSessions: number; // NEW: sessions > 2 min
-  totalFocusMinutes: number;
-  studentsWithFocusSessions: number;
-  avgFocusMinutesPerStudent: number;
-  studentsWatchingNotTesting: number; // NEW: watch but don't test
-}
-
 interface TopStudent {
   user_id: string;
   full_name: string | null;
   avgScore: number;
   totalExams: number;
-}
-
-interface AttendanceBreakdown {
-  lessonId: string;
-  lessonTitle: string;
-  lessonTitleAr: string;
-  centerCount: number;
-  onlineCount: number;
-  bothCount: number;
-  absentCount: number;
-  totalStudents: number;
 }
 
 export default function Reports() {
@@ -76,23 +61,30 @@ export default function Reports() {
   const isMobile = useIsMobile();
   const isArabic = language === 'ar';
   
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATUS ENGINE CONSUMPTION (Single Source of Truth)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  const systemStatus = useSystemStatus();
+  
   // Status filter from dashboard navigation
-  const [focusStatus, setFocusStatus] = useState<SystemStatusCode | null>(() => {
+  const [isFiltered, setIsFiltered] = useState<boolean>(() => {
     const state = location.state as { focusStatus?: SystemStatusCode } | null;
-    return state?.focusStatus || null;
+    return !!state?.focusStatus;
   });
 
   const handleClearFilter = () => {
-    setFocusStatus(null);
-    // Clear location state
+    setIsFiltered(false);
     navigate(location.pathname, { replace: true, state: {} });
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SUPPLEMENTARY DATA (for drill-down sections only)
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const [loading, setLoading] = useState(true);
-  const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [courseStats, setCourseStats] = useState<CourseStats[]>([]);
   const [topStudents, setTopStudents] = useState<TopStudent[]>([]);
-  const [attendanceBreakdown, setAttendanceBreakdown] = useState<AttendanceBreakdown[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [lessonCompletions, setLessonCompletions] = useState<any[]>([]);
   const [examAttempts, setExamAttempts] = useState<any[]>([]);
@@ -107,10 +99,14 @@ export default function Reports() {
       navigate('/');
       return;
     }
-    fetchReportData();
+    fetchSupplementaryData();
   }, [roleLoading]);
 
-  const fetchReportData = async () => {
+  /**
+   * Fetch supplementary data for drill-down sections.
+   * This is NOT used for status computation - that comes from useSystemStatus.
+   */
+  const fetchSupplementaryData = async () => {
     try {
       const { data: studentRoles } = await supabase
         .from('user_roles')
@@ -124,7 +120,6 @@ export default function Reports() {
         { data: courses },
         { data: enrollmentsData },
         { data: lessonsData },
-        { data: attendance },
         { data: examsData },
         { data: examResults },
         { data: chaptersData },
@@ -137,7 +132,6 @@ export default function Reports() {
         supabase.from('courses').select('*'),
         supabase.from('course_enrollments').select('*'),
         supabase.from('lessons').select('*'),
-        supabase.from('lesson_attendance').select('*'),
         supabase.from('exams').select('*, course:courses(title, title_ar)'),
         supabase.from('exam_results').select('*, exams:exam_id(max_score)'),
         supabase.from('chapters').select('*, course:courses(title, title_ar)'),
@@ -156,83 +150,13 @@ export default function Reports() {
       setChapterEnrollments(chapterEnrollmentsData || []);
       setExams(examsData || []);
       
-      const lessons = lessonsData || [];
-      const enrollments = enrollmentsData || [];
-      const exams = examsData || [];
       const profiles = (allProfiles || []).filter(p => studentUserIds.includes(p.user_id));
 
-      const activeEnrollments = (enrollments || []).filter(e => e.status === 'active').length;
-      const pendingEnrollments = (enrollments || []).filter(e => e.status === 'pending').length;
-
-      const avgProgress = (enrollments || []).length > 0
-        ? Math.round((enrollments || []).reduce((sum, e) => sum + (e.progress || 0), 0) / enrollments!.length)
-        : 0;
-
-      // Standard avg score
-      const avgExamScore = (examResults || []).length > 0
-        ? Math.round((examResults || []).reduce((sum, r) => {
-            const maxScore = (r.exams as any)?.max_score || 100;
-            return sum + ((r.score / maxScore) * 100);
-          }, 0) / examResults!.length)
-        : 0;
-
-      // NEW: Avg score excluding students with 0 attempts
-      const validResults = (examResults || []).filter(r => r.score > 0);
-      const avgScoreExcludingZero = validResults.length > 0
-        ? Math.round(validResults.reduce((sum, r) => {
-            const maxScore = (r.exams as any)?.max_score || 100;
-            return sum + ((r.score / maxScore) * 100);
-          }, 0) / validResults.length)
-        : 0;
-
-      // Focus session stats
-      const allFocusSessions = focusSessionsData || [];
-      const totalFocusSessions = allFocusSessions.length;
-      
-      // NEW: Only count sessions > 2 minutes (120 seconds)
-      const meaningfulFocusSessions = allFocusSessions.filter(
-        s => (s.total_active_seconds || 0) > 120
-      ).length;
-      
-      const totalFocusMinutes = Math.round(
-        allFocusSessions.reduce((sum, s) => sum + (s.total_active_seconds || 0), 0) / 60
-      );
-      const studentsWithFocusSessions = new Set(allFocusSessions.map(s => s.user_id)).size;
-      const avgFocusMinutesPerStudent = studentsWithFocusSessions > 0 
-        ? Math.round(totalFocusMinutes / studentsWithFocusSessions) 
-        : 0;
-
-      // NEW: Students who watched but didn't test
-      const studentsWithFocus = new Set(allFocusSessions.map(s => s.user_id));
-      const studentsWithExams = new Set((examAttemptsData || []).map(a => a.user_id));
-      const studentsWatchingNotTesting = [...studentsWithFocus].filter(
-        id => !studentsWithExams.has(id)
-      ).length;
-
-      setOverallStats({
-        totalStudents: profiles.length,
-        totalEnrollments: (enrollments || []).length,
-        activeEnrollments,
-        pendingEnrollments,
-        totalLessons: (lessons || []).length,
-        totalExams: (exams || []).length,
-        totalExamResults: (examResults || []).length,
-        avgOverallProgress: avgProgress,
-        avgOverallExamScore: avgExamScore,
-        avgScoreExcludingZero,
-        totalFocusSessions,
-        meaningfulFocusSessions,
-        totalFocusMinutes,
-        studentsWithFocusSessions,
-        avgFocusMinutesPerStudent,
-        studentsWatchingNotTesting,
-      });
-
-      // Calculate course-level stats
+      // Course stats for drill-down
       const courseStatsData: CourseStats[] = (courses || []).map(course => {
-        const courseEnrollments = (enrollments || []).filter(e => e.course_id === course.id);
-        const courseLessons = (lessons || []).filter(l => l.course_id === course.id);
-        const courseExams = (exams || []).filter(e => e.course_id === course.id);
+        const courseEnrollments = (enrollmentsData || []).filter(e => e.course_id === course.id);
+        const courseLessons = (lessonsData || []).filter(l => l.course_id === course.id);
+        const courseExams = (examsData || []).filter(e => e.course_id === course.id);
         const courseExamIds = courseExams.map(e => e.id);
         const courseExamResults = (examResults || []).filter(r => courseExamIds.includes(r.exam_id));
 
@@ -261,47 +185,7 @@ export default function Reports() {
 
       setCourseStats(courseStatsData);
 
-      // Attendance breakdown
-      const lessonBreakdowns: AttendanceBreakdown[] = (lessons || []).slice(0, 10).map(lesson => {
-        const lessonAttendance = (attendance || []).filter(a => a.lesson_id === lesson.id);
-        
-        const userAttendance = new Map<string, { center: boolean; online: boolean }>();
-        lessonAttendance.forEach(a => {
-          const existing = userAttendance.get(a.user_id) || { center: false, online: false };
-          if (a.attendance_type === 'center') existing.center = true;
-          if (a.attendance_type === 'online') existing.online = true;
-          userAttendance.set(a.user_id, existing);
-        });
-
-        let centerOnly = 0, onlineOnly = 0, both = 0;
-        userAttendance.forEach(att => {
-          if (att.center && att.online) both++;
-          else if (att.center) centerOnly++;
-          else if (att.online) onlineOnly++;
-        });
-
-        const courseEnrollments = (enrollments || []).filter(
-          e => e.course_id === lesson.course_id && e.status === 'active'
-        ).length;
-
-        const attendedCount = centerOnly + onlineOnly + both;
-        const absentCount = Math.max(0, courseEnrollments - attendedCount);
-
-        return {
-          lessonId: lesson.id,
-          lessonTitle: lesson.title,
-          lessonTitleAr: lesson.title_ar,
-          centerCount: centerOnly,
-          onlineCount: onlineOnly,
-          bothCount: both,
-          absentCount,
-          totalStudents: courseEnrollments,
-        };
-      });
-
-      setAttendanceBreakdown(lessonBreakdowns);
-
-      // Top students
+      // Top students for drill-down
       const studentScores = new Map<string, { scores: number[], name: string | null }>();
 
       (examResults || []).forEach(result => {
@@ -331,26 +215,21 @@ export default function Reports() {
       setTopStudents(topStudentsData);
 
     } catch (error) {
-      console.error('Error fetching report data:', error);
+      console.error('Error fetching supplementary data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Insights data with smart metrics
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DERIVED DATA FOR DRILL-DOWN COMPONENTS (uses same thresholds)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // SmartInsights data (uses SAME metrics as status engine where applicable)
   const insightsData = useMemo(() => {
-    if (!overallStats) return null;
+    if (!systemStatus.metrics) return null;
 
-    const lessonDropoffs = attendanceBreakdown
-      .filter(l => l.totalStudents > 0)
-      .map(l => ({
-        lessonId: l.lessonId,
-        title: isArabic ? l.lessonTitleAr : l.lessonTitle,
-        dropoffRate: Math.round((l.absentCount / l.totalStudents) * 100)
-      }))
-      .filter(l => l.dropoffRate > 20)
-      .sort((a, b) => b.dropoffRate - a.dropoffRate);
-
+    const lessonDropoffs: { lessonId: string; title: string; dropoffRate: number }[] = [];
     const examFailures = examAttempts.length > 0 
       ? Object.entries(
           examAttempts.reduce((acc, a) => {
@@ -389,18 +268,23 @@ export default function Reports() {
         .map(lc => lc.user_id)
     ).size;
 
+    // Calculate students watching but not testing from focus sessions and exam attempts
+    const studentsWithFocus = new Set(focusSessions.filter(s => (s.total_active_seconds || 0) > 120).map(s => s.user_id));
+    const studentsWithExams = new Set(examAttempts.map(a => a.user_id));
+    const studentsWatchingNotTesting = [...studentsWithFocus].filter(id => !studentsWithExams.has(id)).length;
+
     return {
       lessonDropoffs,
       examFailures,
       lowProgressStudents,
       activeStudentsToday: activeToday,
-      totalStudents: overallStats.totalStudents,
+      totalStudents: systemStatus.metrics.totalStudents,
       chapterProgress,
-      avgScoreExcludingZero: overallStats.avgScoreExcludingZero,
-      meaningfulFocusSessions: overallStats.meaningfulFocusSessions,
-      studentsWatchingNotTesting: overallStats.studentsWatchingNotTesting,
+      avgScoreExcludingZero: systemStatus.metrics.avgExamScore,
+      meaningfulFocusSessions: systemStatus.metrics.meaningfulFocusSessions,
+      studentsWatchingNotTesting,
     };
-  }, [overallStats, attendanceBreakdown, examAttempts, chapters, lessonCompletions, courseStats, isArabic]);
+  }, [systemStatus.metrics, examAttempts, chapters, lessonCompletions, courseStats, focusSessions, isArabic]);
 
   // Chapter analytics data
   const chapterAnalyticsData = useMemo(() => {
@@ -473,7 +357,7 @@ export default function Reports() {
         }
       }
       
-      // Focus sessions > 2 min only
+      // Focus sessions > 2 min only (same threshold as status engine)
       const chapterFocusSessions = focusSessions.filter(
         fs => chapterLessonIds.includes(fs.lesson_id) && (fs.total_active_seconds || 0) > 120
       );
@@ -576,6 +460,10 @@ export default function Reports() {
     }));
   }, [examAttempts]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HELPER FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-green-600';
     if (score >= 70) return 'text-blue-600';
@@ -590,8 +478,11 @@ export default function Reports() {
     return 'bg-red-500';
   };
 
-  // Loading state - only show if loading > 300ms
-  if (loading || roleLoading) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LOADING STATE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  if (loading || roleLoading || systemStatus.loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <PulsingDots size="lg" />
@@ -599,12 +490,16 @@ export default function Reports() {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+
   return (
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
       <main className="container mx-auto px-3 md:px-4 py-6 pt-20 md:pt-24">
-        {/* Header - Compact on mobile */}
+        {/* Header */}
         <div className="flex items-center gap-3 mb-4 md:mb-6">
           <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10" onClick={() => navigate('/assistant')}>
             <ArrowLeft className={cn("h-4 w-4 md:h-5 md:w-5", isRTL && 'rotate-180')} />
@@ -614,151 +509,56 @@ export default function Reports() {
               {isArabic ? 'التقارير والإحصائيات' : 'Reports & Statistics'}
             </h1>
             <p className="text-xs md:text-sm text-muted-foreground truncate">
-              {isArabic ? 'نظرة شاملة على أداء الطلاب' : 'Student performance overview'}
+              {isArabic ? 'مركز القرار - حالة المنصة الفعلية' : 'Decision Center - Actual Platform State'}
             </p>
           </div>
         </div>
 
-        {/* Status Filter Header - Shows when navigated from dashboard status */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION A: Status Context Header (Top - No Numbers)
+        ═══════════════════════════════════════════════════════════════════ */}
         <ReportsStatusHeader
-          focusStatus={focusStatus}
-          onClearFilter={handleClearFilter}
+          statusCode={systemStatus.statusCode}
           isRTL={isRTL}
+          isFiltered={isFiltered}
+          onClearFilter={handleClearFilter}
         />
 
-        {/* Mobile: Vertical metric cards */}
-        {isMobile ? (
-          <div className="space-y-2 mb-4">
-            <MobileMetricCard
-              icon={Users}
-              label={isArabic ? 'الطلاب' : 'Students'}
-              value={overallStats?.totalStudents || 0}
-              subValue={`${overallStats?.activeEnrollments || 0} ${isArabic ? 'نشط' : 'active'}`}
-            />
-            <MobileMetricCard
-              icon={TrendingUp}
-              label={isArabic ? 'متوسط التقدم' : 'Avg Progress'}
-              value={`${overallStats?.avgOverallProgress || 0}%`}
-              colorClass={overallStats?.avgOverallProgress && overallStats.avgOverallProgress >= 50 ? 'text-green-600' : 'text-amber-600'}
-              bgClass={overallStats?.avgOverallProgress && overallStats.avgOverallProgress >= 50 ? 'bg-green-500/10' : 'bg-amber-500/10'}
-            />
-            <MobileMetricCard
-              icon={Award}
-              label={isArabic ? 'متوسط الدرجات (فعلي)' : 'Avg Score (active)'}
-              value={`${overallStats?.avgScoreExcludingZero || 0}%`}
-              subValue={isArabic ? 'بدون الصفر' : 'excl. zero'}
-              colorClass={getScoreColor(overallStats?.avgScoreExcludingZero || 0)}
-              bgClass="bg-primary/10"
-            />
-            <MobileMetricCard
-              icon={Eye}
-              label={isArabic ? 'جلسات تركيز فعالة' : 'Meaningful Focus'}
-              value={overallStats?.meaningfulFocusSessions || 0}
-              subValue={isArabic ? '> 2 دقيقة' : '> 2 min'}
-              colorClass="text-green-600"
-              bgClass="bg-green-500/10"
-            />
-          </div>
-        ) : (
-          /* Desktop: Grid stats */
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
-            <div className="bg-card border rounded-xl p-3 md:p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
-                <Users className="h-4 w-4" />
-                <span className="text-xs">{isArabic ? 'الطلاب' : 'Students'}</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold">{overallStats?.totalStudents || 0}</p>
-            </div>
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION B: Evidence Blocks (Why this status?)
+        ═══════════════════════════════════════════════════════════════════ */}
+        <div className="mb-4 md:mb-6">
+          <StatusEvidenceBlocks
+            metrics={systemStatus.metrics}
+            statusCode={systemStatus.statusCode}
+            isRTL={isRTL}
+          />
+        </div>
 
-            <div className="bg-card border rounded-xl p-3 md:p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
-                <BookOpen className="h-4 w-4" />
-                <span className="text-xs">{isArabic ? 'الاشتراكات' : 'Enrollments'}</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold">{overallStats?.activeEnrollments || 0}</p>
-              <p className="text-xs text-muted-foreground">
-                {overallStats?.pendingEnrollments || 0} {isArabic ? 'معلق' : 'pending'}
-              </p>
-            </div>
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION C: Actionable Breakdown (What needs fixing?)
+        ═══════════════════════════════════════════════════════════════════ */}
+        <div className="mb-4 md:mb-6">
+          <ActionableBreakdown
+            statusCode={systemStatus.statusCode}
+            metrics={systemStatus.metrics}
+            isRTL={isRTL}
+          />
+        </div>
 
-            <div className="bg-card border rounded-xl p-3 md:p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-xs">{isArabic ? 'متوسط التقدم' : 'Avg Progress'}</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold">{overallStats?.avgOverallProgress || 0}%</p>
-            </div>
-
-            <div className="bg-card border rounded-xl p-3 md:p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
-                <Award className="h-4 w-4" />
-                <span className="text-xs">{isArabic ? 'متوسط الدرجات' : 'Avg Score'}</span>
-              </div>
-              <p className={cn("text-xl md:text-2xl font-bold", getScoreColor(overallStats?.avgScoreExcludingZero || 0))}>
-                {overallStats?.avgScoreExcludingZero || 0}%
-              </p>
-              <p className="text-xs text-muted-foreground">{isArabic ? 'بدون الصفر' : 'excl. zero'}</p>
-            </div>
-
-            <div className="bg-card border rounded-xl p-3 md:p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1 md:mb-2">
-                <Eye className="h-4 w-4" />
-                <span className="text-xs">{isArabic ? 'تركيز فعال' : 'Real Focus'}</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold text-green-600">{overallStats?.meaningfulFocusSessions || 0}</p>
-              <p className="text-xs text-muted-foreground">{isArabic ? '> 2 دقيقة' : '> 2 min'}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Focus Mode Summary - Compact on mobile */}
-        {(overallStats?.totalFocusSessions ?? 0) > 0 && (
-          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-3 md:p-4 mb-4 md:mb-6">
-            <h2 className="text-sm md:text-base font-semibold mb-2 md:mb-3 flex items-center gap-2">
-              <Play className="h-4 w-4 text-green-600" />
-              {isArabic ? 'نشاط التركيز' : 'Focus Activity'}
-            </h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
-                <p className="text-lg md:text-2xl font-bold text-green-600">
-                  {overallStats?.totalFocusMinutes && overallStats.totalFocusMinutes >= 60 
-                    ? `${Math.floor(overallStats.totalFocusMinutes / 60)}h`
-                    : `${overallStats?.totalFocusMinutes || 0}m`
-                  }
-                </p>
-                <p className="text-xs text-muted-foreground">{isArabic ? 'وقت المشاهدة' : 'Watch Time'}</p>
-              </div>
-              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
-                <p className="text-lg md:text-2xl font-bold text-green-600">
-                  {overallStats?.studentsWithFocusSessions || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">{isArabic ? 'طالب نشط' : 'Active'}</p>
-              </div>
-              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
-                <p className="text-lg md:text-2xl font-bold">{overallStats?.avgFocusMinutesPerStudent || 0}m</p>
-                <p className="text-xs text-muted-foreground">{isArabic ? 'متوسط/طالب' : 'Avg/Student'}</p>
-              </div>
-              <div className="bg-background/50 rounded-lg p-2 md:p-3 text-center">
-                <p className={cn(
-                  "text-lg md:text-2xl font-bold",
-                  (overallStats?.studentsWatchingNotTesting || 0) > 3 ? "text-amber-600" : "text-foreground"
-                )}>
-                  {overallStats?.studentsWatchingNotTesting || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">{isArabic ? 'يشاهد فقط' : 'Watch Only'}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Smart Insights - "What should I fix today?" */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION D: Smart Insights (Additional actionable items)
+        ═══════════════════════════════════════════════════════════════════ */}
         {insightsData && (
           <div className="mb-4 md:mb-6">
             <SmartInsights data={insightsData} isArabic={isArabic} />
           </div>
         )}
 
+        {/* ═══════════════════════════════════════════════════════════════════
+            DRILL-DOWN SECTIONS (Secondary - Below Analytics)
+        ═══════════════════════════════════════════════════════════════════ */}
+        
         {/* Analytics - Mobile vs Desktop */}
         {isMobile ? (
           <div className="space-y-4 mb-4">
@@ -772,7 +572,7 @@ export default function Reports() {
           </div>
         )}
 
-        {/* Course Stats - Table on desktop, Cards on mobile */}
+        {/* Course Stats */}
         <div className="bg-card border rounded-xl p-3 md:p-4 mb-4 md:mb-6">
           <h2 className="text-sm md:text-base font-semibold mb-3 flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-primary" />
@@ -855,7 +655,7 @@ export default function Reports() {
           )}
         </div>
 
-        {/* Top Students - Compact */}
+        {/* Top Students */}
         <div className="bg-card border rounded-xl p-3 md:p-4">
           <h2 className="text-sm md:text-base font-semibold mb-3 flex items-center gap-2">
             <Award className="h-4 w-4 text-primary" />
