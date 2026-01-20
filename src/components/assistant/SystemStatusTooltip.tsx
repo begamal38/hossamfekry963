@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { SystemStatusData } from '@/hooks/useSystemStatus';
+import { getSystemStatusText } from '@/lib/statusCopy';
 import { cn } from '@/lib/utils';
 import { 
   Users, 
@@ -31,6 +32,10 @@ const statusColors = {
 export const SystemStatusTooltip = ({ status, isRTL, children }: SystemStatusTooltipProps) => {
   const metrics = status.metrics;
 
+  // Get localized text from status code
+  const label = getSystemStatusText(status.statusCode, 'label', isRTL);
+  const description = getSystemStatusText(status.statusCode, 'description', isRTL);
+
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
@@ -55,7 +60,7 @@ export const SystemStatusTooltip = ({ status, isRTL, children }: SystemStatusToo
               {isRTL ? 'حالة النظام' : 'System Status'}
             </h4>
             <p className="text-xs opacity-90">
-              {status.description || (isRTL ? status.labelAr : status.labelEn)}
+              {description || label}
             </p>
           </div>
           

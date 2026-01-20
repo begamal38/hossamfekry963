@@ -1,318 +1,184 @@
-/**
- * Student Behavioral Status Engine
- * 
- * Determines student engagement status based on REAL behavior data.
- * 
- * States:
- * - ACTIVE: Actively learning (recent focus, lesson progress)
- * - AT_RISK: Shows signs of disengagement (irregular activity)
- * - DORMANT: No recent activity (needs intervention)
- * - LOYAL: Consistent, long-term engagement
- * 
- * ARCHITECTURE RULES:
- * - Deterministic and explainable logic
- * - No fake progress or gamification lies
- * - Based purely on EXISTING data
- */
-
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { StudentStatusCode } from '@/lib/statusCopy';
 
-export type StudentStatus = 'ACTIVE' | 'AT_RISK' | 'DORMANT' | 'LOYAL' | 'NEW';
+// ═══════════════════════════════════════════════════════════════════════════
+// Types - Pure Data, No Text
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface StudentBehaviorMetrics {
+  accountAgeDays: number;
+  daysSinceLastFocus: number | null;
+  totalFocusSessions: number;
+  totalFocusMinutes: number;
+  completedLessons: number;
+  examAttempts: number;
+  avgExamScore: number;
+}
 
 export interface StudentBehaviorData {
-  status: StudentStatus;
-  labelAr: string;
-  labelEn: string;
-  ctaAr: string;
-  ctaEn: string;
+  /** Status code - UI must map this to localized text */
+  statusCode: StudentStatusCode;
+  /** Loading state */
   loading: boolean;
+  /** Raw metrics for display/debugging */
   metrics: StudentBehaviorMetrics | null;
 }
 
-export interface StudentBehaviorMetrics {
-  daysSinceLastFocus: number | null;
-  totalFocusMinutesLast7Days: number;
-  totalFocusMinutesLast30Days: number;
-  lessonsCompletedLast7Days: number;
-  lessonsCompletedLast30Days: number;
-  examAttemptsLast30Days: number;
-  avgExamScoreLast30Days: number;
-  accountAgeDays: number;
-  consistencyScore: number; // 0-100 based on activity regularity
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// Thresholds (configurable)
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Thresholds for status determination
 const THRESHOLDS = {
-  // Days without focus to be considered dormant
+  NEW_USER_DAYS: 3,
   DORMANT_DAYS: 14,
-  
-  // Days without focus to be considered at risk
   AT_RISK_DAYS: 7,
-  
-  // Minimum focus minutes per week for "active" status
-  ACTIVE_WEEKLY_FOCUS_MINUTES: 30,
-  
-  // Loyalty threshold (days of consistent activity)
-  LOYAL_ACCOUNT_AGE_DAYS: 60,
-  LOYAL_CONSISTENCY_SCORE: 70,
-  
-  // New user threshold
-  NEW_USER_DAYS: 7,
+  LOYAL_MIN_FOCUS_SESSIONS: 10,
+  LOYAL_MIN_FOCUS_MINUTES: 120,
+  LOYAL_RECENT_ACTIVITY_DAYS: 3,
 };
 
-export const useStudentBehavior = (studentId?: string): StudentBehaviorData => {
+// ═══════════════════════════════════════════════════════════════════════════
+// Hook
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const useStudentBehavior = (): StudentBehaviorData => {
   const { user } = useAuth();
-  const targetUserId = studentId || user?.id;
   
   const [data, setData] = useState<StudentBehaviorData>({
-    status: 'NEW',
-    labelAr: 'جديد',
-    labelEn: 'New',
-    ctaAr: '',
-    ctaEn: '',
+    statusCode: 'NEW',
     loading: true,
     metrics: null,
   });
 
-  const calculateStatus = useCallback((metrics: StudentBehaviorMetrics): StudentBehaviorData => {
-    const {
-      daysSinceLastFocus,
-      totalFocusMinutesLast7Days,
-      lessonsCompletedLast7Days,
-      lessonsCompletedLast30Days,
-      examAttemptsLast30Days,
-      avgExamScoreLast30Days,
-      accountAgeDays,
-      consistencyScore,
+  /**
+   * Determine status from metrics - returns STATUS CODE only
+   */
+  const determineStatus = useCallback((metrics: StudentBehaviorMetrics): StudentStatusCode => {
+    const { 
+      accountAgeDays, 
+      daysSinceLastFocus, 
+      totalFocusSessions, 
+      totalFocusMinutes 
     } = metrics;
 
-    // ═══════════════════════════════════════════════════════════════════
-    // NEW USER: Account age < 7 days
-    // ═══════════════════════════════════════════════════════════════════
+    // New User: Account < 3 days old
     if (accountAgeDays < THRESHOLDS.NEW_USER_DAYS) {
-      return {
-        status: 'NEW',
-        labelAr: 'طالب جديد',
-        labelEn: 'New Student',
-        ctaAr: 'ابدأ أول حصة واكتشف المنصة',
-        ctaEn: 'Start your first lesson and explore',
-        loading: false,
-        metrics,
-      };
+      return 'NEW';
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // DORMANT: No activity for 14+ days
-    // ═══════════════════════════════════════════════════════════════════
+    // Dormant: No activity for 14+ days
     if (daysSinceLastFocus !== null && daysSinceLastFocus >= THRESHOLDS.DORMANT_DAYS) {
-      return {
-        status: 'DORMANT',
-        labelAr: 'غير نشط',
-        labelEn: 'Inactive',
-        ctaAr: 'عدنا نستناك! ارجع كمّل من حيث وقفت',
-        ctaEn: 'We miss you! Continue where you left off',
-        loading: false,
-        metrics,
-      };
+      return 'DORMANT';
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // LOYAL: Long-term consistent engagement
-    // ═══════════════════════════════════════════════════════════════════
-    if (
-      accountAgeDays >= THRESHOLDS.LOYAL_ACCOUNT_AGE_DAYS &&
-      consistencyScore >= THRESHOLDS.LOYAL_CONSISTENCY_SCORE &&
-      lessonsCompletedLast30Days >= 10
-    ) {
-      return {
-        status: 'LOYAL',
-        labelAr: 'طالب مثالي',
-        labelEn: 'Star Student',
-        ctaAr: 'استمر على الوتيرة الممتازة! 🌟',
-        ctaEn: 'Keep up the excellent pace! 🌟',
-        loading: false,
-        metrics,
-      };
+    // Loyal: High engagement + recent activity
+    const isLoyal = 
+      totalFocusSessions >= THRESHOLDS.LOYAL_MIN_FOCUS_SESSIONS &&
+      totalFocusMinutes >= THRESHOLDS.LOYAL_MIN_FOCUS_MINUTES &&
+      daysSinceLastFocus !== null && 
+      daysSinceLastFocus <= THRESHOLDS.LOYAL_RECENT_ACTIVITY_DAYS;
+
+    if (isLoyal) {
+      return 'LOYAL';
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // AT_RISK: Shows signs of disengagement
-    // ═══════════════════════════════════════════════════════════════════
+    // At Risk: No activity for 7-13 days
     const isAtRisk = 
-      (daysSinceLastFocus !== null && daysSinceLastFocus >= THRESHOLDS.AT_RISK_DAYS) ||
-      (totalFocusMinutesLast7Days < THRESHOLDS.ACTIVE_WEEKLY_FOCUS_MINUTES && lessonsCompletedLast7Days === 0);
+      daysSinceLastFocus !== null && 
+      daysSinceLastFocus >= THRESHOLDS.AT_RISK_DAYS && 
+      daysSinceLastFocus < THRESHOLDS.DORMANT_DAYS;
 
     if (isAtRisk) {
-      return {
-        status: 'AT_RISK',
-        labelAr: 'محتاج متابعة',
-        labelEn: 'Needs Attention',
-        ctaAr: 'رجعتلك! كمّل حصة واحدة بس النهاردة',
-        ctaEn: 'You got this! Complete just one lesson today',
-        loading: false,
-        metrics,
-      };
+      return 'AT_RISK';
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ACTIVE: Regular engagement
-    // ═══════════════════════════════════════════════════════════════════
-    return {
-      status: 'ACTIVE',
-      labelAr: 'نشط',
-      labelEn: 'Active',
-      ctaAr: 'أداءك ممتاز! كمل بنفس الروح 💪',
-      ctaEn: 'Great progress! Keep the momentum 💪',
-      loading: false,
-      metrics,
-    };
+    // Default: Active
+    return 'ACTIVE';
   }, []);
 
-  const fetchBehaviorData = useCallback(async () => {
-    if (!targetUserId) {
-      setData(prev => ({ ...prev, loading: false }));
+  /**
+   * Fetch behavior metrics from database
+   */
+  const fetchBehavior = useCallback(async () => {
+    if (!user) {
+      setData({ statusCode: 'NEW', loading: false, metrics: null });
       return;
     }
 
     try {
-      const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      setData(prev => ({ ...prev, loading: true }));
 
-      // Fetch all data in parallel
+      // Parallel fetch all required data
       const [
         { data: profile },
         { data: focusSessions },
-        { data: recentCompletions },
-        { data: recentExams },
+        { count: completedLessonsCount },
+        { data: examAttempts },
       ] = await Promise.all([
-        // Profile for account age
-        supabase
-          .from('profiles')
-          .select('created_at')
-          .eq('user_id', targetUserId)
-          .single(),
-
-        // Focus sessions for engagement analysis
-        supabase
-          .from('focus_sessions')
-          .select('total_active_seconds, created_at')
-          .eq('user_id', targetUserId)
-          .gte('created_at', thirtyDaysAgo.toISOString())
-          .order('created_at', { ascending: false }),
-
-        // Lesson completions
-        supabase
-          .from('lesson_completions')
-          .select('completed_at')
-          .eq('user_id', targetUserId)
-          .gte('completed_at', thirtyDaysAgo.toISOString()),
-
-        // Exam attempts
-        supabase
-          .from('exam_attempts')
-          .select('score, total_questions, completed_at')
-          .eq('user_id', targetUserId)
-          .eq('is_completed', true)
-          .gte('completed_at', thirtyDaysAgo.toISOString()),
+        supabase.from('profiles').select('created_at').eq('user_id', user.id).maybeSingle(),
+        supabase.from('focus_sessions').select('started_at, total_active_seconds').eq('user_id', user.id).order('started_at', { ascending: false }),
+        supabase.from('lesson_completions').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('exam_attempts').select('score, total_questions').eq('user_id', user.id).eq('is_completed', true),
       ]);
 
-      // Calculate metrics
-      const accountAgeDays = profile?.created_at
-        ? Math.floor((now.getTime() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+      // Calculate account age
+      const createdAt = profile?.created_at ? new Date(profile.created_at) : new Date();
+      const accountAgeDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Days since last focus
-      const lastFocusSession = focusSessions?.[0];
-      const daysSinceLastFocus = lastFocusSession
-        ? Math.floor((now.getTime() - new Date(lastFocusSession.created_at).getTime()) / (1000 * 60 * 60 * 24))
-        : null;
+      // Calculate days since last focus
+      let daysSinceLastFocus: number | null = null;
+      if (focusSessions && focusSessions.length > 0) {
+        const lastSession = new Date(focusSessions[0].started_at);
+        daysSinceLastFocus = Math.floor((Date.now() - lastSession.getTime()) / (1000 * 60 * 60 * 24));
+      }
 
-      // Focus minutes calculation
-      const focusLast7Days = (focusSessions || [])
-        .filter(s => new Date(s.created_at) >= sevenDaysAgo)
-        .reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
+      // Calculate total focus metrics
+      const totalFocusSessions = focusSessions?.length || 0;
+      const totalFocusMinutes = Math.round(
+        (focusSessions || []).reduce((sum, s) => sum + (s.total_active_seconds || 0), 0) / 60
+      );
 
-      const focusLast30Days = (focusSessions || [])
-        .reduce((sum, s) => sum + (s.total_active_seconds || 0), 0);
-
-      // Lessons completed
-      const lessonsLast7Days = (recentCompletions || [])
-        .filter(c => new Date(c.completed_at) >= sevenDaysAgo).length;
-
-      const lessonsLast30Days = (recentCompletions || []).length;
-
-      // Exam metrics
-      const examAttemptsLast30Days = (recentExams || []).length;
-      const avgExamScore = examAttemptsLast30Days > 0
+      // Calculate exam metrics
+      const examAttemptsCount = examAttempts?.length || 0;
+      const avgExamScore = examAttemptsCount > 0
         ? Math.round(
-            (recentExams || []).reduce((sum, e) => 
-              sum + (e.total_questions > 0 ? (e.score / e.total_questions) * 100 : 0), 
-            0) / examAttemptsLast30Days
+            examAttempts!.reduce((sum, a) => sum + ((a.score / a.total_questions) * 100), 0) / examAttemptsCount
           )
         : 0;
 
-      // Consistency score: based on active days ratio over last 30 days
-      const activeDays = new Set(
-        (focusSessions || []).map(s => 
-          new Date(s.created_at).toISOString().split('T')[0]
-        )
-      ).size;
-      const consistencyScore = Math.round((activeDays / 30) * 100);
-
       const metrics: StudentBehaviorMetrics = {
-        daysSinceLastFocus,
-        totalFocusMinutesLast7Days: Math.round(focusLast7Days / 60),
-        totalFocusMinutesLast30Days: Math.round(focusLast30Days / 60),
-        lessonsCompletedLast7Days: lessonsLast7Days,
-        lessonsCompletedLast30Days: lessonsLast30Days,
-        examAttemptsLast30Days,
-        avgExamScoreLast30Days: avgExamScore,
         accountAgeDays,
-        consistencyScore,
+        daysSinceLastFocus,
+        totalFocusSessions,
+        totalFocusMinutes,
+        completedLessons: completedLessonsCount || 0,
+        examAttempts: examAttemptsCount,
+        avgExamScore,
       };
 
-      const calculatedData = calculateStatus(metrics);
-      setData(calculatedData);
+      const statusCode = determineStatus(metrics);
 
+      setData({
+        statusCode,
+        loading: false,
+        metrics,
+      });
     } catch (error) {
       console.error('Error fetching student behavior:', error);
       setData({
-        status: 'NEW',
-        labelAr: 'غير محدد',
-        labelEn: 'Unknown',
-        ctaAr: '',
-        ctaEn: '',
+        statusCode: 'UNKNOWN',
         loading: false,
         metrics: null,
       });
     }
-  }, [targetUserId, calculateStatus]);
+  }, [user, determineStatus]);
 
+  // Fetch on mount and user change
   useEffect(() => {
-    fetchBehaviorData();
-  }, [fetchBehaviorData]);
+    fetchBehavior();
+  }, [fetchBehavior]);
 
   return data;
-};
-
-/**
- * Get status color for UI rendering
- */
-export const getStatusColor = (status: StudentStatus) => {
-  switch (status) {
-    case 'LOYAL':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    case 'ACTIVE':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-    case 'AT_RISK':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
-    case 'DORMANT':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-    case 'NEW':
-    default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-  }
 };
