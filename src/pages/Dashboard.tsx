@@ -32,7 +32,7 @@ import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard'
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
 import { ExamHistorySection } from '@/components/dashboard/ExamHistorySection';
-import { PullToRefresh } from '@/components/ui/PullToRefresh';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -344,7 +344,7 @@ const Dashboard: React.FC = () => {
     >
       <Navbar />
 
-      <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
+      <>
         <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
           <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
           {/* Hero Header - Personalized Ana Vodafone Style */}
@@ -598,7 +598,7 @@ const Dashboard: React.FC = () => {
           </SectionCard>
         </div>
         </main>
-      </PullToRefresh>
+      </>
       <Footer />
       
       {/* First-time user welcome onboarding */}
