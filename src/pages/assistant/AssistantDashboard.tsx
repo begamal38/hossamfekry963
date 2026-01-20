@@ -33,6 +33,7 @@ import { ConversionInsightsCard } from '@/components/assistant/ConversionInsight
 import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
+import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
 
 interface Stats {
   totalStudents: number;
@@ -303,22 +304,26 @@ export default function AssistantDashboard() {
             </div>
           </div>
 
-          {/* Status Summary Card - System Status Indicator */}
-          <StatusSummaryCard
-            primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
-            secondaryText={systemStatus.loading 
-              ? '...' 
-              : systemStatus.description
-            }
-            badge={systemStatus.loading 
-              ? '...'
-              : (isRTL ? systemStatus.labelAr : systemStatus.labelEn)
-            }
-            badgeVariant={systemStatus.level}
-            href="/assistant/students"
-            isRTL={isRTL}
-            className="mb-5"
-          />
+          {/* Status Summary Card - System Status Indicator with Tooltip */}
+          <SystemStatusTooltip status={systemStatus} isRTL={isRTL}>
+            <div>
+              <StatusSummaryCard
+                primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
+                secondaryText={systemStatus.loading 
+                  ? '...' 
+                  : systemStatus.description
+                }
+                badge={systemStatus.loading 
+                  ? '...'
+                  : (isRTL ? systemStatus.labelAr : systemStatus.labelEn)
+                }
+                badgeVariant={systemStatus.level}
+                href="/assistant/students"
+                isRTL={isRTL}
+                className="mb-5"
+              />
+            </div>
+          </SystemStatusTooltip>
 
           {/* Quick Actions Strip */}
           <QuickActionsStrip actions={quickActions} isRTL={isRTL} className="mb-6" />

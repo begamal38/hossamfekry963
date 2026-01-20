@@ -545,7 +545,7 @@ export default function CourseView() {
   // Use slug for canonical URL (always present due to NOT NULL constraint)
 
   return (
-    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'} style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
       <SEOHead 
         title={`${course.title} – Hossam Fekry Platform`}
         titleAr={`${course.title_ar} – منصة حسام فكري`}
@@ -719,7 +719,7 @@ export default function CourseView() {
                       {isArabic ? 'مستر حسام فكري' : 'Mr. Hossam Fekry'}
                     </p>
                     <p className="text-white/70 text-xs">
-                      DMT {isArabic ? '• المجال في الكيمياء' : '• Chemistry Expert'}
+                      DMT {isArabic ? '• خبير في الكيمياء' : '• Chemistry Expert'}
                     </p>
                   </div>
                 </div>
