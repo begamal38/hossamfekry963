@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Play, Clock, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/Navbar';
@@ -16,6 +16,8 @@ import { MobileMetricCard } from '@/components/analytics/MobileMetricCard';
 import { ChapterAnalytics } from '@/components/analytics/ChapterAnalytics';
 import { ExamAnalytics } from '@/components/analytics/ExamAnalytics';
 import { PulsingDots } from '@/components/ui/PulsingDots';
+import { ReportsStatusHeader } from '@/components/analytics/ReportsStatusHeader';
+import { type SystemStatusCode } from '@/lib/statusCopy';
 import { cn } from '@/lib/utils';
 
 interface CourseStats {
@@ -68,10 +70,23 @@ interface AttendanceBreakdown {
 
 export default function Reports() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, isRTL } = useLanguage();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
   const isMobile = useIsMobile();
   const isArabic = language === 'ar';
+  
+  // Status filter from dashboard navigation
+  const [focusStatus, setFocusStatus] = useState<SystemStatusCode | null>(() => {
+    const state = location.state as { focusStatus?: SystemStatusCode } | null;
+    return state?.focusStatus || null;
+  });
+
+  const handleClearFilter = () => {
+    setFocusStatus(null);
+    // Clear location state
+    navigate(location.pathname, { replace: true, state: {} });
+  };
 
   const [loading, setLoading] = useState(true);
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
@@ -603,6 +618,13 @@ export default function Reports() {
             </p>
           </div>
         </div>
+
+        {/* Status Filter Header - Shows when navigated from dashboard status */}
+        <ReportsStatusHeader
+          focusStatus={focusStatus}
+          onClearFilter={handleClearFilter}
+          isRTL={isRTL}
+        />
 
         {/* Mobile: Vertical metric cards */}
         {isMobile ? (

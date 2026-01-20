@@ -311,7 +311,6 @@ export default function AssistantDashboard() {
                 status={systemStatus}
                 studentCount={stats.totalStudents}
                 isRTL={isRTL}
-                href="/assistant/students"
                 loading={loading}
                 className="mb-5"
               />
