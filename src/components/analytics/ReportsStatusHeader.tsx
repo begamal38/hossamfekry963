@@ -1,86 +1,46 @@
 /**
- * Reports Status Header
+ * Status Context Header
  * 
- * Visual status summary for the Reports page, showing the current
- * system status with filtering context when navigated from dashboard.
+ * Top section of Reports page that answers: "What is the system state right now?"
+ * Shows visual status indicator, translated label, and short explanation.
+ * NO numbers here - just status context.
  */
 
 import React from 'react';
+import { X, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
-  STATUS_VISUALS, 
-  getSystemStatusText,
-  type SystemStatusCode 
+  type SystemStatusCode, 
+  STATUS_VISUALS,
+  getSystemStatusText 
 } from '@/lib/statusCopy';
-import { AlertTriangle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface ReportsStatusHeaderProps {
-  focusStatus: SystemStatusCode | null;
-  onClearFilter: () => void;
+  statusCode: SystemStatusCode;
   isRTL: boolean;
+  /** Whether this is a filtered view from dashboard navigation */
+  isFiltered?: boolean;
+  /** Callback to clear filter */
+  onClearFilter?: () => void;
 }
 
-/**
- * Maps status codes to relevant analytics focus areas
- */
-const STATUS_FOCUS_MAP: Record<SystemStatusCode, { 
-  focusArea: { ar: string; en: string };
-  filterKey: string;
-}> = {
-  STABLE: {
-    focusArea: { ar: 'نظرة عامة على الأداء الممتاز', en: 'Overview of excellent performance' },
-    filterKey: 'all',
-  },
-  NEEDS_EXAM_FOLLOWUP: {
-    focusArea: { ar: 'الطلاب المحتاجين متابعة الامتحانات', en: 'Students needing exam follow-up' },
-    filterKey: 'exam_gaps',
-  },
-  UNSTABLE_RESULTS: {
-    focusArea: { ar: 'المناطق التي تحتاج ضبط', en: 'Areas requiring adjustment' },
-    filterKey: 'low_engagement',
-  },
-  HIGH_FAILURE_RATE: {
-    focusArea: { ar: 'تحليل نسب الرسوب', en: 'Failure rate analysis' },
-    filterKey: 'high_failure',
-  },
-  CRITICAL_PASS_RATE: {
-    focusArea: { ar: 'تحليل نسب النجاح الحرجة', en: 'Critical pass rate analysis' },
-    filterKey: 'critical',
-  },
-  NOT_ACTIVATED: {
-    focusArea: { ar: 'بيانات النظام', en: 'System data' },
-    filterKey: 'all',
-  },
-  NO_STUDENTS_OR_ENROLLMENTS: {
-    focusArea: { ar: 'بيانات النظام', en: 'System data' },
-    filterKey: 'all',
-  },
-  DATA_LOAD_ERROR: {
-    focusArea: { ar: 'بيانات النظام', en: 'System data' },
-    filterKey: 'all',
-  },
-};
-
 export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
-  focusStatus,
-  onClearFilter,
+  statusCode,
   isRTL,
+  isFiltered = false,
+  onClearFilter,
 }) => {
-  if (!focusStatus) return null;
-
-  const visual = STATUS_VISUALS[focusStatus] || STATUS_VISUALS.NOT_ACTIVATED;
+  const visual = STATUS_VISUALS[statusCode];
   const StatusIcon = visual.icon;
-  const label = getSystemStatusText(focusStatus, 'label', isRTL);
-  const description = getSystemStatusText(focusStatus, 'description', isRTL);
-  const focusInfo = STATUS_FOCUS_MAP[focusStatus];
-  const focusArea = isRTL ? focusInfo.focusArea.ar : focusInfo.focusArea.en;
+  const label = getSystemStatusText(statusCode, 'label', isRTL);
+  const description = getSystemStatusText(statusCode, 'description', isRTL);
 
   return (
     <div
       className={cn(
         "rounded-xl border overflow-hidden mb-4",
-        visual.bgTintClass.replace('/10', '/5'),
+        visual.bgTintClass,
         "border-l-4",
         visual.dotClass.replace('bg-', 'border-l-')
       )}
@@ -89,54 +49,67 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            {/* Status Icon */}
-            <div className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-              visual.bgTintClass
-            )}>
-              <StatusIcon className={cn("w-5 h-5", visual.textClass)} />
+            {/* Status Icon with Pulsing Dot */}
+            <div className="relative">
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center",
+                visual.bgTintClass
+              )}>
+                <StatusIcon className={cn("w-6 h-6", visual.textClass)} />
+              </div>
+              {/* Pulsing dot indicator */}
+              <span className={cn(
+                "absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse",
+                visual.dotClass
+              )} />
             </div>
 
-            <div>
-              {/* Filter Context */}
+            <div className="pt-0.5">
+              {/* Status Label */}
               <div className="flex items-center gap-2 mb-1">
                 <span className={cn(
-                  "text-sm font-semibold",
+                  "text-lg font-bold",
                   visual.textClass
                 )}>
                   {label}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {isRTL ? '- تصفية نشطة' : '- Active Filter'}
-                </span>
+                {isFiltered && (
+                  <span className="text-xs bg-background/60 px-2 py-0.5 rounded-full text-muted-foreground">
+                    {isRTL ? 'تصفية نشطة' : 'Active Filter'}
+                  </span>
+                )}
               </div>
 
               {/* Description */}
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-sm text-muted-foreground">
                 {description}
               </p>
 
-              {/* Focus Area */}
-              <div className="flex items-center gap-2 text-xs">
-                <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {isRTL ? 'التركيز على:' : 'Focusing on:'}{' '}
-                  <span className="font-medium text-foreground">{focusArea}</span>
+              {/* Context hint */}
+              <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground/70">
+                <Info className="w-3 h-3" />
+                <span>
+                  {isRTL 
+                    ? 'هذه الحالة مبنية على البيانات الفعلية أدناه' 
+                    : 'This status is derived from the actual data below'
+                  }
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Clear Filter Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 h-8 w-8"
-            onClick={onClearFilter}
-            title={isRTL ? 'إزالة الفلتر' : 'Clear filter'}
-          >
-            <X className="w-4 h-4" />
-          </Button>
+          {/* Clear Filter Button - Only show if filtered */}
+          {isFiltered && onClearFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-8 w-8"
+              onClick={onClearFilter}
+              title={isRTL ? 'إزالة الفلتر' : 'Clear filter'}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
