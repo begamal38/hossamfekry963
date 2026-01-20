@@ -32,6 +32,7 @@ import { InfoCard } from '@/components/dashboard/InfoCard';
 import { ConversionInsightsCard } from '@/components/assistant/ConversionInsightsCard';
 import { PlatformGuidance } from '@/components/guidance/PlatformGuidance';
 import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
+import { useSystemStatus } from '@/hooks/useSystemStatus';
 
 interface Stats {
   totalStudents: number;
@@ -69,6 +70,7 @@ export default function AssistantDashboard() {
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { count: unreadMessages } = useUnreadMessagesCount();
+  const systemStatus = useSystemStatus();
 
   const hasAccess = canAccessDashboard();
 
@@ -301,20 +303,18 @@ export default function AssistantDashboard() {
             </div>
           </div>
 
-          {/* Status Summary Card */}
+          {/* Status Summary Card - System Status Indicator */}
           <StatusSummaryCard
             primaryText={loading ? '...' : `${stats.totalStudents} ${isRTL ? 'طالب نشط' : 'Active Students'}`}
-            secondaryText={stats.newStudentsThisWeek > 0 
-              ? (isRTL ? `+${stats.newStudentsThisWeek} طالب الأسبوع ده` : `+${stats.newStudentsThisWeek} students this week`)
-              : (isRTL ? 'إدارة الطلاب والمحتوى' : 'Manage students & content')
+            secondaryText={systemStatus.loading 
+              ? '...' 
+              : systemStatus.description
             }
-            badge={stats.pendingEnrollments > 5 
-              ? (isRTL ? 'فيه مشكلة' : 'At Risk')
-              : stats.pendingEnrollments > 0 
-              ? (isRTL ? 'محتاج متابعة' : 'Needs Attention')
-              : (isRTL ? 'كله تمام' : 'All Good')
+            badge={systemStatus.loading 
+              ? '...'
+              : (isRTL ? systemStatus.labelAr : systemStatus.labelEn)
             }
-            badgeVariant={stats.pendingEnrollments > 5 ? 'danger' : stats.pendingEnrollments > 0 ? 'warning' : 'success'}
+            badgeVariant={systemStatus.level}
             href="/assistant/students"
             isRTL={isRTL}
             className="mb-5"
