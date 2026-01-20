@@ -34,8 +34,11 @@ export const CoursesSection: React.FC = () => {
 
   const fetchCourses = async () => {
     try {
-      // Home should always show courses if any exist.
-      // 1) Prefer primary (2026 structure) - ALSO filter by is_hidden = false
+      // Priority logic:
+      // 1) First fetch primary courses (4 main tracks) that are NOT hidden
+      // 2) If less than 4, fill remaining slots with other non-hidden courses
+      // 3) This ensures primary courses always take priority when visible
+      
       const primaryRes = await supabase
         .from('courses')
         .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
@@ -48,17 +51,23 @@ export const CoursesSection: React.FC = () => {
 
       let coursesData = primaryRes.data || [];
       
-      if (coursesData.length === 0) {
-        // 2) Fallback: show any non-hidden courses (protects against misconfigured is_primary)
-        const fallbackRes = await supabase
+      // If we have less than 4 primary courses, fill with other non-hidden courses
+      if (coursesData.length < 4) {
+        const remainingSlots = 4 - coursesData.length;
+        const primaryIds = coursesData.map(c => c.id);
+        
+        const fillRes = await supabase
           .from('courses')
           .select('id, title, title_ar, description, description_ar, grade, is_free, lessons_count, duration_hours, thumbnail_url, slug, price')
           .eq('is_hidden', false)
+          .eq('is_primary', false)
+          .not('id', 'in', `(${primaryIds.length > 0 ? primaryIds.join(',') : 'null'})`)
           .order('created_at', { ascending: false })
-          .limit(4);
+          .limit(remainingSlots);
 
-        if (fallbackRes.error) throw fallbackRes.error;
-        coursesData = fallbackRes.data || [];
+        if (!fillRes.error && fillRes.data) {
+          coursesData = [...coursesData, ...fillRes.data];
+        }
       }
 
       // Fetch enrollment counts for each course
