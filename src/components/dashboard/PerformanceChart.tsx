@@ -29,11 +29,19 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
   // Calculate progress percentage
   const progressPercent = totalLessons > 0 ? Math.round((lessonsCompleted / totalLessons) * 100) : 0;
 
-  // Overall performance based on exams and lessons only
+  // ═══════════════════════════════════════════════════════════════════
+  // WEIGHTED PERFORMANCE SCORING (TRUTH RULE)
+  // 
+  // Exams = Mastery (70% weight) - proves understanding
+  // Lessons = Exposure (30% weight) - shows engagement
+  // 
+  // Rationale: Watching lessons doesn't prove learning.
+  // Exam scores are the true measure of mastery.
+  // ═══════════════════════════════════════════════════════════════════
   const hasExams = examScores.length > 0;
   const overallScore = hasExams 
-    ? Math.round((avgExamScore + progressPercent) / 2)
-    : progressPercent;
+    ? Math.round(avgExamScore * 0.7 + progressPercent * 0.3)
+    : progressPercent; // If no exams, lessons are 100%
 
   // Determine performance status
   const getPerformanceStatus = () => {
@@ -92,6 +100,15 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
             <span>{status.label}</span>
           </div>
         </div>
+        
+        {/* Weighted scoring explanation */}
+        {hasExams && (
+          <p className="text-[10px] text-muted-foreground mb-3 text-center">
+            {isArabic 
+              ? 'الدرجة = الامتحانات (70%) + الحصص (30%)' 
+              : 'Score = Exams (70%) + Lessons (30%)'}
+          </p>
+        )}
 
         {/* Two metrics side by side */}
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -154,7 +171,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
   // Full version for desktop
   return (
     <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">
           {isArabic ? 'تحليل الأداء' : 'Performance Analysis'}
         </h3>
@@ -163,6 +180,15 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
           <span>{status.label}</span>
         </div>
       </div>
+      
+      {/* Weighted scoring explanation for desktop */}
+      {hasExams && (
+        <p className="text-xs text-muted-foreground mb-4 text-center">
+          {isArabic 
+            ? 'الدرجة الإجمالية = الامتحانات (70%) + إكمال الحصص (30%)' 
+            : 'Overall Score = Exams (70%) + Lesson Completion (30%)'}
+        </p>
+      )}
 
       {/* Metrics */}
       <div className="grid grid-cols-2 gap-6 mb-6">
