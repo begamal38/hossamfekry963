@@ -32,7 +32,9 @@ interface AuthContextType {
     phone?: string,
     academicYear?: string,
     languageTrack?: string,
-    governorate?: string
+    governorate?: string,
+    studyMode?: 'online' | 'center',
+    centerGroupId?: string | null
   ) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -85,7 +87,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, phone?: string, academicYear?: string, languageTrack?: string, governorate?: string) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    fullName: string, 
+    phone?: string, 
+    academicYear?: string, 
+    languageTrack?: string, 
+    governorate?: string,
+    studyMode?: 'online' | 'center',
+    centerGroupId?: string | null
+  ) => {
     const redirectUrl = `${window.location.origin}/`;
     
     // Generate combined grade for backward compatibility
@@ -105,9 +117,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           academic_year: academicYear,
           language_track: languageTrack,
           governorate: governorate,
+          attendance_mode: studyMode || 'online',
         }
       }
     });
+
+    // If center mode with group selected, add to center group after signup
+    if (!error && data?.user && studyMode === 'center' && centerGroupId) {
+      try {
+        await supabase.from('center_group_members').insert({
+          group_id: centerGroupId,
+          student_id: data.user.id,
+          is_active: true,
+        });
+      } catch (groupError) {
+        console.error('Failed to add to center group:', groupError);
+        // Non-blocking - don't fail registration
+      }
+    }
 
     // Send welcome email (non-blocking, fail silently)
     if (!error && data?.user) {

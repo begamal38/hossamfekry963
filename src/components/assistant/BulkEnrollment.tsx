@@ -65,9 +65,10 @@ type EnrollmentMode = 'select' | 'paste';
 type EnrollmentTarget = 'course' | 'chapters';
 type EnrollmentAction = 'activate' | 'deactivate';
 
+// Grade options - must match database values
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  '2nd_secondary': { ar: 'الثانية الثانوية', en: '2nd Secondary' },
-  '3rd_secondary': { ar: 'الثالثة الثانوية', en: '3rd Secondary' },
+  'second_secondary': { ar: 'الثانية الثانوية', en: '2nd Secondary' },
+  'third_secondary': { ar: 'الثالثة الثانوية', en: '3rd Secondary' },
 };
 
 const TRACK_OPTIONS: Record<string, { ar: string; en: string }> = {
@@ -125,21 +126,22 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
   // Search & filter
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter groups by grade and track
+  // Filter groups by grade and track - only center groups
   const filteredGroups = useMemo(() => {
+    if (!groups || !Array.isArray(groups)) return [];
     return groups.filter(g => {
-      if (!g.is_active) return false;
+      if (!g || !g.is_active) return false;
       if (groupGradeFilter && g.grade !== groupGradeFilter) return false;
       if (groupTrackFilter && g.language_track !== groupTrackFilter) return false;
       return true;
     });
   }, [groups, groupGradeFilter, groupTrackFilter]);
 
-  // Get selected group details
-  const selectedGroup = useMemo(() => 
-    groups.find(g => g.id === selectedGroupId),
-    [groups, selectedGroupId]
-  );
+  // Get selected group details - with null safety
+  const selectedGroup = useMemo(() => {
+    if (!groups || !Array.isArray(groups) || !selectedGroupId) return null;
+    return groups.find(g => g.id === selectedGroupId) || null;
+  }, [groups, selectedGroupId]);
 
   // Fetch all students on open
   useEffect(() => {
@@ -634,7 +636,11 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
               <Button
                 variant={targetType === 'student' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setTargetType('student')}
+                onClick={() => {
+                  setTargetType('student');
+                  setSelectedGroupId(null);
+                  setGroupMembers([]);
+                }}
                 className="flex-1"
               >
                 <User className="w-4 h-4 me-1" />
@@ -643,7 +649,20 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
               <Button
                 variant={targetType === 'group' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setTargetType('group')}
+                onClick={() => {
+                  // Check if groups exist before switching to group mode
+                  if (!groups || groups.length === 0) {
+                    toast({
+                      variant: 'destructive',
+                      title: isArabic ? 'لا توجد مجموعات' : 'No Groups',
+                      description: isArabic ? 'لا توجد مجموعات سنتر متاحة حالياً' : 'No center groups available',
+                    });
+                    return;
+                  }
+                  setTargetType('group');
+                  setSelectedGroupId(null);
+                  setGroupMembers([]);
+                }}
                 className="flex-1"
               >
                 <UsersRound className="w-4 h-4 me-1" />
@@ -840,10 +859,10 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                               <span className="flex items-center gap-1">
                                 <MapPin className="w-3 h-3" />
-                                {isArabic ? GRADE_OPTIONS[group.grade]?.ar : GRADE_OPTIONS[group.grade]?.en}
+                                {isArabic ? (GRADE_OPTIONS[group.grade]?.ar || group.grade) : (GRADE_OPTIONS[group.grade]?.en || group.grade)}
                               </span>
                               <span>•</span>
-                              <span>{isArabic ? TRACK_OPTIONS[group.language_track]?.ar : TRACK_OPTIONS[group.language_track]?.en}</span>
+                              <span>{isArabic ? (TRACK_OPTIONS[group.language_track]?.ar || group.language_track) : (TRACK_OPTIONS[group.language_track]?.en || group.language_track)}</span>
                               <span>•</span>
                               <span className="flex items-center gap-1">
                                 <Users className="w-3 h-3" />
