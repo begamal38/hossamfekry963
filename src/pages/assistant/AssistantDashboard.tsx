@@ -471,6 +471,22 @@ export default function AssistantDashboard() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Center Groups Section */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <Users className="h-3.5 w-3.5" />
+                    {isRTL ? 'مجموعات السنتر' : 'Center Groups'}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="ghost" size="sm" asChild className="justify-start h-9 text-xs">
+                      <Link to="/assistant/center-groups">
+                        <Plus className="h-3.5 w-3.5 mr-2" />
+                        {isRTL ? 'إدارة المجموعات' : 'Manage Groups'}
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
