@@ -129,7 +129,8 @@ const MESSAGE_TEMPLATES: {
   },
 ];
 
-const GRADES = ['second_arabic', 'second_languages', 'third_arabic', 'third_languages'];
+// Now using normalized format (second_secondary + language_track) for profiles
+const GRADES = ['second_secondary', 'third_secondary'];
 const ATTENDANCE_MODES = ['online', 'center', 'hybrid'];
 
 export default function SendNotifications() {
@@ -347,6 +348,10 @@ export default function SendNotifications() {
 
   const getGradeLabel = (grade: string) => {
     const labels: Record<string, string> = {
+      // Normalized format (profiles)
+      'second_secondary': 'تانية ثانوي',
+      'third_secondary': 'تالته ثانوي',
+      // Legacy combined format (courses)
       'second_arabic': 'تانية ثانوي - عربي',
       'second_languages': 'تانية ثانوي - لغات',
       'third_arabic': 'تالته ثانوي - عربي',

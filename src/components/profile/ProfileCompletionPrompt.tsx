@@ -82,10 +82,14 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Helper to normalize grade to base academic year (for center group matching)
+  // Now DB stores normalized format (second_secondary, third_secondary)
+  // This helper handles legacy data if any still exists
   const normalizeGradeToAcademicYear = (dbGrade: string): string => {
-    // Convert DB grade format to academic year format for group filtering
-    // DB stores: second_arabic, second_languages, third_arabic, third_languages
-    // Groups store: second_secondary, third_secondary
+    // Already in normalized format
+    if (dbGrade === 'second_secondary' || dbGrade === 'third_secondary') {
+      return dbGrade;
+    }
+    // Handle legacy combined format (second_arabic → second_secondary)
     if (dbGrade.startsWith('second')) return 'second_secondary';
     if (dbGrade.startsWith('third')) return 'third_secondary';
     return dbGrade;
@@ -104,7 +108,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         if (data) {
           if (data.full_name) setFullName(data.full_name);
           if (data.grade) {
-            // Normalize grade to academic year format for display and group matching
+            // Normalize grade to academic year format (handles both new and legacy data)
             setGrade(normalizeGradeToAcademicYear(data.grade));
           }
           if (data.language_track) setLanguageTrack(data.language_track);
@@ -174,18 +178,6 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
     return Object.keys(newErrors).length === 0;
   };
 
-  // Helper function to compute proper grade value from academic year + language track
-  const computeGradeValue = (academicYear: string, langTrack: string): string => {
-    // DB expects: second_arabic, second_languages, third_arabic, third_languages
-    if (academicYear === 'second_secondary') {
-      return langTrack === 'languages' ? 'second_languages' : 'second_arabic';
-    } else if (academicYear === 'third_secondary') {
-      return langTrack === 'languages' ? 'third_languages' : 'third_arabic';
-    }
-    // Fallback - should not reach here
-    return academicYear;
-  };
-
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -198,11 +190,11 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         updateData.full_name = fullName.trim();
       }
       
-      // Handle grade + language_track combination
-      // The DB constraint requires: second_arabic, second_languages, third_arabic, third_languages
+      // Handle grade + language_track - now storing normalized format
+      // DB constraint accepts: second_secondary, third_secondary
       if ((missingFields.grade || missingFields.language_track) && grade && languageTrack) {
-        const computedGrade = computeGradeValue(grade, languageTrack);
-        updateData.grade = computedGrade;
+        // Grade is already in normalized format (second_secondary / third_secondary)
+        updateData.grade = grade;
         updateData.language_track = languageTrack;
       } else {
         // Handle individual field updates if only one is missing

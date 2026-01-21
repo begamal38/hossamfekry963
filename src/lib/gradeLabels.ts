@@ -60,10 +60,25 @@ export const COMBINED_GRADE_OPTIONS = [
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * Get the label for a combined grade (e.g., "second_arabic")
+ * Get the label for a combined grade (legacy) or normalized grade
+ * Supports both old format (second_arabic) and new format (second_secondary)
  */
-export function getCombinedGradeLabel(grade: string | null, isArabic: boolean): string {
+export function getCombinedGradeLabel(grade: string | null, isArabic: boolean, languageTrack?: string | null): string {
   if (!grade) return isArabic ? 'غير محدد' : 'Not specified';
+  
+  // Try new normalized format first (grade + separate track)
+  if (GRADE_LABELS[grade] && languageTrack && TRACK_LABELS[languageTrack]) {
+    const gradeLabel = GRADE_LABELS[grade];
+    const trackLabel = TRACK_LABELS[languageTrack];
+    return isArabic ? `${gradeLabel.ar} - ${trackLabel.ar}` : `${gradeLabel.en} - ${trackLabel.en}`;
+  }
+  
+  // Try new format without track
+  if (GRADE_LABELS[grade]) {
+    return isArabic ? GRADE_LABELS[grade].ar : GRADE_LABELS[grade].en;
+  }
+  
+  // Fallback to legacy combined format
   const label = COMBINED_GRADE_LABELS[grade];
   return label ? (isArabic ? label.ar : label.en) : grade;
 }

@@ -24,8 +24,12 @@ interface StudentTableProps {
   onViewStudent?: (userId: string) => void;
 }
 
+// Supports both normalized format (second_secondary) and legacy combined format
 const gradeLabels: Record<string, { ar: string; en: string }> = {
   'first': { ar: 'أولى ثانوي', en: '1st Sec' },
+  'second_secondary': { ar: 'تانية ثانوي', en: '2nd Sec' },
+  'third_secondary': { ar: 'تالته ثانوي', en: '3rd Sec' },
+  // Legacy combined format (kept for backwards compatibility)
   'second_arabic': { ar: 'ثانية عربي', en: '2nd Arabic' },
   'second_languages': { ar: 'ثانية لغات', en: '2nd Lang' },
   'third_arabic': { ar: 'ثالثة عربي', en: '3rd Arabic' },
