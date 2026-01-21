@@ -14,6 +14,8 @@ interface MissingFields {
   governorate: boolean;
   phone: boolean;
   full_name: boolean;
+  attendance_mode: boolean;
+  center_group: boolean; // Required only when attendance_mode = center
 }
 
 const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
@@ -38,11 +40,12 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     }
 
     try {
+      // Fetch profile data
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, grade, language_track, governorate, phone')
+        .select('full_name, grade, language_track, governorate, phone, attendance_mode')
         .eq('user_id', user.id)
-        .maybeSingle(); // Use maybeSingle() to handle missing profile gracefully
+        .maybeSingle();
 
       // If profile doesn't exist yet (can happen briefly after Google OAuth), retry
       if (!data && !error && retryCount < 3) {
@@ -69,11 +72,25 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
           language_track: true,
           governorate: true,
           phone: true,
+          attendance_mode: true,
+          center_group: false, // Can't know if needed yet
         };
         setMissingFields(allMissing);
         setLoading(false);
         setHasChecked(true);
         return;
+      }
+
+      // Check center group membership if attendance_mode = center
+      let hasCenterGroup = true;
+      if (data.attendance_mode === 'center') {
+        const { data: membership } = await supabase
+          .from('center_group_members')
+          .select('id')
+          .eq('student_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+        hasCenterGroup = !!membership;
       }
 
       // Check which fields are missing
@@ -83,6 +100,8 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         language_track: !data.language_track,
         governorate: !data.governorate,
         phone: !data.phone || data.phone.trim() === '',
+        attendance_mode: !data.attendance_mode,
+        center_group: data.attendance_mode === 'center' && !hasCenterGroup,
       };
 
       // If any required field is missing, show the prompt

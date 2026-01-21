@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
 import { useNewUserOnboarding } from '@/hooks/useNewUserOnboarding';
+import { StudyModeSelector, StudyMode } from '@/components/registration/StudyModeSelector';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,8 @@ interface MissingFields {
   governorate: boolean;
   phone: boolean;
   full_name: boolean;
+  attendance_mode: boolean;
+  center_group: boolean;
 }
 
 interface ProfileCompletionPromptProps {
@@ -73,6 +76,8 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
   const [languageTrack, setLanguageTrack] = useState('');
   const [governorate, setGovernorate] = useState('');
   const [phone, setPhone] = useState('');
+  const [studyMode, setStudyMode] = useState<StudyMode>('online');
+  const [centerGroupId, setCenterGroupId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -82,7 +87,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('full_name, grade, language_track, governorate, phone')
+          .select('full_name, grade, language_track, governorate, phone, attendance_mode')
           .eq('user_id', userId)
           .single();
 
@@ -92,6 +97,19 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           if (data.language_track) setLanguageTrack(data.language_track);
           if (data.governorate) setGovernorate(data.governorate);
           if (data.phone) setPhone(data.phone);
+          if (data.attendance_mode) setStudyMode(data.attendance_mode as StudyMode);
+        }
+
+        // Check if already in a center group
+        const { data: membership } = await supabase
+          .from('center_group_members')
+          .select('group_id')
+          .eq('student_id', userId)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        if (membership?.group_id) {
+          setCenterGroupId(membership.group_id);
         }
       } catch (error) {
         console.error('Error loading existing profile:', error);
@@ -132,6 +150,11 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           newErrors.phone = phoneResult.error.errors[0].message;
         }
       }
+    }
+
+    // Validate study mode and center group
+    if ((missingFields.attendance_mode || missingFields.center_group) && studyMode === 'center' && !centerGroupId) {
+      newErrors.centerGroup = 'يرجى اختيار مجموعة السنتر';
     }
 
     setErrors(newErrors);
@@ -178,6 +201,11 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       if (missingFields.governorate && governorate) {
         updateData.governorate = governorate;
       }
+
+      // Handle study mode
+      if (missingFields.attendance_mode) {
+        updateData.attendance_mode = studyMode;
+      }
       
       // Phone number handling with duplicate check
       if (missingFields.phone && phone.trim()) {
@@ -202,6 +230,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         
         updateData.phone = phoneValue;
       }
+
+      // Handle center group membership (separate from profile update)
+      let needsCenterGroupUpdate = (missingFields.attendance_mode || missingFields.center_group) && 
+        studyMode === 'center' && centerGroupId;
 
       // Check if there's anything to update
       if (Object.keys(updateData).length === 0) {
@@ -270,6 +302,27 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           throw new Error('duplicate');
         } else {
           throw new Error('save');
+        }
+      }
+
+      // Handle center group membership after profile update
+      if (needsCenterGroupUpdate && centerGroupId) {
+        try {
+          // Remove from any existing groups first
+          await supabase
+            .from('center_group_members')
+            .update({ is_active: false })
+            .eq('student_id', userId);
+
+          // Add to new group
+          await supabase.from('center_group_members').insert({
+            group_id: centerGroupId,
+            student_id: userId,
+            is_active: true,
+          });
+        } catch (groupError) {
+          console.error('Error updating center group:', groupError);
+          // Non-blocking
         }
       }
 
@@ -363,7 +416,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${((5 - missingCount) / 5) * 100}%` }}
+                style={{ width: `${((7 - missingCount) / 7) * 100}%` }}
               />
             </div>
           </div>
@@ -491,6 +544,19 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
                 <p className="text-sm text-destructive">{errors.governorate}</p>
               )}
             </div>
+          )}
+
+          {/* Study Mode & Center Group Selection */}
+          {(missingFields.attendance_mode || missingFields.center_group) && grade && languageTrack && (
+            <StudyModeSelector
+              value={studyMode}
+              onChange={setStudyMode}
+              grade={grade}
+              languageTrack={languageTrack}
+              centerGroupId={centerGroupId}
+              onCenterGroupChange={setCenterGroupId}
+              centerGroupError={errors.centerGroup}
+            />
           )}
 
           {/* Submit Button */}
