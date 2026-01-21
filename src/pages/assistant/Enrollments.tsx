@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, User, BookOpen, RefreshCw, PauseCircle, PlayCircle, CreditCard, Calendar } from 'lucide-react';
+import { CheckCircle, XCircle, User, BookOpen, RefreshCw, PauseCircle, PlayCircle, CreditCard, Calendar, MapPin, Wifi } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
