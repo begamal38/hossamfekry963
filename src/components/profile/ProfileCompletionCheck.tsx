@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,18 +18,44 @@ interface MissingFields {
   center_group: boolean; // Required only when attendance_mode = center
 }
 
+// Session-level flag to prevent re-triggering after successful completion
+const COMPLETION_SUCCESS_KEY = 'profile_completion_success';
+
 const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
   const { user } = useAuth();
   const { isStudent, loading: roleLoading } = useUserRole();
   const [missingFields, setMissingFields] = useState<MissingFields | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
+  
+  // Guard: If completion was just done this session, don't re-check
+  const completedThisSession = useRef(false);
 
   const checkProfileCompletion = useCallback(async (retryCount = 0) => {
     if (!user || roleLoading) {
       setLoading(false);
       return;
     }
+
+    // GUARD: If already completed this session, skip check entirely
+    if (completedThisSession.current) {
+      setMissingFields(null);
+      setLoading(false);
+      setHasChecked(true);
+      return;
+    }
+
+    // Check sessionStorage for recent completion
+    try {
+      const successKey = `${COMPLETION_SUCCESS_KEY}_${user.id}`;
+      if (sessionStorage.getItem(successKey) === 'true') {
+        completedThisSession.current = true;
+        setMissingFields(null);
+        setLoading(false);
+        setHasChecked(true);
+        return;
+      }
+    } catch { /* sessionStorage may be blocked */ }
 
     // Only check profile completion for students
     if (!isStudent()) {
@@ -64,7 +90,6 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
       }
 
       // If profile still doesn't exist after retries, create a placeholder for the prompt
-      // This handles the edge case where the trigger hasn't fired yet
       if (!data) {
         const allMissing: MissingFields = {
           full_name: true,
@@ -73,7 +98,7 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
           governorate: true,
           phone: true,
           attendance_mode: true,
-          center_group: false, // Can't know if needed yet
+          center_group: false,
         };
         setMissingFields(allMissing);
         setLoading(false);
@@ -81,16 +106,24 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         return;
       }
 
-      // Check center group membership if attendance_mode = center
+      // CRITICAL: Check center group membership from center_group_members table
+      // This is the SINGLE SOURCE OF TRUTH for center membership
       let hasCenterGroup = true;
       if (data.attendance_mode === 'center') {
-        const { data: membership } = await supabase
+        const { data: membership, error: membershipError } = await supabase
           .from('center_group_members')
           .select('id')
           .eq('student_id', user.id)
           .eq('is_active', true)
           .maybeSingle();
-        hasCenterGroup = !!membership;
+        
+        if (membershipError) {
+          console.error('Error checking center membership:', membershipError);
+          // On error, assume they have a group to avoid false prompts
+          hasCenterGroup = true;
+        } else {
+          hasCenterGroup = !!membership;
+        }
       }
 
       // Check which fields are missing
@@ -135,9 +168,19 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     }
   }, [user?.id]); // Only trigger on user ID change
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = useCallback(() => {
+    // Mark completion in session to prevent re-triggering
+    completedThisSession.current = true;
+    
+    try {
+      if (user) {
+        const successKey = `${COMPLETION_SUCCESS_KEY}_${user.id}`;
+        sessionStorage.setItem(successKey, 'true');
+      }
+    } catch { /* sessionStorage may be blocked */ }
+    
     setMissingFields(null);
-  };
+  }, [user]);
 
   if (loading) {
     return <>{children}</>;

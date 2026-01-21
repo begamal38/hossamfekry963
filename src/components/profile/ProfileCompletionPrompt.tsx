@@ -320,15 +320,32 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
             .eq('student_id', userId);
 
           // Add to new group
-          await supabase.from('center_group_members').insert({
+          const { error: insertError } = await supabase.from('center_group_members').insert({
             group_id: centerGroupId,
             student_id: userId,
             is_active: true,
           });
+          
+          if (insertError) {
+            console.error('Error inserting center group membership:', insertError);
+            // Try upsert as fallback (in case record exists but was deactivated)
+            await supabase.from('center_group_members')
+              .update({ is_active: true })
+              .eq('student_id', userId)
+              .eq('group_id', centerGroupId);
+          }
         } catch (groupError) {
           console.error('Error updating center group:', groupError);
           // Non-blocking
         }
+      }
+
+      // CRITICAL: Clear profile cache to ensure fresh data on next check
+      try {
+        const { clearProfileCache } = await import('@/hooks/useProfile');
+        clearProfileCache();
+      } catch {
+        // Non-critical
       }
 
       // Success - refresh session to ensure auth state is current
@@ -346,6 +363,8 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       // Trigger welcome onboarding after successful profile completion
       triggerWelcomeAfterProfileComplete();
       
+      // IMPORTANT: Call onComplete AFTER all operations are done
+      // This triggers the session guard in ProfileCompletionCheck
       onComplete();
     } catch (error) {
       console.error('Error saving profile:', error);
