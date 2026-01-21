@@ -22,6 +22,8 @@ export interface UserProfile {
   attendance_mode: 'online' | 'center' | 'hybrid';
   is_suspended: boolean;
   theme_preference: string | null;
+  // Center group membership (fetched separately for center students)
+  center_group_id?: string | null;
 }
 
 // In-memory cache to avoid re-fetching on route changes
@@ -69,6 +71,18 @@ export const useProfile = () => {
       if (fetchError) throw fetchError;
 
       if (data) {
+        // Fetch center group membership for center students
+        let centerGroupId: string | null = null;
+        if (data.attendance_mode === 'center') {
+          const { data: membership } = await supabase
+            .from('center_group_members')
+            .select('group_id')
+            .eq('student_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle();
+          centerGroupId = membership?.group_id || null;
+        }
+
         const userProfile: UserProfile = {
           user_id: data.user_id,
           full_name: data.full_name,
@@ -82,6 +96,7 @@ export const useProfile = () => {
           attendance_mode: data.attendance_mode || 'online',
           is_suspended: data.is_suspended || false,
           theme_preference: data.theme_preference,
+          center_group_id: centerGroupId,
         };
 
         profileCache = { userId: user.id, profile: userProfile, fetchedAt: Date.now() };
