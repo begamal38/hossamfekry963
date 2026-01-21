@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Monitor, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
+import { CenterGroupSelector } from '@/components/registration/CenterGroupSelector';
 import {
   Select,
   SelectContent,
@@ -74,8 +75,10 @@ const Auth = () => {
   const [academicYear, setAcademicYear] = useState('');
   const [languageTrack, setLanguageTrack] = useState('');
   const [governorate, setGovernorate] = useState('');
+  const [studyMode, setStudyMode] = useState<'online' | 'center'>('online');
+  const [centerGroupId, setCenterGroupId] = useState<string | null>(null);
   const [showGroupConfirmation, setShowGroupConfirmation] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string; studyMode?: string; centerGroupId?: string }>({});
 
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
   const { loading: roleLoading, hasAttemptedFetch } = useUserRole();
@@ -158,7 +161,7 @@ const Auth = () => {
     navigate('/', { replace: true });
   }, [user, searchParams, navigate]);
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; phone?: string; academicYear?: string; languageTrack?: string; governorate?: string; studyMode?: string; centerGroupId?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -196,6 +199,11 @@ const Auth = () => {
 
       if (!governorate) {
         newErrors.governorate = tr('يرجى اختيار المحافظة', 'Please select your governorate');
+      }
+
+      // Validate study mode and center group
+      if (studyMode === 'center' && !centerGroupId) {
+        newErrors.centerGroupId = tr('يرجى اختيار مجموعة السنتر', 'Please select your center group');
       }
     }
     
@@ -292,7 +300,7 @@ const Auth = () => {
           });
         }
       } else {
-        const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate);
+        const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate, studyMode, centerGroupId);
         if (error) {
           const already = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered');
           toast({
@@ -626,6 +634,61 @@ const Auth = () => {
                   {errors.governorate && <p className="text-sm text-destructive">{errors.governorate}</p>}
                 </div>
 
+                {/* Study Mode Selection */}
+                {academicYear && languageTrack && (
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      {tr('طريقة الدراسة', 'Study Mode')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudyMode('online');
+                          setCenterGroupId(null);
+                        }}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+                          studyMode === 'online'
+                            ? "border-blue-500 bg-blue-500/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <Monitor className={cn("h-5 w-5", studyMode === 'online' ? "text-blue-600" : "text-muted-foreground")} />
+                        <span className={cn("text-sm font-medium", studyMode === 'online' ? "text-blue-600" : "text-foreground")}>
+                          {tr('أونلاين', 'Online')}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStudyMode('center')}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+                          studyMode === 'center'
+                            ? "border-green-500 bg-green-500/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <Building2 className={cn("h-5 w-5", studyMode === 'center' ? "text-green-600" : "text-muted-foreground")} />
+                        <span className={cn("text-sm font-medium", studyMode === 'center' ? "text-green-600" : "text-foreground")}>
+                          {tr('سنتر', 'Center')}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Center Group Selection (only for center mode) */}
+                {studyMode === 'center' && academicYear && languageTrack && (
+                  <CenterGroupSelector
+                    grade={academicYear}
+                    languageTrack={languageTrack}
+                    value={centerGroupId}
+                    onChange={setCenterGroupId}
+                    error={errors.centerGroupId}
+                  />
+                )}
+
                 {/* Selected Group Preview */}
                 {academicYear && languageTrack && (
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
@@ -638,7 +701,7 @@ const Auth = () => {
 
                 {/* Warning note - compact */}
                 <p className="text-xs text-muted-foreground text-center">
-                  {tr('⚠️ لا يمكن تغيير المجموعة بعد التسجيل', '⚠️ You can’t change your group after sign up')}
+                  {tr('⚠️ لا يمكن تغيير المجموعة بعد التسجيل', "⚠️ You cannot change your group after sign up")}
                 </p>
               </div>
             )}
