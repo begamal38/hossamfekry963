@@ -76,6 +76,8 @@ export function CenterGroupSelector({
 
       setLoading(true);
       try {
+        console.log('[CenterGroupSelector] Fetching groups for:', { grade, languageTrack });
+        
         const { data, error } = await supabase
           .from('center_groups')
           .select('*')
@@ -84,10 +86,15 @@ export function CenterGroupSelector({
           .eq('is_active', true)
           .order('name');
 
-        if (error) throw error;
+        if (error) {
+          console.error('[CenterGroupSelector] Query error:', error);
+          throw error;
+        }
+        
+        console.log('[CenterGroupSelector] Found groups:', data?.length || 0);
         setGroups(data || []);
       } catch (err) {
-        console.error('Error fetching center groups:', err);
+        console.error('[CenterGroupSelector] Error fetching center groups:', err);
         setGroups([]);
       } finally {
         setLoading(false);
