@@ -81,6 +81,16 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Helper to normalize grade to base academic year (for center group matching)
+  const normalizeGradeToAcademicYear = (dbGrade: string): string => {
+    // Convert DB grade format to academic year format for group filtering
+    // DB stores: second_arabic, second_languages, third_arabic, third_languages
+    // Groups store: second_secondary, third_secondary
+    if (dbGrade.startsWith('second')) return 'second_secondary';
+    if (dbGrade.startsWith('third')) return 'third_secondary';
+    return dbGrade;
+  };
+
   // Load existing profile data
   useEffect(() => {
     const loadExistingData = async () => {
@@ -93,7 +103,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
         if (data) {
           if (data.full_name) setFullName(data.full_name);
-          if (data.grade) setGrade(data.grade);
+          if (data.grade) {
+            // Normalize grade to academic year format for display and group matching
+            setGrade(normalizeGradeToAcademicYear(data.grade));
+          }
           if (data.language_track) setLanguageTrack(data.language_track);
           if (data.governorate) setGovernorate(data.governorate);
           if (data.phone) setPhone(data.phone);
