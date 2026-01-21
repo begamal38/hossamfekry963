@@ -149,3 +149,43 @@ export const TRANSLATION_REFERENCE = {
   'Arabic Track': 'مسار عربي',
   'Languages Track': 'مسار لغات',
 };
+
+// ══════════════════════════════════════════════════════════════════════════
+// MATCHING HELPERS
+// ══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if a student's profile grade matches a course grade
+ * Student profiles use normalized format (second_secondary + language_track)
+ * Courses use combined format (second_arabic)
+ */
+export function doesStudentMatchCourseGrade(
+  studentGrade: string | null,
+  studentTrack: string | null,
+  courseGrade: string | null
+): boolean {
+  if (!studentGrade || !courseGrade) return false;
+  
+  // If course uses combined format, check if it matches student's grade+track
+  if (courseGrade.includes('_')) {
+    const [courseYear, courseTrack] = courseGrade.split('_');
+    const studentYear = studentGrade.split('_')[0]; // 'second' or 'third'
+    return courseYear === studentYear && courseTrack === studentTrack;
+  }
+  
+  // Direct match for normalized formats
+  return studentGrade === courseGrade;
+}
+
+/**
+ * Build the combined course grade from student profile
+ * e.g., (second_secondary, arabic) => second_arabic
+ */
+export function buildCourseGradeFromProfile(
+  studentGrade: string | null,
+  studentTrack: string | null
+): string | null {
+  if (!studentGrade || !studentTrack) return null;
+  const year = studentGrade.split('_')[0]; // 'second' or 'third'
+  return `${year}_${studentTrack}`;
+}
