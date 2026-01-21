@@ -52,7 +52,11 @@ import { UnifiedFocusBar } from '@/components/lesson/UnifiedFocusBar';
 import { WatchInsideTip } from '@/components/lesson/WatchInsideTip';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
 import { SmartNextStep } from '@/components/guidance/SmartNextStep';
+import { LessonContextStrip } from '@/components/lesson/LessonContextStrip';
+import { ProgressImpactSection } from '@/components/lesson/ProgressImpactSection';
+import { FocusSystemAwareness } from '@/components/lesson/FocusSystemAwareness';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
+import { useChapterProgressOptimized } from '@/hooks/useChapterProgressOptimized';
 import { toast } from 'sonner';
 import { UserType } from '@/hooks/useUnifiedFocusState';
 import { useEngagementSafe } from '@/components/consent';
@@ -155,6 +159,9 @@ export default function LessonView() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const { saveFocusSession } = useFocusSessionPersistence();
   
+  // Chapter progress for context strip
+  const { chapters: chapterProgressData, getChapterProgress } = useChapterProgressOptimized(course?.id || '');
+  
   // Smart engagement for prompts (safe hook - returns null if not in provider)
   const engagement = useEngagementSafe();
 
@@ -173,6 +180,27 @@ export default function LessonView() {
   // Unified focus state: computed from video + tab + page visibility
   // NOTE: No viewport check - YouTube embeds are unreliable with intersection observers
   const isFocusActive = isVideoPlaying && isTabActive && isPageVisible;
+  
+  // Computed lesson context for the context strip
+  const chapterLessons = useMemo(() => {
+    if (!lesson?.chapter_id) return [];
+    return courseLessons.filter(l => l.chapter_id === lesson.chapter_id);
+  }, [courseLessons, lesson?.chapter_id]);
+  
+  const lessonPositionInChapter = useMemo(() => {
+    if (!lesson?.chapter_id || chapterLessons.length === 0) return 1;
+    const sorted = [...chapterLessons].sort((a, b) => a.order_index - b.order_index);
+    const idx = sorted.findIndex(l => l.id === lesson.id);
+    return idx >= 0 ? idx + 1 : 1;
+  }, [chapterLessons, lesson]);
+  
+  const currentChapterProgress = chapter ? getChapterProgress(chapter.id) : null;
+  
+  // Check if chapter has an exam
+  const hasChapterExam = currentChapterProgress?.hasExam ?? false;
+  const remainingLessonsInChapter = currentChapterProgress 
+    ? currentChapterProgress.totalLessons - currentChapterProgress.completedLessons 
+    : 0;
   
   // Determine user type for unified focus bar
   const getUserType = (): UserType => {
@@ -794,6 +822,20 @@ export default function LessonView() {
       )}
 
       <main className="pt-20">
+        {/* Learning Context Strip - Reconnects lesson to chapter */}
+        {chapter && course && (
+          <LessonContextStrip
+            chapterId={chapter.id}
+            chapterTitle={chapter.title}
+            chapterTitleAr={chapter.title_ar}
+            chapterProgress={currentChapterProgress?.progressPercent ?? 0}
+            lessonPosition={lessonPositionInChapter}
+            totalLessonsInChapter={chapterLessons.length}
+            courseSlug={course.slug}
+            courseId={course.id}
+          />
+        )}
+
         {/* Header with hierarchy */}
         <header className="bg-card border-b">
           <div className="container mx-auto px-4 py-4 md:py-6">
@@ -952,6 +994,26 @@ export default function LessonView() {
                   : 'Click after you finish watching the lesson completely'}
               </p>
             </section>
+          )}
+          {/* Progress Impact Section - Explains why completion matters */}
+          {user && hasValidVideo(lesson.video_url) && !completed && (
+            <ProgressImpactSection
+              hasChapter={!!chapter}
+              chapterTitle={chapter?.title}
+              chapterTitleAr={chapter?.title_ar}
+              remainingLessonsInChapter={remainingLessonsInChapter}
+              hasChapterExam={hasChapterExam}
+              isCompleted={completed}
+              className="mb-6"
+            />
+          )}
+
+          {/* Focus System Awareness - When focus is active */}
+          {user && isFocusActive && (
+            <FocusSystemAwareness
+              isFocusActive={isFocusActive}
+              className="mb-6"
+            />
           )}
 
           {/* Action Buttons Section */}
