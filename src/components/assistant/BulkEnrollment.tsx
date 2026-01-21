@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Users, BookOpen, Check, Loader2, AlertCircle, Upload, X, Layers, Plus } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Users, BookOpen, Check, Loader2, AlertCircle, Upload, X, Layers, Plus, UsersRound, User, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCenterGroups, CenterGroup } from '@/hooks/useCenterGroups';
 
 // Types
 interface Student {
@@ -59,9 +60,20 @@ interface BulkEnrollmentProps {
   showAsFab?: boolean;
 }
 
+type TargetType = 'student' | 'group';
 type EnrollmentMode = 'select' | 'paste';
 type EnrollmentTarget = 'course' | 'chapters';
 type EnrollmentAction = 'activate' | 'deactivate';
+
+const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
+  '2nd_secondary': { ar: 'الثانية الثانوية', en: '2nd Secondary' },
+  '3rd_secondary': { ar: 'الثالثة الثانوية', en: '3rd Secondary' },
+};
+
+const TRACK_OPTIONS: Record<string, { ar: string; en: string }> = {
+  'arabic': { ar: 'عربي', en: 'Arabic' },
+  'languages': { ar: 'لغات', en: 'Languages' },
+};
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -72,12 +84,23 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { groups } = useCenterGroups();
   const [open, setOpen] = useState(false);
 
-  // Mode states
+  // Target type: student or group
+  const [targetType, setTargetType] = useState<TargetType>('student');
+  
+  // Mode states (for student selection)
   const [mode, setMode] = useState<EnrollmentMode>('select');
   const [enrollmentTarget, setEnrollmentTarget] = useState<EnrollmentTarget>('course');
   const [action, setAction] = useState<EnrollmentAction>('activate');
+
+  // Group selection states
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [groupGradeFilter, setGroupGradeFilter] = useState<string>('');
+  const [groupTrackFilter, setGroupTrackFilter] = useState<string>('');
+  const [groupMembers, setGroupMembers] = useState<string[]>([]);
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
 
   // Data states
   const [students, setStudents] = useState<Student[]>([]);
@@ -102,6 +125,22 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
   // Search & filter
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter groups by grade and track
+  const filteredGroups = useMemo(() => {
+    return groups.filter(g => {
+      if (!g.is_active) return false;
+      if (groupGradeFilter && g.grade !== groupGradeFilter) return false;
+      if (groupTrackFilter && g.language_track !== groupTrackFilter) return false;
+      return true;
+    });
+  }, [groups, groupGradeFilter, groupTrackFilter]);
+
+  // Get selected group details
+  const selectedGroup = useMemo(() => 
+    groups.find(g => g.id === selectedGroupId),
+    [groups, selectedGroupId]
+  );
+
   // Fetch all students on open
   useEffect(() => {
     if (!open) return;
@@ -115,6 +154,36 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
       fetchChapters(selectedCourseId);
     }
   }, [selectedCourseId, enrollmentTarget]);
+
+  // Fetch group members when a group is selected
+  useEffect(() => {
+    const fetchGroupMembers = async () => {
+      if (!selectedGroupId) {
+        setGroupMembers([]);
+        return;
+      }
+      
+      setLoadingGroupMembers(true);
+      try {
+        const { data } = await supabase
+          .from('center_group_members')
+          .select('student_id')
+          .eq('group_id', selectedGroupId)
+          .eq('is_active', true);
+        
+        setGroupMembers(data?.map(m => m.student_id) || []);
+      } catch (error) {
+        console.error('Error fetching group members:', error);
+        setGroupMembers([]);
+      } finally {
+        setLoadingGroupMembers(false);
+      }
+    };
+
+    if (targetType === 'group') {
+      fetchGroupMembers();
+    }
+  }, [selectedGroupId, targetType]);
 
   const fetchStudents = async () => {
     setLoadingStudents(true);
@@ -276,6 +345,9 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
 
   // Get final list of students to enroll
   const getStudentsToEnroll = (): string[] => {
+    if (targetType === 'group') {
+      return groupMembers;
+    }
     if (mode === 'paste') {
       return resolvedStudents.map(s => s.user_id);
     }
@@ -290,7 +362,9 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
       toast({
         variant: 'destructive',
         title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'يجب اختيار طالب واحد على الأقل' : 'Select at least one student',
+        description: targetType === 'group' 
+          ? (isArabic ? 'المجموعة المختارة فارغة' : 'Selected group has no members')
+          : (isArabic ? 'يجب اختيار طالب واحد على الأقل' : 'Select at least one student'),
       });
       return;
     }
@@ -457,6 +531,7 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
   };
 
   const resetState = () => {
+    setTargetType('student');
     setMode('select');
     setEnrollmentTarget('course');
     setAction('activate');
@@ -467,6 +542,10 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
     setResolvedStudents([]);
     setUnresolvedLines([]);
     setSearchTerm('');
+    setSelectedGroupId(null);
+    setGroupGradeFilter('');
+    setGroupTrackFilter('');
+    setGroupMembers([]);
   };
 
   const handleOpenChange = (v: boolean) => {
@@ -474,9 +553,40 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
     if (!v) resetState();
   };
 
-  const studentsToEnrollCount = mode === 'paste' ? resolvedStudents.length : selectedStudentIds.size;
-  const canSubmit = studentsToEnrollCount > 0 && selectedCourseId && 
-    (enrollmentTarget === 'course' || selectedChapterIds.size > 0);
+  // Calculate students count based on target type
+  const studentsToEnrollCount = useMemo(() => {
+    if (targetType === 'group') {
+      return groupMembers.length;
+    }
+    if (mode === 'paste') {
+      return resolvedStudents.length;
+    }
+    return selectedStudentIds.size;
+  }, [targetType, groupMembers.length, mode, resolvedStudents.length, selectedStudentIds.size]);
+
+  // Get selected course and chapters for display
+  const selectedCourse = useMemo(() => 
+    courses.find(c => c.id === selectedCourseId),
+    [courses, selectedCourseId]
+  );
+
+  const selectedChaptersList = useMemo(() => 
+    chapters.filter(c => selectedChapterIds.has(c.id)),
+    [chapters, selectedChapterIds]
+  );
+
+  // Validate can submit
+  const canSubmit = useMemo(() => {
+    const hasTarget = targetType === 'group' 
+      ? (selectedGroupId && groupMembers.length > 0)
+      : (studentsToEnrollCount > 0);
+    
+    const hasScope = enrollmentTarget === 'course' 
+      ? selectedCourseId
+      : (selectedCourseId && selectedChapterIds.size > 0);
+
+    return hasTarget && hasScope;
+  }, [targetType, selectedGroupId, groupMembers.length, studentsToEnrollCount, enrollmentTarget, selectedCourseId, selectedChapterIds.size]);
 
   // FAB trigger - opens dialog directly
   const fabTrigger = showAsFab ? (
@@ -515,137 +625,269 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
-          {/* Mode Selector */}
-          <div className="flex gap-2">
-            <Button
-              variant={mode === 'select' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('select')}
-              className="flex-1"
-            >
-              {isArabic ? 'اختيار من القائمة' : 'Select from List'}
-            </Button>
-            <Button
-              variant={mode === 'paste' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('paste')}
-              className="flex-1"
-            >
-              <Upload className="w-4 h-4 me-1" />
-              {isArabic ? 'لصق البيانات' : 'Paste Data'}
-            </Button>
+          {/* Step 1: Target Type Selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">
+              {isArabic ? 'الخطوة 1: اختر الهدف' : 'Step 1: Select Target'}
+            </label>
+            <div className="flex gap-2">
+              <Button
+                variant={targetType === 'student' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTargetType('student')}
+                className="flex-1"
+              >
+                <User className="w-4 h-4 me-1" />
+                {isArabic ? 'طالب' : 'Student'}
+              </Button>
+              <Button
+                variant={targetType === 'group' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTargetType('group')}
+                className="flex-1"
+              >
+                <UsersRound className="w-4 h-4 me-1" />
+                {isArabic ? 'مجموعة' : 'Group'}
+              </Button>
+            </div>
           </div>
 
-          {/* Select Mode */}
-          {mode === 'select' && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder={isArabic ? 'بحث بالاسم أو الموبايل أو الكود...' : 'Search by name, phone, or ID...'}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+          {/* Student Selection Mode */}
+          {targetType === 'student' && (
+            <>
+              {/* Mode Selector */}
+              <div className="flex gap-2">
+                <Button
+                  variant={mode === 'select' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMode('select')}
                   className="flex-1"
-                />
-                <Button variant="outline" size="sm" onClick={selectAllStudents}>
-                  {isArabic ? 'تحديد الكل' : 'Select All'}
+                >
+                  {isArabic ? 'اختيار من القائمة' : 'Select from List'}
                 </Button>
-                {selectedStudentIds.size > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearSelection}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+                <Button
+                  variant={mode === 'paste' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMode('paste')}
+                  className="flex-1"
+                >
+                  <Upload className="w-4 h-4 me-1" />
+                  {isArabic ? 'لصق البيانات' : 'Paste Data'}
+                </Button>
               </div>
 
-              <div className="border rounded-lg max-h-48 overflow-y-auto bg-background">
-                {loadingStudents ? (
-                  <div className="p-4 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              {/* Select Mode */}
+              {mode === 'select' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder={isArabic ? 'بحث بالاسم أو الموبايل أو الكود...' : 'Search by name, phone, or ID...'}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button variant="outline" size="sm" onClick={selectAllStudents}>
+                      {isArabic ? 'تحديد الكل' : 'Select All'}
+                    </Button>
+                    {selectedStudentIds.size > 0 && (
+                      <Button variant="ghost" size="sm" onClick={clearSelection}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
-                ) : filteredStudents.length === 0 ? (
+
+                  <div className="border rounded-lg max-h-48 overflow-y-auto bg-background">
+                    {loadingStudents ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                      </div>
+                    ) : filteredStudents.length === 0 ? (
+                      <p className="p-4 text-center text-muted-foreground text-sm">
+                        {isArabic ? 'لا يوجد طلاب' : 'No students found'}
+                      </p>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredStudents.slice(0, 50).map((student) => (
+                          <button
+                            key={student.user_id}
+                            type="button"
+                            onClick={() => toggleStudent(student.user_id)}
+                            className={`w-full p-3 text-start hover:bg-muted/50 transition-colors flex items-center justify-between ${
+                              selectedStudentIds.has(student.user_id) ? 'bg-primary/10' : ''
+                            }`}
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{student.full_name || 'بدون اسم'}</p>
+                              <p className="text-xs text-muted-foreground" dir="ltr">
+                                {student.phone || student.email} • #{student.short_id}
+                              </p>
+                            </div>
+                            {selectedStudentIds.has(student.user_id) && (
+                              <Check className="w-4 h-4 text-primary" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedStudentIds.size > 0 && (
+                    <Badge variant="secondary">
+                      {isArabic ? `${selectedStudentIds.size} طالب محدد` : `${selectedStudentIds.size} selected`}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* Paste Mode */}
+              {mode === 'paste' && (
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder={isArabic 
+                      ? 'الصق أرقام الموبايل أو الإيميلات أو أكواد الطلاب (سطر لكل طالب أو مفصولة بفاصلة)'
+                      : 'Paste phone numbers, emails, or student IDs (one per line or comma-separated)'}
+                    value={pasteInput}
+                    onChange={(e) => setPasteInput(e.target.value)}
+                    rows={4}
+                  />
+                  <Button onClick={resolvePastedInput} disabled={resolving || !pasteInput.trim()}>
+                    {resolving ? <Loader2 className="w-4 h-4 animate-spin me-1" /> : null}
+                    {isArabic ? 'تحليل البيانات' : 'Resolve Students'}
+                  </Button>
+
+                  {resolvedStudents.length > 0 && (
+                    <div className="border rounded-lg p-3 bg-green-500/10 border-green-500/20">
+                      <p className="text-sm font-medium text-green-700 mb-2">
+                        {isArabic ? `تم التعرف على ${resolvedStudents.length} طالب` : `Resolved ${resolvedStudents.length} students`}
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {resolvedStudents.map(s => (
+                          <Badge key={s.user_id} variant="outline" className="text-xs">
+                            {s.full_name || s.phone}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {unresolvedLines.length > 0 && (
+                    <div className="border rounded-lg p-3 bg-destructive/10 border-destructive/20">
+                      <p className="text-sm font-medium text-destructive mb-2 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {isArabic ? `لم يتم التعرف على ${unresolvedLines.length} عنصر` : `${unresolvedLines.length} unresolved`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{unresolvedLines.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Group Selection Mode */}
+          {targetType === 'group' && (
+            <div className="space-y-3">
+              {/* Group Filters */}
+              <div className="flex gap-2">
+                <Select value={groupGradeFilter} onValueChange={setGroupGradeFilter}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={isArabic ? 'الصف...' : 'Grade...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{isArabic ? 'كل الصفوف' : 'All Grades'}</SelectItem>
+                    {Object.entries(GRADE_OPTIONS).map(([key, val]) => (
+                      <SelectItem key={key} value={key}>
+                        {isArabic ? val.ar : val.en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={groupTrackFilter} onValueChange={setGroupTrackFilter}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={isArabic ? 'المسار...' : 'Track...'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{isArabic ? 'كل المسارات' : 'All Tracks'}</SelectItem>
+                    {Object.entries(TRACK_OPTIONS).map(([key, val]) => (
+                      <SelectItem key={key} value={key}>
+                        {isArabic ? val.ar : val.en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Groups List */}
+              <div className="border rounded-lg max-h-48 overflow-y-auto bg-background">
+                {filteredGroups.length === 0 ? (
                   <p className="p-4 text-center text-muted-foreground text-sm">
-                    {isArabic ? 'لا يوجد طلاب' : 'No students found'}
+                    {isArabic ? 'لا توجد مجموعات متاحة' : 'No groups available'}
                   </p>
                 ) : (
                   <div className="divide-y">
-                    {filteredStudents.slice(0, 50).map((student) => (
+                    {filteredGroups.map((group) => (
                       <button
-                        key={student.user_id}
+                        key={group.id}
                         type="button"
-                        onClick={() => toggleStudent(student.user_id)}
-                        className={`w-full p-3 text-start hover:bg-muted/50 transition-colors flex items-center justify-between ${
-                          selectedStudentIds.has(student.user_id) ? 'bg-primary/10' : ''
+                        onClick={() => setSelectedGroupId(group.id)}
+                        className={`w-full p-3 text-start hover:bg-muted/50 transition-colors ${
+                          selectedGroupId === group.id ? 'bg-primary/10 border-s-2 border-primary' : ''
                         }`}
                       >
-                        <div>
-                          <p className="font-medium text-sm">{student.full_name || 'بدون اسم'}</p>
-                          <p className="text-xs text-muted-foreground" dir="ltr">
-                            {student.phone || student.email} • #{student.short_id}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{group.name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {isArabic ? GRADE_OPTIONS[group.grade]?.ar : GRADE_OPTIONS[group.grade]?.en}
+                              </span>
+                              <span>•</span>
+                              <span>{isArabic ? TRACK_OPTIONS[group.language_track]?.ar : TRACK_OPTIONS[group.language_track]?.en}</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {group.member_count || 0}
+                              </span>
+                            </div>
+                          </div>
+                          {selectedGroupId === group.id && (
+                            <Check className="w-4 h-4 text-primary" />
+                          )}
                         </div>
-                        {selectedStudentIds.has(student.user_id) && (
-                          <Check className="w-4 h-4 text-primary" />
-                        )}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {selectedStudentIds.size > 0 && (
-                <Badge variant="secondary">
-                  {isArabic ? `${selectedStudentIds.size} طالب محدد` : `${selectedStudentIds.size} selected`}
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {/* Paste Mode */}
-          {mode === 'paste' && (
-            <div className="space-y-3">
-              <Textarea
-                placeholder={isArabic 
-                  ? 'الصق أرقام الموبايل أو الإيميلات أو أكواد الطلاب (سطر لكل طالب أو مفصولة بفاصلة)'
-                  : 'Paste phone numbers, emails, or student IDs (one per line or comma-separated)'}
-                value={pasteInput}
-                onChange={(e) => setPasteInput(e.target.value)}
-                rows={4}
-              />
-              <Button onClick={resolvePastedInput} disabled={resolving || !pasteInput.trim()}>
-                {resolving ? <Loader2 className="w-4 h-4 animate-spin me-1" /> : null}
-                {isArabic ? 'تحليل البيانات' : 'Resolve Students'}
-              </Button>
-
-              {resolvedStudents.length > 0 && (
-                <div className="border rounded-lg p-3 bg-green-500/10 border-green-500/20">
-                  <p className="text-sm font-medium text-green-700 mb-2">
-                    {isArabic ? `تم التعرف على ${resolvedStudents.length} طالب` : `Resolved ${resolvedStudents.length} students`}
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {resolvedStudents.map(s => (
-                      <Badge key={s.user_id} variant="outline" className="text-xs">
-                        {s.full_name || s.phone}
-                      </Badge>
-                    ))}
+              {/* Selected Group Info */}
+              {selectedGroup && (
+                <div className="border rounded-lg p-3 bg-primary/5 border-primary/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{selectedGroup.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {loadingGroupMembers 
+                          ? (isArabic ? 'جاري التحميل...' : 'Loading...')
+                          : (isArabic ? `${groupMembers.length} طالب في المجموعة` : `${groupMembers.length} students in group`)
+                        }
+                      </p>
+                    </div>
+                    <Badge variant="secondary">
+                      <UsersRound className="w-3 h-3 me-1" />
+                      {isArabic ? 'سنتر' : 'Center'}
+                    </Badge>
                   </div>
                 </div>
               )}
-
-              {unresolvedLines.length > 0 && (
-                <div className="border rounded-lg p-3 bg-destructive/10 border-destructive/20">
-                  <p className="text-sm font-medium text-destructive mb-2 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {isArabic ? `لم يتم التعرف على ${unresolvedLines.length} عنصر` : `${unresolvedLines.length} unresolved`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{unresolvedLines.join(', ')}</p>
-                </div>
-              )}
             </div>
           )}
 
-          {/* Course Selection */}
+          {/* Step 2: Scope Selection */}
           <div className="space-y-2 pt-4 border-t">
-            <label className="text-sm font-medium">
-              {isArabic ? 'اختر الكورس' : 'Select Course'}
+            <label className="text-sm font-medium text-muted-foreground">
+              {isArabic ? 'الخطوة 2: اختر نطاق الاشتراك' : 'Step 2: Select Scope'}
             </label>
             <Select value={selectedCourseId || ''} onValueChange={setSelectedCourseId}>
               <SelectTrigger>
@@ -664,7 +906,7 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
             </Select>
           </div>
 
-          {/* Enrollment Target */}
+          {/* Enrollment Target (Course vs Chapters) */}
           {selectedCourseId && (
             <div className="space-y-2">
               <label className="text-sm font-medium">
@@ -754,6 +996,71 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
                 >
                   {isArabic ? 'إلغاء التفعيل' : 'Deactivate'}
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Review Summary */}
+          {canSubmit && (
+            <div className="space-y-2 pt-4 border-t">
+              <label className="text-sm font-medium text-muted-foreground">
+                {isArabic ? 'ملخص العملية' : 'Review Summary'}
+              </label>
+              <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
+                {/* Target */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{isArabic ? 'الهدف:' : 'Target:'}</span>
+                  <span className="font-medium">
+                    {targetType === 'group' 
+                      ? `${selectedGroup?.name} (${groupMembers.length} ${isArabic ? 'طالب' : 'students'})`
+                      : `${studentsToEnrollCount} ${isArabic ? 'طالب' : 'students'}`
+                    }
+                  </span>
+                </div>
+                
+                {/* Scope */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{isArabic ? 'النطاق:' : 'Scope:'}</span>
+                  <span className="font-medium">
+                    {enrollmentTarget === 'course'
+                      ? (isArabic ? 'كورس كامل' : 'Full Course')
+                      : `${selectedChapterIds.size} ${isArabic ? 'باب' : 'chapters'}`
+                    }
+                  </span>
+                </div>
+
+                {/* Course */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{isArabic ? 'الكورس:' : 'Course:'}</span>
+                  <span className="font-medium truncate max-w-[180px]">
+                    {isArabic ? selectedCourse?.title_ar : selectedCourse?.title}
+                  </span>
+                </div>
+
+                {/* Chapters if selected */}
+                {enrollmentTarget === 'chapters' && selectedChaptersList.length > 0 && (
+                  <div className="pt-1">
+                    <span className="text-xs text-muted-foreground">{isArabic ? 'الأبواب:' : 'Chapters:'}</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedChaptersList.map(c => (
+                        <Badge key={c.id} variant="outline" className="text-xs">
+                          {isArabic ? c.title_ar : c.title}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mode indicator for groups */}
+                {targetType === 'group' && (
+                  <div className="flex items-center justify-between text-sm pt-1 border-t">
+                    <span className="text-muted-foreground">{isArabic ? 'الوضع:' : 'Mode:'}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      <MapPin className="w-3 h-3 me-1" />
+                      {isArabic ? 'سنتر' : 'Center'}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
           )}
