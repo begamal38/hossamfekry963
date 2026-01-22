@@ -94,6 +94,54 @@ export type Database = {
           },
         ]
       }
+      center_group_transfers: {
+        Row: {
+          created_at: string
+          id: string
+          new_group_id: string
+          performed_by: string
+          previous_group_id: string | null
+          reason: string | null
+          student_id: string
+          transferred_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_group_id: string
+          performed_by: string
+          previous_group_id?: string | null
+          reason?: string | null
+          student_id: string
+          transferred_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_group_id?: string
+          performed_by?: string
+          previous_group_id?: string | null
+          reason?: string | null
+          student_id?: string
+          transferred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_group_transfers_new_group_id_fkey"
+            columns: ["new_group_id"]
+            isOneToOne: false
+            referencedRelation: "center_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_group_transfers_previous_group_id_fkey"
+            columns: ["previous_group_id"]
+            isOneToOne: false
+            referencedRelation: "center_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_groups: {
         Row: {
           assistant_teacher_id: string
