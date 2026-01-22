@@ -26,7 +26,17 @@ import {
 // Validation schemas (localized)
 // NOTE: These are declared inside the component so they can react to language changes.
 const createEmailSchema = (msg: string) => z.string().email(msg).max(255);
-const createPasswordSchema = (minMsg: string) => z.string().min(6, minMsg).max(72);
+
+// STRONG password validation: min 8 chars, at least 1 number
+const createPasswordSchema = (minMsg: string, strengthMsg: string) => 
+  z.string()
+    .min(8, minMsg)
+    .max(72)
+    .refine(
+      (password) => /[0-9]/.test(password),
+      { message: strengthMsg }
+    );
+
 const createNameSchema = (minMsg: string, maxMsg: string, refineMsg: string) =>
   z
     .string()
@@ -91,7 +101,10 @@ const Auth = () => {
 
   // Localized validation schemas
   const emailSchema = createEmailSchema(tr('البريد الإلكتروني غير صحيح', 'Invalid email address')).max(255);
-  const passwordSchema = createPasswordSchema(tr('كلمة المرور لازم تكون 6 أحرف على الأقل', 'Password must be at least 6 characters'));
+  const passwordSchema = createPasswordSchema(
+    tr('كلمة المرور لازم تكون 8 أحرف على الأقل', 'Password must be at least 8 characters'),
+    tr('كلمة المرور لازم تحتوي على رقم واحد على الأقل', 'Password must contain at least one number')
+  );
   const nameSchema = createNameSchema(
     tr('الاسم قصير جداً', 'Name is too short'),
     tr('الاسم طويل جداً', 'Name is too long'),

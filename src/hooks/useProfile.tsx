@@ -3,6 +3,9 @@
  * 
  * Provides cached profile data to avoid duplicate fetches across components.
  * Profile is fetched once per session and cached in memory.
+ * 
+ * CRITICAL: isProfileComplete is the SINGLE SOURCE OF TRUTH for profile completion.
+ * All components MUST use this flag instead of re-deriving completion logic.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -24,6 +27,7 @@ export interface UserProfile {
   theme_preference: string | null;
   // Center group membership (fetched separately for center students)
   center_group_id?: string | null;
+  center_group_name?: string | null;
 }
 
 // In-memory cache to avoid re-fetching on route changes
@@ -73,14 +77,22 @@ export const useProfile = () => {
       if (data) {
         // Fetch center group membership for center students
         let centerGroupId: string | null = null;
+        let centerGroupName: string | null = null;
+        
         if (data.attendance_mode === 'center') {
           const { data: membership } = await supabase
             .from('center_group_members')
-            .select('group_id')
+            .select('group_id, center_groups!inner(name)')
             .eq('student_id', user.id)
             .eq('is_active', true)
             .maybeSingle();
-          centerGroupId = membership?.group_id || null;
+          
+          if (membership) {
+            centerGroupId = membership.group_id || null;
+            // Type assertion for nested join
+            const groupData = membership.center_groups as unknown as { name: string } | null;
+            centerGroupName = groupData?.name || null;
+          }
         }
 
         const userProfile: UserProfile = {
@@ -97,6 +109,7 @@ export const useProfile = () => {
           is_suspended: data.is_suspended || false,
           theme_preference: data.theme_preference,
           center_group_id: centerGroupId,
+          center_group_name: centerGroupName,
         };
 
         profileCache = { userId: user.id, profile: userProfile, fetchedAt: Date.now() };
@@ -137,12 +150,35 @@ export const useProfile = () => {
     };
   }, [profile]);
 
+  /**
+   * SINGLE SOURCE OF TRUTH for profile completion.
+   * Profile is complete if:
+   * - attendance_mode is set
+   * - grade is set
+   * - IF attendance_mode === 'center' → must have active center group membership
+   */
+  const isProfileComplete = useMemo(() => {
+    if (!profile) return false;
+    
+    // Must have attendance_mode and grade
+    if (!profile.attendance_mode || !profile.grade) return false;
+    
+    // For center students, must have active group membership
+    if (profile.attendance_mode === 'center') {
+      return Boolean(profile.center_group_id);
+    }
+    
+    // Online students are complete if they have grade and attendance_mode
+    return true;
+  }, [profile]);
+
   return {
     profile,
     loading,
     error,
     firstName,
     academicPath,
+    isProfileComplete,
     refreshProfile: () => fetchProfile(true),
   };
 };
