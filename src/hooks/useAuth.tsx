@@ -100,10 +100,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    // Generate combined grade for backward compatibility
-    const grade = academicYear && languageTrack 
-      ? `${academicYear === 'second_secondary' ? 'second' : 'third'}_${languageTrack}`
-      : undefined;
+    // IMPORTANT:
+    // public.profiles.grade is constrained by DB to normalized values:
+    // ('second_secondary' | 'third_secondary').
+    // Do NOT send combined values like 'third_arabic' here.
+    const grade = academicYear;
     
     const { data, error } = await supabase.auth.signUp({
       email,
