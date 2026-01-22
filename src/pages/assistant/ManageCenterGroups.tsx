@@ -22,7 +22,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCenterGroups, CenterGroup } from '@/hooks/useCenterGroups';
 import { Navbar } from '@/components/layout/Navbar';
-import { MiniFooter } from '@/components/layout/MiniFooter';
+import { Footer } from '@/components/layout/Footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -279,7 +279,7 @@ export default function ManageCenterGroups() {
         </div>
       </main>
 
-      <MiniFooter />
+      <Footer />
       <FloatingActionButton
         onClick={() => setCreateDialogOpen(true)}
         label={tr('إنشاء مجموعة', 'Create Group')}
