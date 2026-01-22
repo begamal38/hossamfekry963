@@ -60,6 +60,8 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   avatar_url: string | null;
+  attendance_mode: 'online' | 'center' | 'hybrid' | null;
+  center_group_name?: string | null;
 }
 
 interface EnrolledCourse {
@@ -136,7 +138,24 @@ const Dashboard: React.FC = () => {
         .maybeSingle();
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      
+      // Fetch center group name if center student
+      let centerGroupName: string | null = null;
+      if (profileData?.attendance_mode === 'center') {
+        const { data: membership } = await supabase
+          .from('center_group_members')
+          .select('center_groups!inner(name)')
+          .eq('student_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        if (membership) {
+          const groupData = membership.center_groups as unknown as { name: string } | null;
+          centerGroupName = groupData?.name || null;
+        }
+      }
+      
+      setProfile(profileData ? { ...profileData, center_group_name: centerGroupName } : null);
 
       // Fetch enrolled courses with course details
       const { data: enrollmentsData, error: enrollmentsError } = await supabase
@@ -360,6 +379,26 @@ const Dashboard: React.FC = () => {
                     : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {/* Study Mode Badge - READ ONLY */}
+                  {profile?.attendance_mode && (
+                    <Badge 
+                      variant={profile.attendance_mode === 'center' ? 'default' : 'secondary'}
+                      className={cn(
+                        "text-[10px] px-2 py-0.5",
+                        profile.attendance_mode === 'center' 
+                          ? "bg-green-600/90 hover:bg-green-600/90 text-white" 
+                          : "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10"
+                      )}
+                    >
+                      {profile.attendance_mode === 'center'
+                        ? (isArabic 
+                            ? `سنتر${profile.center_group_name ? ` - ${profile.center_group_name}` : ''}` 
+                            : `Center${profile.center_group_name ? ` - ${profile.center_group_name}` : ''}`)
+                        : (isArabic ? 'أونلاين' : 'Online')
+                      }
+                    </Badge>
+                  )}
+                  {/* Academic Group Badge */}
                   {groupLabel && (
                     <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                       {groupLabel}
