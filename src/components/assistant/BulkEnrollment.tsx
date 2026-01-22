@@ -98,8 +98,8 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
 
   // Group selection states
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [groupGradeFilter, setGroupGradeFilter] = useState<string>('');
-  const [groupTrackFilter, setGroupTrackFilter] = useState<string>('');
+  const [groupGradeFilter, setGroupGradeFilter] = useState<string>('all');
+  const [groupTrackFilter, setGroupTrackFilter] = useState<string>('all');
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [loadingGroupMembers, setLoadingGroupMembers] = useState(false);
 
@@ -131,8 +131,8 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
     if (!groups || !Array.isArray(groups)) return [];
     return groups.filter(g => {
       if (!g || !g.is_active) return false;
-      if (groupGradeFilter && g.grade !== groupGradeFilter) return false;
-      if (groupTrackFilter && g.language_track !== groupTrackFilter) return false;
+      if (groupGradeFilter && groupGradeFilter !== 'all' && g.grade !== groupGradeFilter) return false;
+      if (groupTrackFilter && groupTrackFilter !== 'all' && g.language_track !== groupTrackFilter) return false;
       return true;
     });
   }, [groups, groupGradeFilter, groupTrackFilter]);
@@ -545,8 +545,8 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
     setUnresolvedLines([]);
     setSearchTerm('');
     setSelectedGroupId(null);
-    setGroupGradeFilter('');
-    setGroupTrackFilter('');
+    setGroupGradeFilter('all');
+    setGroupTrackFilter('all');
     setGroupMembers([]);
   };
 
@@ -813,7 +813,7 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
                     <SelectValue placeholder={isArabic ? 'الصف...' : 'Grade...'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{isArabic ? 'كل الصفوف' : 'All Grades'}</SelectItem>
+                    <SelectItem value="all">{isArabic ? 'كل الصفوف' : 'All Grades'}</SelectItem>
                     {Object.entries(GRADE_OPTIONS).map(([key, val]) => (
                       <SelectItem key={key} value={key}>
                         {isArabic ? val.ar : val.en}
@@ -826,7 +826,7 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
                     <SelectValue placeholder={isArabic ? 'المسار...' : 'Track...'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{isArabic ? 'كل المسارات' : 'All Tracks'}</SelectItem>
+                    <SelectItem value="all">{isArabic ? 'كل المسارات' : 'All Tracks'}</SelectItem>
                     {Object.entries(TRACK_OPTIONS).map(([key, val]) => (
                       <SelectItem key={key} value={key}>
                         {isArabic ? val.ar : val.en}
