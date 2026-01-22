@@ -2,7 +2,7 @@
  * Manage Center Groups Page
  * 
  * Allows assistant teachers to view, create, edit, and archive center groups.
- * This page is ONLY for group management - enrollment happens elsewhere.
+ * Includes viewing members and initiating student transfers.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,12 +15,14 @@ import {
   BookOpen,
   Trash2,
   Edit3,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCenterGroups, CenterGroup } from '@/hooks/useCenterGroups';
 import { Navbar } from '@/components/layout/Navbar';
+import { MiniFooter } from '@/components/layout/MiniFooter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,8 +36,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { CreateCenterGroupDialog } from '@/components/assistant/CreateCenterGroupDialog';
+import { EditCenterGroupDialog } from '@/components/assistant/EditCenterGroupDialog';
+import { GroupMembersSheet } from '@/components/assistant/GroupMembersSheet';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
 import { useToast } from '@/hooks/use-toast';
+import { GRADE_LABELS, TRACK_LABELS } from '@/lib/gradeLabels';
 
 // Day labels
 const DAY_LABELS: Record<string, { ar: string; en: string }> = {
@@ -48,18 +53,6 @@ const DAY_LABELS: Record<string, { ar: string; en: string }> = {
   friday: { ar: 'جمعة', en: 'Fri' },
 };
 
-// Grade labels
-const GRADE_LABELS: Record<string, { ar: string; en: string }> = {
-  second_secondary: { ar: 'تانية ثانوي', en: '2nd Secondary' },
-  third_secondary: { ar: 'تالته ثانوي', en: '3rd Secondary' },
-};
-
-// Track labels
-const TRACK_LABELS: Record<string, { ar: string; en: string }> = {
-  arabic: { ar: 'عربي', en: 'Arabic' },
-  languages: { ar: 'لغات', en: 'Languages' },
-};
-
 export default function ManageCenterGroups() {
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
@@ -70,6 +63,9 @@ export default function ManageCenterGroups() {
   const isArabic = language === 'ar';
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [membersSheetOpen, setMembersSheetOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<CenterGroup | null>(null);
   const [deleteConfirmGroup, setDeleteConfirmGroup] = useState<CenterGroup | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -102,6 +98,16 @@ export default function ManageCenterGroups() {
     } catch {
       return time;
     }
+  };
+
+  const handleEditClick = (group: CenterGroup) => {
+    setSelectedGroup(group);
+    setEditDialogOpen(true);
+  };
+
+  const handleMembersClick = (group: CenterGroup) => {
+    setSelectedGroup(group);
+    setMembersSheetOpen(true);
   };
 
   const handleDeleteGroup = async () => {
@@ -202,30 +208,40 @@ export default function ManageCenterGroups() {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
                             <GraduationCap className="h-3 w-3" />
-                            {GRADE_LABELS[group.grade]?.[isArabic ? 'ar' : 'en']}
+                            {GRADE_LABELS[group.grade]?.[isArabic ? 'ar' : 'en'] || group.grade}
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <BookOpen className="h-3 w-3" />
-                            {TRACK_LABELS[group.language_track]?.[isArabic ? 'ar' : 'en']}
+                            {TRACK_LABELS[group.language_track]?.[isArabic ? 'ar' : 'en'] || group.language_track}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Archive Button */}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={() => setDeleteConfirmGroup(group)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={() => handleEditClick(group)}
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setDeleteConfirmGroup(group)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Group Details */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     <Badge variant="secondary" className="text-xs">
                       <Calendar className="h-3 w-3 me-1" />
                       {formatDays(group.days_of_week)}
@@ -244,6 +260,18 @@ export default function ManageCenterGroups() {
                       </Badge>
                     )}
                   </div>
+
+                  {/* View Members Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleMembersClick(group)}
+                  >
+                    <Users className="h-4 w-4 me-2" />
+                    {tr('عرض الطلاب', 'View Students')}
+                    <ChevronDown className="h-4 w-4 ms-auto" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -251,7 +279,7 @@ export default function ManageCenterGroups() {
         </div>
       </main>
 
-      {/* Floating Action Button */}
+      <MiniFooter />
       <FloatingActionButton
         onClick={() => setCreateDialogOpen(true)}
         label={tr('إنشاء مجموعة', 'Create Group')}
@@ -262,6 +290,22 @@ export default function ManageCenterGroups() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onGroupCreated={refetch}
+      />
+
+      {/* Edit Group Dialog */}
+      <EditCenterGroupDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        group={selectedGroup}
+        onGroupUpdated={refetch}
+      />
+
+      {/* Members Sheet */}
+      <GroupMembersSheet
+        open={membersSheetOpen}
+        onOpenChange={setMembersSheetOpen}
+        group={selectedGroup}
+        onMemberUpdated={refetch}
       />
 
       {/* Delete Confirmation Dialog */}

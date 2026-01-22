@@ -65,10 +65,10 @@ type EnrollmentMode = 'select' | 'paste';
 type EnrollmentTarget = 'course' | 'chapters';
 type EnrollmentAction = 'activate' | 'deactivate';
 
-// Grade options - must match database values
+// Grade options - must match database values (unified terminology)
 const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  'second_secondary': { ar: 'الثانية الثانوية', en: '2nd Secondary' },
-  'third_secondary': { ar: 'الثالثة الثانوية', en: '3rd Secondary' },
+  'second_secondary': { ar: 'تانية ثانوي', en: '2nd Secondary' },
+  'third_secondary': { ar: 'تالته ثانوي', en: '3rd Secondary' },
 };
 
 const TRACK_OPTIONS: Record<string, { ar: string; en: string }> = {
