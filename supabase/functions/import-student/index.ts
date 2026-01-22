@@ -56,7 +56,16 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, full_name, phone, academic_year, language_track } = await req.json();
+    const { 
+      email, 
+      password, 
+      full_name, 
+      phone, 
+      academic_year, 
+      language_track,
+      attendance_mode,
+      center_group_id 
+    } = await req.json();
 
     if (!email || !password || !full_name) {
       return new Response(
@@ -68,6 +77,11 @@ Deno.serve(async (req) => {
     // Use service role client to create user
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // IMPORTANT: grade MUST be normalized (second_secondary / third_secondary)
+    // The handle_new_user trigger reads 'grade' from user_metadata
+    // and applies DB check constraint 'grade_valid'
+    const normalizedGrade = academic_year || null; // Already in correct format
+
     // Create user with metadata
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
@@ -75,9 +89,12 @@ Deno.serve(async (req) => {
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name,
-        phone,
+        phone: phone || null,
+        // CRITICAL: Send normalized grade value for handle_new_user trigger
+        grade: normalizedGrade,
         academic_year: academic_year || null,
         language_track: language_track || null,
+        attendance_mode: attendance_mode || 'online',
       },
     });
 
@@ -89,8 +106,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // The trigger handle_new_user should create profile and assign student role
-    // But let's verify and handle if needed
+    // Add to center group if specified
+    if (attendance_mode === 'center' && center_group_id && newUser.user) {
+      try {
+        await adminClient.from('center_group_members').insert({
+          group_id: center_group_id,
+          student_id: newUser.user.id,
+          is_active: true,
+        });
+      } catch (groupError) {
+        console.error('Failed to add to center group:', groupError);
+        // Non-blocking - user is created successfully
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
