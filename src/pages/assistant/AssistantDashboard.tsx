@@ -34,6 +34,7 @@ import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
 import { SystemStatusIndicator } from '@/components/assistant/SystemStatusIndicator';
+import { OrphanCenterStudentsAlert } from '@/components/assistant/OrphanCenterStudentsAlert';
 
 interface Stats {
   totalStudents: number;
@@ -367,6 +368,9 @@ export default function AssistantDashboard() {
               compact
             />
           </div>
+
+          {/* Orphan Center Students Alert */}
+          <OrphanCenterStudentsAlert />
 
           {/* Conversion Insights */}
           <div className="mb-5">
