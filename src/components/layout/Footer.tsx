@@ -130,13 +130,13 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-6 border-t border-border text-center">
+        <div className="mt-12 pt-6 border-t border-border text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Hossam Fekry © {currentYear} — {t('footer.rights')}
           </p>
           <button 
             onClick={() => window.open('https://wa.me/201000788628', '_blank')}
-            className="block mt-2 mx-auto text-[0.7rem] text-muted-foreground/60 hover:text-muted-foreground/80 transition-opacity cursor-pointer"
+            className="block mx-auto text-[0.7rem] text-muted-foreground/60 hover:text-muted-foreground/80 transition-opacity cursor-pointer"
           >
             Powered by Belal Gamal
           </button>
