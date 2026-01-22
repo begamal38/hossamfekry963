@@ -315,13 +315,22 @@ const Auth = () => {
       } else {
         const { error } = await signUp(email, password, fullName, phone, academicYear, languageTrack, governorate, studyMode, centerGroupId);
         if (error) {
-          const already = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered');
+          const errorMsg = error.message.toLowerCase();
+          const already = errorMsg.includes('already') || errorMsg.includes('registered');
+          const weakPassword = errorMsg.includes('weak') || errorMsg.includes('easy to guess') || errorMsg.includes('breached') || errorMsg.includes('leaked');
+          
+          let description = error.message || tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.');
+          
+          if (already) {
+            description = tr('هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.', 'This email is already registered. Please sign in.');
+          } else if (weakPassword) {
+            description = tr('كلمة السر ضعيفة أو مسربة. استخدم كلمة سر أقوى تحتوي على حروف وأرقام ورموز.', 'Password is too weak or has been leaked. Use a stronger password with letters, numbers, and symbols.');
+          }
+          
           toast({
             variant: 'destructive',
             title: tr('فشل إنشاء الحساب', 'Sign up failed'),
-            description: already
-              ? tr('هذا البريد مسجل بالفعل. جرّب تسجيل الدخول.', 'This email is already registered. Please sign in.')
-              : error.message || tr('حصلت مشكلة، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
+            description,
           });
         } else {
           // Track successful registration with Facebook Pixel
