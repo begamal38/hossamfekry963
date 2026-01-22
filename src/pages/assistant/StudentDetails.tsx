@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Award, 
   Mail, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
-  Clock, Plus, Trash2, Edit2, Copy, Check, Gauge
+  Clock, Plus, Trash2, Edit2, Copy, Check, Gauge, ArrowRightLeft, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ import { useCourseActivitySummary, CourseActivitySummary } from '@/hooks/useCour
 import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivitySummaryCard';
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 import { AISuggestionCard } from '@/components/assistant/AISuggestionCard';
+import { StudentGroupTransferDialog } from '@/components/assistant/StudentGroupTransferDialog';
 
 interface StudentProfile {
   user_id: string;
@@ -43,6 +44,7 @@ interface StudentProfile {
   grade: string | null;
   academic_year: string | null;
   language_track: string | null;
+  attendance_mode: 'online' | 'center' | 'hybrid' | null;
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
@@ -153,6 +155,10 @@ export default function StudentDetails() {
   });
   const [lessonFocusDetails, setLessonFocusDetails] = useState<LessonFocusDetail[]>([]);
 
+  // Center group info
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+  const [currentGroupName, setCurrentGroupName] = useState<string | null>(null);
+
   // Action dialogs
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
@@ -161,6 +167,7 @@ export default function StudentDetails() {
   const [newNote, setNewNote] = useState('');
   const [resetProgressDialogOpen, setResetProgressDialogOpen] = useState(false);
   const [selectedCourseForReset, setSelectedCourseForReset] = useState<string | null>(null);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
@@ -272,6 +279,27 @@ export default function StudentDetails() {
 
       if (profileError) throw profileError;
       setStudent(profileData);
+
+      // Fetch center group membership if center student
+      if (profileData?.attendance_mode === 'center') {
+        const { data: membership } = await supabase
+          .from('center_group_members')
+          .select('group_id, center_groups!inner(id, name)')
+          .eq('student_id', targetUserId)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        if (membership) {
+          setCurrentGroupId(membership.group_id);
+          setCurrentGroupName((membership.center_groups as any)?.name || null);
+        } else {
+          setCurrentGroupId(null);
+          setCurrentGroupName(null);
+        }
+      } else {
+        setCurrentGroupId(null);
+        setCurrentGroupName(null);
+      }
 
       // Fetch enrollments with course info
       const { data: enrollmentData, error: enrollmentError } = await supabase
@@ -733,9 +761,23 @@ export default function StudentDetails() {
                         <Badge variant="destructive">{isArabic ? 'موقوف' : 'Suspended'}</Badge>
                       )}
                     </div>
-                    {groupLabel && (
-                      <Badge variant="secondary" className="mt-2">{groupLabel}</Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {/* Study Mode Badge */}
+                      {student.attendance_mode === 'center' ? (
+                        <Badge variant="default" className="bg-purple-600">
+                          <Users className="h-3 w-3 mr-1" />
+                          {currentGroupName || (isArabic ? 'طالب سنتر' : 'Center Student')}
+                        </Badge>
+                      ) : student.attendance_mode === 'online' ? (
+                        <Badge variant="secondary">
+                          {isArabic ? 'طالب أونلاين' : 'Online Student'}
+                        </Badge>
+                      ) : null}
+                      {/* Academic Year/Track Badge */}
+                      {groupLabel && (
+                        <Badge variant="outline">{groupLabel}</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -784,6 +826,13 @@ export default function StudentDetails() {
                 <FileText className="h-4 w-4 mr-2" />
                 {isArabic ? 'إضافة ملاحظة' : 'Add Note'}
               </Button>
+              {/* Group Transfer - Only for center students with a group */}
+              {student.attendance_mode === 'center' && currentGroupId && (
+                <Button variant="outline" size="sm" onClick={() => setTransferDialogOpen(true)}>
+                  <ArrowRightLeft className="h-4 w-4 mr-2" />
+                  {isArabic ? 'نقل لمجموعة أخرى' : 'Transfer Group'}
+                </Button>
+              )}
               <Button 
                 variant={student.is_suspended ? "default" : "destructive"} 
                 size="sm" 
@@ -1204,6 +1253,21 @@ export default function StudentDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Student Group Transfer Dialog */}
+      <StudentGroupTransferDialog
+        open={transferDialogOpen}
+        onOpenChange={setTransferDialogOpen}
+        studentId={userId || ''}
+        studentName={student?.full_name || ''}
+        studentGrade={student?.academic_year || student?.grade || null}
+        studentLanguageTrack={student?.language_track || null}
+        currentGroupId={currentGroupId}
+        currentGroupName={currentGroupName}
+        onTransferComplete={() => {
+          if (userId) fetchStudentData(userId);
+        }}
+      />
     </div>
   );
 }
