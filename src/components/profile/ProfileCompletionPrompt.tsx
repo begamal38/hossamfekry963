@@ -243,8 +243,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         updateData.governorate = governorate;
       }
 
-      // Handle study mode - only if explicitly selected
-      if (missingFields.attendance_mode && studyMode) {
+      // Handle study mode - ALWAYS include if user selected a study mode
+      // This ensures center students always have attendance_mode = 'center' saved
+      // CRITICAL: This MUST be saved for center students even if missingFields says it's not missing
+      if (studyMode) {
         updateData.attendance_mode = studyMode;
       }
       
