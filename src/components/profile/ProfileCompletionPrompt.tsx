@@ -246,8 +246,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       // Handle study mode - ALWAYS include if user selected a study mode
       // This ensures center students always have attendance_mode = 'center' saved
       // CRITICAL: This MUST be saved for center students even if missingFields says it's not missing
+      // ALSO: Set study_mode_confirmed = true to LOCK the choice permanently
       if (studyMode) {
         updateData.attendance_mode = studyMode;
+        (updateData as Record<string, unknown>).study_mode_confirmed = true;
       }
       
       // Phone number handling with duplicate check
@@ -658,6 +660,16 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           {/* Study Mode & Center Group Selection */}
           {(missingFields.attendance_mode || missingFields.center_group) && grade && languageTrack && (
             <>
+              {/* One-time warning message for study mode selection */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg mb-2">
+                <p className="text-sm text-amber-800 dark:text-amber-200 font-medium text-center">
+                  ⚠️ من فضلك حدّد طريقة دراستك مرة واحدة فقط
+                  <br />
+                  <span className="text-amber-700 dark:text-amber-300 text-xs">
+                    هذا الاختيار لا يمكن تغييره لاحقًا
+                  </span>
+                </p>
+              </div>
               <StudyModeSelector
                 value={studyMode}
                 onChange={setStudyMode}
