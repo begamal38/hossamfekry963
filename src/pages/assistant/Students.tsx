@@ -37,6 +37,7 @@ interface Profile {
   academic_year: string | null;
   language_track: string | null;
   governorate: string | null;
+  attendance_mode: 'online' | 'center' | 'hybrid' | null;
   created_at: string;
 }
 
@@ -121,7 +122,7 @@ export default function Students() {
 
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, created_at')
+        .select('user_id, short_id, full_name, phone, grade, academic_year, language_track, governorate, attendance_mode, created_at')
         .in('user_id', studentUserIds)
         .neq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -366,6 +367,12 @@ export default function Students() {
           <div className="space-y-2">
             {filteredStudents.map((student) => {
               const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
+              // Attendance mode label
+              const modeLabel = student.attendance_mode === 'center' 
+                ? (isRTL ? 'سنتر' : 'Center')
+                : student.attendance_mode === 'online'
+                ? (isRTL ? 'أونلاين' : 'Online')
+                : null;
               
               return (
                 <MobileDataCard
@@ -374,6 +381,8 @@ export default function Students() {
                   subtitle={student.phone || undefined}
                   badge={groupLabel || undefined}
                   badgeVariant="default"
+                  secondaryBadge={modeLabel || undefined}
+                  secondaryBadgeVariant={student.attendance_mode === 'center' ? 'success' : 'accent'}
                   icon={User}
                   iconColor="text-primary"
                   metadata={[
