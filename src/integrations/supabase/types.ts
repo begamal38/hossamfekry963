@@ -1408,6 +1408,7 @@ export type Database = {
           language_track: string | null
           phone: string | null
           short_id: number
+          study_mode_confirmed: boolean | null
           theme_preference: string | null
           updated_at: string
           user_id: string
@@ -1431,6 +1432,7 @@ export type Database = {
           language_track?: string | null
           phone?: string | null
           short_id?: number
+          study_mode_confirmed?: boolean | null
           theme_preference?: string | null
           updated_at?: string
           user_id: string
@@ -1454,6 +1456,7 @@ export type Database = {
           language_track?: string | null
           phone?: string | null
           short_id?: number
+          study_mode_confirmed?: boolean | null
           theme_preference?: string | null
           updated_at?: string
           user_id?: string

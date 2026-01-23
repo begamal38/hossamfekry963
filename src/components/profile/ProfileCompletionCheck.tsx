@@ -66,10 +66,10 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     }
 
     try {
-      // Fetch profile data
+      // Fetch profile data including study_mode_confirmed
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, grade, language_track, governorate, phone, attendance_mode')
+        .select('full_name, grade, language_track, governorate, phone, attendance_mode, study_mode_confirmed')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -126,6 +126,15 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         }
       }
 
+      // ========== LEGACY ONLINE DEFAULT FIX ==========
+      // Check if this is a legacy student who was auto-assigned 'online' without explicit choice
+      // Criteria: attendance_mode = 'online' AND study_mode_confirmed = false (or null)
+      const isLegacyOnlineStudent = 
+        data.attendance_mode === 'online' && 
+        data.study_mode_confirmed !== true; // false or null
+      
+      // ========== END LEGACY FIX ==========
+
       // Check which fields are missing
       const missing: MissingFields = {
         full_name: !data.full_name || data.full_name.trim() === '',
@@ -133,7 +142,10 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         language_track: !data.language_track,
         governorate: !data.governorate,
         phone: !data.phone || data.phone.trim() === '',
-        attendance_mode: !data.attendance_mode,
+        // LEGACY FIX: Force attendance_mode selection if:
+        // 1. attendance_mode is null/missing, OR
+        // 2. Student is a legacy online student who never explicitly chose
+        attendance_mode: !data.attendance_mode || isLegacyOnlineStudent,
         center_group: data.attendance_mode === 'center' && !hasCenterGroup,
       };
 
