@@ -48,8 +48,8 @@ interface EnrichedStudent extends Profile {
   enrollmentCount: number;
 }
 
-const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
-  if (!academicYear || !languageTrack) return null;
+const getGroupLabel = (grade: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
+  if (!grade || !languageTrack) return null;
   
   const yearLabels: Record<string, { ar: string; en: string }> = {
     'second_secondary': { ar: 'تانية ثانوي', en: '2nd Sec' },
@@ -61,7 +61,7 @@ const getGroupLabel = (academicYear: string | null, languageTrack: string | null
     'languages': { ar: 'لغات', en: 'Lang' },
   };
   
-  const year = yearLabels[academicYear];
+  const year = yearLabels[grade];
   const track = trackLabels[languageTrack];
   if (!year || !track) return null;
   return isArabic ? `${year.ar} - ${track.ar}` : `${year.en} - ${track.en}`;
@@ -366,7 +366,7 @@ export default function Students() {
         ) : (
           <div className="space-y-2">
             {filteredStudents.map((student) => {
-              const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
+              const groupLabel = getGroupLabel(student.grade, student.language_track, isRTL);
               // Attendance mode label
               const modeLabel = student.attendance_mode === 'center' 
                 ? (isRTL ? 'سنتر' : 'Center')
