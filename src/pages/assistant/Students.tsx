@@ -46,7 +46,6 @@ interface EnrichedStudent extends Profile {
   avgExamScore: number;
   totalExams: number;
   enrollmentCount: number;
-  centerGroupName: string | null; // From center_group_members JOIN
 }
 
 const getGroupLabel = (academicYear: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
@@ -130,22 +129,6 @@ export default function Students() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch center group memberships - SINGLE SOURCE OF TRUTH
-      const { data: groupMemberships } = await supabase
-        .from('center_group_members')
-        .select('student_id, center_groups!inner(name)')
-        .eq('is_active', true)
-        .in('student_id', studentUserIds);
-
-      // Build lookup map for center group names
-      const centerGroupMap = new Map<string, string>();
-      (groupMemberships || []).forEach(m => {
-        const groupName = (m.center_groups as any)?.name;
-        if (groupName) {
-          centerGroupMap.set(m.student_id, groupName);
-        }
-      });
-
       const { data: enrollmentsData } = await supabase
         .from('course_enrollments')
         .select('user_id, progress');
@@ -175,7 +158,6 @@ export default function Students() {
           avgExamScore,
           totalExams: userExamResults.length,
           enrollmentCount: userEnrollments.length,
-          centerGroupName: centerGroupMap.get(profile.user_id) || null,
         };
       });
 
@@ -385,22 +367,12 @@ export default function Students() {
           <div className="space-y-2">
             {filteredStudents.map((student) => {
               const groupLabel = getGroupLabel(student.academic_year, student.language_track, isRTL);
-              
-              // SINGLE SOURCE OF TRUTH: Use center_group_members for center label
-              // If centerGroupName exists, student is confirmed center student
-              const modeLabel = student.centerGroupName
-                ? (isRTL ? `سنتر - ${student.centerGroupName}` : `Center - ${student.centerGroupName}`)
-                : student.attendance_mode === 'center'
-                ? (isRTL ? 'سنتر (بدون مجموعة)' : 'Center (no group)')
+              // Attendance mode label
+              const modeLabel = student.attendance_mode === 'center' 
+                ? (isRTL ? 'سنتر' : 'Center')
                 : student.attendance_mode === 'online'
                 ? (isRTL ? 'أونلاين' : 'Online')
                 : null;
-              
-              const modeBadgeVariant = student.centerGroupName 
-                ? 'success' 
-                : student.attendance_mode === 'center'
-                ? 'outline' // No group = warning state
-                : 'accent';
               
               return (
                 <MobileDataCard
@@ -410,7 +382,7 @@ export default function Students() {
                   badge={groupLabel || undefined}
                   badgeVariant="default"
                   secondaryBadge={modeLabel || undefined}
-                  secondaryBadgeVariant={modeBadgeVariant as any}
+                  secondaryBadgeVariant={student.attendance_mode === 'center' ? 'success' : 'accent'}
                   icon={User}
                   iconColor="text-primary"
                   metadata={[
