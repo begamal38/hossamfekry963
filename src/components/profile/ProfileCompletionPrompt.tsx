@@ -76,7 +76,8 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
   const [languageTrack, setLanguageTrack] = useState('');
   const [governorate, setGovernorate] = useState('');
   const [phone, setPhone] = useState('');
-  const [studyMode, setStudyMode] = useState<StudyMode>('online');
+  // CRITICAL: Start with null to force explicit selection (no default)
+  const [studyMode, setStudyMode] = useState<StudyMode | null>(null);
   const [centerGroupId, setCenterGroupId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -169,8 +170,13 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       }
     }
 
-    // Validate study mode and center group
-    if ((missingFields.attendance_mode || missingFields.center_group) && studyMode === 'center' && !centerGroupId) {
+    // Validate study mode selection - MUST be explicitly chosen
+    if (missingFields.attendance_mode && !studyMode) {
+      newErrors.studyMode = 'يرجى اختيار طريقة الدراسة';
+    }
+
+    // Validate center group when center mode is selected
+    if (studyMode === 'center' && !centerGroupId) {
       newErrors.centerGroup = 'يرجى اختيار مجموعة السنتر';
     }
 
@@ -207,8 +213,8 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         updateData.governorate = governorate;
       }
 
-      // Handle study mode
-      if (missingFields.attendance_mode) {
+      // Handle study mode - only if explicitly selected
+      if (missingFields.attendance_mode && studyMode) {
         updateData.attendance_mode = studyMode;
       }
       
@@ -572,15 +578,19 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
           {/* Study Mode & Center Group Selection */}
           {(missingFields.attendance_mode || missingFields.center_group) && grade && languageTrack && (
-            <StudyModeSelector
-              value={studyMode}
-              onChange={setStudyMode}
-              grade={grade}
-              languageTrack={languageTrack}
-              centerGroupId={centerGroupId}
-              onCenterGroupChange={setCenterGroupId}
-              centerGroupError={errors.centerGroup}
-            />
+            <>
+              <StudyModeSelector
+                value={studyMode}
+                onChange={setStudyMode}
+                grade={grade}
+                languageTrack={languageTrack}
+                centerGroupId={centerGroupId}
+                onCenterGroupChange={setCenterGroupId}
+                error={errors.studyMode}
+                centerGroupError={errors.centerGroup}
+                required={missingFields.attendance_mode}
+              />
+            </>
           )}
 
           {/* Submit Button */}

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 export type StudyMode = 'online' | 'center';
 
 interface StudyModeSelectorProps {
-  value: StudyMode;
+  value: StudyMode | null; // Can be null to force explicit selection
   onChange: (mode: StudyMode) => void;
   grade: string;
   languageTrack: string;
@@ -23,6 +23,7 @@ interface StudyModeSelectorProps {
   error?: string;
   centerGroupError?: string;
   className?: string;
+  required?: boolean; // Show required indicator
 }
 
 export function StudyModeSelector({
@@ -35,6 +36,7 @@ export function StudyModeSelector({
   error,
   centerGroupError,
   className,
+  required = false,
 }: StudyModeSelectorProps) {
   const { language, isRTL } = useLanguage();
   const isArabic = language === 'ar';
@@ -66,8 +68,9 @@ export function StudyModeSelector({
     <div className={cn("space-y-4", className)}>
       {/* Mode Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">
+        <label className="text-sm font-medium flex items-center gap-1">
           {tr('طريقة الدراسة', 'Study Mode')}
+          {required && <span className="text-destructive">*</span>}
         </label>
         <div className="grid grid-cols-2 gap-3">
           {modes.map((mode) => {
