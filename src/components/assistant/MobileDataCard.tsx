@@ -25,6 +25,8 @@ interface MobileDataCardProps {
   badge?: string;
   badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent';
   badgeClassName?: string;
+  secondaryBadge?: string;
+  secondaryBadgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent';
   icon?: LucideIcon;
   iconColor?: string;
   iconBgColor?: string;
@@ -59,6 +61,8 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
   badge,
   badgeVariant = 'default',
   badgeClassName,
+  secondaryBadge,
+  secondaryBadgeVariant = 'secondary',
   icon: Icon,
   iconColor = 'text-primary',
   iconBgColor = 'bg-primary/10',
@@ -95,7 +99,18 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
               )}
             </div>
             
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+              {secondaryBadge && (
+                <Badge 
+                  variant={badgeVariantMap[secondaryBadgeVariant] || 'secondary'} 
+                  className={cn(
+                    "text-[10px] sm:text-xs",
+                    badgeClassMap[secondaryBadgeVariant]
+                  )}
+                >
+                  {secondaryBadge}
+                </Badge>
+              )}
               {badge && (
                 <Badge 
                   variant={badgeVariantMap[badgeVariant] || 'default'} 
