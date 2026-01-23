@@ -22,7 +22,8 @@ export interface UserProfile {
   language_track: string | null;
   governorate: string | null;
   avatar_url: string | null;
-  attendance_mode: 'online' | 'center' | 'hybrid';
+  // CRITICAL: Can be null - forces ProfileCompletionPrompt for new/Google users
+  attendance_mode: 'online' | 'center' | 'hybrid' | null;
   is_suspended: boolean;
   theme_preference: string | null;
   // Center group membership (fetched separately for center students)
@@ -105,7 +106,8 @@ export const useProfile = () => {
           language_track: data.language_track,
           governorate: data.governorate,
           avatar_url: data.avatar_url,
-          attendance_mode: data.attendance_mode || 'online',
+          // CRITICAL: Do NOT default to 'online' - preserve null to trigger ProfileCompletionPrompt
+          attendance_mode: data.attendance_mode as 'online' | 'center' | 'hybrid',
           is_suspended: data.is_suspended || false,
           theme_preference: data.theme_preference,
           center_group_id: centerGroupId,

@@ -118,7 +118,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           academic_year: academicYear,
           language_track: languageTrack,
           governorate: governorate,
-          attendance_mode: studyMode || 'online',
+          // CRITICAL: Only send attendance_mode if explicitly provided
+          // Do NOT default to 'online' - let ProfileCompletionPrompt handle it
+          ...(studyMode ? { attendance_mode: studyMode } : {}),
         }
       }
     });

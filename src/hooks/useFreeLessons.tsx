@@ -2,12 +2,14 @@
  * Free Lessons Hook
  * 
  * Single source of truth for free lessons visibility.
- * A lesson with is_free_lesson = true MUST appear in the free lessons list.
+ * Uses centralized eligibility logic from courseEligibility.ts
  * 
- * Rules:
- * - is_free_lesson = true is the ONLY condition for free lesson visibility
- * - Course-level flags (is_primary, is_free) do NOT affect lesson visibility
- * - Lessons must have valid video URLs to be shown
+ * System 3 Rules:
+ * - Anonymous visitors: See ALL free lessons (discovery/marketing)
+ * - Authenticated students: See ONLY free lessons matching grade/track
+ * - Staff: See ALL free lessons
+ * 
+ * FORBIDDEN: attendance_mode, center_group, and enrollments are NOT checked
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { useAuth } from './useAuth';
 import { useUserRole } from './useUserRole';
+import { canViewFreeLesson, buildEligibilityContext, type LessonInfo } from '@/lib/courseEligibility';
 
 export interface FreeLesson {
   id: string;
@@ -44,47 +47,41 @@ export function useFreeLessons(options: UseFreeLessonsOptions = {}) {
   
   const [lessons, setLessons] = useState<FreeLesson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userGrade, setUserGrade] = useState<string | null>(null);
+  const [studentProfile, setStudentProfile] = useState<{ grade: string | null; language_track: string | null } | null>(null);
 
   // Staff check - wait for roles to fully load
   const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
-  // Fetch user's grade for filtering (students only)
-  // Staff members should NEVER have grade filtering applied
+  // Fetch user's profile for filtering (students only)
   useEffect(() => {
-    // Wait for roles to be resolved first
     if (rolesLoading) return;
     
-    const fetchUserGrade = async () => {
-      // Staff members don't need grade - set to null immediately
+    const fetchUserProfile = async () => {
+      // Staff don't need profile filtering
       if (!user || isStaff) {
-        setUserGrade(null);
+        setStudentProfile(null);
         return;
       }
       
       const { data } = await supabase
         .from('profiles')
-        .select('grade')
+        .select('grade, language_track')
         .eq('user_id', user.id)
         .maybeSingle();
       
-      setUserGrade(data?.grade || null);
+      setStudentProfile(data ? { grade: data.grade, language_track: data.language_track } : null);
     };
     
-    fetchUserGrade();
+    fetchUserProfile();
   }, [user, isStaff, rolesLoading]);
 
   /**
-   * Fetch free lessons - SINGLE SOURCE OF TRUTH
-   * 
-   * The ONLY condition is: is_free_lesson = true
-   * No course-level dependencies (is_primary, is_free)
+   * Fetch free lessons using centralized eligibility
    */
   const fetchFreeLessons = useCallback(async () => {
     setLoading(true);
     try {
-      // Query lessons where is_free_lesson = true
-      // Remove is_primary filter - free lessons are course-independent
+      // Query all free lessons
       const { data, error } = await supabase
         .from('lessons')
         .select(`
@@ -108,17 +105,27 @@ export function useFreeLessons(options: UseFreeLessonsOptions = {}) {
 
       if (error) throw error;
       
-      // Filter to only show lessons with valid videos
+      // Filter to only lessons with valid videos
       let validLessons = (data || []).filter(lesson => hasValidVideo(lesson.video_url));
       
-      // ROLE-BASED FILTERING:
-      // - Staff (admin/assistant): See ALL free lessons (no grade filter)
-      // - Logged-in students: Filter by their grade (if filterByUserGrade is true)
-      // - Guests (not logged in): See ALL free lessons
-      if (filterByUserGrade && user && !isStaff && userGrade) {
-        validLessons = validLessons.filter(lesson => 
-          lesson.courses?.grade === userGrade
-        );
+      // Apply System 3 eligibility rules if filtering is enabled
+      if (filterByUserGrade) {
+        const ctx = buildEligibilityContext({
+          user: user ? { id: user.id } : null,
+          isStaff,
+          profile: studentProfile,
+          enrollments: [], // Free lessons don't check enrollments
+        });
+        
+        validLessons = validLessons.filter(lesson => {
+          const lessonInfo: LessonInfo = {
+            id: lesson.id,
+            is_free_lesson: lesson.is_free_lesson,
+            course_id: lesson.course_id,
+            courses: lesson.courses ? { grade: lesson.courses.grade } : null,
+          };
+          return canViewFreeLesson(lessonInfo, ctx);
+        });
       }
       
       setLessons(validLessons);
@@ -128,7 +135,7 @@ export function useFreeLessons(options: UseFreeLessonsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [user, isStaff, userGrade, filterByUserGrade]);
+  }, [user, isStaff, studentProfile, filterByUserGrade]);
 
   // Fetch when dependencies are ready
   useEffect(() => {

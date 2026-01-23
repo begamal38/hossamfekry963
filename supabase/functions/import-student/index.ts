@@ -94,7 +94,9 @@ Deno.serve(async (req) => {
         grade: normalizedGrade,
         academic_year: academic_year || null,
         language_track: language_track || null,
-        attendance_mode: attendance_mode || 'online',
+        // CRITICAL: Only include attendance_mode if explicitly provided
+        // Do NOT default to 'online' for manual imports without mode selection
+        ...(attendance_mode ? { attendance_mode } : {}),
       },
     });
 
