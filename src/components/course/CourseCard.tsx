@@ -229,7 +229,7 @@ const CourseCardInner = ({
           // Simple variant for homepage - just link to course
           <Button 
             variant={course.is_free ? 'default' : 'outline'} 
-            className="w-full h-11 text-base font-semibold group-hover:shadow-md transition-shadow" 
+            className="w-full h-11 lg:h-10 text-base lg:text-sm font-semibold group-hover:shadow-md transition-shadow" 
             asChild
           >
             <Link to={courseUrl}>
@@ -243,7 +243,7 @@ const CourseCardInner = ({
           // Assistant/Admin: View Course
           <Button 
             variant="default" 
-            className="w-full h-11 text-base font-semibold gap-2"
+            className="w-full h-11 lg:h-10 text-base lg:text-sm font-semibold gap-2"
             onClick={handleAction}
           >
             <BookOpen className="w-4 h-4" />
@@ -253,7 +253,7 @@ const CourseCardInner = ({
           // Preview course: View Details
           <Button 
             variant="secondary" 
-            className="w-full h-11 text-base font-semibold gap-2"
+            className="w-full h-11 lg:h-10 text-base lg:text-sm font-semibold gap-2"
             onClick={handleAction}
           >
             <BookOpen className="w-4 h-4" />
@@ -261,7 +261,7 @@ const CourseCardInner = ({
           </Button>
         ) : isEnrolled ? (
           // Enrolled: Continue learning
-          <Button variant="default" className="w-full h-11 text-base font-semibold gap-2" asChild>
+          <Button variant="default" className="w-full h-11 lg:h-10 text-base lg:text-sm font-semibold gap-2" asChild>
             <Link to={courseUrl}>
               <Play className="w-4 h-4" />
               {isArabic ? 'متابعة التعلم' : 'Continue Learning'}
@@ -272,7 +272,7 @@ const CourseCardInner = ({
           <div className="space-y-2">
             <Button 
               variant="outline"
-              className="w-full h-11 text-base opacity-50 cursor-not-allowed"
+              className="w-full h-11 lg:h-10 text-base lg:text-sm opacity-50 cursor-not-allowed"
               disabled
             >
               {isArabic ? 'غير متاح لمسارك' : 'Not available'}
@@ -285,7 +285,7 @@ const CourseCardInner = ({
           // Not enrolled: Enroll button with price
           <Button 
             variant="default"
-            className="w-full h-11 text-base font-semibold"
+            className="w-full h-11 lg:h-10 text-base lg:text-sm font-semibold"
             onClick={handleAction}
             disabled={enrollingId === course.id}
           >

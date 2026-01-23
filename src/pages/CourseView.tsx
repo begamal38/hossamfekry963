@@ -616,8 +616,8 @@ export default function CourseView() {
           </div>
         )}
 
-        {/* CTA Section - Enrollment Notice */}
-        {!canBypassRestrictions && !isEnrolled && (
+        {/* CTA Section - Enrollment Notice (ONLY if not blocked) */}
+        {!canBypassRestrictions && !isEnrolled && !accessBlocked?.blocked && (
           <div className="container mx-auto px-3 sm:px-4 mb-5">
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
               <p className="text-sm text-primary font-medium flex items-center gap-2">
@@ -730,8 +730,8 @@ export default function CourseView() {
 
         {/* ENROLLED STUDENT: Progress & Continue Section */}
         {isEnrolled && !canBypassRestrictions && (
-          <div className="container mx-auto px-3 sm:px-4 mb-6">
-            <div className="bg-card border rounded-2xl p-4 space-y-4">
+          <div className="container mx-auto px-3 sm:px-4 mb-6 lg:max-w-3xl">
+            <div className="bg-card border rounded-2xl p-4 lg:p-5 space-y-4">
               {/* Enrollment Status */}
               <div className="flex items-center gap-2">
                 <Badge className="bg-green-600 text-white gap-1">
@@ -761,7 +761,7 @@ export default function CourseView() {
                     {isArabic ? 'استكمل من حيث توقفت:' : 'Continue where you left off:'}
                   </p>
                   <Button 
-                    className="w-full gap-2"
+                    className="w-full lg:w-auto lg:px-8 gap-2"
                     onClick={() => {
                       // Scroll to the chapter section
                       const chapterEl = document.getElementById(`chapter-${lastAccessedChapter.chapter.id}`);
@@ -782,9 +782,9 @@ export default function CourseView() {
           </div>
         )}
 
-        {/* PAYMENT SECTION - For Non-Enrolled Users (Paid Courses) */}
-        {!isEnrolled && !canBypassRestrictions && !course.is_free && (
-          <div className="container mx-auto px-3 sm:px-4 mb-6">
+        {/* PAYMENT SECTION - For Non-Enrolled Users (Paid Courses) - ONLY if not blocked */}
+        {!isEnrolled && !canBypassRestrictions && !course.is_free && !accessBlocked?.blocked && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6 lg:max-w-2xl">
             <VisitorPaymentBox 
               coursePrice={course.price || 400}
               courseTitle={course.title_ar}
@@ -793,18 +793,16 @@ export default function CourseView() {
           </div>
         )}
 
-        {/* Main CTA Button - Fixed Bottom for Mobile */}
-        {!isEnrolled && !canBypassRestrictions && (
-          <div className="container mx-auto px-3 sm:px-4 mb-6">
+        {/* Main CTA Button - ONLY if not blocked */}
+        {!isEnrolled && !canBypassRestrictions && !accessBlocked?.blocked && (
+          <div className="container mx-auto px-3 sm:px-4 mb-6 lg:max-w-md lg:mx-auto">
             <Button 
               size="lg" 
               onClick={handleEnroll}
-              disabled={enrolling || accessBlocked?.blocked}
-              className="w-full h-12 text-base font-semibold"
+              disabled={enrolling}
+              className="w-full h-12 lg:h-11 text-base font-semibold"
             >
-              {accessBlocked?.blocked ? (
-                isArabic ? 'غير متاح لمرحلتك' : 'Not Available for Your Grade'
-              ) : enrolling ? (
+              {enrolling ? (
                 isArabic ? 'جاري التحميل...' : 'Loading...'
               ) : !user ? (
                 <>{isArabic ? 'سجّل حسابك وابدأ الكورس' : 'Create Account & Start'}</>
