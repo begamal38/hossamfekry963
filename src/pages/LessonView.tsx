@@ -639,15 +639,17 @@ export default function LessonView() {
     );
   }
 
-  // Access logic: staff always has access, free lessons accessible to all, enrolled users have access
+  // Access logic: staff always has access, enrolled users have access
+  // CRITICAL: Free lessons require authentication (no anonymous access to content)
   const isFreeLesson = lesson.is_free_lesson;
   const isSuspended = enrollmentStatus === 'suspended';
   
   // Suspended users can ONLY access lessons they've already completed (for review)
   const canAccessAsSuspended = isSuspended && completed;
   
-  // Full access: staff, free content, or active enrollment
-  const hasFullAccess = isStaff || isFreeLesson || course?.is_free || (isEnrolled && enrollmentStatus === 'active');
+  // Full access: staff, or active enrollment, or authenticated user accessing free content
+  // NOTE: Free lessons are visible to anonymous users in LISTINGS but require login to WATCH
+  const hasFullAccess = isStaff || (user && (isFreeLesson || course?.is_free)) || (isEnrolled && enrollmentStatus === 'active');
   
   // Can access = full access OR suspended with completed lesson
   const canAccess = hasFullAccess || canAccessAsSuspended;
@@ -741,8 +743,9 @@ export default function LessonView() {
     );
   }
 
-  // Show login prompt for non-authenticated users (but still show free lesson content)
-  if (!user && !isFreeLesson) {
+  // CRITICAL: Show login prompt for ALL non-authenticated users (including free lessons)
+  // Free content VISIBILITY is allowed, but ACCESS (watching) requires authentication
+  if (!user) {
     return (
       <div className="min-h-screen bg-background">
         <SEOHead 
@@ -757,19 +760,33 @@ export default function LessonView() {
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
               <LogIn className="w-10 h-10 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold mb-3">{isArabic ? 'سجل دخول للمتابعة' : 'Login to Continue'}</h1>
+            <h1 className="text-2xl font-bold mb-3">
+              {isArabic ? 'سجل دخول لمشاهدة الحصة' : 'Login to Watch'}
+            </h1>
             <p className="text-muted-foreground mb-6">
-              {isArabic 
-                ? 'سجل دخول لمشاهدة الحصص ومتابعة تقدمك وحل الاختبارات' 
-                : 'Login to watch lessons, track progress, and take exams'}
+              {isFreeLesson 
+                ? (isArabic 
+                    ? 'الحصة مجانية! سجل دخول للمشاهدة ومتابعة تقدمك' 
+                    : 'This lesson is free! Login to watch and track your progress')
+                : (isArabic 
+                    ? 'سجل دخول لمشاهدة الحصص ومتابعة تقدمك وحل الاختبارات' 
+                    : 'Login to watch lessons, track progress, and take exams')}
             </p>
+            {isFreeLesson && (
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                  <Gift className="w-5 h-5" />
+                  <span className="font-medium">{isArabic ? 'حصة مجانية' : 'Free Lesson'}</span>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <Button size="lg" onClick={() => navigate('/auth')}>
                 <LogIn className="w-4 h-4 mr-2" />
                 {isArabic ? 'تسجيل الدخول' : 'Login'}
               </Button>
               <Button variant="ghost" onClick={() => navigate('/free-lessons')}>
-                {isArabic ? 'شاهد الحصص المجانية' : 'Watch Free Lessons'}
+                {isArabic ? 'تصفح الحصص المجانية' : 'Browse Free Lessons'}
               </Button>
             </div>
           </div>
@@ -778,8 +795,9 @@ export default function LessonView() {
     );
   }
 
-  // Determine if visitor preview is active
-  const isVisitorFreeLesson = !user && isFreeLesson;
+  // NOTE: isVisitorFreeLesson is always false now since we require login for all content
+  // Keeping variable for legacy code references but it will never be true
+  const isVisitorFreeLesson = false;
 
   return (
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -791,16 +809,6 @@ export default function LessonView() {
         canonical={`${window.location.origin}/lesson/${lesson?.short_id || lessonId}`}
       />
       <Navbar />
-      
-      {/* Onboarding messages for visitors on free lessons (ONLY after playback starts) */}
-      {isVisitorFreeLesson && (
-        <OnboardingMessages
-          type="free_lesson_intro"
-          enabled={hasPlaybackStarted}
-          courseId={course?.id}
-          courseSlug={course?.slug}
-        />
-      )}
 
       {/* Free Trial guidance for logged-in students (not enrolled) on free lessons (ONLY after playback starts) */}
       {user && isFreeLesson && !isEnrolled && !isStaff && !completed && (

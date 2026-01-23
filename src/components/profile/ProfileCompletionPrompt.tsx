@@ -316,33 +316,46 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         }
       }
 
-      // Handle center group membership after profile update
+      // CRITICAL: Handle center group membership - THIS MUST SUCCEED FOR CENTER STUDENTS
+      // center_group_members is the SINGLE SOURCE OF TRUTH for group membership
       if (needsCenterGroupUpdate && centerGroupId) {
-        try {
-          // Remove from any existing groups first
-          await supabase
-            .from('center_group_members')
-            .update({ is_active: false })
-            .eq('student_id', userId);
+        // Step 1: Deactivate any existing memberships
+        const { error: deactivateError } = await supabase
+          .from('center_group_members')
+          .update({ is_active: false })
+          .eq('student_id', userId);
+        
+        if (deactivateError) {
+          console.error('Error deactivating existing memberships:', deactivateError);
+          // Continue - this is not blocking
+        }
 
-          // Add to new group
-          const { error: insertError } = await supabase.from('center_group_members').insert({
-            group_id: centerGroupId,
-            student_id: userId,
-            is_active: true,
-          });
+        // Step 2: Insert new membership
+        const { error: insertError } = await supabase.from('center_group_members').insert({
+          group_id: centerGroupId,
+          student_id: userId,
+          is_active: true,
+        });
+        
+        if (insertError) {
+          console.error('Error inserting center group membership:', insertError);
+          // Try update as fallback (record may exist but deactivated)
+          const { error: updateError } = await supabase.from('center_group_members')
+            .update({ is_active: true })
+            .eq('student_id', userId)
+            .eq('group_id', centerGroupId);
           
-          if (insertError) {
-            console.error('Error inserting center group membership:', insertError);
-            // Try upsert as fallback (in case record exists but was deactivated)
-            await supabase.from('center_group_members')
-              .update({ is_active: true })
-              .eq('student_id', userId)
-              .eq('group_id', centerGroupId);
+          if (updateError) {
+            // BLOCKING ERROR: Center group write failed completely
+            console.error('Failed to create center group membership:', updateError);
+            toast({
+              title: 'خطأ في تسجيل المجموعة',
+              description: 'تعذر إضافتك للمجموعة. حاول مرة أخرى.',
+              variant: 'destructive',
+            });
+            setLoading(false);
+            return; // BLOCK completion - don't close prompt
           }
-        } catch (groupError) {
-          console.error('Error updating center group:', groupError);
-          // Non-blocking
         }
       }
 
