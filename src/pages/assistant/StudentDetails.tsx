@@ -168,6 +168,10 @@ export default function StudentDetails() {
   const [resetProgressDialogOpen, setResetProgressDialogOpen] = useState(false);
   const [selectedCourseForReset, setSelectedCourseForReset] = useState<string | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [studyModeDialogOpen, setStudyModeDialogOpen] = useState(false);
+  const [selectedStudyMode, setSelectedStudyMode] = useState<'online' | 'center' | null>(null);
+  const [selectedCenterGroup, setSelectedCenterGroup] = useState<string | null>(null);
+  const [availableCenterGroups, setAvailableCenterGroups] = useState<Array<{ id: string; name: string }>>([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
@@ -645,6 +649,96 @@ export default function StudentDetails() {
     }
   };
 
+  // Fetch center groups for study mode assignment
+  const fetchCenterGroups = async () => {
+    if (!student?.academic_year && !student?.grade) return;
+    try {
+      const gradeForQuery = student.academic_year || student.grade;
+      const { data } = await supabase
+        .from('center_groups')
+        .select('id, name')
+        .eq('grade', gradeForQuery)
+        .eq('is_active', true);
+      setAvailableCenterGroups(data || []);
+    } catch (err) {
+      console.error('Error fetching center groups:', err);
+    }
+  };
+
+  // Handle study mode assignment
+  const handleAssignStudyMode = async () => {
+    if (!userId || !selectedStudyMode) return;
+    setActionLoading(true);
+    try {
+      // Update profile with attendance_mode
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ attendance_mode: selectedStudyMode })
+        .eq('user_id', userId);
+
+      if (profileError) throw profileError;
+
+      // If center mode, add to center group
+      if (selectedStudyMode === 'center' && selectedCenterGroup) {
+        // First deactivate any existing memberships
+        await supabase
+          .from('center_group_members')
+          .update({ is_active: false })
+          .eq('student_id', userId);
+
+        // Add to selected group
+        const { error: memberError } = await supabase
+          .from('center_group_members')
+          .insert({
+            group_id: selectedCenterGroup,
+            student_id: userId,
+            is_active: true,
+          });
+
+        if (memberError) {
+          // Try upsert if insert fails
+          await supabase
+            .from('center_group_members')
+            .update({ is_active: true })
+            .eq('student_id', userId)
+            .eq('group_id', selectedCenterGroup);
+        }
+
+        // Get group name for display
+        const group = availableCenterGroups.find(g => g.id === selectedCenterGroup);
+        setCurrentGroupId(selectedCenterGroup);
+        setCurrentGroupName(group?.name || null);
+      }
+
+      // Log action
+      await logAction('assign_study_mode', { 
+        mode: selectedStudyMode,
+        group_id: selectedStudyMode === 'center' ? selectedCenterGroup : null
+      });
+
+      // Update local student state
+      setStudent(prev => prev ? { ...prev, attendance_mode: selectedStudyMode } : null);
+
+      setStudyModeDialogOpen(false);
+      setSelectedStudyMode(null);
+      setSelectedCenterGroup(null);
+
+      toast({
+        title: isArabic ? 'تم التحديث' : 'Updated',
+        description: isArabic ? 'تم تحديد حالة الدراسة بنجاح' : 'Study mode assigned successfully',
+      });
+    } catch (error) {
+      console.error('Error assigning study mode:', error);
+      toast({
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في تحديد حالة الدراسة' : 'Failed to assign study mode',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getGradeLabel = (grade: string | null) => {
     if (!grade) return isArabic ? 'غير محدد' : 'Not specified';
     // Use unified grade labels
@@ -772,7 +866,12 @@ export default function StudentDetails() {
                         <Badge variant="secondary">
                           {isArabic ? 'طالب أونلاين' : 'Online Student'}
                         </Badge>
-                      ) : null}
+                      ) : (
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          {isArabic ? 'حالة الدراسة غير محددة' : 'Study mode not set'}
+                        </Badge>
+                      )}
                       {/* Academic Year/Track Badge */}
                       {groupLabel && (
                         <Badge variant="outline">{groupLabel}</Badge>
@@ -814,6 +913,21 @@ export default function StudentDetails() {
               {isArabic ? 'إجراءات المساعد' : 'Assistant Actions'}
             </h3>
             <div className="flex flex-wrap gap-3">
+              {/* Assign Study Mode - Only show if attendance_mode is NULL */}
+              {!student.attendance_mode && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => {
+                    fetchCenterGroups();
+                    setStudyModeDialogOpen(true);
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {isArabic ? 'تحديد حالة الدراسة' : 'Assign Study Mode'}
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => setResetProgressDialogOpen(true)}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {isArabic ? 'إعادة تعيين التقدم' : 'Reset Progress'}
@@ -1268,6 +1382,90 @@ export default function StudentDetails() {
           if (userId) fetchStudentData(userId);
         }}
       />
+
+      {/* Assign Study Mode Dialog */}
+      <Dialog open={studyModeDialogOpen} onOpenChange={setStudyModeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-orange-600" />
+              {isArabic ? 'تحديد حالة الدراسة' : 'Assign Study Mode'}
+            </DialogTitle>
+            <DialogDescription>
+              {isArabic 
+                ? 'حدد إذا كان الطالب يدرس أونلاين أو في السنتر' 
+                : 'Specify if the student studies online or at the center'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            {/* Study Mode Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{isArabic ? 'طريقة الدراسة' : 'Study Mode'}</label>
+              <Select 
+                value={selectedStudyMode || ''} 
+                onValueChange={(val) => {
+                  setSelectedStudyMode(val as 'online' | 'center');
+                  if (val === 'online') {
+                    setSelectedCenterGroup(null);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isArabic ? 'اختر طريقة الدراسة' : 'Select study mode'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">{isArabic ? 'أونلاين' : 'Online'}</SelectItem>
+                  <SelectItem value="center">{isArabic ? 'سنتر' : 'Center'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Center Group Selection - Only when center mode is selected */}
+            {selectedStudyMode === 'center' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{isArabic ? 'مجموعة السنتر' : 'Center Group'}</label>
+                {availableCenterGroups.length > 0 ? (
+                  <Select value={selectedCenterGroup || ''} onValueChange={setSelectedCenterGroup}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={isArabic ? 'اختر المجموعة' : 'Select group'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCenterGroups.map(group => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="p-3 bg-amber-500/10 rounded-lg text-sm text-amber-700">
+                    <AlertCircle className="h-4 w-4 inline mr-2" />
+                    {isArabic ? 'لا توجد مجموعات متاحة لهذه المرحلة' : 'No groups available for this grade'}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setStudyModeDialogOpen(false);
+              setSelectedStudyMode(null);
+              setSelectedCenterGroup(null);
+            }}>
+              {isArabic ? 'إلغاء' : 'Cancel'}
+            </Button>
+            <Button 
+              onClick={handleAssignStudyMode} 
+              disabled={actionLoading || !selectedStudyMode || (selectedStudyMode === 'center' && !selectedCenterGroup)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {actionLoading ? (isArabic ? 'جاري الحفظ...' : 'Saving...') : (isArabic ? 'حفظ' : 'Save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
