@@ -20,11 +20,11 @@ const buttonVariants = cva(
         glow: "bg-primary text-primary-foreground shadow-glow hover:shadow-glow-sm",
       },
       size: {
-        default: "h-11 px-6 py-2",
-        sm: "h-9 rounded-md px-4",
-        lg: "h-12 rounded-lg px-8 text-base",
-        xl: "h-14 rounded-xl px-10 text-lg",
-        icon: "h-10 w-10",
+        default: "h-11 px-6 py-2 lg:h-10 lg:px-5",
+        sm: "h-9 rounded-md px-4 lg:h-8 lg:px-3",
+        lg: "h-12 rounded-lg px-8 text-base lg:h-11 lg:px-6",
+        xl: "h-14 rounded-xl px-10 text-lg lg:h-12 lg:px-8",
+        icon: "h-10 w-10 lg:h-9 lg:w-9",
       },
     },
     defaultVariants: {
