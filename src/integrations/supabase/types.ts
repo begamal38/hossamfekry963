@@ -1393,7 +1393,7 @@ export type Database = {
       profiles: {
         Row: {
           academic_year: string | null
-          attendance_mode: Database["public"]["Enums"]["attendance_mode"]
+          attendance_mode: Database["public"]["Enums"]["attendance_mode"] | null
           auth_methods: string[] | null
           avatar_url: string | null
           created_at: string
@@ -1414,7 +1414,9 @@ export type Database = {
         }
         Insert: {
           academic_year?: string | null
-          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          attendance_mode?:
+            | Database["public"]["Enums"]["attendance_mode"]
+            | null
           auth_methods?: string[] | null
           avatar_url?: string | null
           created_at?: string
@@ -1435,7 +1437,9 @@ export type Database = {
         }
         Update: {
           academic_year?: string | null
-          attendance_mode?: Database["public"]["Enums"]["attendance_mode"]
+          attendance_mode?:
+            | Database["public"]["Enums"]["attendance_mode"]
+            | null
           auth_methods?: string[] | null
           avatar_url?: string | null
           created_at?: string
