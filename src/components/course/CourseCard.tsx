@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { ContentTypeBadge } from '@/components/course/ContentTypeBadge';
+import { doesStudentMatchCourseGrade } from '@/lib/gradeLabels';
 
 // Default fallback image for courses without a cover
 const DEFAULT_COURSE_COVER = '/images/default-course-cover.svg';
@@ -42,6 +43,12 @@ interface CourseCardProps {
   index?: number;
   isAssistantOrAdmin?: boolean;
   isPreview?: boolean;
+  // Student profile for grade matching - use normalized values
+  studentProfile?: {
+    grade: string | null;
+    language_track: string | null;
+  } | null;
+  /** @deprecated Use studentProfile instead */
   userGrade?: string | null;
   variant?: 'full' | 'simple'; // 'full' for Courses page, 'simple' for homepage
 }
@@ -60,14 +67,23 @@ const CourseCardInner = ({
   index = 0,
   isAssistantOrAdmin = false,
   isPreview = false,
-  userGrade = null,
+  studentProfile = null,
+  userGrade = null, // deprecated, kept for backwards compatibility
   variant = 'full'
 }: CourseCardProps) => {
   const { language, t } = useLanguage();
   const isArabic = isArabicProp ?? (language === 'ar');
   
   const gradeInfo = GRADE_OPTIONS[course.grade];
-  const isGradeMatch = !userGrade || userGrade === course.grade;
+  
+  // Use centralized grade matching logic
+  // If no profile/grade info provided, allow access (visitor or incomplete profile)
+  const hasStudentInfo = !!(studentProfile?.grade || userGrade);
+  const isGradeMatch = !hasStudentInfo || doesStudentMatchCourseGrade(
+    studentProfile?.grade ?? null,
+    studentProfile?.language_track ?? null,
+    course.grade
+  );
   const canEnroll = isAssistantOrAdmin || isGradeMatch;
   const courseUrl = `/course/${course.slug || course.id}`;
   

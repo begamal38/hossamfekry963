@@ -12,8 +12,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { canAccessContent, parseAcademicPath, combineAcademicPath } from '@/lib/academicValidation';
+import { combineAcademicPath } from '@/lib/academicValidation';
 import { filterCoursesForStudents, isCoursePreview } from '@/lib/contentVisibility';
+import { doesStudentMatchCourseGrade } from '@/lib/gradeLabels';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { useEngagementSafe } from '@/components/consent';
 import { cn } from '@/lib/utils';
@@ -278,12 +279,20 @@ const Courses: React.FC = () => {
       return 0;
     });
 
-  // Separate user's grade courses and others (maintaining free-first order)
-  const userGradeCourses = userGrade 
-    ? filteredCourses.filter(c => c.grade === userGrade)
+  // Separate user's grade courses and others using centralized matching
+  const userGradeCourses = (userProfile?.academic_year && userProfile?.language_track)
+    ? filteredCourses.filter(c => doesStudentMatchCourseGrade(
+        userProfile.academic_year,
+        userProfile.language_track,
+        c.grade
+      ))
     : [];
-  const otherCourses = userGrade
-    ? filteredCourses.filter(c => c.grade !== userGrade)
+  const otherCourses = (userProfile?.academic_year && userProfile?.language_track)
+    ? filteredCourses.filter(c => !doesStudentMatchCourseGrade(
+        userProfile.academic_year,
+        userProfile.language_track,
+        c.grade
+      ))
     : filteredCourses;
 
   if (loading) {
@@ -406,7 +415,7 @@ const Courses: React.FC = () => {
           </div>
 
           {/* User's Grade Courses - Priority Section */}
-          {userGrade && userGradeCourses.length > 0 && selectedGrade === 'all' && (
+          {userProfile?.academic_year && userProfile?.language_track && userGradeCourses.length > 0 && selectedGrade === 'all' && (
             <div className="mb-8 md:mb-12 animate-fade-in-up animation-delay-200">
               {/* Section header with glow */}
               <div className="flex items-center gap-3 mb-4 md:mb-6">
@@ -421,7 +430,7 @@ const Courses: React.FC = () => {
                     {isArabic ? 'كورساتك' : 'Your Courses'}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    {isArabic ? GRADE_OPTIONS[userGrade]?.ar : GRADE_OPTIONS[userGrade]?.en}
+                    {userGrade && (isArabic ? GRADE_OPTIONS[userGrade]?.ar : GRADE_OPTIONS[userGrade]?.en)}
                   </p>
                 </div>
               </div>
@@ -439,7 +448,10 @@ const Courses: React.FC = () => {
                     index={index}
                     isAssistantOrAdmin={canBypassAcademicRestrictions}
                     isPreview={isCoursePreview(course.grade)}
-                    userGrade={userGrade}
+                    studentProfile={userProfile ? {
+                      grade: userProfile.academic_year,
+                      language_track: userProfile.language_track
+                    } : null}
                     variant="full"
                   />
                 ))}
@@ -449,7 +461,7 @@ const Courses: React.FC = () => {
 
           {/* All/Other Courses */}
           <div className="animate-fade-in-up animation-delay-300">
-            {userGrade && userGradeCourses.length > 0 && selectedGrade === 'all' && otherCourses.length > 0 && (
+            {userProfile?.academic_year && userProfile?.language_track && userGradeCourses.length > 0 && selectedGrade === 'all' && otherCourses.length > 0 && (
               <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 md:mb-6 flex items-center gap-2">
                 <span className="w-1.5 h-6 bg-muted-foreground/30 rounded-full" />
                 {isArabic ? 'كورسات أخرى' : 'Other Courses'}
@@ -457,7 +469,7 @@ const Courses: React.FC = () => {
             )}
             
             {/* Empty state */}
-            {(selectedGrade !== 'all' || !userGrade || userGradeCourses.length === 0) && filteredCourses.length === 0 && (
+            {(selectedGrade !== 'all' || !(userProfile?.academic_year && userProfile?.language_track) || userGradeCourses.length === 0) && filteredCourses.length === 0 && (
               <div className="text-center py-12 md:py-16">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
                   <BookOpen className="w-8 h-8 text-muted-foreground/50" />
@@ -484,7 +496,7 @@ const Courses: React.FC = () => {
             
             {/* Course grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {(selectedGrade === 'all' && userGrade ? otherCourses : filteredCourses).map((course, index) => (
+              {(selectedGrade === 'all' && userProfile?.academic_year && userProfile?.language_track ? otherCourses : filteredCourses).map((course, index) => (
                 <CourseCard 
                   key={course.id}
                   course={course}
@@ -495,7 +507,10 @@ const Courses: React.FC = () => {
                   index={index}
                   isAssistantOrAdmin={canBypassAcademicRestrictions}
                   isPreview={isCoursePreview(course.grade)}
-                  userGrade={userGrade}
+                  studentProfile={userProfile ? {
+                    grade: userProfile.academic_year,
+                    language_track: userProfile.language_track
+                  } : null}
                   variant="full"
                 />
               ))}
