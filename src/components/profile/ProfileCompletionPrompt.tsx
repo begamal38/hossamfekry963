@@ -189,6 +189,36 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
     setLoading(true);
     try {
+      // ========== CRITICAL: HARD AUTH GUARD ==========
+      // Fetch auth user explicitly BEFORE any database operations
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authData?.user?.id) {
+        console.error('AUTH_NOT_READY: Cannot proceed without authenticated user', authError);
+        toast({
+          title: 'خطأ في المصادقة',
+          description: 'يرجى تسجيل الخروج وإعادة الدخول مرة أخرى.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return; // BLOCK submission - auth not ready
+      }
+      
+      const confirmedUserId = authData.user.id;
+      
+      // Verify the userId prop matches the authenticated user
+      if (confirmedUserId !== userId) {
+        console.error('USER_MISMATCH: userId prop does not match authenticated user');
+        toast({
+          title: 'خطأ في المصادقة',
+          description: 'حدث خطأ في التحقق من هويتك. يرجى إعادة تحميل الصفحة.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+      // ========== END AUTH GUARD ==========
+
       // Build update data object - only include fields that are missing AND have values
       const updateData: Record<string, string | null> = {};
       
@@ -227,7 +257,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           .from('profiles')
           .select('user_id')
           .eq('phone', phoneValue)
-          .neq('user_id', userId)
+          .neq('user_id', confirmedUserId)
           .maybeSingle();
         
         if (phoneCheckError) {
@@ -243,11 +273,12 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       }
 
       // Handle center group membership (separate from profile update)
-      let needsCenterGroupUpdate = (missingFields.attendance_mode || missingFields.center_group) && 
+      // CRITICAL: This is determined BEFORE profile update, executed AFTER
+      const needsCenterGroupUpdate = (missingFields.attendance_mode || missingFields.center_group) && 
         studyMode === 'center' && centerGroupId;
 
-      // Check if there's anything to update
-      if (Object.keys(updateData).length === 0) {
+      // Check if there's anything to update (profile OR center group)
+      if (Object.keys(updateData).length === 0 && !needsCenterGroupUpdate) {
         toast({
           title: 'تم الحفظ بنجاح ✅',
           description: 'بياناتك محدثة بالفعل',
@@ -256,11 +287,13 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         return;
       }
 
+      // ========== STEP 1: UPDATE PROFILE FIRST ==========
+      // STRICT ORDER: Profile MUST be updated before group membership
       // First, check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('user_id, phone')
-        .eq('user_id', userId)
+        .eq('user_id', confirmedUserId)
         .maybeSingle();
 
       if (checkError) {
@@ -270,22 +303,24 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
 
       let saveError;
 
-      if (existingProfile) {
-        // Profile exists - UPDATE it (most common case for Google OAuth)
-        const { error } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('user_id', userId);
-        saveError = error;
-      } else {
-        // Profile doesn't exist - INSERT it (rare edge case)
-        const { error } = await supabase
-          .from('profiles')
-          .insert({ 
-            user_id: userId, 
-            ...updateData 
-          });
-        saveError = error;
+      if (Object.keys(updateData).length > 0) {
+        if (existingProfile) {
+          // Profile exists - UPDATE it (most common case for Google OAuth)
+          const { error } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('user_id', confirmedUserId);
+          saveError = error;
+        } else {
+          // Profile doesn't exist - INSERT it (rare edge case)
+          const { error } = await supabase
+            .from('profiles')
+            .insert({ 
+              user_id: confirmedUserId, 
+              ...updateData 
+            });
+          saveError = error;
+        }
       }
 
       if (saveError) {
@@ -316,35 +351,38 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         }
       }
 
-      // CRITICAL: Handle center group membership after profile update
-      // This MUST succeed for center students - it is NOT optional
+      // ========== STEP 2: CENTER GROUP MEMBERSHIP (AFTER profile update) ==========
+      // CRITICAL: This MUST succeed for center students - it is NOT optional
+      // STRICT ORDER: Only execute AFTER profile update succeeds
       if (needsCenterGroupUpdate && centerGroupId) {
-        // Remove from any existing groups first
+        console.log('Starting center group membership update for user:', confirmedUserId);
+        
+        // Step 2a: Deactivate any existing memberships
         const { error: deactivateError } = await supabase
           .from('center_group_members')
           .update({ is_active: false })
-          .eq('student_id', userId);
+          .eq('student_id', confirmedUserId);
         
         if (deactivateError) {
           console.error('Error deactivating old memberships:', deactivateError);
-          // Continue anyway - old records being active won't break things
+          // Continue - old records being active won't break things
         }
 
-        // Add to new group - THIS MUST SUCCEED
+        // Step 2b: Insert new membership - THIS MUST SUCCEED
+        console.log('Inserting center group membership:', { group_id: centerGroupId, student_id: confirmedUserId });
         const { error: insertError } = await supabase.from('center_group_members').insert({
           group_id: centerGroupId,
-          student_id: userId,
+          student_id: confirmedUserId,
           is_active: true,
         });
         
         if (insertError) {
           console.error('Error inserting center group membership:', insertError);
           
-          // Try upsert as fallback (in case record exists but was deactivated)
+          // Fallback: Try to reactivate existing record
           const { error: updateError } = await supabase.from('center_group_members')
-            .update({ is_active: true })
-            .eq('student_id', userId)
-            .eq('group_id', centerGroupId);
+            .update({ is_active: true, group_id: centerGroupId })
+            .eq('student_id', confirmedUserId);
           
           if (updateError) {
             console.error('Fallback update also failed:', updateError);
@@ -359,25 +397,30 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           }
         }
         
-        // Verify the membership was actually created
+        // Step 2c: MANDATORY VERIFICATION - Confirm the row actually exists
+        console.log('Verifying center group membership...');
         const { data: verifyMembership, error: verifyError } = await supabase
           .from('center_group_members')
-          .select('id')
-          .eq('student_id', userId)
+          .select('id, group_id, student_id, is_active')
+          .eq('student_id', confirmedUserId)
           .eq('group_id', centerGroupId)
           .eq('is_active', true)
           .maybeSingle();
         
+        console.log('Verification result:', { verifyMembership, verifyError });
+        
         if (verifyError || !verifyMembership) {
-          console.error('Center group membership verification failed:', verifyError);
+          console.error('Center group membership verification FAILED:', { verifyError, verifyMembership });
           toast({
-            title: 'تعذر تسجيلك في المجموعة',
+            title: 'فشل الانضمام للمجموعة',
             description: 'لم نتمكن من التحقق من تسجيلك في المجموعة. حاول مرة أخرى.',
             variant: 'destructive',
           });
           setLoading(false);
           return; // DO NOT CALL onComplete - profile is incomplete
         }
+        
+        console.log('Center group membership verified successfully:', verifyMembership.id);
       }
 
       // CRITICAL: Clear profile cache to ensure fresh data on next check
