@@ -4,7 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Gift, CheckCircle2, UserPlus, Eye } from 'lucide-react';
+import { Clock, Play, Gift, CheckCircle2, UserPlus, LogIn } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useFreeLessons } from '@/hooks/useFreeLessons';
@@ -56,18 +56,18 @@ const FreeLessons: React.FC = () => {
 
           {/* User state-based info banner */}
           {!user ? (
-            /* Visitor: Explain preview limit calmly */
-            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl animate-fade-in-up animation-delay-100">
+            /* Visitor: Login required to watch */
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl animate-fade-in-up animation-delay-100">
               <div className="flex items-start gap-3">
-                <Eye className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <UserPlus className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-1">
-                    {isArabic ? 'وضع المعاينة' : 'Preview Mode'}
+                  <p className="text-sm font-medium text-primary mb-1">
+                    {isArabic ? 'سجّل للمشاهدة' : 'Sign up to watch'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isArabic 
-                      ? 'تقدر تشوف 3 دقائق من كل حصة كمعاينة. سجّل حسابك عشان تشوف الحصص كاملة مجانًا.'
-                      : 'You can preview 3 minutes of each lesson. Sign up to watch full lessons for free.'
+                      ? 'الحصص مجانية! بس محتاج تسجل حساب عشان تشوفها وتتابع تقدمك.'
+                      : 'Lessons are free! Just sign up to watch and track your progress.'
                     }
                   </p>
                 </div>
