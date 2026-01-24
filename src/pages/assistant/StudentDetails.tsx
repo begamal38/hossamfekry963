@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowRight, User, Phone, GraduationCap, Calendar, BookOpen, Video, Award, 
-  Mail, AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
-  Clock, Plus, Trash2, Edit2, Copy, Check, Gauge, ArrowRightLeft, Users
+  ArrowRight, BookOpen, Award, 
+  AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
+  Plus, Trash2, Copy, Check, Gauge, ArrowRightLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,10 @@ import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivity
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 import { AISuggestionCard } from '@/components/assistant/AISuggestionCard';
 import { StudentGroupTransferDialog } from '@/components/assistant/StudentGroupTransferDialog';
+import { StudentIdentityCard } from '@/components/assistant/StudentIdentityCard';
+import { StudentProgressOverview } from '@/components/assistant/StudentProgressOverview';
+import { StudentFocusSummary } from '@/components/assistant/StudentFocusSummary';
+import { StudentEnrollmentsList } from '@/components/assistant/StudentEnrollmentsList';
 
 interface StudentProfile {
   user_id: string;
@@ -746,91 +750,64 @@ export default function StudentDetails() {
             </Button>
           </div>
 
-          {/* Student Info Card */}
-          <div className="bg-card rounded-xl border p-6 mb-6">
-            <div className="flex flex-col md:flex-row items-start gap-6">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-10 w-10 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between flex-wrap gap-4">
-                  <div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="text-2xl font-bold">{student.full_name || (isArabic ? 'بدون اسم' : 'No Name')}</h2>
-                      {student.is_suspended && (
-                        <Badge variant="destructive">{isArabic ? 'موقوف' : 'Suspended'}</Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      {/* Study Mode Badge */}
-                      {student.attendance_mode === 'center' ? (
-                        <Badge variant="default" className="bg-purple-600">
-                          <Users className="h-3 w-3 mr-1" />
-                          {currentGroupName || (isArabic ? 'طالب سنتر' : 'Center Student')}
-                        </Badge>
-                      ) : student.attendance_mode === 'online' ? (
-                        <Badge variant="secondary">
-                          {isArabic ? 'طالب أونلاين' : 'Online Student'}
-                        </Badge>
-                      ) : null}
-                      {/* Academic Year/Track Badge */}
-                      {groupLabel && (
-                        <Badge variant="outline">{groupLabel}</Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{student.email || (isArabic ? 'لا يوجد' : 'N/A')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <span dir="ltr">{student.phone || (isArabic ? 'لا يوجد' : 'N/A')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <GraduationCap className="h-4 w-4 shrink-0" />
-                    <span>{getGradeLabel(student.grade)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4 shrink-0" />
-                    <span>{isArabic ? 'تاريخ التسجيل:' : 'Registered:'} {new Date(student.created_at).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4 shrink-0" />
-                    <span>{isArabic ? 'آخر تحديث:' : 'Last update:'} {new Date(student.updated_at).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US')}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Section 1 & 2: Student Identity + Study Mode */}
+          <StudentIdentityCard
+            fullName={student.full_name}
+            email={student.email}
+            phone={student.phone}
+            grade={student.grade}
+            languageTrack={student.language_track}
+            attendanceMode={student.attendance_mode}
+            centerGroupName={currentGroupName}
+            isSuspended={student.is_suspended}
+            createdAt={student.created_at}
+            updatedAt={student.updated_at}
+            isArabic={isArabic}
+          />
+
+          {/* Section 4: Learning Progress Overview */}
+          <div className="mt-6">
+            <StudentProgressOverview
+              completedLessons={completedLessons}
+              totalLessons={totalLessons}
+              examsTaken={examResults.length}
+              totalAttendance={attendanceStats.total_count}
+              isArabic={isArabic}
+            />
+          </div>
+          
+          {/* Section 5: Focus & Behavior Summary */}
+          <div className="mt-6">
+            <StudentFocusSummary
+              stats={focusStats}
+              isArabic={isArabic}
+            />
           </div>
 
           {/* Assistant Actions */}
-          <div className="bg-card rounded-xl border p-6 mb-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div className="bg-card rounded-xl border border-border p-5 sm:p-6 mt-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               {isArabic ? 'إجراءات المساعد' : 'Assistant Actions'}
             </h3>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Button variant="outline" size="sm" onClick={() => setResetProgressDialogOpen(true)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                {isArabic ? 'إعادة تعيين التقدم' : 'Reset Progress'}
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+                {isArabic ? 'إعادة تعيين' : 'Reset'}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setNotificationDialogOpen(true)}>
-                <Bell className="h-4 w-4 mr-2" />
-                {isArabic ? 'إرسال إشعار' : 'Send Notification'}
+                <Bell className="h-4 w-4 mr-1.5" />
+                {isArabic ? 'إشعار' : 'Notify'}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setNoteDialogOpen(true)}>
-                <FileText className="h-4 w-4 mr-2" />
-                {isArabic ? 'إضافة ملاحظة' : 'Add Note'}
+                <FileText className="h-4 w-4 mr-1.5" />
+                {isArabic ? 'ملاحظة' : 'Note'}
               </Button>
               {/* Group Transfer - Only for center students with a group */}
               {student.attendance_mode === 'center' && currentGroupId && (
                 <Button variant="outline" size="sm" onClick={() => setTransferDialogOpen(true)}>
-                  <ArrowRightLeft className="h-4 w-4 mr-2" />
-                  {isArabic ? 'نقل لمجموعة أخرى' : 'Transfer Group'}
+                  <ArrowRightLeft className="h-4 w-4 mr-1.5" />
+                  {isArabic ? 'نقل' : 'Transfer'}
                 </Button>
               )}
               <Button 
@@ -840,197 +817,57 @@ export default function StudentDetails() {
               >
                 {student.is_suspended ? (
                   <>
-                    <Shield className="h-4 w-4 mr-2" />
-                    {isArabic ? 'إعادة التفعيل' : 'Reactivate'}
+                    <Shield className="h-4 w-4 mr-1.5" />
+                    {isArabic ? 'تفعيل' : 'Activate'}
                   </>
                 ) : (
                   <>
-                    <ShieldOff className="h-4 w-4 mr-2" />
-                    {isArabic ? 'تعليق الحساب' : 'Suspend'}
+                    <ShieldOff className="h-4 w-4 mr-1.5" />
+                    {isArabic ? 'تعليق' : 'Suspend'}
                   </>
                 )}
               </Button>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-card rounded-xl border p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-green-500" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold">{completedLessons}</p>
-              <p className="text-sm text-muted-foreground">{isArabic ? 'دروس مكتملة' : 'Lessons Completed'}</p>
-            </div>
-
-            <div className="bg-card rounded-xl border p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-blue-500" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold">{remainingLessons}</p>
-              <p className="text-sm text-muted-foreground">{isArabic ? 'دروس متبقية' : 'Lessons Remaining'}</p>
-            </div>
-
-            <div className="bg-card rounded-xl border p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <Award className="h-5 w-5 text-purple-500" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold">{examResults.length}</p>
-              <p className="text-sm text-muted-foreground">{isArabic ? 'امتحانات مؤداة' : 'Exams Taken'}</p>
-            </div>
-
-            <div className="bg-card rounded-xl border p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Video className="h-5 w-5 text-amber-500" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold">{attendanceStats.total_count}</p>
-              <p className="text-sm text-muted-foreground">{isArabic ? 'إجمالي الحضور' : 'Total Attendance'}</p>
-            </div>
-          </div>
-          
-          {/* Focus Mode Analytics - Only show if there are focus sessions */}
-          {focusStats.totalSessions > 0 && (
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Video className="h-5 w-5 text-green-600" />
-                {isArabic ? 'المشاهدة الفعلية (وضع التركيز)' : 'Actual Viewing (Focus Mode)'}
-              </h3>
-              
-              {/* Focus Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="bg-background/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">{focusStats.totalSessions}</p>
-                  <p className="text-xs text-muted-foreground">{isArabic ? 'جلسة تركيز' : 'Focus Sessions'}</p>
-                </div>
-                <div className="bg-background/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">
-                    {focusStats.totalActiveMinutes >= 60 
-                      ? `${Math.floor(focusStats.totalActiveMinutes / 60)}h ${focusStats.totalActiveMinutes % 60}m`
-                      : `${focusStats.totalActiveMinutes}m`
-                    }
-                  </p>
-                  <p className="text-xs text-muted-foreground">{isArabic ? 'وقت المشاهدة' : 'Watch Time'}</p>
-                </div>
-                <div className="bg-background/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">{focusStats.lessonsWatched}</p>
-                  <p className="text-xs text-muted-foreground">{isArabic ? 'حصص شوهدت' : 'Lessons Watched'}</p>
-                </div>
-                <div className="bg-background/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-green-600">{focusStats.avgSessionMinutes}m</p>
-                  <p className="text-xs text-muted-foreground">{isArabic ? 'متوسط/جلسة' : 'Avg/Session'}</p>
-                </div>
-              </div>
-              
-              {/* Lesson Watch Details */}
-              {lessonFocusDetails.length > 0 && (
-                <div className="bg-background/50 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold mb-3">{isArabic ? 'تفاصيل المشاهدة بالحصة' : 'Watch Details by Lesson'}</h4>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {lessonFocusDetails.slice(0, 10).map(detail => {
-                      const watchPercentage = detail.lessonDuration > 0 
-                        ? Math.min(100, Math.round((detail.watchMinutes / detail.lessonDuration) * 100))
-                        : 0;
-                      return (
-                        <div key={detail.lessonId} className="flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                              <p className="text-sm font-medium truncate">
-                                {isArabic ? detail.lessonTitleAr : detail.lessonTitle}
-                              </p>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {detail.isCompleted && (
-                                  <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
-                                    {isArabic ? 'مكتمل' : 'Done'}
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {detail.watchMinutes}m / {detail.lessonDuration || '?'}m
-                                </span>
-                              </div>
-                            </div>
-                            <Progress 
-                              value={watchPercentage} 
-                              className={`h-1.5 ${watchPercentage >= 80 ? '[&>div]:bg-green-500' : watchPercentage >= 50 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'}`}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Enrollments */}
-            <div className="bg-card rounded-xl border p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                {isArabic ? 'الكورسات المشترك فيها' : 'Enrolled Courses'}
-              </h3>
-              
-              {enrollments.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">{isArabic ? 'لا توجد اشتراكات' : 'No enrollments'}</p>
-              ) : (
-                <div className="space-y-4">
-                  {enrollments.map(enrollment => (
-                    <div key={enrollment.id} className="p-4 bg-muted/30 rounded-lg">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium">{isArabic ? enrollment.course?.title_ar : enrollment.course?.title}</p>
-                        {getStatusBadge(enrollment.status)}
-                      </div>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <span>
-                          {enrollment.completed_lessons || 0} / {enrollment.course?.lessons_count || 0} {isArabic ? 'درس' : 'lessons'}
-                        </span>
-                      </div>
-                      <Progress value={enrollment.progress || 0} className="mt-2 h-2" />
-                      
-                      {/* Activity Summary Button for expired enrollments */}
-                      {enrollment.status === 'expired' && activitySummaries.has(enrollment.course_id) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full gap-2"
-                          onClick={() => {
-                            setSelectedSummary(activitySummaries.get(enrollment.course_id)!);
-                            setSummaryDialogOpen(true);
-                          }}
-                        >
-                          <Gauge className="h-4 w-4" />
-                          {isArabic ? 'ملخص النشاط' : 'Activity Summary'}
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* Section 3: Enrollments + Exam Results Grid */}
+          <div className="grid lg:grid-cols-2 gap-6 mt-6">
+            {/* Enrollments List */}
+            <StudentEnrollmentsList
+              enrollments={enrollments}
+              activitySummaries={activitySummaries}
+              onViewSummary={(summary) => {
+                setSelectedSummary(summary);
+                setSummaryDialogOpen(true);
+              }}
+              isArabic={isArabic}
+            />
 
             {/* Exam Results */}
-            <div className="bg-card rounded-xl border p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border p-5 sm:p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <Award className="h-5 w-5 text-primary" />
                 {isArabic ? 'نتائج الامتحانات' : 'Exam Results'}
+                <Badge variant="secondary" className="mr-auto text-xs">
+                  {examResults.length}
+                </Badge>
               </h3>
               
               {examResults.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">{isArabic ? 'لا توجد نتائج' : 'No exam results'}</p>
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                    <Award className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    {isArabic ? 'لا توجد نتائج بعد' : 'No exam results yet'}
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {examResults.slice(0, 5).map(result => (
                     <div key={result.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{isArabic ? result.exam?.title_ar : result.exam?.title}</p>
+                        <p className="font-medium truncate text-sm">{isArabic ? result.exam?.title_ar : result.exam?.title}</p>
                         <p className="text-xs text-muted-foreground truncate">
                           {isArabic ? result.exam?.course?.title_ar : result.exam?.course?.title}
                         </p>
@@ -1048,7 +885,7 @@ export default function StudentDetails() {
           </div>
 
           {/* Internal Notes */}
-          <div className="bg-card rounded-xl border p-6 mt-6">
+          <div className="bg-card rounded-xl border border-border p-5 sm:p-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
