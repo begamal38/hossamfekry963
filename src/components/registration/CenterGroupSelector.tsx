@@ -141,7 +141,7 @@ export function CenterGroupSelector({
     <div className={cn("space-y-2", className)}>
       <label className="flex items-center gap-2 text-sm font-medium">
         <Users className="h-4 w-4 text-muted-foreground" />
-        {tr('مجموعة السنتر', 'مجموعة السنتر')}
+        {tr('مجموعة السنتر', 'Center Group')}
       </label>
 
       {loading ? (
@@ -154,7 +154,7 @@ export function CenterGroupSelector({
           <span className="text-sm">
             {tr(
               'لا توجد مجموعات متاحة حالياً للصف والمسار المحدد',
-              'لا توجد مجموعات متاحة حالياً للصف والمسار المحدد'
+              'No groups available for the selected grade and track'
             )}
           </span>
         </div>
@@ -162,7 +162,7 @@ export function CenterGroupSelector({
         <>
           <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
             <SelectTrigger className={cn("h-12", error && "border-destructive")}>
-              <SelectValue placeholder={tr('اختر مجموعة السنتر', 'اختر مجموعة السنتر')} />
+              <SelectValue placeholder={tr('اختر مجموعة السنتر', 'Select center group')} />
             </SelectTrigger>
             <SelectContent>
               {groups.map((group) => (

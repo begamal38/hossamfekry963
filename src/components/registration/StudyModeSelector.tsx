@@ -47,8 +47,8 @@ export function StudyModeSelector({
     {
       id: 'online' as StudyMode,
       icon: Monitor,
-      label: tr('أونلاين', 'أونلاين'),
-      description: tr('تعلم من المنزل', 'تعلم من المنزل'),
+      label: tr('أونلاين', 'Online'),
+      description: tr('تعلم من المنزل', 'Learn from home'),
       color: 'text-blue-600',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500',
@@ -56,8 +56,8 @@ export function StudyModeSelector({
     {
       id: 'center' as StudyMode,
       icon: MapPin,
-      label: tr('سنتر', 'سنتر'),
-      description: tr('حضور في السنتر', 'حضور في السنتر'),
+      label: tr('سنتر', 'Center'),
+      description: tr('حضور في السنتر', 'Attend at center'),
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500',
@@ -69,7 +69,7 @@ export function StudyModeSelector({
       {/* Mode Selection */}
       <div className="space-y-2">
         <label className="text-sm font-medium flex items-center gap-1">
-          {tr('طريقة الدراسة', 'طريقة الدراسة')}
+          {tr('طريقة الدراسة', 'Study Mode')}
           {required && <span className="text-destructive">*</span>}
         </label>
         <div className="grid grid-cols-2 gap-3">
