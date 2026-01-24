@@ -819,7 +819,11 @@ const Auth = () => {
             </Button>
           </form>
 
-          {/* Toggle Auth Mode */}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Toggle Auth Mode - OUTSIDE AnimatePresence for reliable clicks */}
           <div className="mt-5 pt-4 border-t border-border text-center">
             <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1 flex-wrap">
               <span>{isLogin ? tr('مش معانا لسه؟', 'New here?') : tr('عندك حساب؟', 'Already have an account?')}</span>
@@ -835,9 +839,6 @@ const Auth = () => {
               </button>
             </p>
           </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Back to Home - subtle */}
