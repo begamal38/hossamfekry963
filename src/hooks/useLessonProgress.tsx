@@ -81,8 +81,24 @@ export function useLessonProgress(courseId: string): UseLessonProgressReturn {
     return !!completions[lessonId]?.isCompleted;
   }, [completions]);
 
-  const markLessonComplete = useCallback(async (lessonId: string) => {
+  /**
+   * Mark a lesson as complete - STUDENTS ONLY
+   * 
+   * CRITICAL DATA HYGIENE: This function should only be called for students.
+   * Staff testing/observation MUST NOT create lesson_completions records.
+   * The isStaff parameter allows callers to block staff writes.
+   */
+  const markLessonComplete = useCallback(async (lessonId: string, isStaff: boolean = false) => {
     if (!user) return;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // ROLE GUARD: Staff MUST NOT write lesson completions
+    // This prevents analytics contamination from testing/observation
+    // ═══════════════════════════════════════════════════════════════════
+    if (isStaff) {
+      console.log('[LessonProgress] Blocked: Staff user - not recording completion');
+      return;
+    }
 
     try {
       const { error } = await supabase

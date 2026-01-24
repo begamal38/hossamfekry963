@@ -341,6 +341,16 @@ export default function LessonView() {
   const handleConfirmComplete = async () => {
     if (!user || !lesson || completionSaving) return;
 
+    // ═══════════════════════════════════════════════════════════════════
+    // ROLE GUARD: Staff (admin/assistant_teacher) MUST NOT write progress data
+    // This prevents analytics contamination from testing/observation
+    // ═══════════════════════════════════════════════════════════════════
+    if (isStaff) {
+      setShowCompletionConfirm(false);
+      toast.info(isArabic ? 'وضع المراقبة — لا يتم تسجيل التقدم للمسؤولين' : 'Observer mode — progress not recorded for staff');
+      return;
+    }
+
     setShowCompletionConfirm(false);
     setCompletionSaving(true);
     try {
@@ -350,6 +360,7 @@ export default function LessonView() {
       // ═══════════════════════════════════════════════════════════════════
       // FOCUS SESSION PERSISTENCE — SINGLE WRITE POINT
       // Persist ONLY on FOCUS_COMPLETED transition, never during playback
+      // Staff are already blocked above, but double-check for safety
       // ═══════════════════════════════════════════════════════════════════
       const sessionData = focusModeRef.current?.getSessionData();
       if (sessionData && lesson.course_id && !focusPersistenceCalledRef.current) {
