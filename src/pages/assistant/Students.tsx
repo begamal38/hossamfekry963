@@ -264,13 +264,12 @@ export default function Students() {
       <Navbar />
       
       <main className="container mx-auto px-3 sm:px-4 py-4 pt-20">
-        {/* Mobile-First Header */}
+        {/* Mobile-First Header - Clean hierarchy */}
         <AssistantPageHeader
           title={isRTL ? 'إدارة الطلاب' : 'Students'}
           subtitle={`${filteredStudents.length} ${isRTL ? 'طالب' : 'students'}`}
           backHref="/assistant"
           isRTL={isRTL}
-          icon={User}
           actions={
             <div className="flex items-center gap-1">
               <Button 
@@ -309,36 +308,41 @@ export default function Students() {
           }
         />
 
-        {/* Status Summary */}
-        <StatusSummaryCard
-          primaryText={`${students.length} ${isRTL ? 'طالب مسجل' : 'registered'}`}
-          secondaryText={students.filter(s => s.enrollmentCount > 0).length > 0 
-            ? `${students.filter(s => s.enrollmentCount > 0).length} ${isRTL ? 'مشترك' : 'enrolled'}`
-            : undefined}
-          isRTL={isRTL}
-          className="mb-4"
-        />
+        {/* Status Summary - Secondary visual weight */}
+        <div className="mb-4 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{students.length}</span>
+          <span className="mx-1">{isRTL ? 'طالب مسجل' : 'registered'}</span>
+          {students.filter(s => s.enrollmentCount > 0).length > 0 && (
+            <>
+              <span className="text-muted-foreground/50 mx-1">•</span>
+              <span className="text-green-600 dark:text-green-400">{students.filter(s => s.enrollmentCount > 0).length}</span>
+              <span className="mx-1">{isRTL ? 'مشترك' : 'enrolled'}</span>
+            </>
+          )}
+        </div>
 
-        {/* Search & Filters */}
-        <SearchFilterBar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchPlaceholder={isRTL ? 'ابحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
-          filters={[
-            {
-              value: academicYearFilter,
-              onChange: setAcademicYearFilter,
-              options: [
-                { value: 'all', label: isRTL ? 'كل السنوات' : 'All Years' },
-                { value: 'second_secondary', label: isRTL ? 'تانية ثانوي' : '2nd Sec' },
-                { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
-              ],
-            },
-          ]}
-          onClearFilters={clearFilters}
-          hasActiveFilters={hasActiveFilters}
-          isRTL={isRTL}
-        />
+        {/* Search & Filters - Grouped in visual block */}
+        <div className="bg-card rounded-xl border border-border p-3 mb-4">
+          <SearchFilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={isRTL ? 'ابحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
+            filters={[
+              {
+                value: academicYearFilter,
+                onChange: setAcademicYearFilter,
+                options: [
+                  { value: 'all', label: isRTL ? 'كل السنوات' : 'All Years' },
+                  { value: 'second_secondary', label: isRTL ? 'تانية ثانوي' : '2nd Sec' },
+                  { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
+                ],
+              },
+            ]}
+            onClearFilters={clearFilters}
+            hasActiveFilters={hasActiveFilters}
+            isRTL={isRTL}
+          />
+        </div>
 
         {/* Students List - Mobile Cards */}
         {loading ? (
@@ -367,7 +371,7 @@ export default function Students() {
           <div className="space-y-2">
             {filteredStudents.map((student) => {
               const groupLabel = getGroupLabel(student.grade, student.language_track, isRTL);
-              // Attendance mode label
+              // Attendance mode label - tertiary, informational only
               const modeLabel = student.attendance_mode === 'center' 
                 ? (isRTL ? 'سنتر' : 'Center')
                 : student.attendance_mode === 'online'
@@ -382,28 +386,44 @@ export default function Students() {
                   badge={groupLabel || undefined}
                   badgeVariant="default"
                   secondaryBadge={modeLabel || undefined}
-                  secondaryBadgeVariant={student.attendance_mode === 'center' ? 'success' : 'accent'}
+                  secondaryBadgeVariant="muted"
                   icon={User}
                   iconColor="text-primary"
+                  iconBgColor="bg-primary/10"
                   metadata={[
                     ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
                     ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
                   ]}
                   onClick={() => navigate(`/assistant/students/${student.short_id}`)}
-                  actions={[
-                    { 
-                      icon: Plus, 
-                      onClick: (e?: React.MouseEvent) => openQuickEnroll(student, e as React.MouseEvent), 
-                      variant: 'outline' as const,
-                      className: 'bg-green-50 hover:bg-green-100 text-green-600 border-green-200 dark:bg-green-950 dark:hover:bg-green-900 dark:text-green-400 dark:border-green-800'
-                    },
-                    { 
-                      icon: ChevronLeft, 
-                      onClick: () => navigate(`/assistant/students/${student.short_id}`), 
-                      variant: 'ghost' as const,
-                      className: isRTL ? '' : 'rotate-180'
-                    }
-                  ]}
+                  actions={
+                    <div className="flex items-center gap-1.5">
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                              onClick={(e) => openQuickEnroll(student, e)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side={isRTL ? 'right' : 'left'}>
+                            <p>{isRTL ? 'إجراءات إضافية' : 'Actions'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={() => navigate(`/assistant/students/${student.short_id}`)}
+                      >
+                        <ChevronLeft className={`h-4 w-4 ${isRTL ? '' : 'rotate-180'}`} />
+                      </Button>
+                    </div>
+                  }
                   isRTL={isRTL}
                 />
               );
@@ -411,7 +431,7 @@ export default function Students() {
           </div>
         )}
 
-        {/* Floating Import Button */}
+        {/* Floating Import Button - Safe positioning */}
         <FloatingActionButton
           icon={Upload}
           onClick={() => setImportDialogOpen(true)}
