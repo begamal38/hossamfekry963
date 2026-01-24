@@ -29,7 +29,6 @@ export const Navbar: React.FC = () => {
     { href: '/about', label: t('nav.about') },
     ...(user && !canAccessDashboard() ? [
       { href: '/platform', label: t('nav.platform') },
-      { href: '/profile', label: t('nav.myProfile') },
     ] : []),
     ...(canAccessDashboard() ? [{ href: '/assistant', label: t('nav.platform') }] : []),
   ];
