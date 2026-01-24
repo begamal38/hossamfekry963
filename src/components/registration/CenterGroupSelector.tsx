@@ -78,12 +78,13 @@ export function CenterGroupSelector({
       try {
         console.log('[CenterGroupSelector] Fetching groups for:', { grade, languageTrack });
         
-        // Use secure RPC function that excludes teacher IDs
+        // Use the safe public view that excludes teacher IDs
         const { data, error } = await supabase
-          .rpc('get_center_groups_for_registration', {
-            p_grade: grade,
-            p_language_track: languageTrack
-          });
+          .from('center_groups_for_registration')
+          .select('id, name, grade, language_track, days_of_week, time_slot, is_active')
+          .eq('grade', grade)
+          .eq('language_track', languageTrack)
+          .order('name');
 
         if (error) {
           console.error('[CenterGroupSelector] Query error:', error);
@@ -91,17 +92,7 @@ export function CenterGroupSelector({
         }
         
         console.log('[CenterGroupSelector] Found groups:', data?.length || 0);
-        // Map RPC result to CenterGroup interface
-        const groups: CenterGroup[] = (data || []).map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          grade: g.grade,
-          language_track: g.language_track,
-          days_of_week: g.days_of_week,
-          time_slot: g.time_slot,
-          is_active: true // RPC only returns active groups
-        }));
-        setGroups(groups);
+        setGroups(data || []);
       } catch (err) {
         console.error('[CenterGroupSelector] Error fetching center groups:', err);
         setGroups([]);
