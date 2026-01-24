@@ -1,5 +1,6 @@
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { useSmartEngagement } from '@/hooks/useSmartEngagement';
+import { UXModalControllerProvider } from '@/hooks/useUXModalController';
 import { CookieConsent } from './CookieConsent';
 import { PushPermissionPrompt } from './PushPermissionPrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -12,28 +13,32 @@ interface SmartEngagementProviderProps {
   children: ReactNode;
 }
 
-export const SmartEngagementProvider = ({ children }: SmartEngagementProviderProps) => {
+/**
+ * Inner provider that uses the modal controller
+ * Must be inside UXModalControllerProvider
+ */
+const SmartEngagementInner = ({ children }: SmartEngagementProviderProps) => {
   const engagement = useSmartEngagement();
 
   return (
     <SmartEngagementContext.Provider value={engagement}>
       {children}
       
-      {/* Cookie Consent Banner - shows first */}
+      {/* Cookie Consent Banner - auto-accepts silently */}
       <CookieConsent
         status={engagement.cookieConsent}
         onAccept={engagement.acceptCookies}
         onDecline={engagement.declineCookies}
       />
 
-      {/* Push Permission Prompt - shows after engagement threshold */}
+      {/* Push Permission Prompt - controlled by modal controller */}
       <PushPermissionPrompt
         show={engagement.canShowPushPrompt}
         onAccept={engagement.requestPushPermission}
         onDismiss={engagement.dismissPushPrompt}
       />
 
-      {/* PWA Install Prompt - shows after engagement threshold */}
+      {/* PWA Install Prompt - controlled by modal controller, lower priority */}
       <PWAInstallPrompt
         show={engagement.canShowInstallPrompt}
         onInstall={engagement.triggerInstall}
@@ -41,6 +46,20 @@ export const SmartEngagementProvider = ({ children }: SmartEngagementProviderPro
         onShown={engagement.markInstallPromptShown}
       />
     </SmartEngagementContext.Provider>
+  );
+};
+
+/**
+ * Main provider that wraps children with UX modal controller
+ * Ensures only ONE system popup is visible at any time
+ */
+export const SmartEngagementProvider = ({ children }: SmartEngagementProviderProps) => {
+  return (
+    <UXModalControllerProvider>
+      <SmartEngagementInner>
+        {children}
+      </SmartEngagementInner>
+    </UXModalControllerProvider>
   );
 };
 

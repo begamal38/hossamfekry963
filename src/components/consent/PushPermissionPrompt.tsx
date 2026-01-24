@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,16 +11,38 @@ interface PushPermissionPromptProps {
 
 export const PushPermissionPrompt = ({ show, onAccept, onDismiss }: PushPermissionPromptProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const hasShownRef = useRef(false);
 
   useEffect(() => {
-    if (show) {
+    if (show && !hasShownRef.current) {
       // Show after a short delay for better UX
-      const timer = setTimeout(() => setIsVisible(true), 500);
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+        hasShownRef.current = true;
+      }, 500);
       return () => clearTimeout(timer);
-    } else {
+    } else if (!show) {
       setIsVisible(false);
     }
   }, [show]);
+
+  // Handle accept - close immediately
+  const handleAccept = () => {
+    setIsVisible(false);
+    // Small delay before callback to allow exit animation
+    setTimeout(() => {
+      onAccept();
+    }, 200);
+  };
+
+  // Handle dismiss - close immediately
+  const handleDismiss = () => {
+    setIsVisible(false);
+    // Small delay before callback to allow exit animation
+    setTimeout(() => {
+      onDismiss();
+    }, 200);
+  };
 
   if (!isVisible) return null;
 
@@ -38,7 +60,7 @@ export const PushPermissionPrompt = ({ show, onAccept, onDismiss }: PushPermissi
           <div className="bg-card border border-border rounded-2xl shadow-lg p-5 backdrop-blur-sm relative">
             {/* Close button */}
             <button
-              onClick={onDismiss}
+              onClick={handleDismiss}
               className="absolute top-3 left-3 p-1.5 rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
@@ -62,7 +84,7 @@ export const PushPermissionPrompt = ({ show, onAccept, onDismiss }: PushPermissi
             {/* Actions */}
             <div className="flex items-center gap-3">
               <Button 
-                onClick={onAccept}
+                onClick={handleAccept}
                 className="flex-1"
                 size="lg"
               >
@@ -70,7 +92,7 @@ export const PushPermissionPrompt = ({ show, onAccept, onDismiss }: PushPermissi
               </Button>
               <Button 
                 variant="ghost" 
-                onClick={onDismiss}
+                onClick={handleDismiss}
                 className="text-muted-foreground hover:text-foreground"
               >
                 مش دلوقتي
