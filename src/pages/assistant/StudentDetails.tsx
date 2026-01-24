@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, BookOpen, Award, 
   AlertCircle, RefreshCw, Bell, FileText, Shield, ShieldOff,
-  Plus, Trash2, Copy, Check, Gauge, ArrowRightLeft
+  Plus, Trash2, Copy, Check, Gauge, ArrowRightLeft, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,7 @@ import { CourseActivitySummaryCard } from '@/components/assistant/CourseActivity
 import { ActivityGuidePanel } from '@/components/assistant/ActivityGuidePanel';
 import { AISuggestionCard } from '@/components/assistant/AISuggestionCard';
 import { StudentGroupTransferDialog } from '@/components/assistant/StudentGroupTransferDialog';
+import { ForceMoveToCenter } from '@/components/assistant/ForceMoveToCenter';
 import { StudentIdentityCard } from '@/components/assistant/StudentIdentityCard';
 import { StudentProgressOverview } from '@/components/assistant/StudentProgressOverview';
 import { StudentFocusSummary } from '@/components/assistant/StudentFocusSummary';
@@ -172,6 +173,7 @@ export default function StudentDetails() {
   const [resetProgressDialogOpen, setResetProgressDialogOpen] = useState(false);
   const [selectedCourseForReset, setSelectedCourseForReset] = useState<string | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [forceMoveDialogOpen, setForceMoveDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
@@ -810,6 +812,13 @@ export default function StudentDetails() {
                   {isArabic ? 'نقل' : 'Transfer'}
                 </Button>
               )}
+              {/* Force Move to Center - Only for online students */}
+              {student.attendance_mode === 'online' && (
+                <Button variant="outline" size="sm" onClick={() => setForceMoveDialogOpen(true)}>
+                  <MapPin className="h-4 w-4 mr-1.5" />
+                  {isArabic ? 'نقل إلى سنتر' : 'Move to Center'}
+                </Button>
+              )}
               <Button 
                 variant={student.is_suspended ? "default" : "destructive"} 
                 size="sm" 
@@ -1102,6 +1111,19 @@ export default function StudentDetails() {
         currentGroupId={currentGroupId}
         currentGroupName={currentGroupName}
         onTransferComplete={() => {
+          if (userId) fetchStudentData(userId);
+        }}
+      />
+
+      {/* Force Move to Center Dialog - Admin action for online students */}
+      <ForceMoveToCenter
+        open={forceMoveDialogOpen}
+        onOpenChange={setForceMoveDialogOpen}
+        studentId={userId || ''}
+        studentName={student?.full_name || ''}
+        studentGrade={student?.academic_year || student?.grade || null}
+        studentLanguageTrack={student?.language_track || null}
+        onMoveComplete={() => {
           if (userId) fetchStudentData(userId);
         }}
       />
