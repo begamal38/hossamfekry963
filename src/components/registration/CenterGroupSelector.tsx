@@ -78,12 +78,12 @@ export function CenterGroupSelector({
       try {
         console.log('[CenterGroupSelector] Fetching groups for:', { grade, languageTrack });
         
+        // Use the safe public view that excludes teacher IDs
         const { data, error } = await supabase
-          .from('center_groups')
-          .select('*')
+          .from('center_groups_for_registration')
+          .select('id, name, grade, language_track, days_of_week, time_slot, is_active')
           .eq('grade', grade)
           .eq('language_track', languageTrack)
-          .eq('is_active', true)
           .order('name');
 
         if (error) {
