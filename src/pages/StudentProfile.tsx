@@ -266,10 +266,10 @@ export default function StudentProfile() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold">{isArabic ? 'ملفي الشخصي' : 'My Profile'}</h1>
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="sm" asChild className="gap-2">
               <Link to="/settings">
-                <Settings className="w-4 h-4 mr-2" />
-                {isArabic ? 'الإعدادات' : 'Settings'}
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">{isArabic ? 'الإعدادات' : 'Settings'}</span>
               </Link>
             </Button>
           </div>
