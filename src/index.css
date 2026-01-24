@@ -1420,7 +1420,219 @@
   .animate-electron-orbit-slow,
   .animate-star-twinkle,
   .animate-scroll-ltr,
-  .animate-scroll-rtl {
+  .animate-scroll-rtl,
+  .micro-ux-animate {
     animation: none !important;
   }
+  .micro-ux-transition {
+    transition: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MICRO UX - FEEDBACK & FOCUS CUES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Form input shake on error - 120ms, 3 small shakes */
+@keyframes shake-error {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+
+.shake-error {
+  animation: shake-error 0.12s ease-out 3;
+}
+
+/* Success checkmark pop */
+@keyframes check-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.check-pop {
+  animation: check-pop 0.2s ease-out forwards;
+}
+
+/* Modal/Dialog entrance - fade + scale */
+@keyframes modal-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modal-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.modal-enter {
+  animation: modal-enter 0.15s ease-out forwards;
+}
+
+.modal-exit {
+  animation: modal-exit 0.12s ease-in forwards;
+}
+
+/* Overlay fade */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.overlay-enter {
+  animation: overlay-fade-in 0.15s ease-out forwards;
+}
+
+.overlay-exit {
+  animation: overlay-fade-out 0.12s ease-in forwards;
+}
+
+/* Focus mode - subtle screen dim */
+.focus-dim {
+  transition: filter 0.3s ease-out;
+}
+
+.focus-dim.active {
+  filter: brightness(0.97);
+}
+
+/* Focus mode completion celebration - calm, one-time */
+@keyframes focus-complete {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.focus-complete {
+  animation: focus-complete 0.3s ease-out;
+}
+
+/* Smooth number count-up animation */
+.number-animate {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.number-animate.updating {
+  animation: count-up 0.25s ease-out;
+}
+
+/* Card data fade-in on load */
+@keyframes data-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.data-fade-in {
+  animation: data-fade-in 0.2s ease-out forwards;
+}
+
+/* Staggered data load animation */
+.data-stagger > * {
+  opacity: 0;
+  animation: data-fade-in 0.2s ease-out forwards;
+}
+
+.data-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.data-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.data-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.data-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.data-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.data-stagger > *:nth-child(6) { animation-delay: 250ms; }
+
+/* Progress bar smooth fill */
+.progress-smooth {
+  transition: width 0.3s ease-out;
+}
+
+/* Lesson complete feedback - calm pulse */
+@keyframes lesson-complete {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--success) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--success) / 0);
+  }
+}
+
+.lesson-complete {
+  animation: lesson-complete 0.5s ease-out;
+}
+
+/* Read-only field indicator */
+.field-readonly {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* RTL-aware slide animations */
+[dir="rtl"] .slide-in-natural {
+  animation: slide-in-right 0.2s ease-out forwards;
+}
+
+[dir="ltr"] .slide-in-natural {
+  animation: slide-in-left 0.2s ease-out forwards;
+}
+
+/* Focus indicator - non-intrusive pulse */
+.focus-active-indicator {
+  position: relative;
+}
+
+.focus-active-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 hsl(var(--primary) / 0.2);
+  animation: focus-breathe 7s ease-in-out infinite;
+}
+
+/* Calm interruption cue */
+@keyframes gentle-alert {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.gentle-alert {
+  animation: gentle-alert 0.8s ease-in-out;
 }
