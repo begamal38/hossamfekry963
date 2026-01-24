@@ -61,6 +61,7 @@
     --gradient-primary: linear-gradient(135deg, hsl(209 56% 46%) 0%, hsl(209 70% 60%) 100%);
     --gradient-glow: radial-gradient(circle, hsl(209 70% 60% / 0.3) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(209 60% 96%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(209 30% 96%) 50%, hsl(209 56% 46% / 0.08) 100%);
 
     /* Enhanced Shadow System - Indigo tinted for brand presence */
     --shadow-xs: 0 1px 2px 0 hsl(209 56% 46% / 0.04);
@@ -133,6 +134,7 @@
     --gradient-primary: linear-gradient(135deg, hsl(209 70% 55%) 0%, hsl(209 80% 65%) 100%);
     --gradient-glow: radial-gradient(circle, hsl(209 80% 65% / 0.2) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 8%) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 8%) 50%, hsl(209 70% 55% / 0.12) 100%);
 
     /* Enhanced Shadow System - Dark mode with indigo glow */
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
