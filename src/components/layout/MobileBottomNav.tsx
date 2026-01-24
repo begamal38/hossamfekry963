@@ -46,9 +46,10 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <nav 
-      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-background/95 backdrop-blur-lg border-t border-border safe-area-bottom w-screen max-w-full"
+      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-background/98 backdrop-blur-xl border-t border-border/70 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] w-screen max-w-full"
       role="navigation"
       aria-label="Main navigation"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 4px)' }}
     >
       <div className="flex items-center justify-around h-16 px-2 max-w-full">
         {navItems.map((item) => {

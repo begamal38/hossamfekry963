@@ -15,10 +15,24 @@ export const Footer: React.FC = () => {
 
   return (
     <footer 
-      className="border-t border-border mt-16 bg-muted/50 dark:bg-background/80" 
+      className="relative border-t border-border/50 mt-16 overflow-hidden" 
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      <div className="container mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+      {/* Brand gradient background - Light mode: soft white to indigo, Dark mode: slate to indigo */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-primary/[0.08] dark:from-background dark:via-muted/10 dark:to-primary/[0.12]" />
+      
+      {/* Subtle chemical-style reflections */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Left reflection */}
+        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-primary/[0.04] to-transparent dark:from-primary/[0.08]" />
+        {/* Right reflection */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/[0.04] to-transparent dark:from-primary/[0.08]" />
+        {/* Bottom glow accent */}
+        <div className="absolute bottom-0 left-1/4 right-1/4 h-32 bg-gradient-to-t from-primary/[0.06] to-transparent dark:from-primary/[0.10] blur-xl" />
+      </div>
+      
+      {/* Content container with proper mobile bottom padding for nav clearance */}
+      <div className="relative container mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20 pb-24 md:pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 text-center md:text-right">
           
           {/* Brand Section */}
@@ -130,16 +144,17 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar - Copyright & Attribution */}
-        <div className="mt-12 pt-6 border-t border-border text-center">
+        <div className="mt-12 pt-6 border-t border-border/60 text-center">
           {/* Copyright Line */}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground/80">
             Hossam Fekry © {currentYear} — {t('footer.rights')}
           </p>
           
-          {/* Powered By - ALWAYS below copyright, smaller, muted */}
+          {/* Powered By - ONLY ONCE, below copyright, smaller, muted, consistent styling */}
           <button 
             onClick={() => window.open('https://wa.me/201000788628', '_blank')}
-            className="mt-3 block mx-auto text-[0.65rem] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors cursor-pointer"
+            className="mt-3 mb-2 block mx-auto text-[0.65rem] font-normal text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors duration-200 cursor-pointer"
+            aria-label="Powered by Belal Gamal"
           >
             Powered by Belal Gamal
           </button>
