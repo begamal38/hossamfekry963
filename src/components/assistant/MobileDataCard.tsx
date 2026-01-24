@@ -23,10 +23,10 @@ interface MobileDataCardProps {
   title: string;
   subtitle?: string;
   badge?: string;
-  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent';
+  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent' | 'muted';
   badgeClassName?: string;
   secondaryBadge?: string;
-  secondaryBadgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent';
+  secondaryBadgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' | 'accent' | 'muted';
   icon?: LucideIcon;
   iconColor?: string;
   iconBgColor?: string;
@@ -47,12 +47,15 @@ const badgeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 
   success: 'secondary',
   warning: 'secondary',
   accent: 'secondary',
+  muted: 'outline',
 };
 
 const badgeClassMap: Record<string, string> = {
-  success: 'bg-green-500/10 text-green-600 border-green-500/20',
-  warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  default: 'bg-primary/10 text-primary border-transparent font-medium',
+  success: 'bg-green-500/15 text-green-700 dark:text-green-400 border-transparent',
+  warning: 'bg-amber-500/10 text-amber-600 border-transparent',
   accent: 'bg-primary/10 text-primary border-primary/20',
+  muted: 'bg-muted/60 text-muted-foreground border-transparent text-[10px]',
 };
 
 export const MobileDataCard: React.FC<MobileDataCardProps> = ({
