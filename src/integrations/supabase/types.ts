@@ -1635,6 +1635,17 @@ export type Database = {
         Args: { p_course_id?: string; p_grade: string; p_title_ar: string }
         Returns: string
       }
+      get_center_groups_for_registration: {
+        Args: { p_grade: string; p_language_track: string }
+        Returns: {
+          days_of_week: string[]
+          grade: string
+          id: string
+          language_track: string
+          name: string
+          time_slot: string
+        }[]
+      }
       get_chapter_progress: {
         Args: { p_course_id: string; p_user_id?: string }
         Returns: {
