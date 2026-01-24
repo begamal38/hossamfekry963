@@ -214,18 +214,18 @@ export const Navbar: React.FC = () => {
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Button variant="outline" className="flex-1" asChild>
+                  <div className="flex flex-col gap-3 w-full">
+                    <Button variant="outline" className="w-full" asChild>
                       <Link to="/auth" onClick={() => setIsOpen(false)}>
                         {t('nav.login')}
                       </Link>
                     </Button>
-                    <Button className="flex-1" asChild>
+                    <Button className="w-full" asChild>
                       <Link to="/auth?mode=signup" onClick={() => setIsOpen(false)}>
                         {t('nav.signUp')}
                       </Link>
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
