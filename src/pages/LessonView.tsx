@@ -1152,72 +1152,57 @@ export default function LessonView() {
             </section>
           )}
 
-          {/* Navigation */}
-          <nav className="flex items-center justify-between gap-4" aria-label="Lesson navigation">
+          {/* Navigation - Single source, clear hierarchy */}
+          <nav className="flex items-center justify-between gap-4 py-2" aria-label="Lesson navigation">
+            {/* Previous - Secondary style (outline) */}
             <div className="flex-1">
               {previousLesson ? (
                 <Button 
                   variant="outline" 
                   onClick={() => navigate(`/lesson/${previousLesson.short_id}`)}
-                  className="gap-2"
+                  className="gap-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">{isArabic ? 'الحصة السابقة' : 'Previous'}</span>
+                  {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{isArabic ? 'السابقة' : 'Previous'}</span>
                 </Button>
               ) : (
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
-                  className="gap-2"
+                  className="gap-2 text-muted-foreground hover:text-foreground"
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
                   <span className="hidden sm:inline">{isArabic ? 'الكورس' : 'Course'}</span>
                 </Button>
               )}
             </div>
 
-            {/* Progress indicator */}
-            <div className="text-sm text-muted-foreground hidden md:block">
+            {/* Progress indicator - centered */}
+            <div className="text-sm text-muted-foreground font-medium px-3 py-1 bg-muted/50 rounded-full">
               {currentLessonIndex + 1} / {courseLessons.length}
             </div>
 
+            {/* Next - Primary style (filled, stronger) */}
             <div className="flex-1 flex justify-end">
               {nextLesson ? (
                 <Button 
                   onClick={() => navigate(`/lesson/${nextLesson.short_id}`)}
-                  className="gap-2"
+                  className="gap-2 bg-primary hover:bg-primary/90"
                 >
-                  <span className="hidden sm:inline">{isArabic ? 'الحصة التالية' : 'Next'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">{isArabic ? 'التالية' : 'Next'}</span>
+                  {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </Button>
               ) : (
                 <Button 
                   onClick={() => navigate('/platform')}
-                  className="gap-2"
+                  className="gap-2 bg-primary hover:bg-primary/90"
                 >
-                  <span className="hidden sm:inline">{isArabic ? 'للمنصة' : 'Platform'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">{isArabic ? 'المنصة' : 'Platform'}</span>
+                  {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                 </Button>
               )}
             </div>
           </nav>
-        </div>
-
-        {/* Floating Lesson List Button - Mobile-first positioning */}
-        <div className={cn(
-          "fixed z-50",
-          "bottom-24 md:bottom-8",
-          isRTL ? "left-4 md:left-8" : "right-4 md:right-8"
-        )}>
-          <Button 
-            size="sm" 
-            variant="secondary"
-            onClick={() => navigate(`/course/${course?.slug || course?.id}`)}
-            className="shadow-lg shadow-black/10 gap-2"
-          >
-            <BookOpen className="w-4 h-4" />
-            {courseLessons.length} {isArabic ? 'حصص' : 'lessons'}
-          </Button>
         </div>
       </main>
       
