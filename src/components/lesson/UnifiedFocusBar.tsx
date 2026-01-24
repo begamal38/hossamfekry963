@@ -156,9 +156,9 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
     <div
       dir="ltr"
       className={cn(
-        "flex items-center gap-2 transition-all duration-300 rounded-full",
+        "flex items-center gap-2 transition-all duration-150 ease-out rounded-full",
         "border backdrop-blur-sm cursor-pointer select-none",
-        "focus-mode-expand-animation",
+        "motion-reduce:transition-none",
         isFocusActive
           ? isWarning
             ? "bg-destructive/10 border-destructive/30"
@@ -202,9 +202,8 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
         <Pause className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       )}
 
-      {/* Expanded content */}
       {isExpanded && (
-        <div className="flex flex-col min-w-0 animate-fade-in">
+        <div className="flex flex-col min-w-0 data-fade-in">
           <span className={cn(
             "text-sm font-medium truncate",
             isFocusActive
