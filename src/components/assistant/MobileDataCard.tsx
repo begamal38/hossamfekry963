@@ -52,10 +52,13 @@ const badgeVariantMap: Record<string, 'default' | 'secondary' | 'destructive' | 
 
 const badgeClassMap: Record<string, string> = {
   default: 'bg-primary/10 text-primary border-transparent font-medium',
+  secondary: 'bg-muted text-muted-foreground border-transparent',
   success: 'bg-green-500/15 text-green-700 dark:text-green-400 border-transparent',
-  warning: 'bg-amber-500/10 text-amber-600 border-transparent',
+  warning: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-transparent',
+  destructive: 'bg-destructive/10 text-destructive border-transparent',
   accent: 'bg-primary/10 text-primary border-primary/20',
   muted: 'bg-muted/60 text-muted-foreground border-transparent text-[10px]',
+  outline: 'bg-transparent text-muted-foreground border-border',
 };
 
 export const MobileDataCard: React.FC<MobileDataCardProps> = ({

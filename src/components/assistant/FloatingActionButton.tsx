@@ -22,11 +22,12 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     <button
       onClick={onClick}
       className={cn(
-        // Fixed position at bottom-right (or bottom-left for RTL)
+        // Fixed position at bottom-right (respects RTL with 'end')
+        // z-40 ensures it sits above content but below modals/dialogs (z-50)
         "fixed z-40",
-        // Mobile: higher to avoid bottom nav, Desktop: lower and smaller
-        isMobile ? "bottom-24 end-4" : "bottom-6 end-6",
-        // Styling - slightly smaller on desktop
+        // Mobile: higher to avoid bottom nav + safe area, Desktop: standard positioning
+        isMobile ? "bottom-24 end-4 safe-area-inset-bottom" : "bottom-6 end-6",
+        // Styling - responsive sizing
         "flex items-center gap-2 rounded-full",
         isMobile ? "px-4 py-3" : "px-3.5 py-2.5",
         "bg-primary text-primary-foreground",
@@ -37,6 +38,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         isMobile ? "text-sm" : "text-xs",
         className
       )}
+      aria-label={label || 'Action button'}
     >
       <Icon className={cn(isMobile ? "w-5 h-5" : "w-4 h-4")} />
       {label && <span>{label}</span>}
