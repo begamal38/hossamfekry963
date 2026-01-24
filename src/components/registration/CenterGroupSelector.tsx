@@ -66,7 +66,7 @@ export function CenterGroupSelector({
 
   const tr = (ar: string, en: string) => isArabic ? ar : en;
 
-  // Fetch groups when grade/track changes
+  // Fetch groups when grade/track changes using secure RPC function
   useEffect(() => {
     const fetchGroups = async () => {
       if (!grade || !languageTrack) {
@@ -76,23 +76,34 @@ export function CenterGroupSelector({
 
       setLoading(true);
       try {
-        console.log('[CenterGroupSelector] Fetching groups for:', { grade, languageTrack });
+        console.log('[CenterGroupSelector] Fetching groups via RPC for:', { grade, languageTrack });
         
+        // Use secure RPC function instead of direct table access
+        // This bypasses RLS restrictions for registration flow
         const { data, error } = await supabase
-          .from('center_groups')
-          .select('*')
-          .eq('grade', grade)
-          .eq('language_track', languageTrack)
-          .eq('is_active', true)
-          .order('name');
+          .rpc('get_center_groups_for_registration', {
+            p_grade: grade,
+            p_language_track: languageTrack
+          });
 
         if (error) {
-          console.error('[CenterGroupSelector] Query error:', error);
+          console.error('[CenterGroupSelector] RPC error:', error);
           throw error;
         }
         
-        console.log('[CenterGroupSelector] Found groups:', data?.length || 0);
-        setGroups(data || []);
+        // Map RPC result to CenterGroup interface
+        const mappedGroups: CenterGroup[] = (data || []).map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          grade: g.grade,
+          language_track: g.language_track,
+          days_of_week: g.days_of_week,
+          time_slot: g.time_slot,
+          is_active: true, // RPC only returns active groups
+        }));
+        
+        console.log('[CenterGroupSelector] Found groups:', mappedGroups.length);
+        setGroups(mappedGroups);
       } catch (err) {
         console.error('[CenterGroupSelector] Error fetching center groups:', err);
         setGroups([]);
