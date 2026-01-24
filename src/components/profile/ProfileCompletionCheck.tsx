@@ -38,24 +38,13 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     }
 
     // GUARD: If already completed this session, skip check entirely
+    // BUT this flag is ONLY set after successful DB verification
     if (completedThisSession.current) {
       setMissingFields(null);
       setLoading(false);
       setHasChecked(true);
       return;
     }
-
-    // Check sessionStorage for recent completion
-    try {
-      const successKey = `${COMPLETION_SUCCESS_KEY}_${user.id}`;
-      if (sessionStorage.getItem(successKey) === 'true') {
-        completedThisSession.current = true;
-        setMissingFields(null);
-        setLoading(false);
-        setHasChecked(true);
-        return;
-      }
-    } catch { /* sessionStorage may be blocked */ }
 
     // Only check profile completion for students
     if (!isStudent()) {
@@ -64,6 +53,10 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
       setHasChecked(true);
       return;
     }
+    
+    // NOTE: SessionStorage check REMOVED intentionally.
+    // Database is the SINGLE SOURCE OF TRUTH for study_mode_confirmed.
+    // This ensures ALL unconfirmed online students are forced to re-verify.
 
     try {
       // Fetch profile data including study_mode_confirmed
@@ -181,9 +174,10 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
   }, [user?.id]); // Only trigger on user ID change
 
   const handleProfileComplete = useCallback(() => {
-    // Mark completion in session to prevent re-triggering
+    // Mark completion in session memory to prevent re-triggering
     completedThisSession.current = true;
     
+    // Also mark in sessionStorage for page refresh resilience within same session
     try {
       if (user) {
         const successKey = `${COMPLETION_SUCCESS_KEY}_${user.id}`;
