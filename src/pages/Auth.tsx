@@ -403,6 +403,10 @@ const Auth = () => {
       {/* Main content area - pulled up to overlap header */}
       <div className="flex-1 px-4 -mt-4 pb-8">
         <div className="bg-card rounded-2xl shadow-lg border border-border p-5 md:p-6 max-w-md mx-auto overflow-hidden">
+          {/*
+            Important: keep the animated form stack from ever blocking clicks on the mode toggle.
+            We explicitly control stacking + pointer events.
+          */}
           <AnimatePresence mode="wait">
             {isForgotPassword ? (
               /* Forgot Password Form */
@@ -469,6 +473,7 @@ const Auth = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: isRTL ? 20 : -20 }}
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="relative"
               >
               {/* Google Sign In - Featured prominently for signup */}
               {!isLogin && (
@@ -824,7 +829,7 @@ const Auth = () => {
           </AnimatePresence>
 
           {/* Toggle Auth Mode - OUTSIDE AnimatePresence for reliable clicks */}
-          <div className="mt-5 pt-4 border-t border-border text-center">
+          <div className="mt-5 pt-4 border-t border-border text-center relative z-10">
             <p className="text-sm text-muted-foreground inline-flex items-center justify-center gap-1 flex-wrap">
               <span>{isLogin ? tr('مش معانا لسه؟', 'New here?') : tr('عندك حساب؟', 'Already have an account?')}</span>
               <button
@@ -833,7 +838,7 @@ const Auth = () => {
                   setIsLogin(!isLogin);
                   setErrors({});
                 }}
-                className="text-primary font-semibold hover:underline"
+                className="text-primary font-semibold hover:underline pointer-events-auto"
               >
                 {isLogin ? tr('سجّل دلوقتي', 'Create an account') : tr('سجّل دخول', 'Sign in')}
               </button>
