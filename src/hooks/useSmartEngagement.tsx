@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUXModalControllerSafe, ModalPriority } from '@/hooks/useUXModalController';
 
 const COOKIE_CONSENT_KEY = 'platform_cookie_consent';
 const PUSH_DISMISSED_KEY = 'push_notification_dismissed';
@@ -39,6 +40,8 @@ const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
 
 export const useSmartEngagement = () => {
   const { user } = useAuth();
+  const modalController = useUXModalControllerSafe();
+  
   const [state, setState] = useState<EngagementState>(() => ({
     cookieConsent: (localStorage.getItem(COOKIE_CONSENT_KEY) as ConsentStatus) || 'pending',
     pushPermission: 'Notification' in window ? Notification.permission : 'unsupported',
@@ -51,6 +54,10 @@ export const useSmartEngagement = () => {
   const deferredPromptRef = useRef<Event | null>(null);
   const focusTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageNavigationCountRef = useRef(0);
+  
+  // Track which prompts have been requested this session
+  const pushPromptRequestedRef = useRef(false);
+  const installPromptRequestedRef = useRef(false);
 
   // Track analytics event
   const trackEvent = useCallback(async (eventType: string) => {
@@ -80,7 +87,7 @@ export const useSmartEngagement = () => {
     trackEvent('cookie_declined');
   }, [trackEvent]);
 
-  // Check if prompts should be shown based on engagement
+  // Check if prompts should be shown based on engagement AND modal controller
   const evaluateEngagement = useCallback((newScore: number) => {
     const hasAcceptedCookies = localStorage.getItem(COOKIE_CONSENT_KEY) === 'accepted';
     const pushDismissed = sessionStorage.getItem(PUSH_DISMISSED_KEY) === 'true';
@@ -91,26 +98,60 @@ export const useSmartEngagement = () => {
     // Update engagement score in session
     sessionStorage.setItem(ENGAGEMENT_SCORE_KEY, newScore.toString());
 
+    // Check eligibility for push prompt
+    const pushEligible = 
+      hasAcceptedCookies && 
+      newScore >= 2 && 
+      pushPerm === 'default' && 
+      !pushDismissed;
+
+    // Check eligibility for install prompt
+    const installEligible = 
+      hasAcceptedCookies && 
+      newScore >= 2 && 
+      !isInstalled && 
+      !installDismissed &&
+      deferredPromptRef.current !== null;
+
+    // Use modal controller to determine if we CAN show (priority-based, sequential)
+    let canShowPush = false;
+    let canShowInstall = false;
+
+    if (modalController) {
+      // Check if push prompt is dismissed for session via controller
+      const pushSessionDismissed = modalController.isDismissedForSession('push_permission');
+      const installSessionDismissed = modalController.isDismissedForSession('pwa_install');
+
+      // Try to request push prompt first (higher priority)
+      if (pushEligible && !pushSessionDismissed && !pushPromptRequestedRef.current) {
+        canShowPush = modalController.requestModal('push_permission', ModalPriority.NOTIFICATION);
+        if (canShowPush) {
+          pushPromptRequestedRef.current = true;
+        }
+      }
+
+      // Only request install if push is not showing and eligible
+      if (installEligible && !installSessionDismissed && !installPromptRequestedRef.current && !canShowPush) {
+        canShowInstall = modalController.requestModal('pwa_install', ModalPriority.PWA_INSTALL);
+        if (canShowInstall) {
+          installPromptRequestedRef.current = true;
+        }
+      }
+    } else {
+      // Fallback if no controller: use legacy sequential check
+      canShowPush = pushEligible && !installPromptRequestedRef.current;
+      canShowInstall = installEligible && !canShowPush;
+    }
+
     setState(prev => ({
       ...prev,
       engagementScore: newScore,
       pushPermission: pushPerm,
       isAppInstalled: isInstalled,
-      // Show push prompt only after engagement AND if cookies accepted AND not dismissed/granted
-      canShowPushPrompt: 
-        hasAcceptedCookies && 
-        newScore >= 2 && 
-        pushPerm === 'default' && 
-        !pushDismissed,
-      // Show install prompt only after more engagement AND if not installed
-      canShowInstallPrompt: 
-        hasAcceptedCookies && 
-        newScore >= 2 && 
-        !isInstalled && 
-        !installDismissed &&
-        deferredPromptRef.current !== null,
+      canShowPushPrompt: canShowPush,
+      canShowInstallPrompt: canShowInstall,
     }));
-  }, []);
+  }, [modalController]);
 
   // Record engagement trigger
   const recordEngagement = useCallback((trigger: EngagementTrigger) => {
@@ -147,15 +188,25 @@ export const useSmartEngagement = () => {
         canShowPushPrompt: false 
       }));
       trackEvent(permission === 'granted' ? 'push_granted' : 'push_denied');
+      
+      // Release the modal slot
+      if (modalController) {
+        modalController.releaseModal('push_permission');
+      }
     } catch (error) {
       console.error('Failed to request push permission:', error);
     }
-  }, [trackEvent]);
+  }, [trackEvent, modalController]);
 
   const dismissPushPrompt = useCallback(() => {
     sessionStorage.setItem(PUSH_DISMISSED_KEY, 'true');
     setState(prev => ({ ...prev, canShowPushPrompt: false }));
-  }, []);
+    
+    // Dismiss for session via controller
+    if (modalController) {
+      modalController.dismissForSession('push_permission');
+    }
+  }, [modalController]);
 
   // PWA install handlers
   const triggerInstall = useCallback(async () => {
@@ -171,15 +222,25 @@ export const useSmartEngagement = () => {
         trackEvent('pwa_installed');
       }
       deferredPromptRef.current = null;
+      
+      // Release the modal slot
+      if (modalController) {
+        modalController.releaseModal('pwa_install');
+      }
     } catch (error) {
       console.error('Install prompt failed:', error);
     }
-  }, [trackEvent]);
+  }, [trackEvent, modalController]);
 
   const dismissInstallPrompt = useCallback(() => {
     sessionStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
     setState(prev => ({ ...prev, canShowInstallPrompt: false }));
-  }, []);
+    
+    // Dismiss for session via controller
+    if (modalController) {
+      modalController.dismissForSession('pwa_install');
+    }
+  }, [modalController]);
 
   // Track install prompt shown
   const markInstallPromptShown = useCallback(() => {
@@ -216,6 +277,11 @@ export const useSmartEngagement = () => {
     const handleAppInstalled = () => {
       setState(prev => ({ ...prev, isAppInstalled: true, canShowInstallPrompt: false }));
       deferredPromptRef.current = null;
+      
+      // Release modal if it was showing
+      if (modalController) {
+        modalController.releaseModal('pwa_install');
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -225,7 +291,7 @@ export const useSmartEngagement = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [evaluateEngagement, state.engagementScore]);
+  }, [evaluateEngagement, state.engagementScore, modalController]);
 
   // Track page navigation
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Smartphone, X, Zap, Bell, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,19 +12,45 @@ interface PWAInstallPromptProps {
 
 export const PWAInstallPrompt = ({ show, onInstall, onDismiss, onShown }: PWAInstallPromptProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const hasShownRef = useRef(false);
+  const onShownCalledRef = useRef(false);
 
   useEffect(() => {
-    if (show) {
-      // Show after a short delay
+    if (show && !hasShownRef.current) {
+      // Show after a delay to ensure previous modal is fully closed
       const timer = setTimeout(() => {
         setIsVisible(true);
-        onShown?.();
+        hasShownRef.current = true;
+        
+        // Call onShown only once
+        if (!onShownCalledRef.current && onShown) {
+          onShown();
+          onShownCalledRef.current = true;
+        }
       }, 1000);
       return () => clearTimeout(timer);
-    } else {
+    } else if (!show) {
       setIsVisible(false);
     }
   }, [show, onShown]);
+
+  // Handle install - close immediately
+  const handleInstall = () => {
+    setIsVisible(false);
+    // Small delay before callback to allow exit animation
+    setTimeout(() => {
+      onInstall();
+    }, 200);
+  };
+
+  // Handle dismiss - close immediately
+  const handleDismiss = () => {
+    setIsVisible(false);
+    // Small delay before callback to allow exit animation
+    setTimeout(() => {
+      onDismiss();
+    }, 200);
+  };
 
   if (!isVisible) return null;
 
@@ -51,7 +77,7 @@ export const PWAInstallPrompt = ({ show, onInstall, onDismiss, onShown }: PWAIns
             
             {/* Close button */}
             <button
-              onClick={onDismiss}
+              onClick={handleDismiss}
               className="absolute top-3 left-3 p-1.5 rounded-full hover:bg-muted/50 transition-colors z-10"
             >
               <X className="w-4 h-4 text-muted-foreground" />
@@ -82,7 +108,7 @@ export const PWAInstallPrompt = ({ show, onInstall, onDismiss, onShown }: PWAIns
 
               {/* Install button */}
               <Button 
-                onClick={onInstall}
+                onClick={handleInstall}
                 className="w-full gap-2"
                 size="lg"
               >
