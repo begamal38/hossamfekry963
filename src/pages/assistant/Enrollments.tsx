@@ -226,13 +226,26 @@ const Enrollments = () => {
   };
 
   const getStatusConfig = (status: string) => {
+    // Soft, muted status badges - not screaming
     const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: { ar: string; en: string }; className?: string }> = {
-      pending: { variant: 'secondary', label: { ar: 'معلق', en: 'Pending' } },
-      active: { variant: 'default', label: { ar: 'نشط', en: 'Active' } },
-      suspended: { variant: 'outline', label: { ar: 'موقوف', en: 'Suspended' }, className: 'border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950' },
-      expired: { variant: 'destructive', label: { ar: 'منتهي', en: 'Expired' } },
+      pending: { variant: 'secondary', label: { ar: 'معلق', en: 'Pending' }, className: 'bg-muted text-muted-foreground' },
+      active: { variant: 'default', label: { ar: 'نشط', en: 'Active' }, className: 'bg-green-500/15 text-green-700 dark:text-green-400 border-transparent' },
+      suspended: { variant: 'outline', label: { ar: 'موقوف', en: 'Suspended' }, className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-transparent' },
+      expired: { variant: 'secondary', label: { ar: 'منتهي', en: 'Expired' }, className: 'bg-muted/80 text-muted-foreground' },
     };
     return config[status] || { variant: 'outline' as const, label: { ar: status, en: status } };
+  };
+
+  // Helper to get grade label
+  const getGradeLabel = (grade?: string) => {
+    if (!grade) return null;
+    const gradeMap: Record<string, { ar: string; en: string }> = {
+      'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Sec Arabic' },
+      'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Sec Languages' },
+      'third_arabic': { ar: 'تالتة ثانوي عربي', en: '3rd Sec Arabic' },
+      'third_languages': { ar: 'تالتة ثانوي لغات', en: '3rd Sec Languages' },
+    };
+    return gradeMap[grade] || { ar: grade, en: grade };
   };
 
   // Stats
@@ -269,73 +282,79 @@ const Enrollments = () => {
   const renderEnrollmentActions = (enrollment: Enrollment) => {
     const isUpdating = updating === enrollment.id;
 
+    // Pending: Single activate action
     if (enrollment.status === 'pending') {
       return (
         <Button
           size="sm"
           onClick={() => updateEnrollmentStatus(enrollment.id, 'active')}
           disabled={isUpdating}
-          className="bg-green-600 hover:bg-green-700 flex-1"
+          className="bg-green-600 hover:bg-green-700 text-white flex-1"
         >
-          {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1" />}
+          {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1.5" />}
           {isRTL ? 'تفعيل' : 'Activate'}
         </Button>
       );
     }
 
+    // Active: Suspend (primary/outline) + End (destructive, visually separated)
     if (enrollment.status === 'active') {
       return (
-        <>
+        <div className="flex gap-2 w-full">
+          {/* Primary action: Suspend - outline style */}
           <Button
             size="sm"
             variant="outline"
-            className="border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950 flex-1"
+            className="flex-1 border-border hover:bg-muted"
             onClick={() => updateEnrollmentStatus(enrollment.id, 'suspended', enrollment)}
             disabled={isUpdating}
           >
-            {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <PauseCircle className="h-4 w-4 me-1" />}
+            {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <PauseCircle className="h-4 w-4 me-1.5" />}
             {isRTL ? 'إيقاف' : 'Suspend'}
           </Button>
+          {/* Destructive action: End - separated, never first */}
           <Button
             size="sm"
-            variant="destructive"
+            variant="ghost"
             onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
             disabled={isUpdating || summaryLoading}
-            className="flex-1"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             {(isUpdating || summaryLoading) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 me-1" />}
             {isRTL ? 'إنهاء' : 'End'}
           </Button>
-        </>
+        </div>
       );
     }
 
+    // Suspended: Reactivate (primary) + End (destructive)
     if (enrollment.status === 'suspended') {
       return (
-        <>
+        <div className="flex gap-2 w-full">
           <Button
             size="sm"
-            className="bg-green-600 hover:bg-green-700 flex-1"
+            className="bg-green-600 hover:bg-green-700 text-white flex-1"
             onClick={() => updateEnrollmentStatus(enrollment.id, 'active')}
             disabled={isUpdating}
           >
-            {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4 me-1" />}
+            {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4 me-1.5" />}
             {isRTL ? 'تفعيل' : 'Reactivate'}
           </Button>
           <Button
             size="sm"
-            variant="destructive"
+            variant="ghost"
             onClick={() => updateEnrollmentStatus(enrollment.id, 'expired', enrollment)}
             disabled={isUpdating || summaryLoading}
-            className="flex-1"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             {(isUpdating || summaryLoading) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4 me-1" />}
             {isRTL ? 'إنهاء' : 'End'}
           </Button>
-        </>
+        </div>
       );
     }
 
+    // Expired: Reactivate option
     if (enrollment.status === 'expired') {
       return (
         <Button
@@ -345,7 +364,7 @@ const Enrollments = () => {
           disabled={isUpdating}
           className="flex-1"
         >
-          {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1" />}
+          {isUpdating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 me-1.5" />}
           {isRTL ? 'إعادة تفعيل' : 'Reactivate'}
         </Button>
       );
@@ -360,55 +379,61 @@ const Enrollments = () => {
       
       <PullToRefresh onRefresh={fetchEnrollments} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
         <main className="pt-20 sm:pt-24 pb-8">
-          <div className="container mx-auto px-3 sm:px-4 max-w-2xl">
-            {/* Header */}
+          <div className="container mx-auto px-3 sm:px-4 max-w-2xl lg:max-w-3xl">
+            {/* Header - Clear hierarchy: Title primary, count secondary */}
             <AssistantPageHeader
-              title={isRTL ? 'إدارة الاشتراكات' : 'Enrollments'}
-              subtitle={`${filteredEnrollments.length} ${isRTL ? 'اشتراك' : 'enrollments'}`}
+              title={isRTL ? 'إدارة الاشتراكات' : 'Manage Enrollments'}
+              subtitle={loading ? '...' : `${stats.active} ${isRTL ? 'نشط' : 'active'} • ${stats.total} ${isRTL ? 'إجمالي' : 'total'}`}
               icon={CreditCard}
               isRTL={isRTL}
             />
 
-            {/* Status Summary */}
+            {/* Status Summary - Secondary visual, not competing with title */}
             <StatusSummaryCard
-              primaryText={loading ? '...' : `${stats.active} ${isRTL ? 'اشتراك نشط' : 'Active'}`}
-              secondaryText={stats.pending > 0 
+              primaryText={stats.pending > 0 
                 ? `${stats.pending} ${isRTL ? 'بانتظار التفعيل' : 'pending activation'}`
-                : (isRTL ? 'كل الاشتراكات اتعالجت' : 'All enrollments processed')
+                : (isRTL ? 'لا يوجد اشتراكات معلقة' : 'No pending enrollments')
+              }
+              secondaryText={stats.suspended > 0 
+                ? `${stats.suspended} ${isRTL ? 'موقوف' : 'suspended'}`
+                : undefined
               }
               badge={stats.pending > 5 
-                ? (isRTL ? 'فيه مشكلة' : 'At Risk')
+                ? (isRTL ? 'يحتاج تدخل' : 'Needs Action')
                 : stats.pending > 0 
-                ? (isRTL ? 'محتاج متابعة' : 'Needs Attention')
+                ? (isRTL ? 'محتاج متابعة' : 'Review')
                 : (isRTL ? 'كله تمام' : 'All Good')
               }
               badgeVariant={stats.pending > 5 ? 'danger' : stats.pending > 0 ? 'warning' : 'success'}
               isRTL={isRTL}
-              className="mb-4"
+              className="mb-5"
             />
 
-            {/* Search & Filters */}
-            <SearchFilterBar
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              searchPlaceholder={isRTL ? 'بحث بالاسم أو الكورس...' : 'Search by name or course...'}
-              filters={[
-                {
-                  value: statusFilter,
-                  onChange: setStatusFilter,
-                  options: [
-                    { value: 'all', label: isRTL ? 'الكل' : 'All' },
-                    { value: 'pending', label: isRTL ? 'معلق' : 'Pending' },
-                    { value: 'active', label: isRTL ? 'نشط' : 'Active' },
-                    { value: 'suspended', label: isRTL ? 'موقوف' : 'Suspended' },
-                    { value: 'expired', label: isRTL ? 'منتهي' : 'Expired' },
-                  ],
-                },
-              ]}
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={clearFilters}
-              isRTL={isRTL}
-            />
+            {/* Search & Filters - Grouped visually */}
+            <div className="bg-card border border-border rounded-xl p-3 mb-4">
+              <SearchFilterBar
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder={isRTL ? 'بحث بالاسم أو رقم الموبايل...' : 'Search by name or phone...'}
+                filters={[
+                  {
+                    value: statusFilter,
+                    onChange: setStatusFilter,
+                    options: [
+                      { value: 'all', label: isRTL ? 'كل الحالات' : 'All Status' },
+                      { value: 'pending', label: isRTL ? 'معلق' : 'Pending' },
+                      { value: 'active', label: isRTL ? 'نشط' : 'Active' },
+                      { value: 'suspended', label: isRTL ? 'موقوف' : 'Suspended' },
+                      { value: 'expired', label: isRTL ? 'منتهي' : 'Expired' },
+                    ],
+                  },
+                ]}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+                isRTL={isRTL}
+                className="mb-0"
+              />
+            </div>
 
             {/* Activity Guide Panel - shown when filtering expired enrollments */}
             {statusFilter === 'expired' && <ActivityGuidePanel className="mb-4" />}
@@ -431,6 +456,8 @@ const Enrollments = () => {
               <div className="space-y-3">
                 {filteredEnrollments.map((enrollment) => {
                   const statusConfig = getStatusConfig(enrollment.status);
+                  const gradeLabel = getGradeLabel(enrollment.course?.grade);
+                  
                   return (
                     <MobileDataCard
                       key={enrollment.id}
@@ -444,6 +471,17 @@ const Enrollments = () => {
                       badgeClassName={statusConfig.className}
                       isRTL={isRTL}
                       metadata={[
+                        // Grade info - primary identifier
+                        ...(gradeLabel ? [{
+                          label: isRTL ? gradeLabel.ar : gradeLabel.en,
+                          icon: BookOpen,
+                          className: 'text-primary font-medium',
+                        }] : []),
+                        // Phone number
+                        ...(enrollment.profile?.phone ? [{
+                          label: enrollment.profile.phone,
+                        }] : []),
+                        // Date enrolled
                         {
                           label: new Date(enrollment.enrolled_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
                             month: 'short',
@@ -451,12 +489,9 @@ const Enrollments = () => {
                           }),
                           icon: Calendar,
                         },
-                        ...(enrollment.profile?.phone ? [{
-                          label: enrollment.profile.phone,
-                        }] : []),
                       ]}
                       actions={
-                        <div className="flex gap-2 mt-3 w-full">
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 w-full">
                           {renderEnrollmentActions(enrollment)}
                         </div>
                       }
