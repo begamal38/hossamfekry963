@@ -131,11 +131,18 @@ export const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/auth">{t('nav.login')}</Link>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/auth')}
+                >
+                  {t('nav.login')}
                 </Button>
-                <Button size="sm" asChild>
-                  <Link to="/auth?mode=signup">{t('nav.signUp')}</Link>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate('/auth?mode=signup')}
+                >
+                  {t('nav.signUp')}
                 </Button>
               </>
             )}
@@ -215,15 +222,24 @@ export const Navbar: React.FC = () => {
                   </>
                 ) : (
                   <div className="flex flex-col gap-3 w-full">
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/auth" onClick={() => setIsOpen(false)}>
-                        {t('nav.login')}
-                      </Link>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => {
+                        navigate('/auth');
+                        setIsOpen(false);
+                      }}
+                    >
+                      {t('nav.login')}
                     </Button>
-                    <Button className="w-full" asChild>
-                      <Link to="/auth?mode=signup" onClick={() => setIsOpen(false)}>
-                        {t('nav.signUp')}
-                      </Link>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => {
+                        navigate('/auth?mode=signup');
+                        setIsOpen(false);
+                      }}
+                    >
+                      {t('nav.signUp')}
                     </Button>
                   </div>
                 )}
