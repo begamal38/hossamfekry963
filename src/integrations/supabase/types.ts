@@ -92,13 +92,6 @@ export type Database = {
             referencedRelation: "center_groups"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "center_group_members_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "center_groups_for_registration"
-            referencedColumns: ["id"]
-          },
         ]
       }
       center_group_transfers: {
@@ -141,24 +134,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "center_group_transfers_new_group_id_fkey"
-            columns: ["new_group_id"]
-            isOneToOne: false
-            referencedRelation: "center_groups_for_registration"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "center_group_transfers_previous_group_id_fkey"
             columns: ["previous_group_id"]
             isOneToOne: false
             referencedRelation: "center_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "center_group_transfers_previous_group_id_fkey"
-            columns: ["previous_group_id"]
-            isOneToOne: false
-            referencedRelation: "center_groups_for_registration"
             referencedColumns: ["id"]
           },
         ]
@@ -277,13 +256,6 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "center_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "center_sessions_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "center_groups_for_registration"
             referencedColumns: ["id"]
           },
         ]
@@ -1651,36 +1623,7 @@ export type Database = {
       }
     }
     Views: {
-      center_groups_for_registration: {
-        Row: {
-          days_of_week: string[] | null
-          grade: string | null
-          id: string | null
-          is_active: boolean | null
-          language_track: string | null
-          name: string | null
-          time_slot: string | null
-        }
-        Insert: {
-          days_of_week?: string[] | null
-          grade?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          language_track?: string | null
-          name?: string | null
-          time_slot?: string | null
-        }
-        Update: {
-          days_of_week?: string[] | null
-          grade?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          language_track?: string | null
-          name?: string | null
-          time_slot?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       can_assistant_view_student: {
