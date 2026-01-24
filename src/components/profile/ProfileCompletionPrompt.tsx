@@ -277,10 +277,9 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       }
 
       // Handle center group membership (separate from profile update)
-      // CRITICAL FIX: Group logic ONLY executes for center students
-      // Online students MUST NEVER trigger any group-related operations
-      const needsCenterGroupUpdate = studyMode === 'center' && centerGroupId && 
-        (missingFields.attendance_mode || missingFields.center_group);
+      // CRITICAL: This is determined BEFORE profile update, executed AFTER
+      const needsCenterGroupUpdate = (missingFields.attendance_mode || missingFields.center_group) && 
+        studyMode === 'center' && centerGroupId;
 
       // Check if there's anything to update (profile OR center group)
       if (Object.keys(updateData).length === 0 && !needsCenterGroupUpdate) {
@@ -357,10 +356,9 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       }
 
       // ========== STEP 2: CENTER GROUP MEMBERSHIP (AFTER profile update) ==========
-      // CRITICAL FIX: This block ONLY runs for CENTER students
-      // Online/hybrid students skip this ENTIRELY - no group validation, no group insert
-      // This is the ONLY place group logic should execute
-      if (studyMode === 'center' && needsCenterGroupUpdate && centerGroupId) {
+      // CRITICAL: This MUST succeed for center students - it is NOT optional
+      // STRICT ORDER: Only execute AFTER profile update succeeds
+      if (needsCenterGroupUpdate && centerGroupId) {
         console.log('Starting center group membership update for user:', confirmedUserId);
         
         // Step 2a: Deactivate any existing memberships
