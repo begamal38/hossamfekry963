@@ -272,10 +272,6 @@ export const ProfilePage: React.FC = () => {
         </button>
       </div>
 
-      {/* App Version */}
-      <p className="text-center text-xs text-muted-foreground pb-4">
-        {isArabic ? 'منصة حسام فكري' : 'Hossam Fekry Platform'} v1.0.0
-      </p>
     </div>
   );
 };
