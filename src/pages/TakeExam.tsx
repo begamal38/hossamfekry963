@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -58,9 +59,16 @@ export default function TakeExam() {
   const { examId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isAssistantTeacher, loading: rolesLoading } = useUserRole();
   const { language, isRTL } = useLanguage();
   const { toast } = useToast();
   const isArabic = language === 'ar';
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // ROLE GUARD: Staff (admin/assistant_teacher) MUST NOT take exams
+  // This prevents analytics contamination from testing/observation
+  // ═══════════════════════════════════════════════════════════════════
+  const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
@@ -135,6 +143,18 @@ export default function TakeExam() {
   };
 
   const handleSubmit = async () => {
+    // ═══════════════════════════════════════════════════════════════════
+    // ROLE GUARD: Staff MUST NOT submit exam attempts
+    // This prevents analytics contamination from testing/observation
+    // ═══════════════════════════════════════════════════════════════════
+    if (isStaff) {
+      toast({
+        title: isArabic ? 'وضع المراقبة' : 'Observer Mode',
+        description: isArabic ? 'لا يتم تسجيل نتائج الامتحانات للمسؤولين' : 'Exam results are not recorded for staff',
+      });
+      return;
+    }
+
     if (Object.keys(answers).length < questions.length) {
       toast({
         variant: 'destructive',

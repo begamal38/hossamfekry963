@@ -12,12 +12,33 @@ interface FocusSessionData {
   isCompleted: boolean;
 }
 
+/**
+ * Focus Session Persistence Hook
+ * 
+ * CRITICAL DATA HYGIENE RULE:
+ * Focus sessions are STUDENT-ONLY behavioral data.
+ * Staff (admin/assistant_teacher) MUST NOT write to this table
+ * to prevent analytics contamination from testing/observation.
+ * 
+ * The isStaff check should be done BEFORE calling saveFocusSession,
+ * but we include a safety log here for debugging purposes.
+ */
 export const useFocusSessionPersistence = () => {
-  // Save focus session to database
+  // Save focus session to database - STUDENTS ONLY
   const saveFocusSession = useCallback(async (
     userId: string,
-    sessionData: FocusSessionData
+    sessionData: FocusSessionData,
+    isStaff: boolean = false
   ) => {
+    // ═══════════════════════════════════════════════════════════════════
+    // ROLE GUARD: Staff MUST NOT persist focus sessions
+    // This is a secondary guard - primary check should be at call site
+    // ═══════════════════════════════════════════════════════════════════
+    if (isStaff) {
+      console.log('[FocusSession] Blocked: Staff user - not persisting focus data');
+      return false;
+    }
+
     try {
       const { error } = await supabase
         .from('focus_sessions')
