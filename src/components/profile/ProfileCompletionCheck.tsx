@@ -173,7 +173,47 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     }
   }, [user?.id]); // Only trigger on user ID change
 
-  const handleProfileComplete = useCallback(() => {
+  const handleProfileComplete = useCallback(async () => {
+    // CRITICAL: Re-verify from database before marking complete
+    // This ensures we don't close the modal if the DB write failed silently
+    if (user) {
+      try {
+        // Fetch fresh profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('attendance_mode, study_mode_confirmed')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        // If center student, verify membership exists
+        if (profileData?.attendance_mode === 'center') {
+          const { data: membership } = await supabase
+            .from('center_group_members')
+            .select('id')
+            .eq('student_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle();
+          
+          if (!membership) {
+            console.error('handleProfileComplete: Center student missing group membership');
+            // Don't close modal - force re-check
+            checkProfileCompletion();
+            return;
+          }
+        }
+        
+        // Verify study_mode_confirmed is true
+        if (profileData?.study_mode_confirmed !== true) {
+          console.error('handleProfileComplete: study_mode_confirmed is not true');
+          checkProfileCompletion();
+          return;
+        }
+      } catch (error) {
+        console.error('handleProfileComplete verification failed:', error);
+        // On error, still proceed to avoid blocking
+      }
+    }
+    
     // Mark completion in session memory to prevent re-triggering
     completedThisSession.current = true;
     
@@ -186,7 +226,7 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
     } catch { /* sessionStorage may be blocked */ }
     
     setMissingFields(null);
-  }, [user]);
+  }, [user, checkProfileCompletion]);
 
   if (loading) {
     return <>{children}</>;
