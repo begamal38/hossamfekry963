@@ -27,6 +27,8 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickEnrollmentDrawer } from '@/components/assistant/QuickEnrollmentDrawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAssistantFilters, applyStudentFilters, CenterGroup } from '@/hooks/useAssistantFilters';
+import { useCenterGroups } from '@/hooks/useCenterGroups';
 
 interface Profile {
   user_id: string;
@@ -46,6 +48,7 @@ interface EnrichedStudent extends Profile {
   avgExamScore: number;
   totalExams: number;
   enrollmentCount: number;
+  center_group_id?: string | null;
 }
 
 const getGroupLabel = (grade: string | null, languageTrack: string | null, isArabic: boolean): string | null => {
@@ -78,6 +81,7 @@ export default function Students() {
   const [loading, setLoading] = useState(true);
   
   const { exportStudents, exporting, progress: exportProgress, canExport, roleLoading: exportRoleLoading } = useStudentExport();
+  const { groups: centerGroups, loading: groupsLoading } = useCenterGroups();
   
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
@@ -85,8 +89,21 @@ export default function Students() {
   const [quickEnrollStudent, setQuickEnrollStudent] = useState<EnrichedStudent | null>(null);
   const [quickEnrollOpen, setQuickEnrollOpen] = useState(false);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [academicYearFilter, setAcademicYearFilter] = useState('all');
+  // Center group member mapping (userId -> groupId)
+  const [centerGroupMembers, setCenterGroupMembers] = useState<Map<string, string>>(new Map());
+  
+  // Unified filters from shared hook
+  const {
+    searchTerm,
+    setSearchTerm,
+    hasActiveFilters,
+    clearFilters,
+    buildFilterConfig,
+    filterState,
+  } = useAssistantFilters({
+    includeCenterGroup: true,
+    centerGroups: centerGroups as CenterGroup[],
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -99,6 +116,20 @@ export default function Students() {
       navigate('/');
     }
   }, [roleLoading, canAccessDashboard, navigate]);
+
+  // Fetch center group members for mapping
+  const fetchCenterGroupMembers = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('center_group_members')
+      .select('student_id, group_id')
+      .eq('is_active', true);
+    
+    if (!error && data) {
+      const mapping = new Map<string, string>();
+      data.forEach(m => mapping.set(m.student_id, m.group_id));
+      setCenterGroupMembers(mapping);
+    }
+  }, []);
 
   const fetchStudents = useCallback(async () => {
     if (!user || !canAccessDashboard()) return;
@@ -173,6 +204,7 @@ export default function Students() {
   useEffect(() => {
     if (!roleLoading && canAccessDashboard()) {
       fetchStudents();
+      fetchCenterGroupMembers();
 
       // Subscribe to realtime updates for student data
       const channel = supabase
@@ -197,36 +229,24 @@ export default function Students() {
           { event: '*', schema: 'public', table: 'profiles' },
           () => fetchStudents()
         )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'center_group_members' },
+          () => fetchCenterGroupMembers()
+        )
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user, roleLoading, canAccessDashboard, fetchStudents]);
+  }, [user, roleLoading, canAccessDashboard, fetchStudents, fetchCenterGroupMembers]);
 
+  // Apply unified filters whenever filter state or students change
   useEffect(() => {
-    let filtered = students;
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (s) =>
-          s.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          s.phone?.includes(searchTerm)
-      );
-    }
-
-    if (academicYearFilter !== 'all') {
-      filtered = filtered.filter((s) => s.academic_year === academicYearFilter);
-    }
-
+    const filtered = applyStudentFilters(students, filterState, centerGroupMembers);
     setFilteredStudents(filtered);
-  }, [searchTerm, academicYearFilter, students]);
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setAcademicYearFilter('all');
-  };
+  }, [students, filterState, centerGroupMembers]);
 
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-green-600';
@@ -241,7 +261,13 @@ export default function Students() {
     setQuickEnrollOpen(true);
   };
 
-  const hasActiveFilters = academicYearFilter !== 'all';
+  // Stats
+  const stats = {
+    total: students.length,
+    online: students.filter(s => s.attendance_mode === 'online').length,
+    center: students.filter(s => s.attendance_mode === 'center').length,
+    enrolled: students.filter(s => s.enrollmentCount > 0).length,
+  };
 
   if (authLoading || roleLoading) {
     return (
@@ -310,12 +336,18 @@ export default function Students() {
 
         {/* Status Summary - Secondary visual weight */}
         <div className="mb-4 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{students.length}</span>
-          <span className="mx-1">{isRTL ? 'طالب مسجل' : 'registered'}</span>
-          {students.filter(s => s.enrollmentCount > 0).length > 0 && (
+          <span className="font-medium text-foreground">{stats.total}</span>
+          <span className="mx-1">{isRTL ? 'طالب' : 'total'}</span>
+          <span className="text-muted-foreground/50 mx-1">•</span>
+          <span className="text-blue-600 dark:text-blue-400">{stats.online}</span>
+          <span className="mx-1">{isRTL ? 'أونلاين' : 'online'}</span>
+          <span className="text-muted-foreground/50 mx-1">•</span>
+          <span className="text-purple-600 dark:text-purple-400">{stats.center}</span>
+          <span className="mx-1">{isRTL ? 'سنتر' : 'center'}</span>
+          {stats.enrolled > 0 && (
             <>
               <span className="text-muted-foreground/50 mx-1">•</span>
-              <span className="text-green-600 dark:text-green-400">{students.filter(s => s.enrollmentCount > 0).length}</span>
+              <span className="text-green-600 dark:text-green-400">{stats.enrolled}</span>
               <span className="mx-1">{isRTL ? 'مشترك' : 'enrolled'}</span>
             </>
           )}
@@ -327,17 +359,7 @@ export default function Students() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder={isRTL ? 'ابحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
-            filters={[
-              {
-                value: academicYearFilter,
-                onChange: setAcademicYearFilter,
-                options: [
-                  { value: 'all', label: isRTL ? 'كل السنوات' : 'All Years' },
-                  { value: 'second_secondary', label: isRTL ? 'تانية ثانوي' : '2nd Sec' },
-                  { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
-                ],
-              },
-            ]}
+            filters={buildFilterConfig(isRTL)}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
             isRTL={isRTL}
@@ -370,7 +392,7 @@ export default function Students() {
         ) : (
           <div className="space-y-2">
             {filteredStudents.map((student) => {
-              const groupLabel = getGroupLabel(student.grade, student.language_track, isRTL);
+              const groupLabel = getGroupLabel(student.grade || student.academic_year, student.language_track, isRTL);
               // Attendance mode label - tertiary, informational only
               const modeLabel = student.attendance_mode === 'center' 
                 ? (isRTL ? 'سنتر' : 'Center')
@@ -386,7 +408,7 @@ export default function Students() {
                   badge={groupLabel || undefined}
                   badgeVariant="default"
                   secondaryBadge={modeLabel || undefined}
-                  secondaryBadgeVariant="muted"
+                  secondaryBadgeVariant={student.attendance_mode === 'center' ? 'secondary' : 'muted'}
                   icon={User}
                   iconColor="text-primary"
                   iconBgColor="bg-primary/10"
@@ -458,7 +480,9 @@ export default function Students() {
               setQuickEnrollOpen(false);
               setQuickEnrollStudent(null);
             }}
-            onComplete={fetchStudents}
+            onComplete={() => {
+              fetchStudents();
+            }}
             isArabic={isRTL}
           />
         )}
