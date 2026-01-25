@@ -19,6 +19,8 @@ import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader'
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
+import { useAssistantFilters, applyEnrollmentFilters, CenterGroup, FilterableEnrollment } from '@/hooks/useAssistantFilters';
+import { useCenterGroups } from '@/hooks/useCenterGroups';
 
 
 interface Enrollment {
@@ -33,6 +35,10 @@ interface Enrollment {
     full_name: string | null;
     phone: string | null;
     email: string | null;
+    grade?: string | null;
+    academic_year?: string | null;
+    language_track?: string | null;
+    attendance_mode?: 'online' | 'center' | 'hybrid' | null;
   };
   course?: {
     title: string;
@@ -50,11 +56,27 @@ const Enrollments = () => {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [updating, setUpdating] = useState<string | null>(null);
   
   const { calculateAndFreezeSummary, loading: summaryLoading } = useCourseActivitySummary();
+  const { groups: centerGroups, loading: groupsLoading } = useCenterGroups();
+  
+  // Center group member mapping (userId -> groupId)
+  const [centerGroupMembers, setCenterGroupMembers] = useState<Map<string, string>>(new Map());
+
+  // Unified filters from shared hook
+  const {
+    searchTerm,
+    setSearchTerm,
+    hasActiveFilters,
+    clearFilters,
+    buildFilterConfig,
+    filterState,
+  } = useAssistantFilters({
+    includeStatus: true,
+    includeCenterGroup: true,
+    centerGroups: centerGroups as CenterGroup[],
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -67,6 +89,20 @@ const Enrollments = () => {
       navigate('/');
     }
   }, [roleLoading, canAccessDashboard, navigate]);
+
+  // Fetch center group members for mapping
+  const fetchCenterGroupMembers = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('center_group_members')
+      .select('student_id, group_id')
+      .eq('is_active', true);
+    
+    if (!error && data) {
+      const mapping = new Map<string, string>();
+      data.forEach(m => mapping.set(m.student_id, m.group_id));
+      setCenterGroupMembers(mapping);
+    }
+  }, []);
 
   const fetchEnrollments = useCallback(async () => {
     if (!user || !canAccessDashboard()) return;
@@ -108,7 +144,7 @@ const Enrollments = () => {
       const courseIds = [...new Set(enrollmentsData.map(e => e.course_id))];
 
       const [profilesRes, coursesRes] = await Promise.all([
-        supabase.from('profiles').select('user_id, full_name, phone, email').in('user_id', userIds),
+        supabase.from('profiles').select('user_id, full_name, phone, email, grade, academic_year, language_track, attendance_mode').in('user_id', userIds),
         supabase.from('courses').select('id, title, title_ar, grade').in('id', courseIds),
       ]);
 
@@ -138,30 +174,19 @@ const Enrollments = () => {
   useEffect(() => {
     if (!roleLoading && canAccessDashboard()) {
       fetchEnrollments();
+      fetchCenterGroupMembers();
     }
-  }, [user, roleLoading, canAccessDashboard, fetchEnrollments]);
+  }, [user, roleLoading, canAccessDashboard, fetchEnrollments, fetchCenterGroupMembers]);
 
+  // Apply unified filters whenever filter state or enrollments change
   useEffect(() => {
-    let filtered = enrollments;
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (e) =>
-          e.profile?.full_name?.toLowerCase().includes(term) ||
-          e.profile?.phone?.includes(searchTerm) ||
-          e.profile?.email?.toLowerCase().includes(term) ||
-          e.course?.title?.toLowerCase().includes(term) ||
-          e.course?.title_ar?.includes(searchTerm)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((e) => e.status === statusFilter);
-    }
-
-    setFilteredEnrollments(filtered);
-  }, [searchTerm, statusFilter, enrollments]);
+    const filtered = applyEnrollmentFilters(
+      enrollments as FilterableEnrollment[],
+      filterState,
+      centerGroupMembers
+    );
+    setFilteredEnrollments(filtered as Enrollment[]);
+  }, [enrollments, filterState, centerGroupMembers]);
 
   const updateEnrollmentStatus = async (enrollmentId: string, newStatus: string, enrollment?: Enrollment) => {
     if (!user) return;
@@ -254,13 +279,6 @@ const Enrollments = () => {
     active: enrollments.filter(e => e.status === 'active').length,
     pending: enrollments.filter(e => e.status === 'pending').length,
     suspended: enrollments.filter(e => e.status === 'suspended').length,
-  };
-
-  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
   };
 
   if (authLoading || roleLoading) {
@@ -415,19 +433,7 @@ const Enrollments = () => {
                 searchValue={searchTerm}
                 onSearchChange={setSearchTerm}
                 searchPlaceholder={isRTL ? 'بحث بالاسم أو رقم الموبايل...' : 'Search by name or phone...'}
-                filters={[
-                  {
-                    value: statusFilter,
-                    onChange: setStatusFilter,
-                    options: [
-                      { value: 'all', label: isRTL ? 'كل الحالات' : 'All Status' },
-                      { value: 'pending', label: isRTL ? 'معلق' : 'Pending' },
-                      { value: 'active', label: isRTL ? 'نشط' : 'Active' },
-                      { value: 'suspended', label: isRTL ? 'موقوف' : 'Suspended' },
-                      { value: 'expired', label: isRTL ? 'منتهي' : 'Expired' },
-                    ],
-                  },
-                ]}
+                filters={buildFilterConfig(isRTL)}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
                 isRTL={isRTL}
@@ -436,7 +442,7 @@ const Enrollments = () => {
             </div>
 
             {/* Activity Guide Panel - shown when filtering expired enrollments */}
-            {statusFilter === 'expired' && <ActivityGuidePanel className="mb-4" />}
+            {filterState.statusFilter === 'expired' && <ActivityGuidePanel className="mb-4" />}
 
             {/* Enrollments List */}
             {loading ? (
@@ -457,6 +463,11 @@ const Enrollments = () => {
                 {filteredEnrollments.map((enrollment) => {
                   const statusConfig = getStatusConfig(enrollment.status);
                   const gradeLabel = getGradeLabel(enrollment.course?.grade);
+                  const modeLabel = enrollment.profile?.attendance_mode === 'center' 
+                    ? (isRTL ? 'سنتر' : 'Center')
+                    : enrollment.profile?.attendance_mode === 'online'
+                    ? (isRTL ? 'أونلاين' : 'Online')
+                    : null;
                   
                   return (
                     <MobileDataCard
@@ -469,6 +480,8 @@ const Enrollments = () => {
                       badge={isRTL ? statusConfig.label.ar : statusConfig.label.en}
                       badgeVariant={statusConfig.variant}
                       badgeClassName={statusConfig.className}
+                      secondaryBadge={modeLabel || undefined}
+                      secondaryBadgeVariant={enrollment.profile?.attendance_mode === 'center' ? 'secondary' : 'muted'}
                       isRTL={isRTL}
                       metadata={[
                         // Grade info - primary identifier
