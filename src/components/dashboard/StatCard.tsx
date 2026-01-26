@@ -33,8 +33,8 @@ export const StatCard: React.FC<StatCardProps> = ({
         className
       )}
     >
-      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mb-2", variantStyles[variant])}>
-        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-2", variantStyles[variant])}>
+        <Icon className="w-5 h-5" />
       </div>
       <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>
       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-2">{label}</p>
