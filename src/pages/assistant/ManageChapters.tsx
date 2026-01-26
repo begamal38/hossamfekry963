@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Plus, Edit2, Trash2, BookOpen, ChevronRight, Layers, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, BookOpen, ChevronRight, Layers, Loader2, ArrowUpDown } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
+import { ChapterReorderList } from '@/components/assistant/ChapterReorderList';
+import { cn } from '@/lib/utils';
 
 interface Course {
   id: string;
@@ -56,6 +58,7 @@ export default function ManageChapters() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const [isReorderMode, setIsReorderMode] = useState(false);
   
   const [formData, setFormData] = useState({
     title_ar: '',
@@ -284,20 +287,35 @@ export default function ManageChapters() {
           className="mb-4"
         />
 
-        {/* Course Selector */}
-        <div className="mb-4">
-          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-            <SelectTrigger className="h-10">
-              <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
-            </SelectTrigger>
-            <SelectContent>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {isArabic ? course.title_ar : course.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Course Selector + Reorder Toggle */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex-1">
+            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {isArabic ? course.title_ar : course.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Reorder Toggle Button */}
+          {chapters.length > 1 && (
+            <Button 
+              variant={isReorderMode ? "default" : "outline"} 
+              size="sm" 
+              className={cn("gap-1.5 text-xs shrink-0", isReorderMode && "bg-primary")}
+              onClick={() => setIsReorderMode(!isReorderMode)}
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              {isArabic ? 'ترتيب' : 'Reorder'}
+            </Button>
+          )}
         </div>
 
         {/* Chapters List */}
@@ -311,7 +329,26 @@ export default function ManageChapters() {
             title={isArabic ? 'لا توجد أبواب' : 'No chapters'}
             description={isArabic ? 'أضف أبواباً لتنظيم الحصص' : 'Add chapters to organize lessons'}
           />
+        ) : isReorderMode ? (
+          /* Reorder Mode View */
+          <div className="mb-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <ArrowUpDown className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                {isArabic 
+                  ? 'أنت الآن في وضع الترتيب. استخدم الأسهم لتغيير ترتيب الأبواب.'
+                  : 'You are in reorder mode. Use arrows to change chapter order.'}
+              </p>
+            </div>
+            <ChapterReorderList
+              chapters={chapters}
+              onReorderComplete={fetchChapters}
+              isRTL={isRTL}
+              isArabic={isArabic}
+            />
+          </div>
         ) : (
+          /* Normal View */
           <div className="space-y-2">
             {chapters.map((chapter) => (
               <MobileDataCard
