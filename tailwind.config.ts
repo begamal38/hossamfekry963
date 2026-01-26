@@ -136,8 +136,8 @@ export default {
         "scroll-rtl-mobile": "scroll-rtl 60s linear infinite",
       },
       boxShadow: {
-        'glow': '0 0 40px hsl(224 76% 48% / 0.4)',
-        'glow-sm': '0 0 20px hsl(224 76% 48% / 0.3)',
+        'glow': '0 0 40px hsl(213 100% 71% / 0.4)',
+        'glow-sm': '0 0 20px hsl(213 100% 71% / 0.3)',
       },
       fontSize: {
         // Large screen typography scaling
