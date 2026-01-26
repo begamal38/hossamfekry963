@@ -34,14 +34,14 @@ export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
         className
       )}
     >
-      {/* Breathing indicator dot when active - rich green */}
+      {/* Breathing indicator dot - unified green pulse */}
       <span className="relative flex items-center justify-center">
         {isActive && (
           <span 
             className={cn(
               "absolute inline-flex h-4 w-4 rounded-full",
               "bg-[hsl(142_71%_45%/0.25)]",
-              "animate-[focus-breathe_2s_ease-in-out_infinite]",
+              "animate-focus-breathe",
               "motion-reduce:animate-none"
             )}
           />
@@ -50,7 +50,7 @@ export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
           className={cn(
             "relative inline-flex h-2 w-2 rounded-full transition-colors duration-300",
             isActive 
-              ? "bg-[#22C55E] animate-[focus-dot-breathe_2s_ease-in-out_infinite] motion-reduce:animate-none" 
+              ? "bg-[#22C55E] animate-subtle-pulse motion-reduce:animate-none" 
               : "bg-muted-foreground/50"
           )}
         />

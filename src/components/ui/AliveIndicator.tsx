@@ -35,22 +35,22 @@ export const AliveIndicator: React.FC<AliveIndicatorProps> = ({
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <span className="relative flex items-center justify-center">
-        {/* Outer glow ring - Rich green breathing animation */}
+        {/* Outer glow ring - Unified breathing animation */}
         <span 
           className={cn(
             "absolute inline-flex rounded-full",
-            "bg-[hsl(142_71%_45%/0.35)]",
-            "animate-[alive-breathe_2s_ease-in-out_infinite]",
+            "bg-[hsl(142_71%_45%/0.30)]",
+            "animate-focus-breathe",
             "motion-reduce:animate-none",
             glowSizeClasses[size]
           )}
         />
-        {/* Inner dot - solid rich green with subtle glow */}
+        {/* Inner dot - solid green with subtle pulse */}
         <span 
           className={cn(
             "relative inline-flex rounded-full",
             "bg-[#22C55E]",
-            "animate-[alive-dot-pulse_2s_ease-in-out_infinite]",
+            "animate-subtle-pulse",
             "motion-reduce:animate-none",
             sizeClasses[size]
           )}

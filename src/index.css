@@ -1074,11 +1074,16 @@
   }
 }
 
-/* Pulsing dots loading indicator - brand indigo sequential animation */
+/* ══════════════════════════════════════════════════════════════════════════
+   UNIFIED PULSE DOT SYSTEM
+   All pulsing indicators use consistent timing and easing
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Loading indicator dots - brand indigo, sequential animation */
 @keyframes pulse-dot {
   0%, 100% {
-    opacity: 0.4;
-    transform: scale(0.85);
+    opacity: 0.35;
+    transform: scale(0.8);
   }
   50% {
     opacity: 1;
@@ -1087,7 +1092,46 @@
 }
 
 .animate-pulse-dot {
-  animation: pulse-dot 1.2s ease-in-out infinite;
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+/* Subtle pulse for status indicators - replaces default animate-pulse usage */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* Focus/Alive breathing animation - unified green pulse */
+@keyframes focus-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+
+.animate-focus-breathe {
+  animation: focus-breathe 2s ease-in-out infinite;
+}
+
+/* Reduced motion support for all pulse animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-dot,
+  .animate-subtle-pulse,
+  .animate-focus-breathe {
+    animation: none !important;
+  }
 }
 
 .animate-float {
