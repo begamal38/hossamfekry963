@@ -40,6 +40,15 @@ export const getGradeFilterOptions = (isRTL: boolean): FilterOption[] => [
   { value: 'third_secondary', label: isRTL ? 'تالته ثانوي' : '3rd Sec' },
 ];
 
+// Course Status Filter Options
+export type CourseStatusFilter = 'all' | 'with_courses' | 'no_courses';
+
+export const getCourseStatusFilterOptions = (isRTL: boolean): FilterOption[] => [
+  { value: 'all', label: isRTL ? 'كل الطلاب' : 'All Students' },
+  { value: 'with_courses', label: isRTL ? 'لديهم كورسات' : 'With Courses' },
+  { value: 'no_courses', label: isRTL ? 'بدون كورسات' : 'No Courses' },
+];
+
 export const getTrackFilterOptions = (isRTL: boolean): FilterOption[] => [
   { value: 'all', label: isRTL ? 'كل الأنظمة' : 'All Tracks' },
   { value: 'arabic', label: isRTL ? 'عربي' : 'Arabic' },
