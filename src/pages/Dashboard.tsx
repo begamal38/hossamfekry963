@@ -358,16 +358,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-muted/30 pb-mobile-nav overflow-x-hidden"
+      className="min-h-screen bg-muted/20 pb-mobile-nav overflow-x-hidden"
       dir={isArabic ? 'rtl' : 'ltr'}
     >
       <Navbar />
 
       <>
         <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
-          <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
-          {/* Hero Header - Personalized Ana Vodafone Style */}
-          <div className="bg-gradient-to-br from-primary/5 via-card to-accent/5 rounded-2xl border border-border p-4 sm:p-5 mb-5">
+          {/* Desktop max-width container for professional containment */}
+          <div className="container mx-auto px-3 sm:px-4 max-w-4xl xl:max-w-5xl">
+          {/* Hero Header - Vodafone-inspired personalized greeting */}
+          <div className="bg-card rounded-2xl border border-border/50 shadow-card p-4 sm:p-5 mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-muted-foreground mb-1">

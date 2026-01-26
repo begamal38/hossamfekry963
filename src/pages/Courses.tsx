@@ -316,7 +316,7 @@ const Courses: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav">
+    <div className="min-h-screen bg-muted/20 pb-mobile-nav">
       <SEOHead 
         title="Chemistry Courses – Hossam Fekry Platform"
         titleAr="كورسات الكيمياء – منصة حسام فكري"
@@ -328,7 +328,7 @@ const Courses: React.FC = () => {
       
       <main className="pt-20 pb-16">
         {/* Desktop max-width container for professional containment */}
-        <div className="container mx-auto px-4 max-w-6xl 2xl:max-w-7xl">
+        <div className="container mx-auto px-4 max-w-5xl xl:max-w-6xl">
           {/* Header Section - Clean and impactful */}
           <header className="mb-6 md:mb-8">
             {/* Stats row */}
@@ -357,14 +357,14 @@ const Courses: React.FC = () => {
             </p>
           </header>
 
-          {/* Filters Section - Grouped logically */}
-          <section className="mb-8 space-y-4" aria-label={isArabic ? 'فلاتر البحث' : 'Search filters'}>
+          {/* Filters Section - Sticky on scroll, clean grouping */}
+          <section className="mb-8 space-y-4 sticky top-16 z-30 bg-muted/20 py-3 -mx-4 px-4 backdrop-blur-sm" aria-label={isArabic ? 'فلاتر البحث' : 'Search filters'}>
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <Input 
                 placeholder={isArabic ? 'ابحث عن كورس...' : 'Search courses...'} 
-                className="ps-10 h-12 text-base rounded-xl border-border/60 bg-card focus:border-primary/50 transition-colors"
+                className="ps-10 h-12 text-base rounded-xl border-border/50 bg-card focus:border-primary/50 transition-colors shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

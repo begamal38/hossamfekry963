@@ -9,8 +9,8 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      // Unified rounded-2xl with subtle border and shadow
-      "rounded-2xl border border-border/80 bg-card text-card-foreground shadow-card transition-all duration-150 ease-out motion-reduce:transition-none",
+      // Vodafone-inspired: Clean rounded corners, subtle shadow, no heavy borders
+      "rounded-2xl border border-border/60 bg-card text-card-foreground shadow-card transition-all duration-150 ease-out motion-reduce:transition-none",
       className
     )}
     {...props}

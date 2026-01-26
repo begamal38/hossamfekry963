@@ -103,11 +103,11 @@ const CourseCardInner = ({
   return (
     <article 
       className={cn(
-        "group relative bg-card rounded-2xl border border-border/80 overflow-hidden transition-all duration-200",
-        // Refined shadow system
+        "group relative bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-150",
+        // Clean shadow - Vodafone style
         "shadow-card hover:shadow-elevated",
         // Desktop: subtle lift on hover
-        "md:hover:-translate-y-0.5 md:hover:border-primary/40",
+        "md:hover:-translate-y-1 md:hover:border-primary/30",
         // Mobile: optimized touch feedback
         "active:scale-[0.98] touch-manipulation select-none"
       )}

@@ -37,17 +37,17 @@ export const CourseFilterChips: React.FC<CourseFilterChipsProps> = ({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      {/* Filter chips row - Horizontal scroll on mobile */}
+      {/* Filter chips row - Horizontal scroll on mobile, Vodafone-style pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
         {/* "All" chip */}
         <button
           onClick={() => onSelect('all')}
           className={cn(
-            "flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150",
-            "active:scale-[0.97] select-none touch-manipulation",
+            "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-150",
+            "active:scale-[0.96] select-none touch-manipulation border",
             selectedValue === 'all' && !showFreeOnly
-              ? "bg-primary text-primary-foreground shadow-sm" 
-              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+              ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+              : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
           )}
         >
           {isRTL ? 'الكل' : 'All'}
@@ -59,27 +59,27 @@ export const CourseFilterChips: React.FC<CourseFilterChipsProps> = ({
             key={filter.value}
             onClick={() => onSelect(filter.value)}
             className={cn(
-              "flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 whitespace-nowrap",
-              "active:scale-[0.97] select-none touch-manipulation",
+              "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 whitespace-nowrap border",
+              "active:scale-[0.96] select-none touch-manipulation",
               selectedValue === filter.value 
-                ? "bg-primary text-primary-foreground shadow-sm" 
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
             )}
           >
             {filter.label}
           </button>
         ))}
         
-        {/* Free filter chip - visually distinct */}
+        {/* Free filter chip - accent color when active */}
         {onFreeToggle && (
           <button
             onClick={onFreeToggle}
             className={cn(
-              "flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 flex items-center gap-1.5",
-              "active:scale-[0.97] select-none touch-manipulation",
+              "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 flex items-center gap-1.5 border",
+              "active:scale-[0.96] select-none touch-manipulation",
               showFreeOnly 
-                ? "bg-success text-success-foreground shadow-sm" 
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-accent text-accent-foreground border-accent shadow-sm" 
+                : "bg-card text-muted-foreground border-border/60 hover:border-accent/40 hover:text-foreground"
             )}
           >
             <Sparkles className="w-3.5 h-3.5" />
