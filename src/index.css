@@ -733,6 +733,27 @@
   animation: fade-in-up 0.4s ease-out forwards;
 }
 
+/* Focus Toast Styling - Calm, non-blocking feedback */
+.focus-toast-pause,
+.focus-toast-resume {
+  font-size: 0.875rem !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 9999px !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.focus-toast-pause {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.focus-toast-resume {
+  background: hsl(var(--primary) / 0.1) !important;
+  color: hsl(var(--primary)) !important;
+  border: 1px solid hsl(var(--primary) / 0.2) !important;
+}
+
 /* Reduced motion for accessibility - Focus Mode */
 @media (prefers-reduced-motion: reduce) {
   .focus-icon-breathe,

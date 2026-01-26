@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Eye, Pause, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { UserType } from '@/hooks/useUnifiedFocusState';
+import { UserType, FocusLostReason } from '@/hooks/useUnifiedFocusState';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UnifiedFocusBarProps {
   userType: UserType;
   isFocusActive: boolean;
+  focusLostReason?: FocusLostReason;
   remainingSeconds?: number; // Only for visitors
   isTimerRunning?: boolean; // Only for visitors
   hasPlaybackStarted: boolean;
@@ -27,6 +28,7 @@ interface UnifiedFocusBarProps {
 export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
   userType,
   isFocusActive,
+  focusLostReason,
   remainingSeconds = 0,
   isTimerRunning = false,
   hasPlaybackStarted,
@@ -89,6 +91,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
   }
 
   // Get state-specific text - uses translation system
+  // Now includes pause reason for better feedback
   const getText = () => {
     if (userType === 'visitor') {
       if (isFocusActive) {
@@ -124,7 +127,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
         };
       }
     } else {
-      // Enrolled student
+      // Enrolled student - show pause reason for better feedback
       if (isFocusActive) {
         return {
           title: isRTL ? 'وضع التركيز نشط' : 'Focus Mode Active',
@@ -132,9 +135,17 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
           timer: null,
         };
       } else {
+        // Provide contextual pause message based on reason
+        let subtitle: string | null = null;
+        if (focusLostReason === 'tab_inactive' || focusLostReason === 'page_hidden') {
+          subtitle = isRTL ? 'رجعت للتاب لاستكمال التركيز' : 'Return to tab to resume focus';
+        } else if (focusLostReason === 'video_paused') {
+          subtitle = isRTL ? 'شغّل الفيديو للمتابعة' : 'Play video to continue';
+        }
+        
         return {
           title: isRTL ? 'متوقف مؤقتاً' : 'Paused',
-          subtitle: null,
+          subtitle,
           timer: null,
         };
       }
