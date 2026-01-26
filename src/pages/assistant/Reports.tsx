@@ -22,7 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSystemStatus, type SystemStatusMetrics } from '@/hooks/useSystemStatus';
-import { SmartInsights } from '@/components/analytics/SmartInsights';
+// SmartInsights removed - consolidated into ActionableBreakdown
 import { MobileChapterAnalytics } from '@/components/analytics/MobileChapterCard';
 import { MobileExamAnalytics } from '@/components/analytics/MobileExamAnalytics';
 import { MobileMetricCard } from '@/components/analytics/MobileMetricCard';
@@ -546,14 +546,7 @@ export default function Reports() {
           />
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            SECTION D: Smart Insights (Additional actionable items)
-        ═══════════════════════════════════════════════════════════════════ */}
-        {insightsData && (
-          <div className="mb-4 md:mb-6">
-            <SmartInsights data={insightsData} isArabic={isArabic} />
-          </div>
-        )}
+        {/* SmartInsights REMOVED - ActionableBreakdown is the single source for insights */}
 
         {/* ═══════════════════════════════════════════════════════════════════
             DRILL-DOWN SECTIONS (Secondary - Below Analytics)
