@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  X
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -24,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { safeFilterMatch } from '@/lib/silentAutoFix';
 
 type NotificationType = 
   | 'course_announcement'
@@ -201,26 +201,21 @@ const NOTIFICATION_CONFIG: Record<NotificationType, {
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { t, language, isRTL } = useLanguage();
+  const { language, isRTL } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const isArabic = language === 'ar';
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  
+  // Prevent duplicate fetches
+  const fetchingRef = useRef(false);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-      return;
-    }
-    if (user) {
-      fetchNotifications();
-    }
-  }, [user, authLoading]);
-
-  const fetchNotifications = async () => {
-    if (!user) return;
+  const fetchNotifications = useCallback(async () => {
+    if (!user || fetchingRef.current) return;
+    
+    fetchingRef.current = true;
 
     try {
       // Get user creation date - only show notifications created AFTER user joined
@@ -254,7 +249,7 @@ export default function Notifications() {
 
       if (notifError) throw notifError;
 
-      // Filter notifications based on targeting
+      // Filter notifications based on targeting - using safeFilterMatch for legacy data
       const relevantNotifications = (notificationsData || []).filter(n => {
         // Direct user targeting - only show if targeted to this user
         if (n.target_type === 'user') {
@@ -281,9 +276,9 @@ export default function Notifications() {
           return profile?.grade === n.target_value;
         }
         
-        // Attendance mode targeting
+        // Attendance mode targeting - use safeFilterMatch for legacy 'hybrid' handling
         if (n.target_type === 'attendance_mode' && n.target_value) {
-          return profile?.attendance_mode === n.target_value;
+          return safeFilterMatch(profile?.attendance_mode, n.target_value);
         }
         
         return false;
@@ -311,8 +306,19 @@ export default function Notifications() {
       console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, authLoading, fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     if (!user) return;
@@ -438,8 +444,13 @@ export default function Notifications() {
           </div>
 
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              <Check className="h-4 w-4 mr-1" />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={markAllAsRead}
+              className="transition-all duration-150 active:scale-[0.98]"
+            >
+              <Check className={cn("h-4 w-4", isRTL ? "ml-1" : "mr-1")} />
               {isArabic ? 'قراءة الكل' : 'Mark all read'}
             </Button>
           )}
@@ -472,7 +483,7 @@ export default function Notifications() {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    "bg-card border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/50 group",
+                    "bg-card border border-border/60 rounded-lg p-4 cursor-pointer transition-all duration-150 hover:shadow-card hover:border-primary/50 active:scale-[0.99] group",
                     !notification.isRead && "border-primary/30 bg-primary/5"
                   )}
                 >
@@ -523,7 +534,7 @@ export default function Notifications() {
                           variant="outline" 
                           size="sm" 
                           className={cn(
-                            "gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors",
+                            "gap-2 transition-all duration-150 active:scale-[0.98]",
                             isRTL && "flex-row-reverse"
                           )}
                           onClick={(e) => {
@@ -597,6 +608,7 @@ export default function Notifications() {
                   <Button 
                     variant="outline" 
                     onClick={() => setSelectedNotification(null)}
+                    className="transition-all duration-150 active:scale-[0.98]"
                   >
                     {isArabic ? 'إغلاق' : 'Close'}
                   </Button>
