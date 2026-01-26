@@ -82,8 +82,8 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       className={cn(
-        "relative rounded-2xl border border-border bg-card overflow-hidden transition-all",
-        "hover:border-primary/40 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50",
+        "relative rounded-lg border border-border bg-card overflow-hidden transition-all duration-150",
+        "hover:border-primary/40 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98]",
         className
       )}
       dir={isRTL ? 'rtl' : 'ltr'}

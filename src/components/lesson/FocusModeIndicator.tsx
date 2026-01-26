@@ -289,7 +289,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
       {/* Stats badge - only shows when ACTIVE */}
       {stats && stats.totalMinutes > 0 && isActive && (
         <div className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full",
+          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
           "bg-[hsl(142_71%_45%/0.1)] border border-[hsl(142_71%_45%/0.2)]",
           "text-xs font-medium text-[#22C55E]",
           "animate-fade-in"
@@ -304,9 +304,8 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         <div 
           className={cn(
             "absolute top-full right-0 mt-3",
-            "px-4 py-2.5 rounded-xl",
-            "bg-gradient-to-r from-[hsl(142_71%_45%/0.15)] to-[hsl(142_71%_45%/0.05)]",
-            "border border-[hsl(142_71%_45%/0.2)]",
+            "px-4 py-2.5 rounded-lg",
+            "bg-[hsl(142_71%_45%/0.1)] border border-[hsl(142_71%_45%/0.2)]",
             "text-sm font-medium text-foreground",
             "whitespace-nowrap shadow-lg",
             "animate-fade-in-up"

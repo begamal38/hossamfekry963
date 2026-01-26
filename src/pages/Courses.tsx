@@ -364,7 +364,7 @@ const Courses: React.FC = () => {
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <Input 
                 placeholder={isArabic ? 'ابحث عن كورس...' : 'Search courses...'} 
-                className="ps-10 h-12 text-base rounded-xl border-border/50 bg-card focus:border-primary/50 transition-colors shadow-sm"
+                className="ps-10 h-12 text-base border-border/50 bg-card focus:border-primary/50 transition-colors shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

@@ -9,8 +9,8 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      // Vodafone-inspired: Clean rounded corners, subtle shadow, no heavy borders
-      "rounded-2xl border border-border/60 bg-card text-card-foreground shadow-card transition-all duration-150 ease-out motion-reduce:transition-none",
+      // Unified: rounded-lg (10px), subtle shadow, consistent border
+      "rounded-lg border border-border/60 bg-card text-card-foreground shadow-card transition-all duration-150 ease-out motion-reduce:transition-none",
       className
     )}
     {...props}

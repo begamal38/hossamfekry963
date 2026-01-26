@@ -401,8 +401,8 @@ const Auth = () => {
       </div>
       
       {/* Main content area - pulled up to overlap header */}
-      <div className="flex-1 px-4 -mt-4 pb-8">
-        <div className="bg-card rounded-2xl shadow-lg border border-border p-5 md:p-6 max-w-md mx-auto overflow-hidden">
+        <div className="flex-1 px-4 -mt-4 pb-8">
+        <div className="bg-card rounded-lg shadow-lg border border-border p-5 md:p-6 max-w-md mx-auto overflow-hidden">
           {/*
             Important: keep the animated form stack from ever blocking clicks on the mode toggle.
             We explicitly control stacking + pointer events.

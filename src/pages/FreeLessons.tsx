@@ -115,12 +115,12 @@ const FreeLessons: React.FC = () => {
                     key={lesson.id}
                     onClick={() => handleLessonClick(lesson.short_id)}
                     className={cn(
-                      "group flex items-center gap-4 p-4 sm:p-5 bg-card rounded-xl border border-border hover:border-green-500/40 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]",
+                      "group flex items-center gap-4 p-4 sm:p-5 bg-card rounded-lg border border-border hover:border-green-500/40 hover:shadow-md transition-all duration-150 cursor-pointer active:scale-[0.98]",
                       "animate-fade-in-up",
                       `animation-delay-${Math.min((index % 4) + 1, 4) * 100}`
                     )}
                   >
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 transition-colors flex-shrink-0">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 transition-colors flex-shrink-0">
                       <Play className="w-5 h-5 text-green-600 group-hover:text-white" />
                     </div>
                     

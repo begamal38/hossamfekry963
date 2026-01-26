@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Play, Loader2, CheckCircle, BookOpen, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';

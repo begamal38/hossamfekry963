@@ -13,8 +13,8 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color }) => (
-  <div className="bg-card rounded-2xl border border-border p-6 2xl:p-8 3xl:p-10 shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
-    <div className={cn("w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl flex items-center justify-center mb-4 2xl:mb-6", color)}>
+  <div className="bg-card rounded-lg border border-border p-6 2xl:p-8 3xl:p-10 shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
+    <div className={cn("w-12 h-12 2xl:w-14 2xl:h-14 rounded-lg flex items-center justify-center mb-4 2xl:mb-6", color)}>
       {icon}
     </div>
     <p className="text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-foreground mb-1 2xl:mb-2">{value}</p>

@@ -56,13 +56,13 @@ export const StudentCard: React.FC<StudentCardProps> = ({
 
   return (
     <div 
-      className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
+      className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 hover:shadow-md transition-all duration-150 cursor-pointer active:scale-[0.98]"
       onClick={onClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <User className="w-6 h-6 text-primary" />
           </div>
           <div>

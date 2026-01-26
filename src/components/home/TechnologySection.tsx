@@ -70,10 +70,10 @@ export const TechnologySection: React.FC = () => {
             <div 
               key={idx}
               className={cn(
-                "flex flex-col gap-3 p-5 rounded-xl",
+                "flex flex-col gap-3 p-5 rounded-lg",
                 "bg-background border border-border/50",
                 "shadow-card hover:shadow-elevated hover:border-primary/20",
-                "transition-all duration-500",
+                "transition-all duration-300",
                 gridVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
               style={{ transitionDelay: `${idx * 100}ms` }}
