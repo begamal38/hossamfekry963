@@ -11,7 +11,7 @@ interface VisitorFocusIndicatorProps {
 /**
  * Simple Focus Mode indicator for visitors
  * Shows whether focus validation is active or paused
- * Uses centralized translation keys for consistency
+ * Uses rich green (#22C55E) with calm 2s breathing animation
  * Visible ONLY to visitors (not logged in) during free lesson preview
  */
 export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
@@ -27,24 +27,31 @@ export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
       className={cn(
         "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
         "border transition-all duration-300",
+        "motion-reduce:transition-none",
         isActive 
-          ? "bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400"
+          ? "bg-[hsl(142_71%_45%/0.08)] border-[hsl(142_71%_45%/0.25)] text-[#22C55E]"
           : "bg-muted/50 border-muted text-muted-foreground",
         className
       )}
     >
-      {/* Breathing indicator dot when active */}
+      {/* Breathing indicator dot when active - rich green */}
       <span className="relative flex items-center justify-center">
         {isActive && (
           <span 
-            className="absolute inline-flex h-4 w-4 rounded-full bg-green-500/20 animate-ping"
-            style={{ animationDuration: '2s' }}
+            className={cn(
+              "absolute inline-flex h-4 w-4 rounded-full",
+              "bg-[hsl(142_71%_45%/0.25)]",
+              "animate-[focus-breathe_2s_ease-in-out_infinite]",
+              "motion-reduce:animate-none"
+            )}
           />
         )}
         <span 
           className={cn(
             "relative inline-flex h-2 w-2 rounded-full transition-colors duration-300",
-            isActive ? "bg-green-500" : "bg-muted-foreground/50"
+            isActive 
+              ? "bg-[#22C55E] animate-[focus-dot-breathe_2s_ease-in-out_infinite] motion-reduce:animate-none" 
+              : "bg-muted-foreground/50"
           )}
         />
       </span>

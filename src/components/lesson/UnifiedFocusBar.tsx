@@ -173,22 +173,23 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
         isFocusActive
           ? isWarning
             ? "bg-destructive/10 border-destructive/30"
-            : "bg-primary/10 border-primary/30"
+            : "bg-[hsl(142_71%_45%/0.08)] border-[hsl(142_71%_45%/0.25)]"
           : "bg-muted/50 border-muted",
         isExpanded ? "px-4 py-2" : "px-3 py-2",
         className
       )}
       onClick={handleToggle}
     >
-      {/* Pulsing dot indicator - always visible */}
+      {/* Pulsing dot indicator - always visible, rich green when active */}
       <span className="relative flex items-center justify-center flex-shrink-0">
         {isFocusActive && (
           <span 
             className={cn(
-              "absolute inline-flex h-4 w-4 rounded-full animate-ping",
-              isWarning ? "bg-destructive/20" : "bg-primary/20"
+              "absolute inline-flex h-4 w-4 rounded-full",
+              "animate-[focus-breathe_2s_ease-in-out_infinite]",
+              "motion-reduce:animate-none",
+              isWarning ? "bg-destructive/20" : "bg-[hsl(142_71%_45%/0.25)]"
             )}
-            style={{ animationDuration: '2s' }}
           />
         )}
         <span 
@@ -197,7 +198,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
             isFocusActive 
               ? isWarning 
                 ? "bg-destructive" 
-                : "bg-primary"
+                : "bg-[#22C55E]"
               : "bg-muted-foreground/50"
           )}
         />
@@ -207,20 +208,20 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
       {isFocusActive ? (
         <Eye className={cn(
           "w-4 h-4 flex-shrink-0",
-          isWarning ? "text-destructive" : "text-primary"
+          isWarning ? "text-destructive" : "text-[#22C55E]"
         )} />
       ) : (
         <Pause className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       )}
 
       {isExpanded && (
-        <div className="flex flex-col min-w-0 data-fade-in">
+        <div className="flex flex-col min-w-0 animate-fade-in">
           <span className={cn(
             "text-sm font-medium truncate",
             isFocusActive
               ? isWarning
                 ? "text-destructive"
-                : "text-primary"
+                : "text-[#22C55E]"
               : "text-muted-foreground"
           )}>
             {text.title}
@@ -235,7 +236,7 @@ export const UnifiedFocusBar: React.FC<UnifiedFocusBarProps> = ({
           {userType === 'visitor' && text.timer && (
             <span className={cn(
               "text-xs font-medium mt-0.5",
-              isWarning ? "text-destructive" : "text-primary"
+              isWarning ? "text-destructive" : "text-[#22C55E]"
             )}>
               {text.timer}
             </span>

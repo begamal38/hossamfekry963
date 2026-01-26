@@ -226,27 +226,32 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         className={cn(
           "flex items-center gap-2.5 px-3.5 py-2 rounded-full",
           "bg-card/90 backdrop-blur-md border shadow-lg",
-          "transition-all duration-700 ease-out",
+          "transition-all duration-500 ease-out",
           "focus-mode-expand-animation",
+          "motion-reduce:transition-none motion-reduce:animate-none",
           isPaused 
             ? "border-muted/50 opacity-60" 
-            : "border-primary/30 shadow-primary/10 focus-mode-on-badge"
+            : "border-[hsl(142_71%_45%/0.3)] shadow-[0_0_12px_-4px_hsl(142_71%_45%/0.2)] focus-mode-on-badge"
         )}
       >
-        {/* Breathing indicator dot with enhanced glow */}
+        {/* Breathing indicator dot with rich green glow */}
         <span className="relative flex items-center justify-center">
           {isActive && (
             <span 
               className={cn(
-                "absolute inline-flex h-5 w-5 rounded-full",
-                "bg-primary/20 animate-[focus-breathe_7.5s_ease-in-out_infinite]"
+                "absolute inline-flex h-4 w-4 rounded-full",
+                "bg-[hsl(142_71%_45%/0.25)]",
+                "animate-[focus-breathe_2s_ease-in-out_infinite]",
+                "motion-reduce:animate-none"
               )}
             />
           )}
           <span 
             className={cn(
               "relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500",
-              isPaused ? "bg-muted-foreground/50" : "bg-primary focus-dot-pulse"
+              isPaused 
+                ? "bg-muted-foreground/50" 
+                : "bg-[#22C55E] animate-[focus-dot-breathe_2s_ease-in-out_infinite] motion-reduce:animate-none"
             )}
           />
         </span>
@@ -266,7 +271,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         {isActive && (
           <div className="w-12 h-1.5 bg-muted/50 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-primary/70 rounded-full transition-all duration-1000 ease-linear"
+              className="h-full bg-[hsl(142_71%_45%/0.7)] rounded-full transition-all duration-1000 ease-linear"
               style={{ width: `${currentSegmentProgress}%` }}
             />
           </div>
@@ -275,8 +280,9 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
         {/* Icon with subtle animation */}
         <StatusIcon className={cn(
           "w-4 h-4 transition-all duration-300",
-          isPaused ? "text-muted-foreground" : "text-primary",
-          isActive && "animate-[subtle-pulse_4s_ease-in-out_infinite]"
+          isPaused 
+            ? "text-muted-foreground" 
+            : "text-[#22C55E] animate-[subtle-pulse_4s_ease-in-out_infinite] motion-reduce:animate-none"
         )} />
       </div>
 
@@ -284,8 +290,8 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
       {stats && stats.totalMinutes > 0 && isActive && (
         <div className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full",
-          "bg-primary/10 border border-primary/20",
-          "text-xs font-medium text-primary",
+          "bg-[hsl(142_71%_45%/0.1)] border border-[hsl(142_71%_45%/0.2)]",
+          "text-xs font-medium text-[#22C55E]",
           "animate-fade-in"
         )}>
           <Timer className="w-3 h-3" />
@@ -299,8 +305,8 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
           className={cn(
             "absolute top-full right-0 mt-3",
             "px-4 py-2.5 rounded-xl",
-            "bg-gradient-to-r from-primary/15 to-primary/5",
-            "border border-primary/20",
+            "bg-gradient-to-r from-[hsl(142_71%_45%/0.15)] to-[hsl(142_71%_45%/0.05)]",
+            "border border-[hsl(142_71%_45%/0.2)]",
             "text-sm font-medium text-foreground",
             "whitespace-nowrap shadow-lg",
             "animate-fade-in-up"
