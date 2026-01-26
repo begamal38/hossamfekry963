@@ -41,7 +41,8 @@ import { useShortId } from '@/hooks/useShortId';
 import { usePreviewTimer } from '@/hooks/usePreviewTimer';
 import { useFreeAnalytics } from '@/hooks/useFreeAnalytics';
 import { useFacebookPixel } from '@/hooks/useFacebookPixel';
-import { usePageVisibility } from '@/hooks/useUnifiedFocusState';
+import { usePageVisibility, FocusLostReason } from '@/hooks/useUnifiedFocusState';
+import { useFocusFeedback } from '@/hooks/useFocusFeedback';
 import { extractYouTubeVideoId } from '@/lib/youtubeUtils';
 import { hasValidVideo } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -164,6 +165,9 @@ export default function LessonView() {
   
   // Smart engagement for prompts (safe hook - returns null if not in provider)
   const engagement = useEngagementSafe();
+  
+  // Focus feedback for calm, non-blocking state change notifications
+  const { showPauseFeedback, showResumeFeedback, resetFeedback } = useFocusFeedback();
 
   // Keep volatile values in refs so player lifecycle never re-initializes on re-renders
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
@@ -176,10 +180,17 @@ export default function LessonView() {
   const analyticsTrackedRef = useRef(false); // Single trackView per session
   const focusPersistenceCalledRef = useRef(false); // Single persistence write per completion
   const lastFocusStateRef = useRef<'active' | 'paused' | null>(null); // Prevent duplicate focus transitions
+  const previousFocusActiveRef = useRef<boolean | null>(null); // Track focus state for feedback
 
   // Unified focus state: computed from video + tab + page visibility
   // NOTE: No viewport check - YouTube embeds are unreliable with intersection observers
   const isFocusActive = isVideoPlaying && isTabActive && isPageVisible;
+  
+  // Compute focus lost reason for UI feedback
+  const focusLostReason: FocusLostReason = isFocusActive ? null
+    : !isPageVisible ? 'page_hidden'
+    : !isTabActive ? 'tab_inactive'
+    : 'video_paused';
   
   // Computed lesson context for the context strip
   const chapterLessons = useMemo(() => {
@@ -214,7 +225,9 @@ export default function LessonView() {
     analyticsTrackedRef.current = false;
     focusPersistenceCalledRef.current = false;
     lastFocusStateRef.current = null;
-  }, [lessonId]);
+    previousFocusActiveRef.current = null;
+    resetFeedback(); // Reset feedback debounce state
+  }, [lessonId, resetFeedback]);
 
   const copyLessonLink = async () => {
     const shortUrl = `${window.location.origin}/lesson/${lesson?.short_id}`;
@@ -607,6 +620,40 @@ export default function LessonView() {
     }
   }, [isFocusActive, engagement]);
 
+  // ═══════════════════════════════════════════════════════════════════
+  // FOCUS STATE CHANGE FEEDBACK — Calm, non-blocking notifications
+  // Shows subtle feedback when focus pauses/resumes for enrolled users
+  // GUARD: Only show for enrolled students, not visitors or staff
+  // ═══════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    // Skip for visitors, staff, or when lesson not loaded
+    if (!user || isStaff || !lesson) return;
+    
+    // Skip if this is the initial render (no previous state)
+    if (previousFocusActiveRef.current === null) {
+      previousFocusActiveRef.current = isFocusActive;
+      return;
+    }
+    
+    // Detect state transitions
+    const wasActive = previousFocusActiveRef.current;
+    const isNowActive = isFocusActive;
+    
+    if (wasActive && !isNowActive) {
+      // Transition: Active → Paused
+      // Determine reason: video paused, tab hidden, or page hidden
+      const reason: FocusLostReason = !isPageVisible ? 'page_hidden' 
+        : !isTabActive ? 'tab_inactive' 
+        : 'video_paused';
+      showPauseFeedback(reason);
+    } else if (!wasActive && isNowActive) {
+      // Transition: Paused → Active
+      showResumeFeedback();
+    }
+    
+    previousFocusActiveRef.current = isNowActive;
+  }, [isFocusActive, isPageVisible, isTabActive, user, isStaff, lesson, showPauseFeedback, showResumeFeedback]);
+
   const currentLessonIndex = courseLessons.findIndex(l => l.id === lessonId);
   const previousLesson = currentLessonIndex > 0 ? courseLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < courseLessons.length - 1 ? courseLessons[currentLessonIndex + 1] : null;
@@ -935,6 +982,7 @@ export default function LessonView() {
                   <UnifiedFocusBar
                     userType={getUserType()}
                     isFocusActive={isFocusActive}
+                    focusLostReason={focusLostReason}
                     remainingSeconds={previewTimer.remainingSeconds}
                     isTimerRunning={previewTimer.isRunning}
                     hasPlaybackStarted={hasPlaybackStarted}
