@@ -96,9 +96,9 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "8px",
+        md: "6px",
+        sm: "4px",
       },
       keyframes: {
         "accordion-down": {
@@ -137,8 +137,8 @@ export default {
         "scroll-rtl-mobile": "scroll-rtl 60s linear infinite",
       },
       boxShadow: {
-        'glow': '0 0 40px hsl(213 100% 71% / 0.4)',
-        'glow-sm': '0 0 20px hsl(213 100% 71% / 0.3)',
+        'glow': 'none',
+        'glow-sm': 'none',
       },
       fontSize: {
         // Large screen typography scaling
