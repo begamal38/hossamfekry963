@@ -1,112 +1,146 @@
 import React from 'react';
-import { BookOpen, FileCheck, TrendingUp, Award } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle2, Award, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 
-interface StatCardProps {
-  icon: React.ReactNode;
+// Unified variant system matching Student Dashboard
+type StatVariant = 'primary' | 'success' | 'warning' | 'muted';
+
+const variantStyles: Record<StatVariant, { bg: string; icon: string }> = {
+  primary: { bg: 'bg-primary/10', icon: 'text-primary' },
+  success: { bg: 'bg-success/10', icon: 'text-success' },
+  warning: { bg: 'bg-warning/10', icon: 'text-warning' },
+  muted: { bg: 'bg-muted', icon: 'text-muted-foreground' },
+};
+
+interface StatItemProps {
+  icon: React.ElementType;
   value: number;
   label: string;
-  color: string;
-  delay: string;
+  variant: StatVariant;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, value, label, color }) => (
-  <div className="bg-card rounded-lg border border-border p-6 2xl:p-8 3xl:p-10 shadow-card hover:shadow-elevated transition-all duration-300 hover:-translate-y-1">
-    <div className={cn("w-12 h-12 2xl:w-14 2xl:h-14 rounded-lg flex items-center justify-center mb-4 2xl:mb-6", color)}>
-      {icon}
+// Compact stat item matching Dashboard InfoCard structure
+const StatItem: React.FC<StatItemProps> = ({ icon: Icon, value, label, variant }) => {
+  const styles = variantStyles[variant];
+  
+  return (
+    <div className="bg-card rounded-lg border border-border/50 p-4 transition-colors duration-150">
+      {/* Icon Container - UNIFIED: 44x44px square with 12px radius */}
+      <div className={cn(
+        "w-11 h-11 rounded-[12px] flex items-center justify-center mb-3",
+        styles.bg
+      )}>
+        <Icon className={cn("w-5 h-5", styles.icon)} strokeWidth={2} />
+      </div>
+      
+      {/* Value - Primary visual anchor */}
+      <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
+      
+      {/* Label - Secondary, muted */}
+      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-2">{label}</p>
     </div>
-    <p className="text-3xl 2xl:text-4xl 3xl:text-5xl font-bold text-foreground mb-1 2xl:mb-2">{value}</p>
-    <p className="text-muted-foreground text-sm 2xl:text-base 3xl:text-lg">{label}</p>
-  </div>
-);
+  );
+};
 
 export const ProgressPreviewSection: React.FC = () => {
   const { t, isRTL } = useLanguage();
 
-  const stats = [
+  // Stats matching Dashboard structure with unified variants
+  const stats: StatItemProps[] = [
     {
-      icon: <BookOpen className="w-6 h-6 2xl:w-7 2xl:h-7 text-primary" />,
+      icon: CheckCircle2,
       value: 18,
       label: t('dashboard.lessonsCompleted'),
-      color: 'bg-primary/10',
-      delay: 'animation-delay-100',
+      variant: 'success',
     },
     {
-      icon: <BookOpen className="w-6 h-6 2xl:w-7 2xl:h-7 text-accent" />,
+      icon: Clock,
       value: 12,
       label: t('dashboard.lessonsRemaining'),
-      color: 'bg-accent/10',
-      delay: 'animation-delay-200',
+      variant: 'muted',
     },
     {
-      icon: <FileCheck className="w-6 h-6 2xl:w-7 2xl:h-7 text-green-600" />,
+      icon: Award,
       value: 5,
       label: t('dashboard.examsTaken'),
-      color: 'bg-green-100',
-      delay: 'animation-delay-300',
+      variant: 'primary',
     },
     {
-      icon: <FileCheck className="w-6 h-6 2xl:w-7 2xl:h-7 text-orange-600" />,
+      icon: BookOpen,
       value: 3,
       label: t('dashboard.examsPending'),
-      color: 'bg-orange-100',
-      delay: 'animation-delay-400',
+      variant: 'warning',
     },
   ];
 
   return (
-    <section className="py-20 lg:py-28 2xl:py-32 3xl:py-36 bg-background section-with-depth" dir={isRTL ? 'rtl' : 'ltr'} style={{ contain: 'layout' }}>
-      <div className="container mx-auto px-4 2xl:px-8 3xl:px-12 relative z-10">
-        <div className="text-center mb-16 2xl:mb-20 3xl:mb-24">
-          <h2 className="text-3xl md:text-4xl 2xl:text-5xl 3xl:text-5xl-display font-bold text-foreground mb-4 2xl:mb-6">
+    <section 
+      className="py-16 lg:py-24 bg-background" 
+      dir={isRTL ? 'rtl' : 'ltr'} 
+      style={{ contain: 'layout' }}
+    >
+      <div className="container mx-auto px-4 max-w-4xl">
+        {/* Section Header */}
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
             {isRTL ? 'شوف وصلت لفين 🚀' : 'Track Your Progress 🚀'}
           </h2>
-          <p className="text-muted-foreground max-w-2xl 2xl:max-w-3xl mx-auto 2xl:text-lg 3xl:text-xl leading-relaxed">
+          <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
             {isRTL 
               ? 'متابعة لحظة بلحظة.. عشان تعرف إنت ماشي صح ولا لأ'
               : 'Track your learning journey with our comprehensive progress monitoring system'
             }
           </p>
-          <div className="w-24 h-1 2xl:w-32 bg-primary mx-auto rounded-full mt-6 2xl:mt-8" />
+          {/* Accent line using primary color - solid, no gradient */}
+          <div className="w-16 h-1 bg-primary mx-auto rounded-full mt-5" />
         </div>
 
-        <div className="max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl mx-auto">
-          {/* Overall Progress */}
-          <div className="bg-card rounded-2xl border border-border p-8 2xl:p-10 3xl:p-12 mb-8 2xl:mb-10 shadow-card">
-            <div className="flex items-center justify-between mb-4 2xl:mb-6">
-              <div className="flex items-center gap-3 2xl:gap-4">
-                <div className="w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl bg-primary flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 2xl:w-7 2xl:h-7 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground 2xl:text-lg 3xl:text-xl">{t('dashboard.overallProgress')}</h3>
-                  <p className="text-sm 2xl:text-base text-muted-foreground">
-                    {isRTL ? 'كورس الكيمياء العضوية' : 'Organic Chemistry Course'}
-                  </p>
-                </div>
+        {/* Main Progress Card */}
+        <div className="bg-card rounded-lg border border-border p-5 sm:p-6 mb-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              {/* Icon Container - matching unified system */}
+              <div className="w-11 h-11 rounded-[12px] bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-primary" strokeWidth={2} />
               </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 2xl:w-6 2xl:h-6 text-primary" />
-                <span className="text-2xl 2xl:text-3xl 3xl:text-4xl font-bold text-primary">60%</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">
+                  {t('dashboard.overallProgress')}
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  {isRTL ? 'كورس الكيمياء العضوية' : 'Organic Chemistry Course'}
+                </p>
               </div>
             </div>
             
-            <Progress value={60} className="h-3 2xl:h-4" aria-label={isRTL ? 'التقدم الكلي في الكورس' : 'Overall course progress'} />
-            
-            <div className="flex justify-between mt-3 2xl:mt-4 text-sm 2xl:text-base text-muted-foreground">
-              <span>{isRTL ? '18 درس مكتمل' : '18 lessons completed'}</span>
-              <span>{isRTL ? '12 درس متبقي' : '12 lessons remaining'}</span>
+            {/* Progress percentage */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-xl sm:text-2xl font-bold text-foreground">60%</span>
             </div>
           </div>
+          
+          {/* Progress Bar - solid primary color, no gradient */}
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary rounded-full transition-all duration-500"
+              style={{ width: '60%' }}
+            />
+          </div>
+          
+          {/* Progress details */}
+          <div className="flex justify-between mt-3 text-xs sm:text-sm text-muted-foreground">
+            <span>{isRTL ? '18 حصة مكتملة' : '18 lessons completed'}</span>
+            <span>{isRTL ? '12 حصة متبقية' : '12 lessons remaining'}</span>
+          </div>
+        </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 2xl:gap-6 3xl:gap-8">
-            {stats.map((stat, index) => (
-              <StatCard key={index} {...stat} />
-            ))}
-          </div>
+        {/* Stats Grid - 2x2 matching Dashboard layout */}
+        <div className="grid grid-cols-2 gap-3">
+          {stats.map((stat, index) => (
+            <StatItem key={index} {...stat} />
+          ))}
         </div>
       </div>
     </section>
