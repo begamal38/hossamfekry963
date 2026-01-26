@@ -473,32 +473,28 @@ const Dashboard: React.FC = () => {
               value={totalLessonsCompleted}
               label={isArabic ? 'حصة مكتملة' : 'Lessons Done'}
               subtext={totalLessons > 0 ? (isArabic ? `من ${totalLessons} حصة` : `of ${totalLessons} total`) : undefined}
-              color="text-green-600"
-              bgColor="bg-green-500/10"
+              variant="success"
               compact
             />
             <InfoCard
               icon={BookOpen}
               value={lessonsRemaining}
               label={isArabic ? 'حصة متبقية' : 'Remaining'}
-              color="text-primary"
-              bgColor="bg-primary/10"
+              variant="primary"
               compact
             />
             <InfoCard
               icon={Award}
               value={examsTaken}
               label={isArabic ? 'امتحان تم' : 'Exams Taken'}
-              color="text-purple-600"
-              bgColor="bg-purple-500/10"
+              variant="primary"
               compact
             />
             <InfoCard
               icon={TrendingUp}
               value={`${overallProgress}%`}
               label={isArabic ? 'التقدم الكلي' : 'Overall'}
-              color="text-amber-600"
-              bgColor="bg-amber-500/10"
+              variant="warning"
               compact
             />
           </div>
