@@ -15,8 +15,16 @@
 
 @layer base {
   :root {
-    /* === Vodafone-inspired Design System === */
-    /* Clean, confident, calm educational platform */
+    /* ═══════════════════════════════════════════════════════════════════════
+       UNIFIED COLOR IDENTITY - Single Source of Truth
+       ═══════════════════════════════════════════════════════════════════════
+       
+       RULE: Primary color is the ONLY brand anchor.
+       - Bottom nav active state = Primary (the reference)
+       - All CTAs use Primary
+       - No competing blues allowed
+       
+       ═══════════════════════════════════════════════════════════════════════ */
     
     --background: 0 0% 99%;
     --foreground: 222 47% 11%;
@@ -28,22 +36,39 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary: Indigo Blue (from chemistry logo) - trust anchor */
-    /* HSL: 209 56% 46% (#3173B8) */
+    /* ═══════════════════════════════════════════════════════════════════════
+       PRIMARY: The ONE and ONLY brand action color
+       HSL: 209 56% 46% (#3173B8) - Indigo Blue
+       
+       USE FOR:
+       ✓ Main CTA buttons (Save, Continue, Confirm)
+       ✓ Active bottom navigation state
+       ✓ Primary progress indicators
+       ✓ Core focus rings
+       
+       FORBIDDEN:
+       ✗ Headers, badges, or containers as solid fill
+       ✗ Competing with another blue
+       ═══════════════════════════════════════════════════════════════════════ */
     --primary: 209 56% 46%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Subtle indigo tint for backgrounds */
-    --secondary: 210 40% 97%;
-    --secondary-foreground: 209 56% 40%;
+    /* Secondary: Subtle primary tint for backgrounds - NOT a competing color */
+    --secondary: 209 30% 97%;
+    --secondary-foreground: 209 56% 35%;
 
     /* Muted: Neutral grays for minimal visual noise */
     --muted: 210 20% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* Accent: Electric Cyan-Blue for CTAs & active states */
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
+    /* ═══════════════════════════════════════════════════════════════════════
+       ACCENT: A lighter/softer variant of Primary - NOT a separate identity
+       
+       Used for: hover states, subtle highlights, secondary emphasis
+       Must be visually WEAKER than primary
+       ═══════════════════════════════════════════════════════════════════════ */
+    --accent: 209 40% 94%;
+    --accent-foreground: 209 56% 40%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -61,16 +86,22 @@
 
     --radius: 0.75rem;
 
-    /* Brand colors */
+    /* ═══════════════════════════════════════════════════════════════════════
+       BRAND COLOR SCALE - All derived from Primary
+       ═══════════════════════════════════════════════════════════════════════ */
     --brand-primary: 209 56% 46%;
-    --brand-glow: 199 89% 48%;
-    --brand-light: 210 40% 97%;
+    /* Lighter variant for glows/hovers - same hue, higher lightness */
+    --brand-light: 209 40% 97%;
+    /* Darker variant for depth - same hue, lower lightness */
+    --brand-dark: 209 56% 38%;
+    /* Glow uses primary with reduced saturation */
+    --brand-glow: 209 45% 55%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(209 56% 46%) 0%, hsl(199 89% 48%) 100%);
-    --gradient-glow: radial-gradient(circle, hsl(199 89% 48% / 0.25) 0%, transparent 70%);
+    /* Gradients - all based on Primary hue only */
+    --gradient-primary: linear-gradient(135deg, hsl(209 56% 46%) 0%, hsl(209 45% 55%) 100%);
+    --gradient-glow: radial-gradient(circle, hsl(209 56% 46% / 0.2) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-footer: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 97%) 50%, hsl(209 56% 46% / 0.06) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(209 40% 97%) 50%, hsl(209 56% 46% / 0.06) 100%);
 
     /* Enhanced Shadow System - Lighter, cleaner shadows */
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.03);
@@ -85,22 +116,25 @@
     --shadow-section: 0 -1px 0 hsl(0 0% 0% / 0.03), 0 8px 24px -8px hsl(0 0% 0% / 0.06);
     --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.06), 0 12px 32px -8px hsl(0 0% 0% / 0.08);
     
-    /* Edge accent for premium feel */
+    /* Edge accent for premium feel - uses primary */
     --edge-accent-intensity: 0.08;
-    --shadow-glow: 0 0 40px hsl(199 89% 48% / 0.3);
+    --shadow-glow: 0 0 40px hsl(209 56% 46% / 0.25);
 
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 209 56% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 97%;
+    --sidebar-accent: 209 40% 97%;
     --sidebar-accent-foreground: 209 56% 46%;
     --sidebar-border: 214 20% 91%;
     --sidebar-ring: 209 56% 46%;
   }
 
   .dark {
-    /* === Dark Mode: Vodafone-inspired === */
+    /* ═══════════════════════════════════════════════════════════════════════
+       DARK MODE - Same hierarchy, adjusted for contrast
+       Primary remains the dominant action color
+       ═══════════════════════════════════════════════════════════════════════ */
     --background: 222 20% 7%;
     --foreground: 0 0% 95%;
 
@@ -111,7 +145,7 @@
     --popover: 222 18% 10%;
     --popover-foreground: 0 0% 95%;
 
-    /* Primary: Lighter indigo for dark mode visibility */
+    /* Primary: Same hue (209), lighter for dark mode visibility */
     --primary: 209 70% 58%;
     --primary-foreground: 222 20% 7%;
 
@@ -121,9 +155,9 @@
     --muted: 222 15% 14%;
     --muted-foreground: 215 15% 60%;
 
-    /* Accent: Electric cyan for dark mode pop */
-    --accent: 199 85% 55%;
-    --accent-foreground: 222 20% 7%;
+    /* Accent: Softer variant of primary - same hue family */
+    --accent: 209 30% 18%;
+    --accent-foreground: 209 70% 70%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 95%;
@@ -138,27 +172,28 @@
     --input: 222 15% 18%;
     --ring: 209 70% 58%;
 
-    /* Brand colors - dark mode */
+    /* Brand colors - dark mode - all derived from primary hue 209 */
     --brand-primary: 209 70% 58%;
-    --brand-glow: 199 85% 55%;
     --brand-light: 222 15% 14%;
+    --brand-dark: 209 70% 48%;
+    --brand-glow: 209 60% 65%;
 
-    /* Gradients - dark mode */
-    --gradient-primary: linear-gradient(135deg, hsl(209 70% 58%) 0%, hsl(199 85% 55%) 100%);
-    --gradient-glow: radial-gradient(circle, hsl(199 85% 55% / 0.2) 0%, transparent 70%);
+    /* Gradients - dark mode - unified primary hue */
+    --gradient-primary: linear-gradient(135deg, hsl(209 70% 58%) 0%, hsl(209 60% 65%) 100%);
+    --gradient-glow: radial-gradient(circle, hsl(209 70% 58% / 0.2) 0%, transparent 70%);
     --gradient-hero: linear-gradient(180deg, hsl(222 20% 7%) 0%, hsl(222 18% 10%) 100%);
     --gradient-footer: linear-gradient(180deg, hsl(222 20% 7%) 0%, hsl(222 18% 10%) 50%, hsl(209 70% 58% / 0.08) 100%);
 
-    /* Shadows - dark mode with subtle glow */
+    /* Shadows - dark mode with subtle glow using primary */
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
     --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.3);
     --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 40px hsl(199 85% 55% / 0.2);
+    --shadow-glow: 0 0 40px hsl(209 70% 58% / 0.2);
     
-    /* Card shadows - dark mode with subtle edge glow */
+    /* Card shadows - dark mode with primary-based edge glow */
     --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.4), 0 4px 12px hsl(0 0% 0% / 0.3), 0 0 0 1px hsl(209 70% 58% / 0.05);
     --shadow-section: 0 -1px 0 hsl(209 70% 58% / 0.08), 0 8px 24px -8px hsl(0 0% 0% / 0.5);
     --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.4), 0 12px 32px -8px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(209 70% 58% / 0.08);
@@ -170,7 +205,7 @@
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 209 70% 58%;
     --sidebar-primary-foreground: 222 20% 7%;
-    --sidebar-accent: 222 15% 14%;
+    --sidebar-accent: 209 30% 18%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 222 15% 18%;
     --sidebar-ring: 209 70% 58%;

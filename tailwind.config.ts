@@ -82,6 +82,7 @@ export default {
           primary: "hsl(var(--brand-primary))",
           glow: "hsl(var(--brand-glow))",
           light: "hsl(var(--brand-light))",
+          dark: "hsl(var(--brand-dark))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
