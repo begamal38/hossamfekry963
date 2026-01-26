@@ -20,13 +20,13 @@ export const PreviewLockOverlay: React.FC<PreviewLockOverlayProps> = ({ classNam
     <div 
       dir={isRTL ? 'rtl' : 'ltr'}
       className={cn(
-        "absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm",
+        "absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/98",
         className
       )}
     >
-      {/* Lock icon */}
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-        <Lock className="w-8 h-8 text-primary" />
+      {/* Lock icon - flat, functional */}
+      <div className="w-14 h-14 rounded-md bg-muted flex items-center justify-center mb-5">
+        <Lock className="w-7 h-7 text-muted-foreground" />
       </div>
       
       {/* Message - Spec: "انتهت المعاينة" + "سجّل حسابك علشان تكمل المحتوى كامل." */}

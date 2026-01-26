@@ -46,7 +46,7 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <nav 
-      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-card/98 backdrop-blur-xl border-t border-border shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-card border-t border-border"
       role="navigation"
       aria-label="Main navigation"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
@@ -61,27 +61,20 @@ export const MobileBottomNav: React.FC = () => {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 px-1 gap-0.5 transition-all duration-150 rounded-xl",
-                "active:scale-95 touch-manipulation",
+                "flex flex-col items-center justify-center flex-1 py-2 px-1 gap-0.5 transition-colors duration-150",
+                "touch-manipulation",
                 active 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
               aria-current={active ? 'page' : undefined}
             >
-              {/* Icon container with active indicator */}
+              {/* Icon container - flat, minimal */}
               <div className={cn(
-                "relative p-2 rounded-xl transition-all duration-150",
+                "relative p-2 rounded-md",
                 active && "bg-primary/10"
               )}>
-                <Icon className={cn(
-                  "w-5 h-5 transition-transform duration-150",
-                  active && "scale-110"
-                )} />
-                {/* Active dot indicator - Vodafone style */}
-                {active && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                )}
+                <Icon className="w-5 h-5" />
               </div>
               <span className={cn(
                 "text-[10px] font-medium leading-tight text-center",

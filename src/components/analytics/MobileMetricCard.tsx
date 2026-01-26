@@ -26,8 +26,8 @@ export const MobileMetricCard: React.FC<MobileMetricCardProps> = ({
   trend
 }) => {
   return (
-    <div className="bg-card border rounded-lg p-3 flex items-center gap-3">
-      <div className={cn("p-2 rounded-lg shrink-0", bgClass)}>
+    <div className="bg-card border border-border rounded-md p-3 flex items-center gap-3">
+      <div className={cn("p-2 rounded-md shrink-0", bgClass)}>
         <Icon className={cn("h-4 w-4", colorClass)} />
       </div>
       <div className="flex-1 min-w-0">
