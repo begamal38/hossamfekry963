@@ -164,17 +164,37 @@ export function doesStudentMatchCourseGrade(
   studentTrack: string | null,
   courseGrade: string | null
 ): boolean {
-  if (!studentGrade || !courseGrade) return false;
+  // SILENT AUTO-FIX: Allow navigation for incomplete profiles
+  // Only block if BOTH student and course have grades but don't match
+  if (!studentGrade || !courseGrade) return true; // Allow access for incomplete data
+  
+  // Normalize student grade to handle legacy formats
+  const normalizedStudentGrade = studentGrade.toLowerCase().trim();
+  const normalizedCourseGrade = courseGrade.toLowerCase().trim();
   
   // If course uses combined format, check if it matches student's grade+track
-  if (courseGrade.includes('_')) {
-    const [courseYear, courseTrack] = courseGrade.split('_');
-    const studentYear = studentGrade.split('_')[0]; // 'second' or 'third'
-    return courseYear === studentYear && courseTrack === studentTrack;
+  if (normalizedCourseGrade.includes('_')) {
+    const [courseYear, courseTrack] = normalizedCourseGrade.split('_');
+    
+    // Extract year from student grade (handles both 'second_secondary' and 'second')
+    let studentYear = normalizedStudentGrade.split('_')[0];
+    if (studentYear === 'second_secondary') studentYear = 'second';
+    if (studentYear === 'third_secondary') studentYear = 'third';
+    
+    // Normalize student track for comparison
+    const normalizedTrack = studentTrack?.toLowerCase().trim() || '';
+    
+    return courseYear === studentYear && courseTrack === normalizedTrack;
   }
   
-  // Direct match for normalized formats
-  return studentGrade === courseGrade;
+  // Direct match for normalized formats (handle both formats)
+  if (normalizedStudentGrade === normalizedCourseGrade) return true;
+  
+  // Handle cross-format matching (second_secondary matches second_*)
+  const studentPrefix = normalizedStudentGrade.split('_')[0];
+  const coursePrefix = normalizedCourseGrade.split('_')[0];
+  
+  return studentPrefix === coursePrefix;
 }
 
 /**

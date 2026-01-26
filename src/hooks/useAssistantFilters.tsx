@@ -3,9 +3,12 @@
  * 
  * Provides consistent filtering across Students, Enrollments, and other assistant pages.
  * Single source of truth for filter options and logic.
+ * 
+ * Integrates Silent Auto-Fix Layer for legacy data normalization.
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { safeFilterMatch, safeString } from '@/lib/silentAutoFix';
 
 // ============= Filter Types =============
 
@@ -137,37 +140,36 @@ export function applyStudentFilters<T extends FilterableStudent>(
 ): T[] {
   let filtered = [...students];
 
-  // Search filter (name or phone)
+  // Search filter (name or phone) - uses safe string normalization
   if (filters.searchTerm) {
-    const term = filters.searchTerm.toLowerCase();
-    filtered = filtered.filter(
-      (s) =>
-        s.full_name?.toLowerCase().includes(term) ||
-        s.phone?.includes(filters.searchTerm!)
-    );
+    const term = safeString(filters.searchTerm).toLowerCase();
+    if (term) {
+      filtered = filtered.filter(
+        (s) =>
+          safeString(s.full_name).toLowerCase().includes(term) ||
+          safeString(s.phone).includes(filters.searchTerm!)
+      );
+    }
   }
 
-  // Grade filter (academic_year or grade)
+  // Grade filter (academic_year or grade) - uses safeFilterMatch for normalization
   if (filters.gradeFilter && filters.gradeFilter !== 'all') {
     filtered = filtered.filter(
-      (s) => s.academic_year === filters.gradeFilter || s.grade === filters.gradeFilter
+      (s) => safeFilterMatch(s.academic_year, filters.gradeFilter) || 
+             safeFilterMatch(s.grade, filters.gradeFilter)
     );
   }
 
-  // Track filter
+  // Track filter - uses safeFilterMatch
   if (filters.trackFilter && filters.trackFilter !== 'all') {
     filtered = filtered.filter(
-      (s) => s.language_track === filters.trackFilter
+      (s) => safeFilterMatch(s.language_track, filters.trackFilter)
     );
   }
 
-  // Study mode filter (normalize hybrid → online for matching)
+  // Study mode filter - safeFilterMatch handles hybrid → online normalization automatically
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter((s) => {
-      // Normalize legacy hybrid to online for filter comparison
-      const normalizedMode = s.attendance_mode === 'hybrid' ? 'online' : s.attendance_mode;
-      return normalizedMode === filters.studyModeFilter;
-    });
+    filtered = filtered.filter((s) => safeFilterMatch(s.attendance_mode, filters.studyModeFilter));
   }
 
   // Center group filter (requires centerGroupMembers mapping)
@@ -187,47 +189,45 @@ export function applyEnrollmentFilters(
 ): FilterableEnrollment[] {
   let filtered = [...enrollments];
 
-  // Search filter (name, phone, email, or course)
+  // Search filter (name, phone, email, or course) - uses safe string normalization
   if (filters.searchTerm) {
-    const term = filters.searchTerm.toLowerCase();
-    filtered = filtered.filter(
-      (e) =>
-        e.profile?.full_name?.toLowerCase().includes(term) ||
-        e.profile?.phone?.includes(filters.searchTerm!) ||
-        e.profile?.email?.toLowerCase().includes(term) ||
-        e.course?.title?.toLowerCase().includes(term) ||
-        e.course?.title_ar?.includes(filters.searchTerm!)
-    );
+    const term = safeString(filters.searchTerm).toLowerCase();
+    if (term) {
+      filtered = filtered.filter(
+        (e) =>
+          safeString(e.profile?.full_name).toLowerCase().includes(term) ||
+          safeString(e.profile?.phone).includes(filters.searchTerm!) ||
+          safeString(e.profile?.email).toLowerCase().includes(term) ||
+          safeString(e.course?.title).toLowerCase().includes(term) ||
+          safeString(e.course?.title_ar).includes(filters.searchTerm!)
+      );
+    }
   }
 
-  // Status filter
+  // Status filter - uses safeFilterMatch for normalization
   if (filters.statusFilter && filters.statusFilter !== 'all') {
-    filtered = filtered.filter((e) => e.status === filters.statusFilter);
+    filtered = filtered.filter((e) => safeFilterMatch(e.status, filters.statusFilter));
   }
 
-  // Grade filter (from profile)
+  // Grade filter (from profile) - uses safeFilterMatch
   if (filters.gradeFilter && filters.gradeFilter !== 'all') {
     filtered = filtered.filter(
       (e) => 
-        e.profile?.academic_year === filters.gradeFilter || 
-        e.profile?.grade === filters.gradeFilter
+        safeFilterMatch(e.profile?.academic_year, filters.gradeFilter) || 
+        safeFilterMatch(e.profile?.grade, filters.gradeFilter)
     );
   }
 
-  // Track filter (from profile)
+  // Track filter (from profile) - uses safeFilterMatch
   if (filters.trackFilter && filters.trackFilter !== 'all') {
     filtered = filtered.filter(
-      (e) => e.profile?.language_track === filters.trackFilter
+      (e) => safeFilterMatch(e.profile?.language_track, filters.trackFilter)
     );
   }
 
-  // Study mode filter (from profile, normalize hybrid → online)
+  // Study mode filter - safeFilterMatch handles hybrid → online normalization automatically
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter((e) => {
-      // Normalize legacy hybrid to online for filter comparison
-      const normalizedMode = e.profile?.attendance_mode === 'hybrid' ? 'online' : e.profile?.attendance_mode;
-      return normalizedMode === filters.studyModeFilter;
-    });
+    filtered = filtered.filter((e) => safeFilterMatch(e.profile?.attendance_mode, filters.studyModeFilter));
   }
 
   // Center group filter

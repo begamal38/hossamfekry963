@@ -9,6 +9,11 @@
  * 2. Staff (admin/assistant) can access everything
  * 3. Free lessons follow System 3 logic (visitors see all, students see matching grade/track)
  * 4. Paid courses require enrollment OR matching grade/track for visibility
+ * 
+ * SILENT AUTO-FIX INTEGRATION:
+ * - Never blocks navigation due to missing/incomplete data
+ * - Defaults to ALLOW for incomplete profiles
+ * - Only blocks when data is explicitly mismatched
  */
 
 import { doesStudentMatchCourseGrade, buildCourseGradeFromProfile } from './gradeLabels';
