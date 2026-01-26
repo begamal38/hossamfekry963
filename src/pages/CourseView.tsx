@@ -10,7 +10,8 @@ import {
   Lock,
   Unlock,
   FileVideo,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -879,21 +880,38 @@ export default function CourseView() {
 
                   if (chapterLessons.length === 0) return null;
 
-                  return (
+                    // Check if this is an intro/basics chapter
+                    const isIntroChapter = chapter.title_ar?.includes('أساسيات') || 
+                                           chapter.title?.toLowerCase().includes('basics') ||
+                                           chapter.title?.toLowerCase().includes('intro');
+
+                    return (
                     <div key={chapter.id} id={`chapter-${chapter.id}`} className="space-y-3">
                       {/* Chapter Header */}
-                      <div className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Layers className="w-4 h-4 text-primary" />
+                      <div className={cn(
+                        "flex items-center gap-3 rounded-md p-3",
+                        isIntroChapter 
+                          ? "bg-amber-500/10 border border-amber-500/20" 
+                          : "bg-muted/50"
+                      )}>
+                        <div className={cn(
+                          "w-9 h-9 rounded-md flex items-center justify-center shrink-0",
+                          isIntroChapter 
+                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" 
+                            : "bg-primary/10 text-primary"
+                        )}>
+                          {isIntroChapter ? (
+                            <Sparkles className="w-4 h-4" />
+                          ) : (
+                            <Layers className="w-4 h-4" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-bold truncate">
+                          <h3 className={cn(
+                            "text-base font-bold truncate",
+                            isIntroChapter && "text-amber-700 dark:text-amber-300"
+                          )}>
                             {(() => {
-                              // Check if this is an intro/basics chapter (should not be numbered)
-                              const isIntroChapter = chapter.title_ar?.includes('أساسيات') || 
-                                                     chapter.title?.toLowerCase().includes('basics') ||
-                                                     chapter.title?.toLowerCase().includes('intro');
-                              
                               if (isIntroChapter) {
                                 return isArabic ? chapter.title_ar : chapter.title;
                               }
