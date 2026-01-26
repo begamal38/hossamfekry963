@@ -477,10 +477,10 @@ const Dashboard: React.FC = () => {
               compact
             />
             <InfoCard
-              icon={BookOpen}
+              icon={Clock}
               value={lessonsRemaining}
               label={isArabic ? 'حصة متبقية' : 'Remaining'}
-              variant="primary"
+              variant="muted"
               compact
             />
             <InfoCard
