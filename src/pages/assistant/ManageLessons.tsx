@@ -28,7 +28,6 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { LessonReorderList } from '@/components/assistant/LessonReorderList';
 import { cn } from '@/lib/utils';
-import { useSelectionPersistence } from '@/hooks/useSelectionPersistence';
 
 interface Course {
   id: string;
@@ -75,9 +74,42 @@ const ManageLessons = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isReorderMode, setIsReorderMode] = useState(false);
   
-  // URL-persisted selections (survives navigation)
-  const { value: selectedCourse, setValue: setSelectedCourse } = useSelectionPersistence('course', '');
-  const { value: selectedChapter, setValue: setSelectedChapter } = useSelectionPersistence('chapter', 'all');
+  // Read course from URL - support both 'course' (from ManageCourses) and 'c' (short form)
+  const urlCourseId = searchParams.get('course') || searchParams.get('c') || '';
+  const urlChapterId = searchParams.get('chapter') || searchParams.get('ch') || 'all';
+  
+  const [selectedCourse, setSelectedCourseState] = useState<string>(urlCourseId);
+  const [selectedChapter, setSelectedChapterState] = useState<string>(urlChapterId);
+  
+  // Sync URL when selection changes
+  const setSelectedCourse = useCallback((courseId: string) => {
+    setSelectedCourseState(courseId);
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      // Remove old 'course' param if exists, use 'c' for persistence
+      params.delete('course');
+      if (courseId) {
+        params.set('c', courseId);
+      } else {
+        params.delete('c');
+      }
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+  
+  const setSelectedChapter = useCallback((chapterId: string) => {
+    setSelectedChapterState(chapterId);
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      params.delete('chapter');
+      if (chapterId && chapterId !== 'all') {
+        params.set('ch', chapterId);
+      } else {
+        params.delete('ch');
+      }
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
   
   const [formData, setFormData] = useState({
     title_ar: '',
@@ -88,6 +120,19 @@ const ManageLessons = () => {
   });
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
+  // Sync state from URL on mount and URL changes
+  useEffect(() => {
+    const courseFromUrl = searchParams.get('course') || searchParams.get('c') || '';
+    const chapterFromUrl = searchParams.get('chapter') || searchParams.get('ch') || 'all';
+    
+    if (courseFromUrl && courseFromUrl !== selectedCourse) {
+      setSelectedCourseState(courseFromUrl);
+    }
+    if (chapterFromUrl !== selectedChapter) {
+      setSelectedChapterState(chapterFromUrl);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (authLoading || roleLoading) return;
     if (!user) return;
@@ -95,14 +140,10 @@ const ManageLessons = () => {
     fetchCourses();
   }, [authLoading, roleLoading, user, canAccessDashboard]);
 
-  // When courses load, set first one if no selection persisted
+  // When courses load, set first one if no selection from URL
   useEffect(() => {
     if (courses.length > 0 && !selectedCourse) {
-      // Check if the persisted course still exists
-      const courseExists = courses.find(c => c.id === selectedCourse);
-      if (!courseExists) {
-        setSelectedCourse(courses[0].id);
-      }
+      setSelectedCourse(courses[0].id);
     }
   }, [courses, selectedCourse, setSelectedCourse]);
 
