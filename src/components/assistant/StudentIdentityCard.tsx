@@ -2,6 +2,7 @@ import React from 'react';
 import { User, Mail, Phone, Calendar, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getAcademicYearLabel, getLanguageTrackLabel, getFullGroupLabel } from '@/lib/gradeLabels';
+import { normalizeAttendanceMode, type RawAttendanceMode } from '@/lib/attendanceModeUtils';
 
 interface StudentIdentityCardProps {
   fullName: string | null;
@@ -9,7 +10,7 @@ interface StudentIdentityCardProps {
   phone: string | null;
   grade: string | null;
   languageTrack: string | null;
-  attendanceMode: 'online' | 'center' | 'hybrid' | null;
+  attendanceMode: RawAttendanceMode;
   centerGroupName: string | null;
   isSuspended: boolean;
   createdAt: string;
@@ -82,21 +83,32 @@ export const StudentIdentityCard: React.FC<StudentIdentityCardProps> = ({
           <span className="text-sm text-muted-foreground">
             {isArabic ? 'نظام الدراسة' : 'Study Mode'}
           </span>
-          {attendanceMode === 'center' ? (
-            <Badge className="bg-purple-600 hover:bg-purple-700 text-white gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-              {isArabic ? 'سنتر' : 'Center'} – {centerGroupName || (isArabic ? 'بدون مجموعة' : 'No Group')}
-            </Badge>
-          ) : attendanceMode === 'online' ? (
-            <Badge variant="secondary" className="gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              {isArabic ? 'أونلاين' : 'Online'}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-muted-foreground">
-              {isArabic ? 'غير محدد' : 'Not Set'}
-            </Badge>
-          )}
+          {(() => {
+            // Normalize hybrid → online for display
+            const normalizedMode = normalizeAttendanceMode(attendanceMode);
+            
+            if (normalizedMode === 'center') {
+              return (
+                <Badge className="bg-purple-600 hover:bg-purple-700 text-white gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                  {isArabic ? 'سنتر' : 'Center'} – {centerGroupName || (isArabic ? 'بدون مجموعة' : 'No Group')}
+                </Badge>
+              );
+            } else if (normalizedMode === 'online') {
+              return (
+                <Badge variant="secondary" className="gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  {isArabic ? 'أونلاين' : 'Online'}
+                </Badge>
+              );
+            } else {
+              return (
+                <Badge variant="outline" className="text-muted-foreground">
+                  {isArabic ? 'غير محدد' : 'Not Set'}
+                </Badge>
+              );
+            }
+          })()}
         </div>
       </div>
       

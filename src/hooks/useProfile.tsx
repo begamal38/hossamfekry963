@@ -107,6 +107,7 @@ export const useProfile = () => {
           governorate: data.governorate,
           avatar_url: data.avatar_url,
           // CRITICAL: Do NOT default to 'online' - preserve null to trigger ProfileCompletionPrompt
+          // Note: hybrid is stored in DB but normalized to 'online' in UI via normalizeAttendanceMode()
           attendance_mode: data.attendance_mode as 'online' | 'center' | 'hybrid',
           is_suspended: data.is_suspended || false,
           theme_preference: data.theme_preference,
@@ -158,6 +159,8 @@ export const useProfile = () => {
    * - attendance_mode is set
    * - grade is set
    * - IF attendance_mode === 'center' → must have active center group membership
+   * 
+   * Note: hybrid is legacy and treated as online (complete without group)
    */
   const isProfileComplete = useMemo(() => {
     if (!profile) return false;
@@ -165,7 +168,8 @@ export const useProfile = () => {
     // Must have attendance_mode and grade
     if (!profile.attendance_mode || !profile.grade) return false;
     
-    // For center students, must have active group membership
+    // For center students only, must have active group membership
+    // hybrid and online students are complete without group
     if (profile.attendance_mode === 'center') {
       return Boolean(profile.center_group_id);
     }

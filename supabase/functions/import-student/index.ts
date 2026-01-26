@@ -82,6 +82,10 @@ Deno.serve(async (req) => {
     // and applies DB check constraint 'grade_valid'
     const normalizedGrade = academic_year || null; // Already in correct format
 
+    // CRITICAL: Normalize legacy hybrid → online if received
+    // hybrid is no longer supported in the UI
+    const normalizedAttendanceMode = attendance_mode === 'hybrid' ? 'online' : attendance_mode;
+
     // Create user with metadata
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
@@ -95,8 +99,8 @@ Deno.serve(async (req) => {
         academic_year: academic_year || null,
         language_track: language_track || null,
         // CRITICAL: Only include attendance_mode if explicitly provided
-        // Do NOT default to 'online' for manual imports without mode selection
-        ...(attendance_mode ? { attendance_mode } : {}),
+        // Use normalized value (hybrid → online)
+        ...(normalizedAttendanceMode ? { attendance_mode: normalizedAttendanceMode } : {}),
       },
     });
 

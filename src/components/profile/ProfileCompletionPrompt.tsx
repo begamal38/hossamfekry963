@@ -115,7 +115,12 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           if (data.language_track) setLanguageTrack(data.language_track);
           if (data.governorate) setGovernorate(data.governorate);
           if (data.phone) setPhone(data.phone);
-          if (data.attendance_mode) setStudyMode(data.attendance_mode as StudyMode);
+          // CRITICAL: Normalize legacy hybrid → null to force reconfirmation
+          // hybrid is no longer supported in UI, so treat as needing reconfirmation
+          if (data.attendance_mode && data.attendance_mode !== 'hybrid') {
+            setStudyMode(data.attendance_mode as StudyMode);
+          }
+          // If hybrid, leave studyMode as null so user must re-select
         }
 
         // Check if already in a center group

@@ -119,12 +119,15 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         }
       }
 
-      // ========== LEGACY ONLINE DEFAULT FIX ==========
-      // Check if this is a legacy student who was auto-assigned 'online' without explicit choice
-      // Criteria: attendance_mode = 'online' AND study_mode_confirmed = false (or null)
+      // ========== LEGACY ONLINE DEFAULT FIX + HYBRID NORMALIZATION ==========
+      // Check if this is a legacy student who needs to reconfirm their study mode:
+      // 1. attendance_mode = 'online' AND study_mode_confirmed = false (legacy auto-assigned)
+      // 2. attendance_mode = 'hybrid' (deprecated - needs to pick online or center)
       const isLegacyOnlineStudent = 
         data.attendance_mode === 'online' && 
         data.study_mode_confirmed !== true; // false or null
+      
+      const isLegacyHybridStudent = data.attendance_mode === 'hybrid';
       
       // ========== END LEGACY FIX ==========
 
@@ -137,9 +140,11 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
         phone: !data.phone || data.phone.trim() === '',
         // LEGACY FIX: Force attendance_mode selection if:
         // 1. attendance_mode is null/missing, OR
-        // 2. Student is a legacy online student who never explicitly chose
-        attendance_mode: !data.attendance_mode || isLegacyOnlineStudent,
-        center_group: data.attendance_mode === 'center' && !hasCenterGroup,
+        // 2. Student is a legacy online student who never explicitly chose, OR
+        // 3. Student has legacy 'hybrid' mode (no longer supported)
+        attendance_mode: !data.attendance_mode || isLegacyOnlineStudent || isLegacyHybridStudent,
+        // hybrid students also treated as needing center_group reconfirmation if they pick center
+        center_group: (data.attendance_mode === 'center' || isLegacyHybridStudent) && !hasCenterGroup,
       };
 
       // If any required field is missing, show the prompt
