@@ -41,15 +41,15 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   const content = (
     <div
       className={cn(
-        "bg-card rounded-xl border border-border p-3 sm:p-4 transition-all duration-200",
-        href && "hover:border-primary/40 hover:shadow-sm cursor-pointer active:scale-[0.98]",
+        "bg-card rounded-2xl border border-border/80 p-3 sm:p-4 transition-all duration-200",
+        href && "hover:border-primary/40 hover:shadow-md cursor-pointer active:scale-[0.98]",
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          {/* Icon */}
-          <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center mb-2.5", bgColor)}>
+          {/* Icon - unified rounded-xl */}
+          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-2.5", bgColor)}>
             <Icon className={cn("w-4.5 h-4.5", color)} />
           </div>
 
