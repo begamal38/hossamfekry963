@@ -28,6 +28,7 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { LessonReorderList } from '@/components/assistant/LessonReorderList';
 import { cn } from '@/lib/utils';
+import { useSelectionPersistence } from '@/hooks/useSelectionPersistence';
 
 interface Course {
   id: string;
@@ -57,7 +58,7 @@ interface Lesson {
 
 const ManageLessons = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { language, isRTL } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
@@ -68,13 +69,15 @@ const ManageLessons = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [selectedChapter, setSelectedChapter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isReorderMode, setIsReorderMode] = useState(false);
+  
+  // URL-persisted selections (survives navigation)
+  const { value: selectedCourse, setValue: setSelectedCourse } = useSelectionPersistence('course', '');
+  const { value: selectedChapter, setValue: setSelectedChapter } = useSelectionPersistence('chapter', 'all');
   
   const [formData, setFormData] = useState({
     title_ar: '',
@@ -92,21 +95,16 @@ const ManageLessons = () => {
     fetchCourses();
   }, [authLoading, roleLoading, user, canAccessDashboard]);
 
+  // When courses load, set first one if no selection persisted
   useEffect(() => {
-    const courseParam = searchParams.get('course');
-    const chapterParam = searchParams.get('chapter_id');
-    
-    if (courseParam && courses.length > 0) {
-      const courseExists = courses.find(c => c.id === courseParam);
-      if (courseExists) {
-        setSelectedCourse(courseParam);
+    if (courses.length > 0 && !selectedCourse) {
+      // Check if the persisted course still exists
+      const courseExists = courses.find(c => c.id === selectedCourse);
+      if (!courseExists) {
+        setSelectedCourse(courses[0].id);
       }
     }
-    
-    if (chapterParam) {
-      setSelectedChapter(chapterParam);
-    }
-  }, [searchParams, courses]);
+  }, [courses, selectedCourse, setSelectedCourse]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -125,10 +123,8 @@ const ManageLessons = () => {
       if (error) throw error;
       setCourses(data || []);
       
-      const courseParam = searchParams.get('course');
-      if (courseParam && data?.find(c => c.id === courseParam)) {
-        setSelectedCourse(courseParam);
-      } else if (data && data.length > 0) {
+      // Only set first course if no persisted selection exists
+      if (data && data.length > 0 && !selectedCourse) {
         setSelectedCourse(data[0].id);
       }
     } catch (error) {
