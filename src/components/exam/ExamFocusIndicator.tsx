@@ -32,10 +32,10 @@ export const ExamFocusIndicator: React.FC<ExamFocusIndicatorProps> = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-2.5 px-3.5 py-2 rounded-full",
-        "bg-card/90 backdrop-blur-md border shadow-lg",
-        "transition-all duration-300 ease-out",
-        "border-[hsl(142_71%_45%/0.25)] shadow-[0_0_12px_-4px_hsl(142_71%_45%/0.15)]",
+        "flex items-center gap-2.5 px-3.5 py-2 rounded-lg",
+        "bg-card/90 backdrop-blur-md border",
+        "transition-all duration-150 ease-out",
+        "border-[hsl(142_71%_45%/0.25)]",
         "motion-reduce:transition-none",
         className
       )}

@@ -49,13 +49,13 @@ export const ExamActivityList: React.FC<ExamActivityListProps> = ({
       {exams.map((exam) => (
         <div
           key={exam.id}
-          className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors duration-150"
         >
           <div
             className={cn(
-              "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0",
+              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
               exam.isAttempted 
-                ? "bg-success/10 text-success" 
+                ? "bg-success/10 text-success"
                 : "bg-muted text-muted-foreground"
             )}
           >

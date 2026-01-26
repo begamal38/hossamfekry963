@@ -28,11 +28,12 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        "bg-card rounded-md border border-border p-3 sm:p-4",
+        // Unified: rounded-lg (10px), consistent with card system
+        "bg-card rounded-lg border border-border p-3 sm:p-4",
         className
       )}
     >
-      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-md flex items-center justify-center mb-2", variantStyles[variant])}>
+      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mb-2", variantStyles[variant])}>
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
       <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>

@@ -27,7 +27,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   children,
 }) => {
   return (
-    <section className={cn("bg-card rounded-2xl border border-border p-4 sm:p-5", className)}>
+    <section className={cn("bg-card rounded-lg border border-border p-4 sm:p-5", className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

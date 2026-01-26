@@ -25,8 +25,8 @@ export const VisitorFocusIndicator: React.FC<VisitorFocusIndicatorProps> = ({
     <div 
       dir={isRTL ? 'rtl' : 'ltr'}
       className={cn(
-        "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
-        "border transition-all duration-300",
+        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium",
+        "border transition-all duration-150",
         "motion-reduce:transition-none",
         isActive 
           ? "bg-[hsl(142_71%_45%/0.08)] border-[hsl(142_71%_45%/0.25)] text-[#22C55E]"

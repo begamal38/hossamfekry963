@@ -43,8 +43,8 @@ export const ExamTimer: React.FC<ExamTimerProps> = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-2 px-3 py-1.5 rounded-full",
-        "border transition-all duration-500 ease-out",
+        "flex items-center gap-2 px-3 py-1.5 rounded-lg",
+        "border transition-all duration-150 ease-out",
         "motion-reduce:transition-none",
         isCritical 
           ? "bg-destructive/10 border-destructive/30 text-destructive"

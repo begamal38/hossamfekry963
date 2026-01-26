@@ -39,7 +39,7 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
   return (
     <div
       className={cn(
-        "rounded-xl border overflow-hidden mb-4",
+        "rounded-lg border overflow-hidden mb-4",
         visual.bgTintClass,
         "border-l-4",
         visual.dotClass.replace('bg-', 'border-l-')
@@ -52,7 +52,7 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
             {/* Status Icon with Pulsing Dot */}
             <div className="relative">
               <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
+                "w-12 h-12 rounded-lg flex items-center justify-center",
                 visual.bgTintClass
               )}>
                 <StatusIcon className={cn("w-6 h-6", visual.textClass)} />
