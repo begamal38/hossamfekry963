@@ -23,6 +23,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCenterGroups, CenterGroup } from '@/hooks/useCenterGroups';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -181,13 +182,18 @@ export default function ManageCenterGroups() {
               </div>
             </div>
           ) : groups.length === 0 ? (
-            <div className="text-center py-12 bg-card border rounded-xl">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium mb-2">
+            <div className="flex flex-col items-center justify-center py-12 px-4 bg-card border rounded-xl text-center">
+              <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center mb-4">
+                <Users className="h-8 w-8 text-muted-foreground/60" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-1">
                 {tr('لا توجد مجموعات', 'No Groups Yet')}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {tr('اضغط على الزر أدناه لإنشاء أول مجموعة', 'Tap the button below to create your first group')}
+              <p className="text-sm text-muted-foreground max-w-xs mb-2">
+                {tr('أنشئ مجموعة لتنظيم طلاب السنتر', 'Create a group to organize center students')}
+              </p>
+              <p className="text-xs text-muted-foreground/80 italic mb-4">
+                💡 {tr('كل مجموعة تحدد الصف واللغة والمواعيد', 'Each group defines grade, track, and schedule')}
               </p>
             </div>
           ) : (
@@ -195,22 +201,24 @@ export default function ManageCenterGroups() {
               {groups.map((group) => (
                 <div
                   key={group.id}
-                  className="bg-card border rounded-xl p-4 hover:border-primary/30 transition-colors"
+                  className="bg-card border border-border/80 rounded-xl p-4 hover:border-primary/40 transition-colors"
                 >
-                  {/* Group Header */}
+                  {/* Group Header - Enhanced visual hierarchy */}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <Users className="h-5 w-5 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold truncate">{group.name}</h3>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        {/* Group name - Primary emphasis */}
+                        <h3 className="font-semibold text-foreground truncate leading-tight">{group.name}</h3>
+                        {/* Academic info - Secondary */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap mt-0.5">
                           <span className="flex items-center gap-1">
                             <GraduationCap className="h-3 w-3" />
                             {GRADE_LABELS[group.grade]?.[isArabic ? 'ar' : 'en'] || group.grade}
                           </span>
-                          <span>•</span>
+                          <span className="text-muted-foreground/50">•</span>
                           <span className="flex items-center gap-1">
                             <BookOpen className="h-3 w-3" />
                             {TRACK_LABELS[group.language_track]?.[isArabic ? 'ar' : 'en'] || group.language_track}
@@ -219,12 +227,12 @@ export default function ManageCenterGroups() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1 shrink-0">
+                    {/* Action Buttons - Subtle until hover */}
+                    <div className="flex items-center gap-0.5 shrink-0">
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="text-muted-foreground hover:text-primary"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={() => handleEditClick(group)}
                       >
                         <Edit3 className="h-4 w-4" />
@@ -232,7 +240,7 @@ export default function ManageCenterGroups() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="text-muted-foreground hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => setDeleteConfirmGroup(group)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -240,17 +248,26 @@ export default function ManageCenterGroups() {
                     </div>
                   </div>
 
-                  {/* Group Details */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge variant="secondary" className="text-xs">
+                  {/* Group Details - Quick insights */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <Badge variant="secondary" className="text-xs font-normal">
                       <Calendar className="h-3 w-3 me-1" />
                       {formatDays(group.days_of_week)}
                     </Badge>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs font-normal">
                       <Clock className="h-3 w-3 me-1" />
                       {formatTime(group.time_slot)}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
+                    {/* Member count - Prominent */}
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-xs font-medium",
+                        (group.member_count || 0) > 0 
+                          ? "border-primary/30 text-primary bg-primary/5" 
+                          : ""
+                      )}
+                    >
                       <Users className="h-3 w-3 me-1" />
                       {group.member_count || 0} {tr('طالب', 'students')}
                     </Badge>
@@ -265,7 +282,7 @@ export default function ManageCenterGroups() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full border-border/80 hover:border-primary/40"
                     onClick={() => handleMembersClick(group)}
                   >
                     <Users className="h-4 w-4 me-2" />

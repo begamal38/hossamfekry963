@@ -447,7 +447,15 @@ const Enrollments = () => {
             {/* Enrollments List */}
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                <div className="flex items-center gap-2">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="w-3 h-3 rounded-full bg-primary animate-pulse-dot"
+                      style={{ animationDelay: `${i * 150}ms` }}
+                    />
+                  ))}
+                </div>
               </div>
             ) : filteredEnrollments.length === 0 ? (
               <EmptyState
@@ -455,8 +463,13 @@ const Enrollments = () => {
                 title={isRTL ? 'لا يوجد اشتراكات' : 'No enrollments found'}
                 description={hasActiveFilters 
                   ? (isRTL ? 'جرب تغيير الفلاتر' : 'Try adjusting filters')
-                  : (isRTL ? 'أضف اشتراك جديد للبدء' : 'Add a new enrollment to get started')
+                  : (isRTL ? 'لم يتم تسجيل أي اشتراك حتى الآن' : 'No enrollments have been made yet')
                 }
+                hint={!hasActiveFilters 
+                  ? (isRTL ? 'اضغط على + لإضافة اشتراك' : 'Tap + to add an enrollment')
+                  : undefined}
+                actionLabel={hasActiveFilters ? (isRTL ? 'مسح الفلاتر' : 'Clear Filters') : undefined}
+                onAction={hasActiveFilters ? clearFilters : undefined}
               />
             ) : (
               <div className="space-y-3">

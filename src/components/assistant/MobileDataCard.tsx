@@ -83,8 +83,8 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
   const content = (
     <div
       className={cn(
-        "bg-card border border-border rounded-xl p-3 sm:p-4 transition-all duration-200",
-        (href || onClick) && "hover:border-primary/30 hover:bg-muted/30 cursor-pointer active:scale-[0.99]",
+        "bg-card border border-border/80 rounded-xl p-3 sm:p-4 transition-all duration-200",
+        (href || onClick) && "hover:border-primary/40 hover:bg-muted/40 cursor-pointer active:scale-[0.99]",
         className
       )}
       onClick={onClick}
@@ -99,13 +99,30 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{title}</h3>
+              {/* Title - Primary emphasis */}
+              <h3 className="font-semibold text-foreground text-sm sm:text-base truncate leading-tight">{title}</h3>
+              {/* Subtitle - Secondary, muted */}
               {subtitle && (
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate font-medium">{subtitle}</p>
               )}
             </div>
             
-            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+            {/* Badges - Aligned right, stacked vertically on mobile */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end max-w-[45%]">
+              {/* Primary badge (grade/track) - More prominent */}
+              {badge && (
+                <Badge 
+                  variant={badgeVariantMap[badgeVariant] || 'default'} 
+                  className={cn(
+                    "text-[10px] sm:text-xs font-medium",
+                    badgeClassMap[badgeVariant],
+                    badgeClassName
+                  )}
+                >
+                  {badge}
+                </Badge>
+              )}
+              {/* Secondary badge (study mode) - Subtle */}
               {secondaryBadge && (
                 <Badge 
                   variant={badgeVariantMap[secondaryBadgeVariant] || 'secondary'} 
@@ -117,34 +134,26 @@ export const MobileDataCard: React.FC<MobileDataCardProps> = ({
                   {secondaryBadge}
                 </Badge>
               )}
-              {badge && (
-                <Badge 
-                  variant={badgeVariantMap[badgeVariant] || 'default'} 
-                  className={cn(
-                    "text-[10px] sm:text-xs",
-                    badgeClassMap[badgeVariant],
-                    badgeClassName
-                  )}
-                >
-                  {badge}
-                </Badge>
-              )}
               {(href || onClick) && !actions && (
                 isRTL ? (
-                  <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+                  <ChevronLeft className="w-4 h-4 text-muted-foreground/70" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
                 )
               )}
             </div>
           </div>
           
+          {/* Metadata row - Quick insights */}
           {metadata && metadata.length > 0 && (
-            <div className="flex flex-wrap gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-3 mt-2">
               {metadata.map((item, index) => (
-                <div key={index} className={cn("flex items-center gap-1 text-xs text-muted-foreground", item.className)}>
-                  {item.icon && <item.icon className="w-3 h-3" />}
-                  <span>{item.label}</span>
+                <div key={index} className={cn(
+                  "flex items-center gap-1 text-xs text-muted-foreground",
+                  item.className
+                )}>
+                  {item.icon && <item.icon className="w-3 h-3 flex-shrink-0" />}
+                  <span className="tabular-nums">{item.label}</span>
                 </div>
               ))}
             </div>
