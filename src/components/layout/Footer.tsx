@@ -144,16 +144,16 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar - Copyright & Attribution */}
-        <div className="mt-12 pt-6 border-t border-border/60 text-center">
+        <div className="mt-12 pt-6 border-t border-border/40 text-center space-y-2">
           {/* Copyright Line */}
-          <p className="text-sm text-muted-foreground/80">
+          <p className="text-sm text-muted-foreground/70">
             Hossam Fekry © {currentYear} — {t('footer.rights')}
           </p>
           
-          {/* Powered By - ONLY ONCE, below copyright, smaller, muted, consistent styling */}
+          {/* Powered By - ONLY ONCE, readable but unobtrusive */}
           <button 
             onClick={() => window.open('https://wa.me/201000788628', '_blank')}
-            className="mt-3 mb-2 block mx-auto text-[0.65rem] font-normal text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors duration-200 cursor-pointer"
+            className="text-[0.65rem] font-normal text-muted-foreground/35 hover:text-muted-foreground/55 transition-colors duration-200 cursor-pointer pb-safe"
             aria-label="Powered by Belal Gamal"
           >
             Powered by Belal Gamal
