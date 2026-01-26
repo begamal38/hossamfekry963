@@ -41,13 +41,13 @@ export const ExamFocusIndicator: React.FC<ExamFocusIndicatorProps> = ({
       )}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* Breathing pulse dot - Rich green */}
+      {/* Breathing pulse dot - Unified green animation */}
       <span className="relative flex items-center justify-center">
         <span 
           className={cn(
             "absolute inline-flex h-4 w-4 rounded-full",
             "bg-[hsl(142_71%_45%/0.25)]",
-            "animate-[focus-breathe_2s_ease-in-out_infinite]",
+            "animate-focus-breathe",
             "motion-reduce:animate-none"
           )}
         />
@@ -55,7 +55,7 @@ export const ExamFocusIndicator: React.FC<ExamFocusIndicatorProps> = ({
           className={cn(
             "relative inline-flex h-2.5 w-2.5 rounded-full",
             "bg-[#22C55E]",
-            "animate-[focus-dot-breathe_2s_ease-in-out_infinite]",
+            "animate-subtle-pulse",
             "motion-reduce:animate-none"
           )}
         />

@@ -57,9 +57,9 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
               )}>
                 <StatusIcon className={cn("w-6 h-6", visual.textClass)} />
               </div>
-              {/* Pulsing dot indicator */}
+              {/* Pulsing dot indicator - unified subtle pulse */}
               <span className={cn(
-                "absolute -top-1 -right-1 w-3 h-3 rounded-full animate-pulse",
+                "absolute -top-1 -right-1 w-3 h-3 rounded-full animate-subtle-pulse",
                 visual.dotClass
               )} />
             </div>

@@ -39,7 +39,7 @@ export function FocusSystemAwareness({
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div className="flex items-center gap-1.5">
-        <Activity className="w-3.5 h-3.5 text-green-500 animate-pulse" />
+        <Activity className="w-3.5 h-3.5 text-green-500 animate-subtle-pulse" />
         <span className="text-green-600 font-medium">
           {isArabic ? 'تركيز نشط' : 'Focus Active'}
         </span>

@@ -234,14 +234,14 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
             : "border-[hsl(142_71%_45%/0.3)] shadow-[0_0_12px_-4px_hsl(142_71%_45%/0.2)] focus-mode-on-badge"
         )}
       >
-        {/* Breathing indicator dot with rich green glow */}
+        {/* Breathing indicator dot - unified green pulse */}
         <span className="relative flex items-center justify-center">
           {isActive && (
             <span 
               className={cn(
                 "absolute inline-flex h-4 w-4 rounded-full",
                 "bg-[hsl(142_71%_45%/0.25)]",
-                "animate-[focus-breathe_2s_ease-in-out_infinite]",
+                "animate-focus-breathe",
                 "motion-reduce:animate-none"
               )}
             />
@@ -251,7 +251,7 @@ export const FocusModeIndicator = forwardRef<FocusModeHandle, FocusModeIndicator
               "relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500",
               isPaused 
                 ? "bg-muted-foreground/50" 
-                : "bg-[#22C55E] animate-[focus-dot-breathe_2s_ease-in-out_infinite] motion-reduce:animate-none"
+                : "bg-[#22C55E] animate-subtle-pulse motion-reduce:animate-none"
             )}
           />
         </span>

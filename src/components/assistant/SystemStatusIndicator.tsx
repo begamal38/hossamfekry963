@@ -94,14 +94,14 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
         visual.bgTintClass
       )}>
         <div className="flex items-center gap-2.5">
-          {/* Pulsing Dot - Immediate Visual Signal */}
+          {/* Pulsing Dot - Unified breathing animation */}
           <div className="relative flex items-center justify-center">
             <span className={cn(
-              "absolute w-3 h-3 rounded-full animate-ping opacity-40",
-              visual.dotClass
+              "absolute w-3.5 h-3.5 rounded-full animate-focus-breathe",
+              visual.dotClass.replace('bg-', 'bg-').replace(/\/\d+/, '/30')
             )} />
             <span className={cn(
-              "relative w-2.5 h-2.5 rounded-full",
+              "relative w-2.5 h-2.5 rounded-full animate-subtle-pulse",
               visual.dotClass
             )} />
           </div>
