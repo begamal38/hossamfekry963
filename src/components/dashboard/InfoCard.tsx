@@ -49,9 +49,12 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          {/* Icon - unified rounded-xl (square with rounded corners) */}
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-2.5", bgColor)}>
-            <Icon className={cn("w-5 h-5", color)} />
+          {/* Icon - unified square with rounded corners - EXACT same for all cards */}
+          <div className={cn(
+            "w-11 h-11 rounded-[12px] flex items-center justify-center mb-3",
+            bgColor
+          )}>
+            <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
           </div>
 
           {/* Value */}
