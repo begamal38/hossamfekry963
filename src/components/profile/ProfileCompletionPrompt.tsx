@@ -306,51 +306,12 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         return;
       }
 
-      // ========== STEP 1: VALIDATE CENTER GROUP EXISTS (if needed) ==========
-      // CRITICAL: Validate BEFORE any writes to fail fast
-      if (needsCenterGroupWrite && centerGroupId) {
-        const { data: groupExists, error: groupCheckError } = await supabase
-          .from('center_groups')
-          .select('id, grade, language_track, is_active')
-          .eq('id', centerGroupId)
-          .eq('is_active', true)
-          .maybeSingle();
-        
-        if (groupCheckError || !groupExists) {
-          console.error('Center group validation failed:', groupCheckError);
-          // CONTEXTUAL ERROR: Explain the situation without blame
-          toast({
-            title: 'المجموعة لم تعد متاحة',
-            description: 'المجموعة التي اخترتها لم تعد متاحة حالياً. يرجى اختيار مجموعة أخرى متاحة الآن.',
-            variant: 'destructive',
-          });
-          // AUTO-RESET: Clear invalid group selection to allow re-selection
-          setCenterGroupId(null);
-          setLoading(false);
-          return; // BLOCK - invalid group
-        }
-        
-        // Validate academic path match (defense-in-depth)
-        const effectiveGrade = grade || updateData.grade as string;
-        const effectiveTrack = languageTrack || updateData.language_track as string;
-        
-        if (groupExists.grade !== effectiveGrade || groupExists.language_track !== effectiveTrack) {
-          console.error('Academic path mismatch:', { 
-            student: { grade: effectiveGrade, track: effectiveTrack }, 
-            group: { grade: groupExists.grade, track: groupExists.language_track } 
-          });
-          // CONTEXTUAL ERROR: Guide user to pick correct group
-          toast({
-            title: 'المجموعة غير مناسبة لصفك',
-            description: 'يرجى اختيار مجموعة تتوافق مع صفك الدراسي ومسارك التعليمي.',
-            variant: 'destructive',
-          });
-          // AUTO-RESET: Clear mismatched group selection
-          setCenterGroupId(null);
-          setLoading(false);
-          return; // BLOCK - path mismatch
-        }
-      }
+      // ========== STEP 1 (REMOVED): CENTER GROUP SECONDARY VALIDATION ==========
+      // IMPORTANT:
+      // The center groups dropdown uses the backend RPC `get_center_groups_for_registration`.
+      // That RPC is the SINGLE SOURCE OF TRUTH for what is selectable/enrollable.
+      // Do NOT re-validate against `center_groups` here because students may not have direct
+      // SELECT permission, which caused a mismatch: group appears selectable but fails on save.
 
       // ========== STEP 2: UPDATE/INSERT PROFILE ==========
       // First, check if profile exists
@@ -434,7 +395,10 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           }
 
           // Step 3b: Insert new membership - THIS MUST SUCCEED
-          console.log('Inserting center group membership:', { group_id: centerGroupId, student_id: confirmedUserId });
+          console.log('[ProfileCompletionPrompt] Inserting center group membership:', {
+            group_id: centerGroupId,
+            student_id: confirmedUserId,
+          });
           const { error: insertError } = await supabase.from('center_group_members').insert({
             group_id: centerGroupId,
             student_id: confirmedUserId,
@@ -442,7 +406,15 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           });
           
           if (insertError) {
-            console.error('Error inserting center group membership:', insertError);
+            // TEMP DEBUG VISIBILITY (internal only)
+            console.error('[ProfileCompletionPrompt] Center group membership insert failed', {
+              group_id: centerGroupId,
+              student_id: confirmedUserId,
+              code: (insertError as any)?.code,
+              message: (insertError as any)?.message,
+              details: (insertError as any)?.details,
+              hint: (insertError as any)?.hint,
+            });
             
             // Fallback: Try to update/reactivate existing record for this group
             const { error: updateError } = await supabase.from('center_group_members')
@@ -451,7 +423,15 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
               .eq('group_id', centerGroupId);
             
             if (updateError) {
-              console.error('Fallback update also failed:', updateError);
+              // TEMP DEBUG VISIBILITY (internal only)
+              console.error('[ProfileCompletionPrompt] Center group membership fallback update failed', {
+                group_id: centerGroupId,
+                student_id: confirmedUserId,
+                code: (updateError as any)?.code,
+                message: (updateError as any)?.message,
+                details: (updateError as any)?.details,
+                hint: (updateError as any)?.hint,
+              });
               throw new Error('group_membership_failed');
             }
           }
@@ -466,17 +446,28 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
             .eq('is_active', true)
             .maybeSingle();
           
-          console.log('Verification result:', { verifyMembership, verifyError });
+          console.log('[ProfileCompletionPrompt] Verification result:', { verifyMembership, verifyError });
           
           if (verifyError || !verifyMembership) {
-            console.error('Center group membership verification FAILED:', { verifyError, verifyMembership });
+            // TEMP DEBUG VISIBILITY (internal only)
+            console.error('[ProfileCompletionPrompt] Center group membership verification FAILED', {
+              group_id: centerGroupId,
+              student_id: confirmedUserId,
+              verifyError,
+              verifyMembership,
+            });
             throw new Error('group_verification_failed');
           }
           
           console.log('Center group membership verified successfully:', verifyMembership.id);
         } catch (groupError) {
           // ========== ROLLBACK: Revert profile study_mode_confirmed ==========
-          console.error('Group membership failed, rolling back profile:', groupError);
+          // TEMP DEBUG VISIBILITY (internal only)
+          console.error('[ProfileCompletionPrompt] Group membership failed, rolling back profile', {
+            group_id: centerGroupId,
+            student_id: confirmedUserId,
+            error: groupError,
+          });
           
           await supabase
             .from('profiles')
