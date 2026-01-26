@@ -377,7 +377,7 @@ const Auth = () => {
     <div dir={isRTL ? 'rtl' : 'ltr'} lang={language} className={cn("min-h-screen bg-background flex flex-col", isRTL && "rtl")}>
       <Navbar />
       {/* Mobile-first header with gradient */}
-      <div className="pt-16 bg-gradient-to-br from-primary via-primary to-accent pt-safe-top pb-8 px-4 rounded-b-[2rem] relative overflow-hidden">
+      <div className="pt-16 bg-primary pt-safe-top pb-8 px-4 rounded-b-[2rem] relative overflow-hidden">
         {/* Abstract shapes for visual interest */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-4 left-4 w-20 h-20 bg-white/5 rounded-full" />
@@ -477,7 +477,7 @@ const Auth = () => {
               >
               {/* Google Sign In - Featured prominently for signup */}
               {!isLogin && (
-                <div className="mb-5 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/20">
+                <div className="mb-5 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">⚡</span>
                     <span className="text-sm font-semibold text-foreground">{tr('أسرع طريقة للتسجيل', 'Fastest way to sign up')}</span>

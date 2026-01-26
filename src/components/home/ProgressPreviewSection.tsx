@@ -69,7 +69,7 @@ export const ProgressPreviewSection: React.FC = () => {
               : 'Track your learning journey with our comprehensive progress monitoring system'
             }
           </p>
-          <div className="w-24 h-1 2xl:w-32 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mt-6 2xl:mt-8" />
+          <div className="w-24 h-1 2xl:w-32 bg-primary mx-auto rounded-full mt-6 2xl:mt-8" />
         </div>
 
         <div className="max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl mx-auto">
@@ -77,7 +77,7 @@ export const ProgressPreviewSection: React.FC = () => {
           <div className="bg-card rounded-2xl border border-border p-8 2xl:p-10 3xl:p-12 mb-8 2xl:mb-10 shadow-card">
             <div className="flex items-center justify-between mb-4 2xl:mb-6">
               <div className="flex items-center gap-3 2xl:gap-4">
-                <div className="w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+                <div className="w-12 h-12 2xl:w-14 2xl:h-14 rounded-xl bg-primary flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 2xl:w-7 2xl:h-7 text-primary-foreground" />
                 </div>
                 <div>

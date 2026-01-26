@@ -143,7 +143,7 @@ export const CoursesSection: React.FC = () => {
                 : 'Chemistry courses for 2026 academic year - 2nd and 3rd Secondary Arabic & Languages'
               }
             </p>
-            <div className="w-24 h-1 2xl:w-32 bg-gradient-to-r from-primary to-accent rounded-full mt-4 2xl:mt-6" />
+            <div className="w-24 h-1 2xl:w-32 bg-primary rounded-full mt-4 2xl:mt-6" />
           </div>
           
           <Button variant="outline" className="2xl:text-lg 2xl:px-6 2xl:py-3" asChild>

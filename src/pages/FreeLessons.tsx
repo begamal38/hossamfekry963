@@ -35,7 +35,7 @@ const FreeLessons: React.FC = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           
           {/* STATUS FIRST: أنا فين دلوقتي؟ */}
-          <div className="bg-gradient-to-br from-green-500/10 via-card to-primary/5 rounded-2xl border border-border p-5 sm:p-6 mb-6 animate-fade-in-up">
+          <div className="bg-green-500/5 rounded-lg border border-green-500/20 p-5 sm:p-6 mb-6 animate-fade-in-up">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
                 <Gift className="w-6 h-6 text-green-600" />

@@ -240,12 +240,13 @@
 }
 
 @layer utilities {
+  /* Text gradient removed - use solid primary color for emphasis */
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+    @apply text-primary font-semibold;
   }
 
   .bg-gradient-primary {
-    background: var(--gradient-primary);
+    background: hsl(var(--primary));
   }
 
   .bg-gradient-hero {

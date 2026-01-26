@@ -49,9 +49,8 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
   }, [nextSlide]);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl lg:rounded-3xl shadow-2xl group ${className}`}>
-      {/* Subtle glow behind */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 blur-xl scale-105 -z-10 opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className={`relative overflow-hidden rounded-2xl lg:rounded-3xl shadow-xl group ${className}`}>
+      {/* Clean container - no decorative glow */}
       
       {/* LANDSCAPE Image container - 16:9 mobile, larger on desktop */}
       <div className="relative aspect-video lg:aspect-[16/9] xl:aspect-[2/1]">
@@ -84,12 +83,8 @@ export const HeroImageSlider: React.FC<HeroImageSliderProps> = memo(({ className
       {/* Subtle overlay gradient for depth */}
       <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent pointer-events-none" />
       
-      {/* Subtle vignette effect */}
-      <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-background/20 pointer-events-none" />
-      
-      {/* Decorative corner accent */}
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/30 to-transparent pointer-events-none" />
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-accent/20 to-transparent pointer-events-none" />
+      {/* Simple bottom fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/30 to-transparent pointer-events-none" />
 
       {/* Slide indicators */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
