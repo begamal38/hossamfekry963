@@ -608,31 +608,57 @@
 
 /* ══════════════════════════════════════════════════════════════════════════
    FOCUS MODE ANIMATIONS - Calm, non-distracting indicators
+   Uses rich green (#22C55E / HSL 142 71% 45%) for active state
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Focus Mode ON indicator - 7-8 second breathing cycle */
+/* Rich Green Focus Color Variables */
+:root {
+  --focus-active-color: 142 71% 45%;  /* #22C55E - Rich Green */
+  --focus-glow-color: 142 71% 45%;
+  --focus-glow-soft: 142 71% 45%;
+  --focus-breathe-cycle: 2s;  /* Calm, slow breathing */
+}
+
+.dark {
+  --focus-active-color: 142 65% 50%;  /* Slightly brighter for dark mode */
+  --focus-glow-color: 142 65% 50%;
+}
+
+/* Focus Mode ON indicator - Subtle green breathing */
 @keyframes focus-mode-breathe {
   0%, 100% { 
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    box-shadow: 0 0 0 0 hsl(var(--focus-glow-color) / 0);
     transform: scale(1);
   }
   50% { 
-    box-shadow: 0 0 12px 4px hsl(var(--primary) / 0.25);
-    transform: scale(1.05);
+    box-shadow: 0 0 10px 3px hsl(var(--focus-glow-color) / 0.2);
+    transform: scale(1.02);
   }
 }
 
-/* Focus indicator dot breathing */
+/* Focus indicator dot breathing - Rich green with soft glow */
 @keyframes focus-dot-breathe {
   0%, 100% { 
-    opacity: 0.6;
+    opacity: 0.85;
     transform: scale(1);
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    box-shadow: 0 0 0 0 hsl(var(--focus-glow-color) / 0);
   }
   50% { 
     opacity: 1;
-    transform: scale(1.15);
-    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 0 6px 2px hsl(var(--focus-glow-color) / 0.35);
+  }
+}
+
+/* Green breathing ring - outer glow for dots */
+@keyframes focus-ring-breathe {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.25;
+  }
+  50% { 
+    transform: scale(1.6);
+    opacity: 0.4;
   }
 }
 
@@ -643,8 +669,8 @@
     transform: scale(1);
   }
   50% { 
-    box-shadow: 0 0 16px -4px hsl(var(--primary) / 0.3);
-    transform: scale(1.02);
+    box-shadow: 0 0 12px -4px hsl(var(--focus-glow-color) / 0.25);
+    transform: scale(1.01);
   }
 }
 
@@ -662,7 +688,7 @@
 
 /* Apply breathing to focus icons */
 .focus-icon-breathe {
-  animation: focus-icon-breathe 7.5s ease-in-out infinite;
+  animation: focus-icon-breathe var(--focus-breathe-cycle) ease-in-out infinite;
 }
 
 /* Staggered appearance for focus features */
@@ -673,43 +699,76 @@
 
 /* Focus Mode ON badge animation */
 .focus-mode-on-badge {
-  animation: focus-mode-breathe 7.5s ease-in-out infinite;
+  animation: focus-mode-breathe var(--focus-breathe-cycle) ease-in-out infinite;
 }
 
-/* Focus dot pulse */
+/* Focus dot pulse - Green breathing */
 .focus-dot-pulse {
-  animation: focus-dot-breathe 7.5s ease-in-out infinite;
+  animation: focus-dot-breathe var(--focus-breathe-cycle) ease-in-out infinite;
 }
 
-/* Focus Mode expand animation - starts expanded then shrinks to normal (LTR) */
-@keyframes focus-mode-expand {
+/* Focus ring pulse - outer glow */
+.focus-ring-pulse {
+  animation: focus-ring-breathe var(--focus-breathe-cycle) ease-in-out infinite;
+}
+
+/* Focus Mode expand animation - LTR (expands from left) */
+@keyframes focus-mode-expand-ltr {
   0% { 
-    transform: scale(1.15) translateX(0);
+    transform: scaleX(0.85) translateX(-8px);
     opacity: 0.7;
   }
-  30% {
-    transform: scale(1.08) translateX(0);
-    opacity: 0.9;
-  }
   100% { 
-    transform: scale(1) translateX(0);
+    transform: scaleX(1) translateX(0);
     opacity: 1;
   }
 }
 
+/* Focus Mode expand animation - RTL (expands from right) */
+@keyframes focus-mode-expand-rtl {
+  0% { 
+    transform: scaleX(0.85) translateX(8px);
+    opacity: 0.7;
+  }
+  100% { 
+    transform: scaleX(1) translateX(0);
+    opacity: 1;
+  }
+}
+
+/* LTR expand animation */
 .focus-mode-expand-animation {
-  animation: focus-mode-expand 0.8s ease-out forwards;
+  animation: focus-mode-expand-ltr 0.4s ease-out forwards;
   transform-origin: left center;
 }
 
+/* RTL expand animation */
+[dir="rtl"] .focus-mode-expand-animation,
+.focus-mode-expand-animation-rtl {
+  animation: focus-mode-expand-rtl 0.4s ease-out forwards;
+  transform-origin: right center;
+}
+
+/* Primary focus breathe - for outer glow ring */
 @keyframes focus-breathe {
   0%, 100% { 
     transform: scale(1); 
-    opacity: 0.4; 
+    opacity: 0.3; 
   }
   50% { 
-    transform: scale(2.2); 
-    opacity: 0.08; 
+    transform: scale(1.5); 
+    opacity: 0.45; 
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .focus-mode-on-badge,
+  .focus-dot-pulse,
+  .focus-ring-pulse,
+  .focus-icon-breathe,
+  .focus-mode-expand-animation {
+    animation: none !important;
   }
 }
 
@@ -937,15 +996,38 @@
   }
 }
 
-/* Alive indicator breathing - 7 second cycle for calm feel */
+/* ══════════════════════════════════════════════════════════════════════════
+   ALIVE INDICATOR - Unified green breathing pulse
+   Matches Focus Mode indicator styling for visual consistency
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Alive indicator breathing - Rich green, 2s calm cycle */
 @keyframes alive-breathe {
   0%, 100% {
-    transform: scale(1.5);
-    opacity: 0.2;
+    transform: scale(1);
+    opacity: 0.25;
   }
   50% {
-    transform: scale(2.2);
-    opacity: 0.5;
+    transform: scale(1.5);
+    opacity: 0.4;
+  }
+}
+
+/* Alive dot pulse - inner dot subtle glow */
+@keyframes alive-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(var(--focus-glow-color) / 0);
+  }
+  50% {
+    box-shadow: 0 0 4px 1px hsl(var(--focus-glow-color) / 0.3);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .alive-indicator-pulse,
+  .alive-dot-glow {
+    animation: none !important;
   }
 }
 
@@ -986,17 +1068,7 @@
   }
 }
 
-/* Focus mode breathing - calm 7 second cycle */
-@keyframes focus-breathe {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-  50% {
-    transform: scale(1.8);
-    opacity: 0.6;
-  }
-}
+/* NOTE: focus-breathe keyframes defined earlier in the file (line ~750) */
 
 /* Fade out animation for messages */
 @keyframes fade-out {
