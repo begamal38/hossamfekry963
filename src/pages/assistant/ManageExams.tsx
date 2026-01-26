@@ -53,6 +53,7 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
 
 type ExamStatus = 'draft' | 'published' | 'closed' | 'archived';
 
@@ -132,8 +133,21 @@ export default function ManageExams() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [filteredExams, setFilteredExams] = useState<Exam[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [selectedChapter, setSelectedChapter] = useState<string>('all');
+  
+  // Hierarchical selection with anti-reset guard
+  const { 
+    selection, 
+    setCourse, 
+    setChapter,
+    applyDefaultCourseIfEmpty 
+  } = useHierarchicalSelection({ 
+    includeLesson: false, 
+    defaultChapter: 'all' 
+  });
+  
+  const selectedCourse = selection.courseId || '';
+  const selectedChapter = selection.chapterId || 'all';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -184,15 +198,17 @@ export default function ManageExams() {
 
       if (error) throw error;
       setCourses(data || []);
-      if (data && data.length > 0 && !selectedCourse) {
-        setSelectedCourse(data[0].id);
+      
+      // ANTI-RESET GUARD: Only apply default if no selection exists (one-time boot)
+      if (data && data.length > 0) {
+        applyDefaultCourseIfEmpty(data[0].id);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedCourse]);
+  }, [applyDefaultCourseIfEmpty]);
 
   const fetchChapters = useCallback(async () => {
     if (!selectedCourse) return;
@@ -779,11 +795,18 @@ export default function ManageExams() {
 
             {/* Course Selector */}
             <div className="mb-4">
-              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <Select 
+                value={selectedCourse} 
+                onValueChange={(val) => {
+                  if (val && val !== selectedCourse) {
+                    setCourse(val);
+                  }
+                }}
+              >
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder={isArabic ? 'اختر الكورس' : 'Select Course'} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover border shadow-lg z-[200]">
                   {courses.map(course => (
                     <SelectItem key={course.id} value={course.id}>
                       {isArabic ? course.title_ar : course.title}
@@ -814,7 +837,7 @@ export default function ManageExams() {
                     },
                     {
                       value: selectedChapter,
-                      onChange: setSelectedChapter,
+                      onChange: (val) => setChapter(val),
                       options: [
                         { value: 'all', label: isArabic ? 'كل الأبواب' : 'All Chapters' },
                         ...chapters.map(ch => ({
