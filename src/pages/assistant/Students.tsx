@@ -385,6 +385,9 @@ export default function Students() {
             title={isRTL ? 'لا يوجد طلاب' : 'No students found'}
             description={searchTerm || hasActiveFilters 
               ? (isRTL ? 'جرب تعديل البحث أو الفلاتر' : 'Try adjusting your search or filters')
+              : (isRTL ? 'لم يتم تسجيل أي طالب حتى الآن' : 'No students have registered yet')}
+            hint={!searchTerm && !hasActiveFilters 
+              ? (isRTL ? 'الطلاب الجدد سيظهرون هنا تلقائياً' : 'New students will appear here automatically')
               : undefined}
             actionLabel={hasActiveFilters ? (isRTL ? 'مسح الفلاتر' : 'Clear Filters') : undefined}
             onAction={hasActiveFilters ? clearFilters : undefined}
@@ -413,7 +416,11 @@ export default function Students() {
                   iconColor="text-primary"
                   iconBgColor="bg-primary/10"
                   metadata={[
+                    // Enrollment count - quick insight
+                    ...(student.enrollmentCount > 0 ? [{ icon: GraduationCap, label: `${student.enrollmentCount} ${isRTL ? 'كورس' : 'courses'}` }] : []),
+                    // Progress indicator
                     ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
+                    // Exam score with color coding
                     ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
                   ]}
                   onClick={() => navigate(`/assistant/students/${student.short_id}`)}
