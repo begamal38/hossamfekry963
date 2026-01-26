@@ -11,11 +11,11 @@ import { doesStudentMatchCourseGrade } from '@/lib/gradeLabels';
 // Default fallback image for courses without a cover
 const DEFAULT_COURSE_COVER = '/images/default-course-cover.svg';
 
-const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
-  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
-  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
-  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
+const GRADE_OPTIONS: Record<string, { ar: string; en: string; shortAr: string; shortEn: string }> = {
+  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic', shortAr: 'تانية عربي', shortEn: '2nd Arabic' },
+  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages', shortAr: 'تانية لغات', shortEn: '2nd Lang' },
+  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic', shortAr: 'تالتة عربي', shortEn: '3rd Arabic' },
+  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages', shortAr: 'تالتة لغات', shortEn: '3rd Lang' },
 };
 
 interface Course {
@@ -101,30 +101,23 @@ const CourseCardInner = ({
   };
 
   return (
-    <div 
+    <article 
       className={cn(
-        "group relative bg-card rounded-2xl border border-border overflow-hidden transition-all duration-300",
-        // Enhanced shadow system for depth
+        "group relative bg-card rounded-2xl border border-border/80 overflow-hidden transition-all duration-200",
+        // Refined shadow system
         "shadow-card hover:shadow-elevated",
-        // Desktop: hover effects with glow
-        "md:hover:-translate-y-1 md:hover:border-primary/30",
-        // Mobile: optimized spacing and touch targets
-        "active:scale-[0.98] touch-manipulation",
-        `animate-fade-in-up animation-delay-${((index % 3) + 1) * 100}`
+        // Desktop: subtle lift on hover
+        "md:hover:-translate-y-0.5 md:hover:border-primary/40",
+        // Mobile: optimized touch feedback
+        "active:scale-[0.98] touch-manipulation select-none"
       )}
     >
-      {/* Glow effect on hover - Desktop only */}
+      {/* Course Cover Image */}
       <div className={cn(
-        "absolute -inset-0.5 bg-gradient-to-r from-primary/40 via-accent/30 to-primary/40 rounded-2xl opacity-0 blur-md transition-opacity duration-500",
-        "hidden md:block md:group-hover:opacity-70"
-      )} />
-      {/* Course Cover Image - 16:9 aspect ratio on mobile, fixed height on desktop */}
-      <div className={cn(
-        "relative overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10",
-        // Mobile: 16:9 aspect ratio for consistent marketing appearance
-        "aspect-video md:aspect-auto md:h-44",
-        isPreview && "opacity-75",
-        "z-10" // Above glow layer
+        "relative overflow-hidden bg-gradient-to-br from-muted/50 to-muted",
+        // Mobile: 16:9 aspect ratio, Desktop: fixed height
+        "aspect-video md:aspect-auto md:h-40 lg:h-44",
+        isPreview && "opacity-75"
       )}>
         {/* Course Cover Image - Always show the cover or fallback */}
         <img 
@@ -187,15 +180,15 @@ const CourseCardInner = ({
         )}
       </div>
 
-      {/* Content - Above glow layer */}
+      {/* Content */}
       <div className="relative z-10 p-4 md:p-5 space-y-3 bg-card">
-        {/* Grade Category Chip */}
-        <Badge variant="outline" className="text-xs font-medium">
-          {isArabic ? gradeInfo?.ar : gradeInfo?.en}
+        {/* Grade Category Chip - Short labels for scannability */}
+        <Badge variant="secondary" className="text-xs font-medium bg-muted/70 text-muted-foreground">
+          {isArabic ? gradeInfo?.shortAr : gradeInfo?.shortEn}
         </Badge>
         
-        {/* Course Title - max 2 lines */}
-        <h3 className="text-base md:text-lg font-bold text-foreground line-clamp-2 min-h-[2.5rem] md:min-h-0 md:line-clamp-1 group-hover:text-primary transition-colors">
+        {/* Course Title - Strong hierarchy */}
+        <h3 className="text-base md:text-lg font-bold text-foreground line-clamp-2 min-h-[2.5rem] md:min-h-0 md:line-clamp-1 group-hover:text-primary transition-colors duration-150">
           {title}
         </h3>
         
@@ -206,20 +199,22 @@ const CourseCardInner = ({
           </p>
         )}
 
-        {/* Meta info row */}
-        <div className="flex items-center flex-wrap gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-primary/60" />
-            <span>{course.duration_hours || 0} {isArabic ? 'ساعة' : 'hrs'}</span>
+        {/* Meta info row - Secondary visual weight */}
+        <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground/60" />
+            <span className="tabular-nums">{course.duration_hours || 0}</span>
+            <span className="text-xs">{isArabic ? 'س' : 'h'}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Play className="w-4 h-4 text-primary/60" />
-            <span>{course.lessons_count || 0} {isArabic ? 'حصة' : 'lessons'}</span>
+          <div className="flex items-center gap-1">
+            <Play className="w-3.5 h-3.5 text-muted-foreground/60" />
+            <span className="tabular-nums">{course.lessons_count || 0}</span>
+            <span className="text-xs">{isArabic ? 'حصة' : 'lessons'}</span>
           </div>
           {(course.enrolled_count !== undefined && course.enrolled_count > 0) && (
-            <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-primary/60" />
-              <span>{course.enrolled_count} {isArabic ? 'طالب' : 'students'}</span>
+            <div className="flex items-center gap-1">
+              <Users className="w-3.5 h-3.5 text-muted-foreground/60" />
+              <span className="tabular-nums">{course.enrolled_count}</span>
             </div>
           )}
         </div>
@@ -301,7 +296,7 @@ const CourseCardInner = ({
           </Button>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 

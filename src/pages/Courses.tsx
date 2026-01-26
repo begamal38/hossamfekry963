@@ -4,9 +4,10 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Filter, Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CourseCard } from '@/components/course/CourseCard';
+import { CourseFilterChips } from '@/components/courses/CourseFilterChips';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -18,11 +19,12 @@ import { doesStudentMatchCourseGrade } from '@/lib/gradeLabels';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { useEngagementSafe } from '@/components/consent';
 import { cn } from '@/lib/utils';
-const GRADE_OPTIONS: Record<string, { ar: string; en: string }> = {
-  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic' },
-  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages' },
-  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic' },
-  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages' },
+
+const GRADE_OPTIONS: Record<string, { ar: string; en: string; shortAr: string; shortEn: string }> = {
+  'second_arabic': { ar: 'تانية ثانوي عربي', en: '2nd Secondary - Arabic', shortAr: 'تانية عربي', shortEn: '2nd Arabic' },
+  'second_languages': { ar: 'تانية ثانوي لغات', en: '2nd Secondary - Languages', shortAr: 'تانية لغات', shortEn: '2nd Languages' },
+  'third_arabic': { ar: 'تالته ثانوي عربي', en: '3rd Secondary - Arabic', shortAr: 'تالتة عربي', shortEn: '3rd Arabic' },
+  'third_languages': { ar: 'تالته ثانوي لغات', en: '3rd Secondary - Languages', shortAr: 'تالتة لغات', shortEn: '3rd Languages' },
 };
 
 interface Course {
@@ -243,20 +245,10 @@ const Courses: React.FC = () => {
   });
 
   // Filter hidden courses for non-enrolled users (visibility control)
-  // Hidden courses are only visible to:
-  // 1. Admins/Assistant Teachers (canBypassAcademicRestrictions)
-  // 2. Students who are already enrolled in them
   const visibleCourses = scopedCourses.filter(course => {
-    // Staff can see all courses
     if (canBypassAcademicRestrictions) return true;
-    
-    // If course is not hidden, show it
     if (!course.is_hidden) return true;
-    
-    // If course is hidden, only show if user is enrolled
     if (user && isEnrolled(course.id)) return true;
-    
-    // Hidden course and not enrolled - don't show
     return false;
   });
 
@@ -295,6 +287,18 @@ const Courses: React.FC = () => {
       ))
     : filteredCourses;
 
+  // Build filter options for chips
+  const filterOptions = Object.entries(GRADE_OPTIONS).map(([value, labels]) => ({
+    value,
+    label: isArabic ? labels.shortAr : labels.shortEn,
+  }));
+
+  const clearAllFilters = () => {
+    setSelectedGrade('all');
+    setShowFreeOnly(false);
+    setSearchQuery('');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -323,23 +327,26 @@ const Courses: React.FC = () => {
       <Navbar />
       
       <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          {/* Mobile-First Header - Compact and impactful */}
-          <div className="mb-6 md:mb-8 animate-fade-in-up">
-            {/* Stats row - Quick glance info */}
+        {/* Desktop max-width container for professional containment */}
+        <div className="container mx-auto px-4 max-w-6xl 2xl:max-w-7xl">
+          {/* Header Section - Clean and impactful */}
+          <header className="mb-6 md:mb-8">
+            {/* Stats row */}
             <div className="flex items-center gap-2 mb-3">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                <BookOpen className="w-3 h-3 me-1" />
-                {visibleCourses.length} {isArabic ? 'كورس' : 'Courses'}
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-0 gap-1">
+                <BookOpen className="w-3 h-3" />
+                <span className="tabular-nums">{visibleCourses.length}</span>
+                <span>{isArabic ? 'كورس' : 'Courses'}</span>
               </Badge>
               {user && enrollments.length > 0 && (
-                <Badge variant="outline" className="text-muted-foreground">
-                  {enrollments.length} {isArabic ? 'مشترك فيهم' : 'Enrolled'}
+                <Badge variant="outline" className="text-muted-foreground gap-1">
+                  <span className="tabular-nums">{enrollments.length}</span>
+                  <span>{isArabic ? 'مشترك' : 'Enrolled'}</span>
                 </Badge>
               )}
             </div>
             
-            <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
               {t('courses.title')}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
@@ -348,85 +355,42 @@ const Courses: React.FC = () => {
                 : 'Comprehensive Chemistry courses for Thanaweya Amma'
               }
             </p>
-          </div>
+          </header>
 
-          {/* Mobile-First Filters - Horizontal scrollable chips */}
-          <div className="mb-6 animate-fade-in-up animation-delay-100">
-            {/* Search - Full width on mobile */}
-            <div className="relative mb-4">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          {/* Filters Section - Grouped logically */}
+          <section className="mb-8 space-y-4" aria-label={isArabic ? 'فلاتر البحث' : 'Search filters'}>
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
               <Input 
                 placeholder={isArabic ? 'ابحث عن كورس...' : 'Search courses...'} 
-                className="ps-10 h-12 text-base rounded-xl border-border/50 bg-card"
+                className="ps-10 h-12 text-base rounded-xl border-border/60 bg-card focus:border-primary/50 transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             
-            {/* Filter chips - Horizontal scroll on mobile */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
-              {/* Grade filter chips */}
-              <button
-                onClick={() => setSelectedGrade('all')}
-                className={cn(
-                  "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                  selectedGrade === 'all' 
-                    ? "bg-primary text-primary-foreground shadow-md" 
-                    : "bg-card border border-border text-foreground hover:border-primary/30"
-                )}
-              >
-                {isArabic ? 'الكل' : 'All'}
-              </button>
-              
-              {Object.entries(GRADE_OPTIONS).map(([value, labels]) => (
-                <button
-                  key={value}
-                  onClick={() => setSelectedGrade(value)}
-                  className={cn(
-                    "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                    selectedGrade === value 
-                      ? "bg-primary text-primary-foreground shadow-md" 
-                      : "bg-card border border-border text-foreground hover:border-primary/30"
-                  )}
-                >
-                  {isArabic ? labels.ar.split(' ').slice(0, 2).join(' ') : labels.en.split(' - ')[0]}
-                </button>
-              ))}
-              
-              {/* Free filter chip with glow */}
-              <div className="relative group flex-shrink-0">
-                {showFreeOnly && (
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full blur-sm opacity-60 animate-pulse" />
-                )}
-                <button
-                  onClick={() => setShowFreeOnly(!showFreeOnly)}
-                  className={cn(
-                    "relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
-                    showFreeOnly 
-                      ? "bg-green-600 text-white shadow-md" 
-                      : "bg-card border border-border text-foreground hover:border-green-500/30"
-                  )}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                  {isArabic ? 'مجاني' : 'Free'}
-                </button>
-              </div>
-            </div>
-          </div>
+            {/* Filter Chips */}
+            <CourseFilterChips
+              filters={filterOptions}
+              selectedValue={selectedGrade}
+              onSelect={setSelectedGrade}
+              showFreeOnly={showFreeOnly}
+              onFreeToggle={() => setShowFreeOnly(!showFreeOnly)}
+              isRTL={isArabic}
+            />
+          </section>
 
           {/* User's Grade Courses - Priority Section */}
           {userProfile?.academic_year && userProfile?.language_track && userGradeCourses.length > 0 && selectedGrade === 'all' && (
-            <div className="mb-8 md:mb-12 animate-fade-in-up animation-delay-200">
-              {/* Section header with glow */}
-              <div className="flex items-center gap-3 mb-4 md:mb-6">
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-primary/20 rounded-full blur-md" />
-                  <div className="relative w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                  </div>
+            <section className="mb-10 md:mb-12" aria-labelledby="your-courses-heading">
+              {/* Section header */}
+              <div className="flex items-center gap-3 mb-5 md:mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-foreground">
+                  <h2 id="your-courses-heading" className="text-lg md:text-xl font-bold text-foreground">
                     {isArabic ? 'كورساتك' : 'Your Courses'}
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -435,8 +399,8 @@ const Courses: React.FC = () => {
                 </div>
               </div>
               
-              {/* Mobile: single column, Desktop: 2-3 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Course grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
                 {userGradeCourses.map((course, index) => (
                   <CourseCard 
                     key={course.id}
@@ -456,38 +420,34 @@ const Courses: React.FC = () => {
                   />
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           {/* All/Other Courses */}
-          <div className="animate-fade-in-up animation-delay-300">
+          <section aria-labelledby="other-courses-heading">
             {userProfile?.academic_year && userProfile?.language_track && userGradeCourses.length > 0 && selectedGrade === 'all' && otherCourses.length > 0 && (
-              <h2 className="text-lg md:text-xl font-bold text-foreground mb-4 md:mb-6 flex items-center gap-2">
-                <span className="w-1.5 h-6 bg-muted-foreground/30 rounded-full" />
+              <h2 id="other-courses-heading" className="text-lg md:text-xl font-semibold text-foreground mb-5 md:mb-6 flex items-center gap-2">
+                <span className="w-1 h-5 bg-border rounded-full" />
                 {isArabic ? 'كورسات أخرى' : 'Other Courses'}
               </h2>
             )}
             
             {/* Empty state */}
             {(selectedGrade !== 'all' || !(userProfile?.academic_year && userProfile?.language_track) || userGradeCourses.length === 0) && filteredCourses.length === 0 && (
-              <div className="text-center py-12 md:py-16">
+              <div className="text-center py-16 md:py-20">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
                   <BookOpen className="w-8 h-8 text-muted-foreground/50" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">
                   {isArabic ? 'لا توجد كورسات' : 'No courses found'}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {isArabic ? 'جرب تغيير فلاتر البحث' : 'Try changing your search filters'}
+                <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                  {isArabic ? 'جرب تغيير فلاتر البحث أو البحث باسم مختلف' : 'Try changing your filters or search with a different term'}
                 </p>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    setSelectedGrade('all');
-                    setShowFreeOnly(false);
-                    setSearchQuery('');
-                  }}
+                  onClick={clearAllFilters}
                 >
                   {isArabic ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
                 </Button>
@@ -495,7 +455,7 @@ const Courses: React.FC = () => {
             )}
             
             {/* Course grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
               {(selectedGrade === 'all' && userProfile?.academic_year && userProfile?.language_track ? otherCourses : filteredCourses).map((course, index) => (
                 <CourseCard 
                   key={course.id}
@@ -515,7 +475,7 @@ const Courses: React.FC = () => {
                 />
               ))}
             </div>
-          </div>
+          </section>
         </div>
       </main>
 
