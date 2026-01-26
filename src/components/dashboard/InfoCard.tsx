@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight, LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+export type InfoCardVariant = 'primary' | 'success' | 'warning' | 'muted';
+
 interface InfoCardProps {
   /** Icon for the card */
   icon: LucideIcon;
@@ -12,10 +14,8 @@ interface InfoCardProps {
   label: string;
   /** Optional subtext with context */
   subtext?: string;
-  /** Icon/badge color */
-  color?: string;
-  /** Background color for icon */
-  bgColor?: string;
+  /** Color variant using design system tokens */
+  variant?: InfoCardVariant;
   /** Link destination */
   href?: string;
   /** RTL mode */
@@ -26,35 +26,56 @@ interface InfoCardProps {
   className?: string;
 }
 
+// Unified variant styles using semantic design tokens
+const variantStyles: Record<InfoCardVariant, { bg: string; icon: string }> = {
+  primary: {
+    bg: 'bg-primary/10',
+    icon: 'text-primary',
+  },
+  success: {
+    bg: 'bg-success/10',
+    icon: 'text-success',
+  },
+  warning: {
+    bg: 'bg-warning/10',
+    icon: 'text-warning',
+  },
+  muted: {
+    bg: 'bg-muted',
+    icon: 'text-muted-foreground',
+  },
+};
+
 export const InfoCard: React.FC<InfoCardProps> = ({
   icon: Icon,
   value,
   label,
   subtext,
-  color = 'text-primary',
-  bgColor = 'bg-primary/10',
+  variant = 'primary',
   href,
   isRTL = false,
   compact = false,
   className,
 }) => {
+  const styles = variantStyles[variant];
+
   const content = (
     <div
       className={cn(
-        // Unified: rounded-lg (10px), consistent card styling
-        "bg-card rounded-lg border border-border/50 p-3 sm:p-4 transition-all duration-150 shadow-card",
-        href && "hover:border-primary/30 hover:shadow-elevated cursor-pointer active:scale-[0.98]",
+        // Unified card styling
+        "bg-card rounded-lg border border-border/50 p-3 sm:p-4 transition-all duration-150",
+        href && "hover:border-primary/30 cursor-pointer active:scale-[0.98]",
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          {/* Icon - unified square with rounded corners - EXACT same for all cards */}
+          {/* Icon Container - UNIFIED: 44x44px square with 12px radius */}
           <div className={cn(
             "w-11 h-11 rounded-[12px] flex items-center justify-center mb-3",
-            bgColor
+            styles.bg
           )}>
-            <Icon className={cn("w-5 h-5", color)} strokeWidth={2} />
+            <Icon className={cn("w-5 h-5", styles.icon)} strokeWidth={2} />
           </div>
 
           {/* Value */}
@@ -77,7 +98,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
 
         {/* Arrow indicator for links */}
         {href && (
-          <div className="flex-shrink-0 ml-2">
+          <div className="flex-shrink-0 ms-2">
             {isRTL ? (
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             ) : (

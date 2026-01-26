@@ -331,8 +331,7 @@ export default function AssistantDashboard() {
                 : undefined
               }
               href="/assistant/students"
-              color="text-primary"
-              bgColor="bg-primary/10"
+              variant="primary"
               isRTL={isRTL}
               compact
             />
@@ -341,8 +340,7 @@ export default function AssistantDashboard() {
               value={loading ? '...' : stats.totalLessons}
               label={isRTL ? 'حصة' : 'Lessons'}
               href="/assistant/lessons"
-              color="text-blue-600"
-              bgColor="bg-blue-500/10"
+              variant="primary"
               isRTL={isRTL}
               compact
             />
@@ -351,8 +349,7 @@ export default function AssistantDashboard() {
               value={loading ? '...' : stats.activeEnrollments}
               label={isRTL ? 'اشتراك نشط' : 'Active'}
               href="/assistant/enrollments"
-              color="text-green-600"
-              bgColor="bg-green-500/10"
+              variant="success"
               isRTL={isRTL}
               compact
             />
@@ -361,8 +358,7 @@ export default function AssistantDashboard() {
               value={loading ? '...' : `${stats.avgExamScore}%`}
               label={isRTL ? 'متوسط الامتحانات' : 'Avg Score'}
               href="/assistant/reports"
-              color="text-purple-600"
-              bgColor="bg-purple-500/10"
+              variant="warning"
               isRTL={isRTL}
               compact
             />
