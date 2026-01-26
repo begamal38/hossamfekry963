@@ -284,6 +284,19 @@ export default function ManageChapters() {
           backHref="/assistant/courses"
           isRTL={isRTL}
           icon={Layers}
+          actions={
+            chapters.length > 1 ? (
+              <Button 
+                variant={isReorderMode ? "default" : "outline"} 
+                size="sm" 
+                className={cn("gap-1.5 text-xs", isReorderMode && "bg-primary")}
+                onClick={() => setIsReorderMode(!isReorderMode)}
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {isArabic ? 'ترتيب' : 'Reorder'}
+              </Button>
+            ) : undefined
+          }
         />
 
         {/* Status Summary */}
@@ -296,42 +309,27 @@ export default function ManageChapters() {
           className="mb-4"
         />
 
-        {/* Course Selector + Reorder Toggle */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1">
-            <Select 
-              value={selectedCourse} 
-              onValueChange={(val) => {
-                if (val && val !== selectedCourse) {
-                  setCourse(val);
-                }
-              }}
-            >
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border shadow-lg z-[200]">
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {isArabic ? course.title_ar : course.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Reorder Toggle Button */}
-          {chapters.length > 1 && (
-            <Button 
-              variant={isReorderMode ? "default" : "outline"} 
-              size="sm" 
-              className={cn("gap-1.5 text-xs shrink-0", isReorderMode && "bg-primary")}
-              onClick={() => setIsReorderMode(!isReorderMode)}
-            >
-              <ArrowUpDown className="h-3.5 w-3.5" />
-              {isArabic ? 'ترتيب' : 'Reorder'}
-            </Button>
-          )}
+        {/* Course Selector */}
+        <div className="mb-4">
+          <Select 
+            value={selectedCourse} 
+            onValueChange={(val) => {
+              if (val && val !== selectedCourse) {
+                setCourse(val);
+              }
+            }}
+          >
+            <SelectTrigger className="h-10">
+              <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border shadow-lg z-[200]">
+              {courses.map((course) => (
+                <SelectItem key={course.id} value={course.id}>
+                  {isArabic ? course.title_ar : course.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Chapters List */}
