@@ -376,15 +376,19 @@ const ManageLessons = () => {
 
         {/* Course & Chapter Selectors - Compact */}
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <Select value={selectedCourse} onValueChange={(val) => {
-            setSelectedCourse(val);
-            setSelectedChapter('all');
-            navigate(`/assistant/lessons?course=${val}`, { replace: true });
-          }}>
-            <SelectTrigger className="h-9 text-xs">
+          <Select 
+            value={selectedCourse} 
+            onValueChange={(val) => {
+              if (val && val !== selectedCourse) {
+                setSelectedCourse(val);
+                setSelectedChapter('all');
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 text-xs bg-background">
               <SelectValue placeholder={isArabic ? "الكورس" : "Course"} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border shadow-lg z-[200]">
               {courses.map(course => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.title_ar}
@@ -393,11 +397,18 @@ const ManageLessons = () => {
             </SelectContent>
           </Select>
           
-          <Select value={selectedChapter} onValueChange={setSelectedChapter}>
-            <SelectTrigger className="h-9 text-xs">
+          <Select 
+            value={selectedChapter} 
+            onValueChange={(val) => {
+              if (val) {
+                setSelectedChapter(val);
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 text-xs bg-background">
               <SelectValue placeholder={isArabic ? "الباب" : "Chapter"} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border shadow-lg z-[200]">
               <SelectItem value="all">{isArabic ? 'كل الحصص' : 'All'}</SelectItem>
               {chapters.map(chapter => (
                 <SelectItem key={chapter.id} value={chapter.id}>
