@@ -318,11 +318,14 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         
         if (groupCheckError || !groupExists) {
           console.error('Center group validation failed:', groupCheckError);
+          // CONTEXTUAL ERROR: Explain the situation without blame
           toast({
-            title: 'المجموعة غير متاحة',
-            description: 'المجموعة المختارة غير موجودة أو غير نشطة. اختر مجموعة أخرى.',
+            title: 'المجموعة لم تعد متاحة',
+            description: 'المجموعة التي اخترتها لم تعد متاحة حالياً. يرجى اختيار مجموعة أخرى متاحة الآن.',
             variant: 'destructive',
           });
+          // AUTO-RESET: Clear invalid group selection to allow re-selection
+          setCenterGroupId(null);
           setLoading(false);
           return; // BLOCK - invalid group
         }
@@ -336,11 +339,14 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
             student: { grade: effectiveGrade, track: effectiveTrack }, 
             group: { grade: groupExists.grade, track: groupExists.language_track } 
           });
+          // CONTEXTUAL ERROR: Guide user to pick correct group
           toast({
-            title: 'المجموعة غير مناسبة',
-            description: 'المجموعة المختارة لا تتوافق مع صفك الدراسي. اختر مجموعة أخرى.',
+            title: 'المجموعة غير مناسبة لصفك',
+            description: 'يرجى اختيار مجموعة تتوافق مع صفك الدراسي ومسارك التعليمي.',
             variant: 'destructive',
           });
+          // AUTO-RESET: Clear mismatched group selection
+          setCenterGroupId(null);
           setLoading(false);
           return; // BLOCK - path mismatch
         }
@@ -747,7 +753,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           {/* Submit Button */}
           <Button 
             onClick={handleSubmit} 
-            className="w-full h-12 text-base font-semibold rounded-xl mt-4" 
+            className="w-full h-12 text-base font-semibold rounded-lg mt-4 transition-all duration-150 active:scale-[0.98]" 
             disabled={loading}
           >
             {loading ? (

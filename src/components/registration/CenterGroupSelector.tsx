@@ -3,9 +3,12 @@
  * 
  * Component for students to select a center group during registration
  * or profile completion. Dynamically filters groups by grade and track.
+ * 
+ * SMART VALIDATION: Auto-resets invalid group selections and provides
+ * contextual guidance instead of generic errors.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -16,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Users, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { Users, Clock, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CenterGroup {
@@ -30,8 +33,8 @@ interface CenterGroup {
 }
 
 interface CenterGroupSelectorProps {
-  grade: string; // second_secondary or third_secondary
-  languageTrack: string; // arabic or languages
+  grade: string;
+  languageTrack: string;
   value: string | null;
   onChange: (groupId: string | null) => void;
   error?: string;
@@ -59,68 +62,92 @@ export function CenterGroupSelector({
   disabled,
   className,
 }: CenterGroupSelectorProps) {
-  const { language, isRTL } = useLanguage();
+  const { language } = useLanguage();
   const isArabic = language === 'ar';
   const [groups, setGroups] = useState<CenterGroup[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const previousParamsRef = useRef({ grade: '', languageTrack: '' });
 
   const tr = (ar: string, en: string) => isArabic ? ar : en;
 
   // Fetch groups when grade/track changes using secure RPC function
+  const fetchGroups = useCallback(async () => {
+    if (!grade || !languageTrack) {
+      setGroups([]);
+      return;
+    }
+
+    // Avoid duplicate fetches for same params
+    if (previousParamsRef.current.grade === grade && 
+        previousParamsRef.current.languageTrack === languageTrack &&
+        groups.length > 0) {
+      return;
+    }
+
+    previousParamsRef.current = { grade, languageTrack };
+    setLoading(true);
+    setFetchError(null);
+
+    try {
+      console.log('[CenterGroupSelector] Fetching groups via RPC for:', { grade, languageTrack });
+      
+      const { data, error } = await supabase
+        .rpc('get_center_groups_for_registration', {
+          p_grade: grade,
+          p_language_track: languageTrack
+        });
+
+      if (error) {
+        console.error('[CenterGroupSelector] RPC error:', error);
+        throw error;
+      }
+      
+      // Map RPC result to CenterGroup interface
+      const mappedGroups: CenterGroup[] = (data || []).map((g: any) => ({
+        id: g.id,
+        name: g.name,
+        grade: g.grade,
+        language_track: g.language_track,
+        days_of_week: g.days_of_week,
+        time_slot: g.time_slot,
+        is_active: true,
+      }));
+      
+      console.log('[CenterGroupSelector] Found groups:', mappedGroups.length);
+      setGroups(mappedGroups);
+    } catch (err) {
+      console.error('[CenterGroupSelector] Error fetching center groups:', err);
+      setFetchError(tr(
+        'تعذر تحميل المجموعات. يرجى المحاولة مرة أخرى.',
+        'Failed to load groups. Please try again.'
+      ));
+      setGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [grade, languageTrack, groups.length, tr]);
+
   useEffect(() => {
-    const fetchGroups = async () => {
-      if (!grade || !languageTrack) {
-        setGroups([]);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        console.log('[CenterGroupSelector] Fetching groups via RPC for:', { grade, languageTrack });
-        
-        // Use secure RPC function instead of direct table access
-        // This bypasses RLS restrictions for registration flow
-        const { data, error } = await supabase
-          .rpc('get_center_groups_for_registration', {
-            p_grade: grade,
-            p_language_track: languageTrack
-          });
-
-        if (error) {
-          console.error('[CenterGroupSelector] RPC error:', error);
-          throw error;
-        }
-        
-        // Map RPC result to CenterGroup interface
-        const mappedGroups: CenterGroup[] = (data || []).map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          grade: g.grade,
-          language_track: g.language_track,
-          days_of_week: g.days_of_week,
-          time_slot: g.time_slot,
-          is_active: true, // RPC only returns active groups
-        }));
-        
-        console.log('[CenterGroupSelector] Found groups:', mappedGroups.length);
-        setGroups(mappedGroups);
-      } catch (err) {
-        console.error('[CenterGroupSelector] Error fetching center groups:', err);
-        setGroups([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchGroups();
-  }, [grade, languageTrack]);
+  }, [fetchGroups]);
 
-  // Reset selection when groups change
+  // SMART AUTO-RESET: Reset selection if the selected group is no longer valid
   useEffect(() => {
-    if (value && !groups.find(g => g.id === value)) {
-      onChange(null);
+    if (value && groups.length > 0) {
+      const selectedGroupStillValid = groups.some(g => g.id === value);
+      if (!selectedGroupStillValid) {
+        console.log('[CenterGroupSelector] Auto-resetting invalid group selection:', value);
+        onChange(null);
+      }
     }
   }, [groups, value, onChange]);
+
+  // Handle retry on fetch error
+  const handleRetry = () => {
+    previousParamsRef.current = { grade: '', languageTrack: '' }; // Force refetch
+    fetchGroups();
+  };
 
   // Format days for display
   const formatDays = (days: string[]) => {
@@ -156,11 +183,27 @@ export function CenterGroupSelector({
       </label>
 
       {loading ? (
-        <div className="h-12 flex items-center justify-center border rounded-xl bg-muted/50">
+        <div className="h-12 flex items-center justify-center border rounded-lg bg-muted/50">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
         </div>
+      ) : fetchError ? (
+        // Error state with retry option
+        <div className="flex items-center justify-between p-3 rounded-lg border border-destructive/50 bg-destructive/10">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span className="text-sm">{fetchError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex items-center gap-1 text-sm text-primary hover:underline transition-all duration-150 active:scale-[0.98]"
+          >
+            <RefreshCw className="h-3 w-3" />
+            {tr('إعادة المحاولة', 'Retry')}
+          </button>
+        </div>
       ) : groups.length === 0 ? (
-        <div className="flex items-center gap-2 p-3 rounded-xl border border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="text-sm">
             {tr(
@@ -172,7 +215,7 @@ export function CenterGroupSelector({
       ) : (
         <>
           <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
-            <SelectTrigger className={cn("h-12", error && "border-destructive")}>
+            <SelectTrigger className={cn("h-12 rounded-lg", error && "border-destructive")}>
               <SelectValue placeholder={tr('اختر مجموعة السنتر', 'Select center group')} />
             </SelectTrigger>
             <SelectContent>
@@ -212,7 +255,13 @@ export function CenterGroupSelector({
         </>
       )}
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {/* Contextual error message instead of generic */}
+      {error && (
+        <p className="text-sm text-destructive flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
