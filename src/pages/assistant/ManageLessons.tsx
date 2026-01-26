@@ -75,10 +75,11 @@ const ManageLessons = () => {
   const [isReorderMode, setIsReorderMode] = useState(false);
   
   // Read course from URL - support both 'course' (from ManageCourses) and 'c' (short form)
-  const urlCourseId = searchParams.get('course') || searchParams.get('c') || '';
+  // IMPORTANT: URL params take precedence, do NOT fallback to empty string to avoid default course issue
+  const urlCourseId = searchParams.get('course') || searchParams.get('c');
   const urlChapterId = searchParams.get('chapter') || searchParams.get('ch') || 'all';
   
-  const [selectedCourse, setSelectedCourseState] = useState<string>(urlCourseId);
+  const [selectedCourse, setSelectedCourseState] = useState<string>(urlCourseId || '');
   const [selectedChapter, setSelectedChapterState] = useState<string>(urlChapterId);
   
   // Sync URL when selection changes
@@ -140,12 +141,13 @@ const ManageLessons = () => {
     fetchCourses();
   }, [authLoading, roleLoading, user, canAccessDashboard]);
 
-  // When courses load, set first one if no selection from URL
+  // When courses load, set first one ONLY if no URL param was provided initially
   useEffect(() => {
-    if (courses.length > 0 && !selectedCourse) {
+    // Only auto-select if no course from URL AND state is empty
+    if (courses.length > 0 && !selectedCourse && !urlCourseId) {
       setSelectedCourse(courses[0].id);
     }
-  }, [courses, selectedCourse, setSelectedCourse]);
+  }, [courses, selectedCourse, setSelectedCourse, urlCourseId]);
 
   useEffect(() => {
     if (selectedCourse) {
