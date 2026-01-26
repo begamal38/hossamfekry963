@@ -254,12 +254,19 @@ serve(async (req: Request): Promise<Response> => {
           .filter(id => !staffUserIds.has(id));
       } else if (target_type === "attendance_mode" && target_value) {
         // Get users with specific attendance mode (excluding staff)
+        // Handle legacy 'hybrid' mode by treating it as 'online'
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id")
-          .eq("attendance_mode", target_value);
+          .select("user_id, attendance_mode");
         
+        // Filter based on normalized attendance mode
         userIds = (profiles || [])
+          .filter(p => {
+            if (!p.attendance_mode) return false;
+            // Legacy hybrid is treated as online
+            const normalizedMode = p.attendance_mode === 'hybrid' ? 'online' : p.attendance_mode;
+            return normalizedMode === target_value;
+          })
           .map(p => p.user_id)
           .filter(id => !staffUserIds.has(id));
       }

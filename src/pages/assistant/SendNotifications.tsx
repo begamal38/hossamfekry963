@@ -616,7 +616,7 @@ export default function SendNotifications() {
 
         <div className="space-y-6">
           {/* Notification Type */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border border-border/60 rounded-lg p-4">
             <label className="block text-sm font-medium mb-3">
               نوع الإشعار
             </label>
@@ -631,7 +631,7 @@ export default function SendNotifications() {
                       applyTemplate(type.value);
                     }}
                     className={cn(
-                      "flex items-center gap-2 p-3 rounded-lg border text-sm transition-all",
+                      "flex items-center gap-2 p-3 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                       notificationType === type.value
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border hover:border-primary/50"
@@ -646,7 +646,7 @@ export default function SendNotifications() {
           </div>
 
           {/* Target Selection */}
-          <div className="bg-card border rounded-xl p-4">
+          <div className="bg-card border border-border/60 rounded-lg p-4">
             <label className="block text-sm font-medium mb-3">
               أرسل إلى
             </label>
@@ -670,7 +670,7 @@ export default function SendNotifications() {
                       setSelectedStudents([]);
                     }}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all",
+                      "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                       targetType === target.value
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border hover:border-primary/50"
@@ -701,7 +701,7 @@ export default function SendNotifications() {
                     key={grade}
                     onClick={() => setSelectedGrade(grade)}
                     className={cn(
-                      "px-4 py-2 rounded-lg border text-sm transition-all",
+                      "px-4 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                       selectedGrade === grade
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border hover:border-primary/50"
@@ -721,7 +721,7 @@ export default function SendNotifications() {
                     key={mode}
                     onClick={() => setSelectedAttendanceMode(mode)}
                     className={cn(
-                      "px-4 py-2 rounded-lg border text-sm transition-all",
+                      "px-4 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                       selectedAttendanceMode === mode
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border hover:border-primary/50"
@@ -789,7 +789,7 @@ export default function SendNotifications() {
                     <button
                       onClick={() => setFilterCondition('not_taken')}
                       className={cn(
-                        "px-3 py-2 rounded-lg border text-sm transition-all",
+                        "px-3 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                         filterCondition === 'not_taken'
                           ? "border-destructive bg-destructive/10 text-destructive"
                           : "border-border hover:border-destructive/50"
@@ -800,7 +800,7 @@ export default function SendNotifications() {
                     <button
                       onClick={() => setFilterCondition('below_score')}
                       className={cn(
-                        "px-3 py-2 rounded-lg border text-sm transition-all",
+                        "px-3 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                         filterCondition === 'below_score'
                           ? "border-orange-500 bg-orange-500/10 text-orange-600"
                           : "border-border hover:border-orange-500/50"
@@ -811,7 +811,7 @@ export default function SendNotifications() {
                     <button
                       onClick={() => setFilterCondition('above_score')}
                       className={cn(
-                        "px-3 py-2 rounded-lg border text-sm transition-all",
+                        "px-3 py-2 rounded-lg border text-sm transition-all duration-150 active:scale-[0.98]",
                         filterCondition === 'above_score'
                           ? "border-green-500 bg-green-500/10 text-green-600"
                           : "border-border hover:border-green-500/50"
@@ -852,12 +852,22 @@ export default function SendNotifications() {
                     )}
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={selectAllFiltered}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={selectAllFiltered}
+                      className="transition-all duration-150 active:scale-[0.98]"
+                    >
                       <Check className="h-3 w-3 ml-1" />
                       اختار الكل
                     </Button>
                     {selectedStudents.length > 0 && (
-                      <Button variant="ghost" size="sm" onClick={clearSelection}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={clearSelection}
+                        className="transition-all duration-150 active:scale-[0.98]"
+                      >
                         <X className="h-3 w-3 ml-1" />
                         إلغاء
                       </Button>
@@ -926,7 +936,7 @@ export default function SendNotifications() {
           </div>
 
           {/* Message Content - Arabic Only */}
-          <div className="bg-card border rounded-xl p-4 space-y-4">
+          <div className="bg-card border border-border/60 rounded-lg p-4 space-y-4">
             <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <p className="text-sm text-blue-700 dark:text-blue-400">
                 اكتب الرسالة بالعربي وهيتم ترجمتها للإنجليزي تلقائياً عند الإرسال
@@ -941,7 +951,7 @@ export default function SendNotifications() {
                 type="text"
                 value={titleAr}
                 onChange={(e) => setTitleAr(e.target.value)}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg"
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg transition-all duration-150 focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="عنوان الإشعار..."
                 dir="rtl"
               />
@@ -954,7 +964,7 @@ export default function SendNotifications() {
               <textarea
                 value={messageAr}
                 onChange={(e) => setMessageAr(e.target.value)}
-                className="w-full px-4 py-2 bg-background border border-input rounded-lg min-h-[100px]"
+                className="w-full px-4 py-2 bg-background border border-input rounded-lg min-h-[100px] transition-all duration-150 focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="رسالتك..."
                 dir="rtl"
               />
@@ -964,7 +974,7 @@ export default function SendNotifications() {
           {/* Send Button */}
           <Button 
             onClick={handleSend} 
-            className="w-full" 
+            className="w-full transition-all duration-150 active:scale-[0.98]" 
             size="lg"
             disabled={sending}
           >
