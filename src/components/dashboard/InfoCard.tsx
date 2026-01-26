@@ -41,8 +41,8 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   const content = (
     <div
       className={cn(
-        "bg-card rounded-2xl border border-border/80 p-3 sm:p-4 transition-all duration-200",
-        href && "hover:border-primary/40 hover:shadow-md cursor-pointer active:scale-[0.98]",
+        "bg-card rounded-2xl border border-border/50 p-3 sm:p-4 transition-all duration-150 shadow-card",
+        href && "hover:border-primary/30 hover:shadow-elevated cursor-pointer active:scale-[0.98]",
         className
       )}
     >

@@ -15,24 +15,23 @@ export const Footer: React.FC = () => {
 
   return (
     <footer 
-      className="relative border-t border-border/50 mt-16 overflow-hidden" 
+      className="relative border-t border-border/30 mt-16 overflow-hidden" 
       dir={isRTL ? 'rtl' : 'ltr'}
     >
-      {/* Brand gradient background - Light mode: soft white to indigo, Dark mode: slate to indigo */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-primary/[0.08] dark:from-background dark:via-muted/10 dark:to-primary/[0.12]" />
+      {/* Brand gradient background - Vodafone-inspired clean gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-primary/[0.04] dark:from-background dark:via-muted/10 dark:to-primary/[0.08]" />
       
-      {/* Subtle chemical-style reflections */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Left reflection */}
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-primary/[0.04] to-transparent dark:from-primary/[0.08]" />
-        {/* Right reflection */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/[0.04] to-transparent dark:from-primary/[0.08]" />
-        {/* Bottom glow accent */}
-        <div className="absolute bottom-0 left-1/4 right-1/4 h-32 bg-gradient-to-t from-primary/[0.06] to-transparent dark:from-primary/[0.10] blur-xl" />
+      {/* Subtle chemistry-inspired pattern overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20">
+        {/* Molecular grid pattern */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.06) 0%, transparent 50%), 
+                           radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.05) 0%, transparent 50%)`,
+        }} />
       </div>
       
       {/* Content container with proper mobile bottom padding for nav clearance */}
-      <div className="relative container mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20 pb-24 md:pb-20">
+      <div className="relative container mx-auto px-4 sm:px-6 py-10 sm:py-14 md:py-16 pb-28 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 text-center md:text-right">
           
           {/* Brand Section */}
