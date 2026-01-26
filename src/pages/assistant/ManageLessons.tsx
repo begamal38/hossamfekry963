@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { LessonReorderList } from '@/components/assistant/LessonReorderList';
 import { cn } from '@/lib/utils';
+import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
 
 interface Course {
   id: string;
@@ -57,7 +58,6 @@ interface Lesson {
 
 const ManageLessons = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { language, isRTL } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { canAccessDashboard, loading: roleLoading } = useUserRole();
@@ -74,43 +74,20 @@ const ManageLessons = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isReorderMode, setIsReorderMode] = useState(false);
   
-  // Read course from URL - support both 'course' (from ManageCourses) and 'c' (short form)
-  // IMPORTANT: URL params take precedence, do NOT fallback to empty string to avoid default course issue
-  const urlCourseId = searchParams.get('course') || searchParams.get('c');
-  const urlChapterId = searchParams.get('chapter') || searchParams.get('ch') || 'all';
+  // Hierarchical selection with anti-reset guard
+  // defaultChapter = 'all' means show all lessons when no chapter selected
+  const { 
+    selection, 
+    setCourse, 
+    setChapter,
+    applyDefaultCourseIfEmpty 
+  } = useHierarchicalSelection({ 
+    includeLesson: true, 
+    defaultChapter: 'all' 
+  });
   
-  const [selectedCourse, setSelectedCourseState] = useState<string>(urlCourseId || '');
-  const [selectedChapter, setSelectedChapterState] = useState<string>(urlChapterId);
-  
-  // Sync URL when selection changes
-  const setSelectedCourse = useCallback((courseId: string) => {
-    setSelectedCourseState(courseId);
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      // Remove old 'course' param if exists, use 'c' for persistence
-      params.delete('course');
-      if (courseId) {
-        params.set('c', courseId);
-      } else {
-        params.delete('c');
-      }
-      return params;
-    }, { replace: true });
-  }, [setSearchParams]);
-  
-  const setSelectedChapter = useCallback((chapterId: string) => {
-    setSelectedChapterState(chapterId);
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      params.delete('chapter');
-      if (chapterId && chapterId !== 'all') {
-        params.set('ch', chapterId);
-      } else {
-        params.delete('ch');
-      }
-      return params;
-    }, { replace: true });
-  }, [setSearchParams]);
+  const selectedCourse = selection.courseId || '';
+  const selectedChapter = selection.chapterId || 'all';
   
   const [formData, setFormData] = useState({
     title_ar: '',
@@ -121,33 +98,12 @@ const ManageLessons = () => {
   });
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
-  // Sync state from URL on mount and URL changes
-  useEffect(() => {
-    const courseFromUrl = searchParams.get('course') || searchParams.get('c') || '';
-    const chapterFromUrl = searchParams.get('chapter') || searchParams.get('ch') || 'all';
-    
-    if (courseFromUrl && courseFromUrl !== selectedCourse) {
-      setSelectedCourseState(courseFromUrl);
-    }
-    if (chapterFromUrl !== selectedChapter) {
-      setSelectedChapterState(chapterFromUrl);
-    }
-  }, [searchParams]);
-
   useEffect(() => {
     if (authLoading || roleLoading) return;
     if (!user) return;
     if (!canAccessDashboard()) return;
     fetchCourses();
   }, [authLoading, roleLoading, user, canAccessDashboard]);
-
-  // When courses load, set first one ONLY if no URL param was provided initially
-  useEffect(() => {
-    // Only auto-select if no course from URL AND state is empty
-    if (courses.length > 0 && !selectedCourse && !urlCourseId) {
-      setSelectedCourse(courses[0].id);
-    }
-  }, [courses, selectedCourse, setSelectedCourse, urlCourseId]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -166,9 +122,9 @@ const ManageLessons = () => {
       if (error) throw error;
       setCourses(data || []);
       
-      // Only set first course if no persisted selection exists
-      if (data && data.length > 0 && !selectedCourse) {
-        setSelectedCourse(data[0].id);
+      // ANTI-RESET GUARD: Only apply default if no selection exists (one-time boot)
+      if (data && data.length > 0) {
+        applyDefaultCourseIfEmpty(data[0].id);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -186,6 +142,7 @@ const ManageLessons = () => {
         .order('order_index');
       
       if (error) throw error;
+      // FETCH ISOLATION: Only update option list, never mutate selection
       setChapters(data || []);
     } catch (error) {
       console.error('Error fetching chapters:', error);
@@ -201,11 +158,13 @@ const ManageLessons = () => {
         .order('order_index');
 
       if (error) throw error;
+      // FETCH ISOLATION: Only update option list, never mutate selection
       setLessons((data || []) as Lesson[]);
     } catch (error) {
       console.error('Error fetching lessons:', error);
     }
   }, [selectedCourse]);
+
 
   const resetForm = () => {
     setFormData({
@@ -423,8 +382,7 @@ const ManageLessons = () => {
             value={selectedCourse} 
             onValueChange={(val) => {
               if (val && val !== selectedCourse) {
-                setSelectedCourse(val);
-                setSelectedChapter('all');
+                setCourse(val);
               }
             }}
           >
@@ -444,7 +402,7 @@ const ManageLessons = () => {
             value={selectedChapter} 
             onValueChange={(val) => {
               if (val) {
-                setSelectedChapter(val);
+                setChapter(val);
               }
             }}
           >

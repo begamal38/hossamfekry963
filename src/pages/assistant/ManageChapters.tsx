@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Edit2, Trash2, BookOpen, ChevronRight, Layers, Loader2, ArrowUpDown } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import { EmptyState } from '@/components/assistant/EmptyState';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { ChapterReorderList } from '@/components/assistant/ChapterReorderList';
 import { cn } from '@/lib/utils';
-import { useSelectionPersistence } from '@/hooks/useSelectionPersistence';
+import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
 
 interface Course {
   id: string;
@@ -51,14 +51,21 @@ export default function ManageChapters() {
   const { translateText, isTranslating } = useAutoTranslate();
   const isArabic = language === 'ar';
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  
   const [courses, setCourses] = useState<Course[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // URL-persisted selection (survives navigation)
-  const { value: selectedCourse, setValue: setSelectedCourse } = useSelectionPersistence('course', '');
+  // Hierarchical selection with anti-reset guard (chapters page doesn't need lesson level)
+  const { 
+    selection, 
+    setCourse, 
+    applyDefaultCourseIfEmpty 
+  } = useHierarchicalSelection({ includeLesson: false });
+  
+  const selectedCourse = selection.courseId || '';
+  
   const [showForm, setShowForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -89,13 +96,14 @@ export default function ManageChapters() {
 
       if (error) {
         console.error('Error fetching courses:', error);
+        setLoading(false);
         return;
       }
       setCourses(data || []);
 
-      // Only set first course if no persisted selection exists
-      if (data && data.length > 0 && !selectedCourse) {
-        setSelectedCourse(data[0].id);
+      // ANTI-RESET GUARD: Only apply default if no selection exists (one-time boot)
+      if (data && data.length > 0) {
+        applyDefaultCourseIfEmpty(data[0].id);
       }
       setLoading(false);
     };
@@ -103,7 +111,7 @@ export default function ManageChapters() {
     if (!authLoading && !roleLoading && hasAccess) {
       fetchCourses();
     }
-  }, [authLoading, roleLoading, hasAccess, selectedCourse, setSelectedCourse]);
+  }, [authLoading, roleLoading, hasAccess, applyDefaultCourseIfEmpty]);
 
   const fetchChapters = useCallback(async () => {
     if (!selectedCourse) return;
@@ -291,11 +299,18 @@ export default function ManageChapters() {
         {/* Course Selector + Reorder Toggle */}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1">
-            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+            <Select 
+              value={selectedCourse} 
+              onValueChange={(val) => {
+                if (val && val !== selectedCourse) {
+                  setCourse(val);
+                }
+              }}
+            >
               <SelectTrigger className="h-10">
                 <SelectValue placeholder={isArabic ? "اختر الكورس" : "Select Course"} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover border shadow-lg z-[200]">
                 {courses.map((course) => (
                   <SelectItem key={course.id} value={course.id}>
                     {isArabic ? course.title_ar : course.title}
