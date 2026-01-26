@@ -650,7 +650,7 @@ export default function CourseView() {
 
         {/* Chemistry Branding Card - حسام فكري */}
         <div className="container mx-auto px-3 sm:px-4 mb-6 max-w-4xl">
-          <div className="relative bg-gradient-to-br from-primary via-primary to-blue-700 rounded-2xl overflow-hidden shadow-lg">
+          <div className="relative bg-primary rounded-2xl overflow-hidden shadow-lg">
             {/* Chemistry Pattern Background */}
             <div className="absolute inset-0 opacity-[0.08]">
               {/* Molecule shapes */}

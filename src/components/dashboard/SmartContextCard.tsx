@@ -115,10 +115,14 @@ export const SmartContextCard: React.FC<SmartContextCardProps> = ({
         className
       )}
     >
-      {/* Gradient overlay */}
+      {/* Subtle tint overlay - very light, no gradient */}
       <div className={cn(
-        "absolute inset-0 bg-gradient-to-br pointer-events-none",
-        config.gradient
+        "absolute inset-0 pointer-events-none opacity-30",
+        config.gradient.includes('green') ? 'bg-green-500/10' :
+        config.gradient.includes('purple') ? 'bg-purple-500/10' :
+        config.gradient.includes('amber') ? 'bg-amber-500/10' :
+        config.gradient.includes('blue') ? 'bg-blue-500/10' :
+        'bg-primary/5'
       )} />
       
       <div className="relative p-4 sm:p-5">

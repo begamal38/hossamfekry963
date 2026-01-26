@@ -114,9 +114,9 @@ export const WelcomeOnboarding: React.FC = () => {
         role="dialog"
         aria-label="أهلاً بيك في المنصة"
       >
-        {/* Gradient accent top */}
+        {/* Accent top bar - solid primary */}
         <div className={cn(
-          "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/60 to-primary/30",
+          "absolute top-0 left-0 right-0 h-1 bg-primary",
           !isMobile && "rounded-t-2xl"
         )} />
         

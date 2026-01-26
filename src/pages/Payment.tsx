@@ -452,24 +452,19 @@ const Payment: React.FC = () => {
           {/* CTA SECTION - Desktop */}
           <div className="hidden sm:block bg-card rounded-2xl border border-border p-4 sm:p-6 mb-5">
             {/* PRIMARY CTA */}
-            <div className="relative group">
-              {primaryCTAConfig.glow && (
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
-              )}
-              <Button 
-                onClick={handlePrimaryCTA}
-                variant={primaryCTAConfig.variant}
-                className="relative w-full h-12 sm:h-14 text-sm sm:text-base font-bold rounded-xl shadow-lg"
-                disabled={enrolling || userState === 'staff'}
-              >
+            <Button 
+              onClick={handlePrimaryCTA}
+              variant={primaryCTAConfig.variant}
+              className="w-full h-12 sm:h-14 text-sm sm:text-base font-bold rounded-lg shadow-md"
+              disabled={enrolling || userState === 'staff'}
+            >
                 {enrolling ? (
                   <Loader2 className="w-5 h-5 me-2 animate-spin" />
                 ) : (
                   <primaryCTAConfig.icon className="w-4 h-4 sm:w-5 sm:h-5 me-2" />
                 )}
-                {enrolling ? (isArabic ? 'جاري التسجيل...' : 'Enrolling...') : primaryCTAConfig.label}
-              </Button>
-            </div>
+              {enrolling ? (isArabic ? 'جاري التسجيل...' : 'Enrolling...') : primaryCTAConfig.label}
+            </Button>
 
             {/* Visitor hint */}
             {userState === 'visitor' && (

@@ -994,9 +994,8 @@ export default function LessonView() {
             {lesson.video_url && getYouTubeVideoId(lesson.video_url) ? (
               /* Video Container - YouTube IFrame API Player with Premium Glow Border */
               <div className="relative w-full max-w-3xl mx-auto">
-                {/* Glowing Border Effect */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 via-primary/30 to-primary/50 rounded-2xl blur-md opacity-75 animate-pulse" />
-                <div className="relative rounded-xl overflow-hidden bg-black shadow-2xl ring-1 ring-primary/20" style={{ paddingBottom: '56.25%' }}>
+                {/* Video Container - Clean border */}
+                <div className="relative rounded-xl overflow-hidden bg-black shadow-lg ring-1 ring-border" style={{ paddingBottom: '56.25%' }}>
                   <div 
                     ref={playerContainerRef}
                     className="absolute inset-0 w-full h-full"
@@ -1089,14 +1088,13 @@ export default function LessonView() {
                   
                   {/* Exam Button - only show if exam exists and lesson is completed */}
                   {linkedExam && (
-                    <div className="w-full max-w-sm mt-2 relative group">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-primary via-accent to-primary rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
+                    <div className="w-full max-w-sm mt-2">
                       <Button 
                         size="lg"
                         onClick={() => navigate(`/exam/${linkedExam.id}`)}
-                        className="relative w-full bg-primary hover:bg-primary/90 text-lg py-6 shadow-lg"
+                        className="w-full bg-primary hover:bg-primary/90 text-lg py-6 shadow-md"
                       >
-                        <FileQuestion className="w-5 h-5 mr-2" />
+                        <FileQuestion className="w-5 h-5 me-2" />
                         {isArabic ? 'ابدأ الامتحان' : 'Start Exam'}
                       </Button>
                     </div>
@@ -1116,23 +1114,20 @@ export default function LessonView() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
-                  {/* System-driven completion button - always enabled with glow effect */}
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-green-500 via-emerald-500 to-green-500 rounded-xl blur-md opacity-60 group-hover:opacity-100 animate-pulse transition-opacity duration-300" />
-                    <Button 
-                      size="lg" 
-                      onClick={handleCompleteClick} 
-                      className="relative bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                      disabled={completionSaving}
-                    >
+                  {/* System-driven completion button - flat, professional */}
+                  <Button 
+                    size="lg" 
+                    onClick={handleCompleteClick} 
+                    className="bg-green-600 hover:bg-green-700 text-lg px-8 py-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                    disabled={completionSaving}
+                  >
                     {completionSaving ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white me-2" />
                     ) : (
-                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      <CheckCircle2 className="w-5 h-5 me-2" />
                     )}
-                      {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
-                    </Button>
-                  </div>
+                    {isArabic ? 'خلصت الحصة' : 'Mark Complete'}
+                  </Button>
 
                   {/* Completion Confirmation Dialog */}
                   <AlertDialog open={showCompletionConfirm} onOpenChange={setShowCompletionConfirm}>
