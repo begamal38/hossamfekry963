@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, FileSpreadsheet, FileText, ChevronLeft, Plus } from 'lucide-react';
+import { User, Phone, GraduationCap, TrendingUp, Award, Download, Upload, FileSpreadsheet, FileText, ChevronLeft, Plus, BookX } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -27,8 +27,18 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickEnrollmentDrawer } from '@/components/assistant/QuickEnrollmentDrawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAssistantFilters, applyStudentFilters, CenterGroup } from '@/hooks/useAssistantFilters';
+import { 
+  applyStudentFilters, 
+  CenterGroup, 
+  getGradeFilterOptions,
+  getTrackFilterOptions,
+  getStudyModeFilterOptions,
+  getCenterGroupFilterOptions,
+  getCourseStatusFilterOptions,
+  CourseStatusFilter,
+} from '@/hooks/useAssistantFilters';
 import { useCenterGroups } from '@/hooks/useCenterGroups';
+import { useURLFilterState } from '@/hooks/useURLFilterState';
 
 interface Profile {
   user_id: string;
@@ -92,18 +102,94 @@ export default function Students() {
   // Center group member mapping (userId -> groupId)
   const [centerGroupMembers, setCenterGroupMembers] = useState<Map<string, string>>(new Map());
   
-  // Unified filters from shared hook
+  // Search term (local state, not persisted in URL)
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // URL-persisted filters (survives navigation)
   const {
-    searchTerm,
-    setSearchTerm,
-    hasActiveFilters,
-    clearFilters,
-    buildFilterConfig,
-    filterState,
-  } = useAssistantFilters({
-    includeCenterGroup: true,
-    centerGroups: centerGroups as CenterGroup[],
-  });
+    gradeFilter,
+    setGradeFilter,
+    trackFilter,
+    setTrackFilter,
+    studyModeFilter,
+    setStudyModeFilter,
+    centerGroupFilter,
+    setCenterGroupFilter,
+    courseStatusFilter,
+    setCourseStatusFilter,
+    hasActiveFilters: hasActiveURLFilters,
+    clearFilters: clearURLFilters,
+  } = useURLFilterState();
+
+  // Combined hasActiveFilters (search + URL filters)
+  const hasActiveFilters = searchTerm !== '' || hasActiveURLFilters;
+  
+  // Clear all filters including search
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    clearURLFilters();
+  }, [clearURLFilters]);
+
+  // Build filter config for SearchFilterBar
+  const buildFilterConfig = useCallback(() => {
+    const filters: Array<{
+      value: string;
+      onChange: (value: string) => void;
+      options: { value: string; label: string }[];
+    }> = [];
+
+    // Grade filter
+    filters.push({
+      value: gradeFilter,
+      onChange: setGradeFilter,
+      options: getGradeFilterOptions(isRTL),
+    });
+
+    // Track filter
+    filters.push({
+      value: trackFilter,
+      onChange: setTrackFilter,
+      options: getTrackFilterOptions(isRTL),
+    });
+
+    // Study mode filter
+    filters.push({
+      value: studyModeFilter,
+      onChange: (value: string) => {
+        setStudyModeFilter(value);
+        // Reset center group when not in center mode
+        if (value !== 'center') {
+          setCenterGroupFilter('all');
+        }
+      },
+      options: getStudyModeFilterOptions(isRTL),
+    });
+
+    // Center group filter (only visible when study mode is 'center')
+    if (studyModeFilter === 'center' && centerGroups.length > 0) {
+      filters.push({
+        value: centerGroupFilter,
+        onChange: setCenterGroupFilter,
+        options: getCenterGroupFilterOptions(centerGroups as CenterGroup[], isRTL, gradeFilter, trackFilter),
+      });
+    }
+
+    // Course status filter
+    filters.push({
+      value: courseStatusFilter,
+      onChange: setCourseStatusFilter,
+      options: getCourseStatusFilterOptions(isRTL),
+    });
+
+    return filters;
+  }, [
+    gradeFilter, setGradeFilter,
+    trackFilter, setTrackFilter,
+    studyModeFilter, setStudyModeFilter,
+    centerGroupFilter, setCenterGroupFilter,
+    courseStatusFilter, setCourseStatusFilter,
+    centerGroups, isRTL,
+  ]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -242,11 +328,28 @@ export default function Students() {
     }
   }, [user, roleLoading, canAccessDashboard, fetchStudents, fetchCenterGroupMembers]);
 
-  // Apply unified filters whenever filter state or students change
+  // Apply filters whenever filter state or students change
   useEffect(() => {
-    const filtered = applyStudentFilters(students, filterState, centerGroupMembers);
+    // Build filter state object for the applyStudentFilters function
+    const currentFilterState = {
+      searchTerm,
+      gradeFilter,
+      trackFilter,
+      studyModeFilter: studyModeFilter as 'all' | 'online' | 'center',
+      centerGroupFilter,
+    };
+    
+    let filtered = applyStudentFilters(students, currentFilterState, centerGroupMembers);
+    
+    // Apply course status filter (display-only, no logic changes)
+    if (courseStatusFilter === 'with_courses') {
+      filtered = filtered.filter(s => s.enrollmentCount > 0);
+    } else if (courseStatusFilter === 'no_courses') {
+      filtered = filtered.filter(s => s.enrollmentCount === 0);
+    }
+    
     setFilteredStudents(filtered);
-  }, [students, filterState, centerGroupMembers]);
+  }, [students, searchTerm, gradeFilter, trackFilter, studyModeFilter, centerGroupFilter, courseStatusFilter, centerGroupMembers]);
 
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-green-600';
@@ -262,12 +365,13 @@ export default function Students() {
   };
 
   // Stats
-  const stats = {
+  const stats = useMemo(() => ({
     total: students.length,
     online: students.filter(s => s.attendance_mode === 'online').length,
     center: students.filter(s => s.attendance_mode === 'center').length,
     enrolled: students.filter(s => s.enrollmentCount > 0).length,
-  };
+    noCourses: students.filter(s => s.enrollmentCount === 0).length,
+  }), [students]);
 
   if (authLoading || roleLoading) {
     return (
@@ -335,20 +439,27 @@ export default function Students() {
         />
 
         {/* Status Summary - Secondary visual weight */}
-        <div className="mb-4 text-sm text-muted-foreground">
+        <div className="mb-4 text-sm text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-0.5">
           <span className="font-medium text-foreground">{stats.total}</span>
-          <span className="mx-1">{isRTL ? 'طالب' : 'total'}</span>
-          <span className="text-muted-foreground/50 mx-1">•</span>
+          <span>{isRTL ? 'طالب' : 'total'}</span>
+          <span className="text-muted-foreground/50">•</span>
           <span className="text-blue-600 dark:text-blue-400">{stats.online}</span>
-          <span className="mx-1">{isRTL ? 'أونلاين' : 'online'}</span>
-          <span className="text-muted-foreground/50 mx-1">•</span>
+          <span>{isRTL ? 'أونلاين' : 'online'}</span>
+          <span className="text-muted-foreground/50">•</span>
           <span className="text-purple-600 dark:text-purple-400">{stats.center}</span>
-          <span className="mx-1">{isRTL ? 'سنتر' : 'center'}</span>
+          <span>{isRTL ? 'سنتر' : 'center'}</span>
           {stats.enrolled > 0 && (
             <>
-              <span className="text-muted-foreground/50 mx-1">•</span>
+              <span className="text-muted-foreground/50">•</span>
               <span className="text-green-600 dark:text-green-400">{stats.enrolled}</span>
-              <span className="mx-1">{isRTL ? 'مشترك' : 'enrolled'}</span>
+              <span>{isRTL ? 'مشترك' : 'enrolled'}</span>
+            </>
+          )}
+          {stats.noCourses > 0 && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <span className="text-muted-foreground">{stats.noCourses}</span>
+              <span>{isRTL ? 'بدون كورسات' : 'no courses'}</span>
             </>
           )}
         </div>
@@ -359,7 +470,7 @@ export default function Students() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder={isRTL ? 'ابحث بالاسم أو الهاتف...' : 'Search by name or phone...'}
-            filters={buildFilterConfig(isRTL)}
+            filters={buildFilterConfig()}
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters}
             isRTL={isRTL}
@@ -416,8 +527,11 @@ export default function Students() {
                   iconColor="text-primary"
                   iconBgColor="bg-primary/10"
                   metadata={[
-                    // Enrollment count - quick insight
-                    ...(student.enrollmentCount > 0 ? [{ icon: GraduationCap, label: `${student.enrollmentCount} ${isRTL ? 'كورس' : 'courses'}` }] : []),
+                    // Enrollment count - show '0 كورس' with neutral styling for no courses
+                    ...(student.enrollmentCount > 0 
+                      ? [{ icon: GraduationCap, label: `${student.enrollmentCount} ${isRTL ? 'كورس' : 'courses'}` }] 
+                      : [{ icon: BookX, label: isRTL ? '0 كورس' : '0 courses', className: 'text-muted-foreground' }]
+                    ),
                     // Progress indicator
                     ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
                     // Exam score with color coding
