@@ -60,14 +60,17 @@ export const ExamHistorySection: React.FC<ExamHistorySectionProps> = ({
           </div>
         </div>
         
+        {/* Empty state - calm design */}
         <div className="text-center py-8">
-          <Award className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground mb-3">
-            {isArabic ? 'لم تحل أي امتحان بعد' : 'No exams taken yet'}
+          <div className="w-14 h-14 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
+            <Award className="w-7 h-7 text-muted-foreground/60" />
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">
+            {isArabic ? 'لا يوجد امتحانات بعد' : 'No exams yet'}
           </p>
-          <Button size="sm" asChild>
-            <Link to="/exams">{isArabic ? 'ابدأ امتحان' : 'Take an Exam'}</Link>
-          </Button>
+          <p className="text-xs text-muted-foreground mb-4">
+            {isArabic ? 'سيتم إشعارك فور نشر امتحان جديد' : 'You\'ll be notified when exams are available'}
+          </p>
         </div>
       </Card>
     );

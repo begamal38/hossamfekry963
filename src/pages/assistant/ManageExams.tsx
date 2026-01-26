@@ -831,14 +831,23 @@ export default function ManageExams() {
 
                 {/* Exams List */}
                 {filteredExams.length === 0 ? (
-                  <EmptyState
-                    icon={FileText}
-                    title={isArabic ? 'لا توجد امتحانات' : 'No exams found'}
-                    description={hasActiveFilters 
-                      ? (isArabic ? 'جرب تغيير الفلاتر' : 'Try adjusting filters')
-                      : (isArabic ? 'أضف أول امتحان' : 'Add your first exam')
-                    }
-                  />
+                  <div className="border-dashed border-2 rounded-xl bg-card/50 py-10 text-center">
+                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-secondary">
+                      <FileText className="w-7 h-7 text-secondary-foreground" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground mb-1">
+                      {hasActiveFilters 
+                        ? (isArabic ? 'لا توجد امتحانات مطابقة' : 'No matching exams')
+                        : (isArabic ? 'لم يتم نشر امتحانات بعد' : 'No exams published yet')
+                      }
+                    </h3>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      {hasActiveFilters 
+                        ? (isArabic ? 'جرب تغيير الفلاتر' : 'Try adjusting filters')
+                        : (isArabic ? 'عند إنشاء امتحان، سيظهر هنا تلقائيًا للطلاب حسب مسارهم الدراسي' : 'When you create an exam, it will appear to students based on their enrolled courses')
+                      }
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {filteredExams.map((exam) => {

@@ -267,28 +267,44 @@ const StudentExams: React.FC = () => {
               ))}
             </div>
           ) : filteredExams.length === 0 ? (
-            /* Empty State */
-            <Card className="p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Award className="w-8 h-8 text-muted-foreground" />
+            /* Empty State - Calm, reassuring design */
+            <Card className="border-dashed border-2 bg-card/50">
+              <div className="py-12 text-center">
+                {/* Icon container */}
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center bg-muted">
+                  <Award className="w-8 h-8 text-muted-foreground" />
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {filter === 'all' 
+                    ? (isArabic ? 'لا يوجد امتحانات متاحة حاليًا' : 'No exams available right now')
+                    : filter === 'available'
+                      ? (isArabic ? 'لا توجد امتحانات متاحة' : 'No available exams')
+                      : (isArabic ? 'لم تكمل أي امتحان بعد' : 'No completed exams yet')
+                  }
+                </h3>
+
+                {/* Subtitle with notification promise */}
+                <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                  {filter === 'all' 
+                    ? (isArabic 
+                        ? 'سيتم إشعارك فور نشر أي امتحان جديد' 
+                        : 'You\'ll be notified when new exams are published')
+                    : (isArabic 
+                        ? 'اشترك في الكورسات لتظهر لك الامتحانات' 
+                        : 'Enroll in courses to see exams here')
+                  }
+                </p>
+
+                {/* CTA only if no enrollments */}
+                {filter !== 'completed' && (
+                  <Button onClick={() => navigate('/courses')} variant="outline">
+                    <BookOpen className="w-4 h-4 me-2" />
+                    {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
+                  </Button>
+                )}
               </div>
-              <h3 className="text-lg font-semibold mb-2">
-                {filter === 'all' 
-                  ? (isArabic ? 'لا توجد امتحانات حالياً' : 'No exams available')
-                  : filter === 'available'
-                    ? (isArabic ? 'لا توجد امتحانات متاحة' : 'No available exams')
-                    : (isArabic ? 'لم تكمل أي امتحان بعد' : 'No completed exams yet')
-                }
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {isArabic 
-                  ? 'اشترك في الكورسات لتظهر لك الامتحانات' 
-                  : 'Enroll in courses to see exams here'}
-              </p>
-              <Button onClick={() => navigate('/courses')}>
-                <BookOpen className="w-4 h-4 me-2" />
-                {isArabic ? 'تصفح الكورسات' : 'Browse Courses'}
-              </Button>
             </Card>
           ) : (
             /* Exams List */
