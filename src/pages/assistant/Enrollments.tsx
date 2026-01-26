@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, User, BookOpen, RefreshCw, PauseCircle, PlayCircle, CreditCard, Calendar, MapPin, Wifi } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,8 +19,18 @@ import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader'
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
-import { useAssistantFilters, applyEnrollmentFilters, CenterGroup, FilterableEnrollment } from '@/hooks/useAssistantFilters';
+import { 
+  applyEnrollmentFilters, 
+  CenterGroup, 
+  FilterableEnrollment,
+  getGradeFilterOptions,
+  getTrackFilterOptions,
+  getStudyModeFilterOptions,
+  getCenterGroupFilterOptions,
+  getStatusFilterOptions,
+} from '@/hooks/useAssistantFilters';
 import { useCenterGroups } from '@/hooks/useCenterGroups';
+import { useURLFilterState } from '@/hooks/useURLFilterState';
 
 
 interface Enrollment {
@@ -64,19 +74,95 @@ const Enrollments = () => {
   // Center group member mapping (userId -> groupId)
   const [centerGroupMembers, setCenterGroupMembers] = useState<Map<string, string>>(new Map());
 
-  // Unified filters from shared hook
+  // Search term (local state)
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // URL-persisted filters (survives navigation)
   const {
-    searchTerm,
-    setSearchTerm,
-    hasActiveFilters,
-    clearFilters,
-    buildFilterConfig,
-    filterState,
-  } = useAssistantFilters({
-    includeStatus: true,
-    includeCenterGroup: true,
-    centerGroups: centerGroups as CenterGroup[],
-  });
+    gradeFilter,
+    setGradeFilter,
+    trackFilter,
+    setTrackFilter,
+    studyModeFilter,
+    setStudyModeFilter,
+    centerGroupFilter,
+    setCenterGroupFilter,
+    hasActiveFilters: hasActiveURLFilters,
+    clearFilters: clearURLFilters,
+  } = useURLFilterState();
+  
+  // Status filter (also URL-persisted via useURLFilterState extension)
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // Combined hasActiveFilters
+  const hasActiveFilters = searchTerm !== '' || hasActiveURLFilters || statusFilter !== 'all';
+  
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    clearURLFilters();
+  }, [clearURLFilters]);
+
+  // Build filter config for SearchFilterBar
+  const buildFilterConfig = useCallback(() => {
+    const filters: Array<{
+      value: string;
+      onChange: (value: string) => void;
+      options: { value: string; label: string }[];
+    }> = [];
+
+    // Status filter (most important for enrollments)
+    filters.push({
+      value: statusFilter,
+      onChange: setStatusFilter,
+      options: getStatusFilterOptions(isRTL),
+    });
+
+    // Grade filter
+    filters.push({
+      value: gradeFilter,
+      onChange: setGradeFilter,
+      options: getGradeFilterOptions(isRTL),
+    });
+
+    // Track filter
+    filters.push({
+      value: trackFilter,
+      onChange: setTrackFilter,
+      options: getTrackFilterOptions(isRTL),
+    });
+
+    // Study mode filter
+    filters.push({
+      value: studyModeFilter,
+      onChange: (value: string) => {
+        setStudyModeFilter(value);
+        if (value !== 'center') {
+          setCenterGroupFilter('all');
+        }
+      },
+      options: getStudyModeFilterOptions(isRTL),
+    });
+
+    // Center group filter (only visible when study mode is 'center')
+    if (studyModeFilter === 'center' && centerGroups.length > 0) {
+      filters.push({
+        value: centerGroupFilter,
+        onChange: setCenterGroupFilter,
+        options: getCenterGroupFilterOptions(centerGroups as CenterGroup[], isRTL, gradeFilter, trackFilter),
+      });
+    }
+
+    return filters;
+  }, [
+    statusFilter, setStatusFilter,
+    gradeFilter, setGradeFilter,
+    trackFilter, setTrackFilter,
+    studyModeFilter, setStudyModeFilter,
+    centerGroupFilter, setCenterGroupFilter,
+    centerGroups, isRTL,
+  ]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -178,15 +264,24 @@ const Enrollments = () => {
     }
   }, [user, roleLoading, canAccessDashboard, fetchEnrollments, fetchCenterGroupMembers]);
 
-  // Apply unified filters whenever filter state or enrollments change
+  // Apply filters whenever filter state or enrollments change
   useEffect(() => {
+    const currentFilterState = {
+      searchTerm,
+      gradeFilter,
+      trackFilter,
+      studyModeFilter: studyModeFilter as 'all' | 'online' | 'center',
+      centerGroupFilter,
+      statusFilter,
+    };
+    
     const filtered = applyEnrollmentFilters(
       enrollments as FilterableEnrollment[],
-      filterState,
+      currentFilterState,
       centerGroupMembers
     );
     setFilteredEnrollments(filtered as Enrollment[]);
-  }, [enrollments, filterState, centerGroupMembers]);
+  }, [enrollments, searchTerm, gradeFilter, trackFilter, studyModeFilter, centerGroupFilter, statusFilter, centerGroupMembers]);
 
   const updateEnrollmentStatus = async (enrollmentId: string, newStatus: string, enrollment?: Enrollment) => {
     if (!user) return;
@@ -433,7 +528,7 @@ const Enrollments = () => {
                 searchValue={searchTerm}
                 onSearchChange={setSearchTerm}
                 searchPlaceholder={isRTL ? 'بحث بالاسم أو رقم الموبايل...' : 'Search by name or phone...'}
-                filters={buildFilterConfig(isRTL)}
+                filters={buildFilterConfig()}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
                 isRTL={isRTL}
@@ -442,7 +537,7 @@ const Enrollments = () => {
             </div>
 
             {/* Activity Guide Panel - shown when filtering expired enrollments */}
-            {filterState.statusFilter === 'expired' && <ActivityGuidePanel className="mb-4" />}
+            {statusFilter === 'expired' && <ActivityGuidePanel className="mb-4" />}
 
             {/* Enrollments List */}
             {loading ? (

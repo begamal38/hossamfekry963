@@ -25,6 +25,7 @@ import { EmptyState } from '@/components/assistant/EmptyState';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { ChapterReorderList } from '@/components/assistant/ChapterReorderList';
 import { cn } from '@/lib/utils';
+import { useSelectionPersistence } from '@/hooks/useSelectionPersistence';
 
 interface Course {
   id: string;
@@ -54,8 +55,10 @@ export default function ManageChapters() {
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  
+  // URL-persisted selection (survives navigation)
+  const { value: selectedCourse, setValue: setSelectedCourse } = useSelectionPersistence('course', '');
   const [showForm, setShowForm] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -90,10 +93,8 @@ export default function ManageChapters() {
       }
       setCourses(data || []);
 
-      const courseId = searchParams.get('course_id');
-      if (courseId && data?.some(c => c.id === courseId)) {
-        setSelectedCourse(courseId);
-      } else if (data && data.length > 0) {
+      // Only set first course if no persisted selection exists
+      if (data && data.length > 0 && !selectedCourse) {
         setSelectedCourse(data[0].id);
       }
       setLoading(false);
@@ -102,7 +103,7 @@ export default function ManageChapters() {
     if (!authLoading && !roleLoading && hasAccess) {
       fetchCourses();
     }
-  }, [authLoading, roleLoading, hasAccess, searchParams]);
+  }, [authLoading, roleLoading, hasAccess, selectedCourse, setSelectedCourse]);
 
   const fetchChapters = useCallback(async () => {
     if (!selectedCourse) return;
