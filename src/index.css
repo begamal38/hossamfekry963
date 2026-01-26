@@ -16,26 +16,28 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 222 61% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 61% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222 61% 14%;
 
-    /* Primary Blue #3173B8 = hsl(209, 56%, 46%) */
-    --primary: 209 56% 46%;
+    /* Primary Blue #1E4FD8 = hsl(224, 76%, 48%) */
+    --primary: 224 76% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 209 60% 96%;
-    --secondary-foreground: 209 56% 46%;
+    /* Secondary #3A6FF2 = hsl(223, 87%, 59%) */
+    --secondary: 224 87% 96%;
+    --secondary-foreground: 224 76% 48%;
 
-    --muted: 209 30% 96%;
-    --muted-foreground: 209 18% 42%;
+    --muted: 215 12% 96%;
+    --muted-foreground: 215 12% 45%;
 
-    --accent: 209 70% 60%;
-    --accent-foreground: 209 56% 25%;
+    /* Accent #5CC8FF = hsl(200, 100%, 68%) */
+    --accent: 200 100% 68%;
+    --accent-foreground: 222 61% 14%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -46,70 +48,72 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 209 30% 91%;
-    --input: 209 30% 91%;
-    --ring: 209 56% 46%;
+    --border: 215 12% 90%;
+    --input: 215 12% 90%;
+    --ring: 224 76% 48%;
 
     --radius: 0.75rem;
 
     /* Custom brand colors */
-    --brand-primary: 209 56% 46%;
-    --brand-glow: 209 70% 60%;
-    --brand-light: 209 60% 96%;
+    --brand-primary: 224 76% 48%;
+    --brand-glow: 223 87% 59%;
+    --brand-light: 224 87% 96%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(209 56% 46%) 0%, hsl(209 70% 60%) 100%);
-    --gradient-glow: radial-gradient(circle, hsl(209 70% 60% / 0.3) 0%, transparent 70%);
-    --gradient-hero: linear-gradient(180deg, hsl(209 60% 96%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-footer: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(209 30% 96%) 50%, hsl(209 56% 46% / 0.08) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(224 76% 48%) 0%, hsl(223 87% 59%) 100%);
+    --gradient-glow: radial-gradient(circle, hsl(200 100% 68% / 0.3) 0%, transparent 70%);
+    --gradient-hero: linear-gradient(180deg, hsl(224 87% 97%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(215 12% 96%) 50%, hsl(224 76% 48% / 0.08) 100%);
 
-    /* Enhanced Shadow System - Indigo tinted for brand presence */
-    --shadow-xs: 0 1px 2px 0 hsl(209 56% 46% / 0.04);
-    --shadow-sm: 0 1px 3px 0 hsl(209 56% 46% / 0.06), 0 1px 2px -1px hsl(209 56% 46% / 0.06);
-    --shadow-md: 0 4px 6px -1px hsl(209 56% 46% / 0.08), 0 2px 4px -2px hsl(209 56% 46% / 0.08);
-    --shadow-lg: 0 10px 15px -3px hsl(209 56% 46% / 0.1), 0 4px 6px -4px hsl(209 56% 46% / 0.08);
-    --shadow-xl: 0 20px 25px -5px hsl(209 56% 46% / 0.1), 0 8px 10px -6px hsl(209 56% 46% / 0.08);
-    --shadow-2xl: 0 25px 50px -12px hsl(209 56% 46% / 0.15);
+    /* Enhanced Shadow System - Brand tinted */
+    --shadow-xs: 0 1px 2px 0 hsl(224 76% 48% / 0.04);
+    --shadow-sm: 0 1px 3px 0 hsl(224 76% 48% / 0.06), 0 1px 2px -1px hsl(224 76% 48% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(224 76% 48% / 0.08), 0 2px 4px -2px hsl(224 76% 48% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(224 76% 48% / 0.1), 0 4px 6px -4px hsl(224 76% 48% / 0.08);
+    --shadow-xl: 0 20px 25px -5px hsl(224 76% 48% / 0.1), 0 8px 10px -6px hsl(224 76% 48% / 0.08);
+    --shadow-2xl: 0 25px 50px -12px hsl(224 76% 48% / 0.15);
     
     /* Card & Section shadows with brand tint */
-    --shadow-card: 0 1px 3px hsl(209 56% 46% / 0.06), 0 4px 12px hsl(209 56% 46% / 0.08);
-    --shadow-section: 0 -1px 0 hsl(209 56% 46% / 0.05), 0 8px 24px -8px hsl(209 56% 46% / 0.12);
-    --shadow-elevated: 0 4px 16px hsl(209 56% 46% / 0.1), 0 12px 32px -8px hsl(209 56% 46% / 0.15);
+    --shadow-card: 0 1px 3px hsl(224 76% 48% / 0.06), 0 4px 12px hsl(224 76% 48% / 0.08);
+    --shadow-section: 0 -1px 0 hsl(224 76% 48% / 0.05), 0 8px 24px -8px hsl(224 76% 48% / 0.12);
+    --shadow-elevated: 0 4px 16px hsl(224 76% 48% / 0.1), 0 12px 32px -8px hsl(224 76% 48% / 0.15);
     
-    /* Indigo edge accent intensity */
+    /* Edge accent intensity */
     --edge-accent-intensity: 0.12;
-    --shadow-glow: 0 0 40px hsl(209 70% 60% / 0.4);
+    --shadow-glow: 0 0 40px hsl(223 87% 59% / 0.4);
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 209 56% 46%;
+    --sidebar-foreground: 222 61% 14%;
+    --sidebar-primary: 224 76% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 209 60% 96%;
-    --sidebar-accent-foreground: 209 56% 46%;
-    --sidebar-border: 209 30% 91%;
-    --sidebar-ring: 209 56% 46%;
+    --sidebar-accent: 224 87% 96%;
+    --sidebar-accent-foreground: 224 76% 48%;
+    --sidebar-border: 215 12% 90%;
+    --sidebar-ring: 224 76% 48%;
   }
 
   .dark {
-    --background: 0 0% 5%;
+    --background: 222 61% 6%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 8%;
+    --card: 222 50% 9%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 8%;
+    --popover: 222 50% 9%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 209 70% 55%;
-    --primary-foreground: 0 0% 5%;
+    /* Primary - brighter for dark mode visibility */
+    --primary: 223 87% 62%;
+    --primary-foreground: 222 61% 8%;
 
-    --secondary: 0 0% 15%;
+    --secondary: 222 40% 16%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 12% 65%;
 
-    --accent: 209 60% 50%;
+    /* Accent #5CC8FF stays vibrant */
+    --accent: 200 100% 65%;
     --accent-foreground: 0 0% 95%;
 
     --destructive: 0 65% 50%;
@@ -121,46 +125,46 @@
     --warning: 38 85% 55%;
     --warning-foreground: 0 0% 5%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 209 70% 55%;
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 223 87% 62%;
 
     /* Brand colors - dark mode */
-    --brand-primary: 209 70% 55%;
-    --brand-glow: 209 80% 65%;
-    --brand-light: 0 0% 15%;
+    --brand-primary: 223 87% 62%;
+    --brand-glow: 200 100% 70%;
+    --brand-light: 222 40% 16%;
 
     /* Gradients - dark mode */
-    --gradient-primary: linear-gradient(135deg, hsl(209 70% 55%) 0%, hsl(209 80% 65%) 100%);
-    --gradient-glow: radial-gradient(circle, hsl(209 80% 65% / 0.2) 0%, transparent 70%);
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 8%) 100%);
-    --gradient-footer: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 8%) 50%, hsl(209 70% 55% / 0.12) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(223 87% 62%) 0%, hsl(200 100% 70%) 100%);
+    --gradient-glow: radial-gradient(circle, hsl(200 100% 70% / 0.2) 0%, transparent 70%);
+    --gradient-hero: linear-gradient(180deg, hsl(222 61% 6%) 0%, hsl(222 50% 9%) 100%);
+    --gradient-footer: linear-gradient(180deg, hsl(222 61% 6%) 0%, hsl(222 50% 9%) 50%, hsl(223 87% 62% / 0.12) 100%);
 
-    /* Enhanced Shadow System - Dark mode with indigo glow */
+    /* Enhanced Shadow System - Dark mode with brand glow */
     --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
-    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(209 70% 55% / 0.1);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.35), 0 2px 4px -2px hsl(209 70% 55% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(209 70% 55% / 0.15);
-    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(209 70% 55% / 0.15);
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(223 87% 62% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.35), 0 2px 4px -2px hsl(223 87% 62% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(223 87% 62% / 0.15);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(223 87% 62% / 0.15);
     --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 40px hsl(209 80% 65% / 0.25);
+    --shadow-glow: 0 0 40px hsl(200 100% 70% / 0.25);
     
-    /* Card & Section shadows - dark mode with subtle indigo glow */
-    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 4px 12px hsl(0 0% 0% / 0.2), 0 0 0 1px hsl(209 70% 55% / 0.08);
-    --shadow-section: 0 -1px 0 hsl(209 70% 55% / 0.1), 0 8px 24px -8px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.3), 0 12px 32px -8px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(209 70% 55% / 0.1);
+    /* Card & Section shadows - dark mode with subtle brand glow */
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 4px 12px hsl(0 0% 0% / 0.2), 0 0 0 1px hsl(223 87% 62% / 0.08);
+    --shadow-section: 0 -1px 0 hsl(223 87% 62% / 0.1), 0 8px 24px -8px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.3), 0 12px 32px -8px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(223 87% 62% / 0.1);
     
-    /* Indigo edge accent intensity - stronger in dark mode */
+    /* Edge accent intensity - stronger in dark mode */
     --edge-accent-intensity: 0.2;
 
-    --sidebar-background: 0 0% 5%;
+    --sidebar-background: 222 61% 6%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 209 70% 55%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 0 0% 15%;
+    --sidebar-primary: 223 87% 62%;
+    --sidebar-primary-foreground: 222 61% 8%;
+    --sidebar-accent: 222 40% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 209 70% 55%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 223 87% 62%;
   }
 
   /* RTL Support */
@@ -416,7 +420,7 @@
 /* Global ambient variables */
 :root {
   --ambient-cycle: 7.5s;
-  --ambient-glow-color: 209 56% 46%;
+  --ambient-glow-color: 224 76% 48%;
   --ambient-glow-intensity: 0.08;
   --ambient-glow-inner: 0.04;
   --ambient-border-intensity: 0.2;
@@ -427,7 +431,7 @@
 }
 
 .dark {
-  --ambient-glow-color: 209 85% 70%;
+  --ambient-glow-color: 223 87% 62%;
   --ambient-glow-intensity: 0.18;
   --ambient-glow-inner: 0.1;
   --ambient-border-intensity: 0.4;
