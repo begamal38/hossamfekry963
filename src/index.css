@@ -772,6 +772,36 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   EXAM MODE ANIMATIONS - Calm, focused exam experience
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Answer option selection - soft confirmation */
+@keyframes exam-answer-confirm {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Exam mode badge breathing - matches focus mode */
+.exam-mode-badge {
+  animation: focus-mode-breathe var(--focus-breathe-cycle) ease-in-out infinite;
+}
+
+/* Reduced motion for exam components */
+@media (prefers-reduced-motion: reduce) {
+  .exam-mode-badge,
+  .exam-answer-animate {
+    animation: none !important;
+  }
+}
+
 @keyframes subtle-pulse {
   0%, 100% { 
     opacity: 1; 
