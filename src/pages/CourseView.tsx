@@ -888,7 +888,30 @@ export default function CourseView() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="text-base font-bold truncate">
-                            {isArabic ? `الباب ${chapterIndex + 1}: ${chapter.title_ar}` : `Chapter ${chapterIndex + 1}: ${chapter.title}`}
+                            {(() => {
+                              // Check if this is an intro/basics chapter (should not be numbered)
+                              const isIntroChapter = chapter.title_ar?.includes('أساسيات') || 
+                                                     chapter.title?.toLowerCase().includes('basics') ||
+                                                     chapter.title?.toLowerCase().includes('intro');
+                              
+                              if (isIntroChapter) {
+                                return isArabic ? chapter.title_ar : chapter.title;
+                              }
+                              
+                              // Count only non-intro chapters before this one for proper numbering
+                              const introChaptersCount = chapters
+                                .slice(0, chapterIndex)
+                                .filter(c => 
+                                  c.title_ar?.includes('أساسيات') || 
+                                  c.title?.toLowerCase().includes('basics') ||
+                                  c.title?.toLowerCase().includes('intro')
+                                ).length;
+                              
+                              const displayNumber = chapterIndex + 1 - introChaptersCount;
+                              return isArabic 
+                                ? `الباب ${displayNumber}: ${chapter.title_ar}` 
+                                : `Chapter ${displayNumber}: ${chapter.title}`;
+                            })()}
                           </h3>
                           {chapterProgressData && (
                             <p className="text-xs text-muted-foreground">
