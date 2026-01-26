@@ -131,7 +131,8 @@ const MESSAGE_TEMPLATES: {
 
 // Now using normalized format (second_secondary + language_track) for profiles
 const GRADES = ['second_secondary', 'third_secondary'];
-const ATTENDANCE_MODES = ['online', 'center', 'hybrid'];
+// Only show valid UI modes (hybrid is legacy and treated as online)
+const ATTENDANCE_MODES = ['online', 'center'];
 
 export default function SendNotifications() {
   const navigate = useNavigate();
@@ -361,12 +362,13 @@ export default function SendNotifications() {
   };
 
   const getModeLabel = (mode: string) => {
+    // Normalize hybrid → online for display
+    const normalizedMode = mode === 'hybrid' ? 'online' : mode;
     const labels: Record<string, string> = {
       'online': 'أونلاين',
       'center': 'سنتر',
-      'hybrid': 'هجين',
     };
-    return labels[mode] || mode;
+    return labels[normalizedMode] || normalizedMode;
   };
 
   // Translate Arabic text to English

@@ -140,12 +140,13 @@ export function canJoinCenterGroup(
   studentProfile: { academic_year?: string | null; language_track?: string | null; attendance_mode?: string | null },
   groupPath: { grade: string; language_track: string }
 ): { allowed: boolean; message: string; messageAr: string } {
-  // Check attendance mode first
-  if (studentProfile.attendance_mode !== 'center' && studentProfile.attendance_mode !== 'hybrid') {
+  // Check attendance mode first - only center students can join groups
+  // Note: hybrid is legacy and treated as online (cannot join center groups)
+  if (studentProfile.attendance_mode !== 'center') {
     return {
       allowed: false,
-      message: 'Only center or hybrid attendance students can join center groups',
-      messageAr: 'فقط طلاب السنتر أو الحضور الهجين يمكنهم الانضمام لمجموعات السنتر',
+      message: 'Only center attendance students can join center groups',
+      messageAr: 'فقط طلاب السنتر يمكنهم الانضمام لمجموعات السنتر',
     };
   }
   

@@ -161,11 +161,13 @@ export function applyStudentFilters<T extends FilterableStudent>(
     );
   }
 
-  // Study mode filter
+  // Study mode filter (normalize hybrid → online for matching)
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter(
-      (s) => s.attendance_mode === filters.studyModeFilter
-    );
+    filtered = filtered.filter((s) => {
+      // Normalize legacy hybrid to online for filter comparison
+      const normalizedMode = s.attendance_mode === 'hybrid' ? 'online' : s.attendance_mode;
+      return normalizedMode === filters.studyModeFilter;
+    });
   }
 
   // Center group filter (requires centerGroupMembers mapping)
@@ -219,11 +221,13 @@ export function applyEnrollmentFilters(
     );
   }
 
-  // Study mode filter (from profile)
+  // Study mode filter (from profile, normalize hybrid → online)
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter(
-      (e) => e.profile?.attendance_mode === filters.studyModeFilter
-    );
+    filtered = filtered.filter((e) => {
+      // Normalize legacy hybrid to online for filter comparison
+      const normalizedMode = e.profile?.attendance_mode === 'hybrid' ? 'online' : e.profile?.attendance_mode;
+      return normalizedMode === filters.studyModeFilter;
+    });
   }
 
   // Center group filter

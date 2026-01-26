@@ -380,7 +380,7 @@ const Dashboard: React.FC = () => {
                     : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {/* Study Mode Badge - READ ONLY */}
+                  {/* Study Mode Badge - READ ONLY (hybrid normalized to online) */}
                   {profile?.attendance_mode && (
                     <Badge 
                       variant={profile.attendance_mode === 'center' ? 'default' : 'secondary'}
@@ -395,7 +395,7 @@ const Dashboard: React.FC = () => {
                         ? (isArabic 
                             ? `سنتر${profile.center_group_name ? ` - ${profile.center_group_name}` : ''}` 
                             : `Center${profile.center_group_name ? ` - ${profile.center_group_name}` : ''}`)
-                        : (isArabic ? 'أونلاين' : 'Online')
+                        : (isArabic ? 'أونلاين' : 'Online') // hybrid also shows as Online
                       }
                     </Badge>
                   )}
