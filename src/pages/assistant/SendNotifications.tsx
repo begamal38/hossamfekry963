@@ -160,6 +160,9 @@ export default function SendNotifications() {
   const [messageAr, setMessageAr] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   
+  // Email toggle - controls whether to send email notifications alongside platform notifications
+  const [sendEmailWithNotification, setSendEmailWithNotification] = useState(true);
+  
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
@@ -509,8 +512,10 @@ export default function SendNotifications() {
         const { error } = await supabase.from('notifications').insert(notifications);
         if (error) throw error;
 
-        // Send email notifications to selected students (non-blocking)
-        sendEmailNotifications(selectedStudents, 'user', titleEn, messageEn);
+        // Send email notifications to selected students (non-blocking) - if enabled
+        if (sendEmailWithNotification) {
+          sendEmailNotifications(selectedStudents, 'user', titleEn, messageEn);
+        }
 
         toast({
           title: 'تم الإرسال',
@@ -552,8 +557,10 @@ export default function SendNotifications() {
         const { error } = await supabase.from('notifications').insert(notification);
         if (error) throw error;
 
-        // Send email notifications (non-blocking)
-        sendEmailNotifications([], emailTargetType, titleEn, messageEn, emailTargetValue);
+        // Send email notifications (non-blocking) - if enabled
+        if (sendEmailWithNotification) {
+          sendEmailNotifications([], emailTargetType, titleEn, messageEn, emailTargetValue);
+        }
 
         toast({
           title: 'تم الإرسال',
@@ -931,6 +938,45 @@ export default function SendNotifications() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Email Toggle */}
+          <div className="bg-card border border-border/60 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Send className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">إرسال بريد إلكتروني</p>
+                  <p className="text-xs text-muted-foreground">
+                    أرسل نفس الإشعار بالإيميل كمان
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSendEmailWithNotification(!sendEmailWithNotification)}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200",
+                  sendEmailWithNotification ? "bg-primary" : "bg-muted"
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200",
+                    sendEmailWithNotification ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
+            {sendEmailWithNotification && (
+              <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-xs text-green-700 dark:text-green-400">
+                  ✓ سيتم إرسال الإشعار على المنصة + بريد إلكتروني للطلاب
+                </p>
               </div>
             )}
           </div>
