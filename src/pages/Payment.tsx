@@ -163,6 +163,11 @@ const Payment: React.FC = () => {
         throw error;
       }
 
+      // Send enrollment confirmation notification (non-blocking via SSOT)
+      import('@/lib/notificationService').then(({ notifyEnrollmentConfirmed }) => {
+        notifyEnrollmentConfirmed(user.id, course?.title_ar || 'كورس', courseId);
+      }).catch(() => {});
+
       // Refresh enrollments cache
       await refreshEnrollments();
 

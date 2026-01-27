@@ -562,24 +562,24 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         description: 'تم تحديث بياناتك بنجاح',
       });
       
-      // Send welcome email for Google signups (non-blocking)
+      // Send welcome notification using unified service (non-blocking)
       // Google OAuth users complete their profile here, so this is where we trigger the welcome email
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const provider = sessionData?.session?.user?.app_metadata?.provider;
+        const userEmail = sessionData?.session?.user?.email;
         
-        if (provider === 'google') {
-          // Fetch email from auth user since it may not be in profile yet
-          const userEmail = sessionData?.session?.user?.email;
-          
-          supabase.functions.invoke('send-welcome-email', {
-            body: {
-              user_id: confirmedUserId,
-              email: userEmail,
-              full_name: fullName.trim() || null,
-            }
+        if (userEmail) {
+          // Use unified notification service
+          import('@/lib/notificationService').then(({ notifyProfileComplete }) => {
+            notifyProfileComplete(
+              confirmedUserId,
+              userEmail,
+              fullName.trim() || undefined,
+              provider === 'google'
+            );
           }).catch(() => {
-            console.log('[ProfileCompletion] Welcome email skipped for Google user');
+            console.log('[ProfileCompletion] Notification skipped');
           });
         }
       } catch {

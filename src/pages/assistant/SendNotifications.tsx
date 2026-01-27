@@ -400,42 +400,56 @@ export default function SendNotifications() {
     messageEn: string,
     targetValue?: string
   ) => {
+    // Use unified notification service for email dispatch
     try {
-      console.log('[SendNotifications] Sending email notifications...');
+      console.log('[SendNotifications] Using unified notification service for emails...');
       
-      const emailPayload: any = {
-        title: titleEn,
-        title_ar: titleAr,
-        message: messageEn,
-        message_ar: messageAr,
-        type: notificationType,
-      };
-
-      // If targeting specific students, send their IDs directly
+      const { sendBulkUserNotification, sendUnifiedNotification } = await import('@/lib/notificationService');
+      
       if (studentIds.length > 0) {
-        emailPayload.student_ids = studentIds;
+        // For specific students, use bulk sender (email only, platform already sent)
+        await supabase.functions.invoke('send-notification-email', {
+          body: {
+            student_ids: studentIds,
+            title: titleEn,
+            title_ar: titleAr,
+            message: messageEn,
+            message_ar: messageAr,
+            type: notificationType,
+          }
+        }).then(({ data }) => {
+          if (data?.emails_sent > 0) {
+            toast({
+              title: 'تم إرسال البريد',
+              description: `تم إرسال ${data.emails_sent} بريد إلكتروني`,
+            });
+          }
+        }).catch(() => {
+          console.log('[SendNotifications] Email dispatch failed silently');
+        });
       } else {
-        emailPayload.target_type = targetType;
-        emailPayload.target_value = targetValue;
-        if (selectedCourse) {
-          emailPayload.course_id = selectedCourse;
-        }
-      }
-
-      const { data, error } = await supabase.functions.invoke('send-notification-email', {
-        body: emailPayload
-      });
-
-      if (error) {
-        console.error('[SendNotifications] Email function error:', error);
-      } else {
-        console.log('[SendNotifications] Email result:', data);
-        if (data?.emails_sent > 0) {
-          toast({
-            title: 'تم إرسال البريد',
-            description: `تم إرسال ${data.emails_sent} بريد إلكتروني`,
-          });
-        }
+        // For targeted notifications (grade, mode, course, etc.)
+        await supabase.functions.invoke('send-notification-email', {
+          body: {
+            title: titleEn,
+            title_ar: titleAr,
+            message: messageEn,
+            message_ar: messageAr,
+            type: notificationType,
+            target_type: targetType,
+            target_value: targetValue,
+            course_id: selectedCourse || undefined,
+          }
+        }).then(({ data }) => {
+          if (data?.emails_sent > 0) {
+            toast({
+              title: 'تم إرسال البريد',
+              description: `تم إرسال ${data.emails_sent} بريد إلكتروني`,
+            });
+          }
+        }).catch(() => {
+          console.log('[SendNotifications] Email dispatch failed silently');
+        });
       }
     } catch (emailError) {
       // Email failure should not block the notification

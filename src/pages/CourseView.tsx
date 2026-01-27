@@ -375,6 +375,11 @@ export default function CourseView() {
         // Track Subscribe event for Facebook Pixel
         trackSubscribe(course.price || 0, 'EGP');
         
+        // Send enrollment confirmation notification (non-blocking via SSOT)
+        import('@/lib/notificationService').then(({ notifyEnrollmentConfirmed }) => {
+          notifyEnrollmentConfirmed(user.id, course.title_ar, course.id);
+        }).catch(() => {});
+        
         toast({
           title: isArabic ? 'تم الاشتراك!' : 'Enrolled!',
           description: isArabic ? 'تم الاشتراك في الكورس بنجاح' : 'Successfully enrolled in the course',

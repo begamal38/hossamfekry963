@@ -499,6 +499,24 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
         }
       }
 
+      // Send enrollment notifications for activated course enrollments (non-blocking)
+      if (action === 'activate' && enrollmentTarget === 'course' && successCount > 0) {
+        const selectedCourse = courses.find(c => c.id === selectedCourseId);
+        if (selectedCourse) {
+          import('@/lib/notificationService').then(({ sendBulkUserNotification }) => {
+            sendBulkUserNotification(studentIds, {
+              type: 'enrollment_confirmed',
+              titleAr: 'تم تأكيد الاشتراك',
+              messageAr: `تم تسجيلك في كورس "${selectedCourse.title_ar}" بنجاح.`,
+              courseId: selectedCourseId,
+              sendEmail: true,
+            });
+          }).catch(() => {
+            console.log('[BulkEnrollment] Notification skipped');
+          });
+        }
+      }
+
       // Show result
       if (errorCount === 0) {
         toast({
