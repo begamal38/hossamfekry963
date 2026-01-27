@@ -5,6 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 import { EGYPTIAN_GOVERNORATES } from '@/constants/governorates';
 import { useNewUserOnboarding } from '@/hooks/useNewUserOnboarding';
 import { StudyModeSelector, StudyMode } from '@/components/registration/StudyModeSelector';
+import { 
+  logCompletionSuccess, 
+  logCompletionFailure, 
+  logCompletionRollback,
+  type CompletionLogPayload 
+} from '@/lib/profileCompletionLogger';
+import { refreshGroupAvailability } from '@/lib/silentProfileAutoFix';
 import {
   Dialog,
   DialogContent,
@@ -193,6 +200,18 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
     if (!validateForm()) return;
 
     setLoading(true);
+    
+    // Build log payload for debugging
+    const logPayload: CompletionLogPayload = {
+      attendance_mode: studyMode,
+      grade,
+      language_track: languageTrack,
+      center_group_id: centerGroupId,
+      full_name: fullName.trim() || null,
+      phone: phone.trim() || null,
+      governorate: governorate || null,
+    };
+    
     try {
       // ========== CRITICAL: HARD AUTH GUARD ==========
       // Fetch auth user explicitly BEFORE any database operations
@@ -200,6 +219,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       
       if (authError || !authData?.user?.id) {
         console.error('AUTH_NOT_READY: Cannot proceed without authenticated user', authError);
+        logCompletionFailure(userId, logPayload, 'auth_not_ready', { authError });
         toast({
           title: 'خطأ في المصادقة',
           description: 'يرجى تسجيل الخروج وإعادة الدخول مرة أخرى.',
@@ -214,6 +234,7 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       // Verify the userId prop matches the authenticated user
       if (confirmedUserId !== userId) {
         console.error('USER_MISMATCH: userId prop does not match authenticated user');
+        logCompletionFailure(userId, logPayload, 'user_mismatch', { confirmedUserId, propUserId: userId });
         toast({
           title: 'خطأ في المصادقة',
           description: 'حدث خطأ في التحقق من هويتك. يرجى إعادة تحميل الصفحة.',
@@ -291,9 +312,38 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
       
       // Additional check: existing center students with no membership MUST select a group
       if (studyMode === 'center' && !centerGroupId) {
+        logCompletionFailure(confirmedUserId, logPayload, 'center_no_group_selected');
         setErrors(prev => ({ ...prev, centerGroup: 'يرجى اختيار مجموعة السنتر' }));
         setLoading(false);
         return; // BLOCK - cannot proceed without group selection
+      }
+
+      // ========== SMART ERROR GUARD: Re-validate group before save ==========
+      // This prevents "group no longer available" errors by re-fetching
+      if (studyMode === 'center' && centerGroupId && grade && languageTrack) {
+        const { available, groups } = await refreshGroupAvailability(grade, languageTrack, centerGroupId);
+        
+        if (!available) {
+          // Group is no longer available - try to silently rebind to first available
+          if (groups.length > 0) {
+            console.log('[ProfileCompletionPrompt] Auto-rebinding to available group:', groups[0].id);
+            setCenterGroupId(groups[0].id);
+            // Don't fail - just update selection and continue
+            // Re-run submission with new group
+            setLoading(false);
+            toast({
+              title: 'تم تحديث المجموعة',
+              description: 'تم اختيار مجموعة أخرى متاحة تلقائياً',
+            });
+            return; // Let user review and click save again
+          } else {
+            // No groups available at all
+            logCompletionFailure(confirmedUserId, logPayload, 'no_groups_available');
+            setErrors(prev => ({ ...prev, centerGroup: 'لا توجد مجموعات متاحة حالياً' }));
+            setLoading(false);
+            return;
+          }
+        }
       }
 
       // Check if there's anything to update (profile OR center group)
@@ -462,7 +512,12 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
           console.log('Center group membership verified successfully:', verifyMembership.id);
         } catch (groupError) {
           // ========== ROLLBACK: Revert profile study_mode_confirmed ==========
-          // TEMP DEBUG VISIBILITY (internal only)
+          // Log rollback for debugging
+          logCompletionRollback(confirmedUserId, logPayload, 'group_membership_failed', {
+            group_id: centerGroupId,
+            error: groupError instanceof Error ? groupError.message : String(groupError),
+          });
+          
           console.error('[ProfileCompletionPrompt] Group membership failed, rolling back profile', {
             group_id: centerGroupId,
             student_id: confirmedUserId,
@@ -499,6 +554,9 @@ const ProfileCompletionPrompt = ({ userId, missingFields, onComplete }: ProfileC
         // Non-critical, continue
       }
 
+      // Log success
+      logCompletionSuccess(confirmedUserId, logPayload);
+      
       toast({
         title: 'تم الحفظ بنجاح ✅',
         description: 'تم تحديث بياناتك بنجاح',

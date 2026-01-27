@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
+import { attemptSilentProfileFix } from '@/lib/silentProfileAutoFix';
 import ProfileCompletionPrompt from './ProfileCompletionPrompt';
 
 interface ProfileCompletionCheckProps {
@@ -53,6 +54,27 @@ const ProfileCompletionCheck = ({ children }: ProfileCompletionCheckProps) => {
       setHasChecked(true);
       return;
     }
+
+    // ========== SILENT AUTO-FIX LAYER ==========
+    // Attempt to fix any inconsistencies BEFORE checking for missing fields
+    // This prevents unnecessary prompts for fixable issues
+    try {
+      const fixResult = await attemptSilentProfileFix(user.id);
+      if (fixResult.fixed) {
+        console.log('[ProfileCompletionCheck] Silent auto-fix applied:', fixResult.actions);
+      }
+      // If fix was successful and profile is now complete, skip the prompt check
+      if (fixResult.fixed && !fixResult.stillIncomplete) {
+        setMissingFields(null);
+        setLoading(false);
+        setHasChecked(true);
+        return;
+      }
+    } catch (fixError) {
+      console.warn('[ProfileCompletionCheck] Silent auto-fix failed:', fixError);
+      // Continue with normal check - don't block on fix errors
+    }
+    // ========== END SILENT AUTO-FIX ==========
     
     // NOTE: SessionStorage check REMOVED intentionally.
     // Database is the SINGLE SOURCE OF TRUTH for study_mode_confirmed.

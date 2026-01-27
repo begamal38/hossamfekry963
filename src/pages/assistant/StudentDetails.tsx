@@ -40,6 +40,7 @@ import { StudentIdentityCard } from '@/components/assistant/StudentIdentityCard'
 import { StudentProgressOverview } from '@/components/assistant/StudentProgressOverview';
 import { StudentFocusSummary } from '@/components/assistant/StudentFocusSummary';
 import { StudentEnrollmentsList } from '@/components/assistant/StudentEnrollmentsList';
+import { SimulateStudentButton } from '@/components/assistant/SimulateStudentButton';
 
 interface StudentProfile {
   user_id: string;
@@ -740,16 +741,28 @@ export default function StudentDetails() {
               </Button>
               <h1 className="text-2xl font-bold">{isArabic ? 'ملف الطالب' : 'Student Profile'}</h1>
             </div>
-            {/* Copy Link Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={copyStudentLink}
-              className="gap-2"
-            >
-              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              {copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ الرابط' : 'Copy Link')}
-            </Button>
+            {/* Simulate + Copy Link Buttons */}
+            <div className="flex gap-2">
+              {userId && (
+                <SimulateStudentButton
+                  studentId={userId}
+                  studentName={student.full_name || 'Unknown'}
+                  grade={student.grade}
+                  languageTrack={student.language_track}
+                  attendanceMode={student.attendance_mode}
+                  isArabic={isArabic}
+                />
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyStudentLink}
+                className="gap-2"
+              >
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                {copied ? (isArabic ? 'تم النسخ' : 'Copied') : (isArabic ? 'نسخ الرابط' : 'Copy Link')}
+              </Button>
+            </div>
           </div>
 
           {/* Section 1 & 2: Student Identity + Study Mode */}
