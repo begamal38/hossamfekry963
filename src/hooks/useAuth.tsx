@@ -139,14 +139,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Send welcome email (non-blocking, fail silently)
+    // Send welcome email using unified notification service (non-blocking, fail silently)
     if (!error && data?.user) {
-      supabase.functions.invoke('send-welcome-email', {
-        body: {
-          user_id: data.user.id,
-          email: email,
-          full_name: fullName,
-        }
+      import('@/lib/notificationService').then(({ sendWelcomeNotification }) => {
+        sendWelcomeNotification(data.user!.id, email, fullName);
       }).catch(() => {
         // Fail silently - don't block registration
         console.log('Welcome email skipped');

@@ -348,6 +348,16 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
           }
         }
 
+        // Get course title for notification
+        const enrolledCourse = courses.find(c => c.id === courseId);
+        
+        // Send enrollment confirmation notification (non-blocking)
+        import('@/lib/notificationService').then(({ notifyEnrollmentConfirmed }) => {
+          notifyEnrollmentConfirmed(studentId, enrolledCourse?.title_ar || 'كورس', courseId);
+        }).catch(() => {
+          console.log('[ManualEnrollment] Notification skipped');
+        });
+
         // Success message for course
         const studentName = selectedStudent?.full_name || '';
         toast({
