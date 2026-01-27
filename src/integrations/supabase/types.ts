@@ -1390,6 +1390,39 @@ export type Database = {
           },
         ]
       }
+      profile_completion_logs: {
+        Row: {
+          attempted_payload: Json
+          created_at: string
+          failure_details: Json | null
+          failure_reason: string | null
+          id: string
+          user_id: string
+          validation_result: Json
+          write_result: string
+        }
+        Insert: {
+          attempted_payload?: Json
+          created_at?: string
+          failure_details?: Json | null
+          failure_reason?: string | null
+          id?: string
+          user_id: string
+          validation_result?: Json
+          write_result: string
+        }
+        Update: {
+          attempted_payload?: Json
+          created_at?: string
+          failure_details?: Json | null
+          failure_reason?: string | null
+          id?: string
+          user_id?: string
+          validation_result?: Json
+          write_result?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           academic_year: string | null
