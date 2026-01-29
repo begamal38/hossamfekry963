@@ -498,7 +498,7 @@ export default function Reports() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="container mx-auto px-3 md:px-4 py-6 pt-20 md:pt-24">
+      <main className="container mx-auto px-3 md:px-4 py-6 pt-20 md:pt-24 content-appear">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4 md:mb-6">
           <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10" onClick={() => navigate('/assistant')}>

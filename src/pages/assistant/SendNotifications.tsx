@@ -618,7 +618,7 @@ export default function SendNotifications() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir="rtl">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl">
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl content-appear">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>

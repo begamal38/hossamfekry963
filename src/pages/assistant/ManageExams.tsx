@@ -765,7 +765,7 @@ export default function ManageExams() {
       <Navbar />
 
       <PullToRefresh onRefresh={fetchExams} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
-        <main className="pt-20 sm:pt-24 pb-8">
+        <main className="pt-20 sm:pt-24 pb-8 content-appear">
           <div className="container mx-auto px-3 sm:px-4 max-w-2xl">
             {/* Header */}
             <AssistantPageHeader

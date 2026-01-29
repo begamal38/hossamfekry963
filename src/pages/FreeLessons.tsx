@@ -31,7 +31,7 @@ const FreeLessons: React.FC = () => {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-16">
+      <main className="pt-20 sm:pt-24 pb-16 content-appear">
         <div className="container mx-auto px-4 max-w-4xl">
           
           {/* STATUS FIRST: أنا فين دلوقتي؟ */}

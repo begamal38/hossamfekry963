@@ -156,7 +156,7 @@ const TopStudents: React.FC = () => {
     <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-8">
+      <main className="pt-20 sm:pt-24 pb-8 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
           <AssistantPageHeader
             title={isArabic ? 'المتميزون' : 'Top Students'}

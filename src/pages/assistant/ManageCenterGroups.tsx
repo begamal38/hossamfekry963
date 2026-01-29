@@ -156,7 +156,7 @@ export default function ManageCenterGroups() {
     <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="pt-20 sm:pt-24 pb-24">
+      <main className="pt-20 sm:pt-24 pb-24 content-appear">
         <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
           {/* Header */}
           <div className="mb-6">

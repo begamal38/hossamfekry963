@@ -326,7 +326,7 @@ const Courses: React.FC = () => {
       />
       <Navbar />
       
-      <main className="pt-20 pb-16">
+      <main className="pt-20 pb-16 content-appear">
         {/* Desktop max-width container for professional containment */}
         <div className="container mx-auto px-4 max-w-5xl xl:max-w-6xl">
           {/* Header Section - Clean and impactful */}

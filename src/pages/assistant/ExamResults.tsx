@@ -200,7 +200,7 @@ export default function ExamResults() {
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="pt-24 pb-16">
+      <main className="pt-24 pb-16 content-appear">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">

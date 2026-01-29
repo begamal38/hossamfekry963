@@ -731,7 +731,7 @@ export default function StudentDetails() {
   return (
     <div className="min-h-screen bg-muted/30 pb-mobile-nav" dir={isArabic ? 'rtl' : 'ltr'}>
       <Navbar />
-      <div className="pt-20 px-4 pb-12">
+      <div className="pt-20 px-4 pb-12 content-appear">
         <div className="container mx-auto max-w-5xl">
           {/* Header */}
           <div className="flex items-center justify-between gap-4 mb-6">
