@@ -208,7 +208,7 @@ const Settings: React.FC = () => {
     <div className={cn("min-h-screen bg-muted/30 pb-mobile-nav", isRTL && "rtl")}>
       <Navbar />
       
-      <main className="pt-24 pb-16">
+      <main className="pt-24 pb-16 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold text-foreground mb-2">إعدادات الحساب</h1>

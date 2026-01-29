@@ -393,7 +393,7 @@ export default function Students() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="container mx-auto px-3 sm:px-4 py-4 pt-20">
+      <main className="container mx-auto px-3 sm:px-4 py-4 pt-20 content-appear">
         {/* Mobile-First Header - Clean hierarchy */}
         <AssistantPageHeader
           title={isRTL ? 'إدارة الطلاب' : 'Students'}

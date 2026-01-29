@@ -275,7 +275,7 @@ export default function AssistantDashboard() {
       <Navbar />
       
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
-        <main className="pt-20 sm:pt-24 pb-8">
+        <main className="pt-20 sm:pt-24 pb-8 content-appear">
           <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
           {/* Welcome Header - Compact */}
           <div className="flex items-center justify-between mb-4">

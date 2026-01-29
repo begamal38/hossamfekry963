@@ -271,7 +271,7 @@ export default function RecordGrades() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl">
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-3xl content-appear">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate('/assistant')}>
             <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />

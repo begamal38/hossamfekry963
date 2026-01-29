@@ -364,7 +364,7 @@ const Dashboard: React.FC = () => {
       <Navbar />
 
       <>
-        <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden">
+        <main className="pt-20 sm:pt-24 pb-8 overflow-x-hidden content-appear">
           {/* Desktop max-width container for professional containment */}
           <div className="container mx-auto px-3 sm:px-4 max-w-4xl xl:max-w-5xl">
           {/* Hero Header - Vodafone-inspired personalized greeting */}

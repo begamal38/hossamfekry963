@@ -562,7 +562,7 @@ export default function CourseView() {
       />
       <Navbar />
 
-      <main className="pt-16 pb-24 max-w-6xl mx-auto">
+      <main className="pt-16 pb-24 max-w-6xl mx-auto content-appear">
         {/* Mobile-First Header - Back Button */}
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <Button 

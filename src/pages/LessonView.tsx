@@ -840,7 +840,7 @@ export default function LessonView() {
   const isVisitorFreeLesson = !user && isFreeLesson;
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-mobile-nav content-appear" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
         title={seoTitle}
         titleAr={seoTitle}

@@ -28,7 +28,7 @@ const Index: React.FC = () => {
         canonical="https://hossamfekry.com"
       />
       <Navbar />
-      <main>
+      <main className="content-appear">
         {/* 1. Hero: أنا فين؟ - Single message + Single CTA */}
         <HeroSection />
         

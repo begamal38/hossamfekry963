@@ -240,6 +240,23 @@
 }
 
 @layer utilities {
+  /* ═══════════════════════════════════════════════════════════════════════
+     GLOBAL CONTENT APPEARANCE TRANSITION
+     Applied to page containers, cards, lists, dashboards
+     ═══════════════════════════════════════════════════════════════════════ */
+  .content-appear {
+    @apply animate-content-appear;
+  }
+  
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .content-appear {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
   /* Text gradient removed - use solid primary color for emphasis */
   .text-gradient {
     @apply text-primary font-semibold;

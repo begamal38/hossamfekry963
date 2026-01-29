@@ -110,7 +110,7 @@ const About = () => {
       />
       <Navbar />
       
-      <main className="pt-24 pb-16">
+      <main className="pt-24 pb-16 content-appear">
         <div className="container mx-auto px-4">
           
           {/* Hero Section */}

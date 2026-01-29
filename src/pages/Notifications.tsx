@@ -423,7 +423,7 @@ export default function Notifications() {
     <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-2xl">
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-2xl content-appear">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">

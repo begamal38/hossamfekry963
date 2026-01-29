@@ -113,7 +113,7 @@ export default function AssistantMessages() {
             />
           </div>
         ) : (
-          <main className="pt-20">
+          <main className="pt-20 content-appear">
             <div className="container mx-auto px-4 max-w-2xl">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">

@@ -125,6 +125,10 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(33.333%)" },
         },
+        "content-appear": {
+          "0%": { opacity: "0", transform: "translateY(3px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -135,6 +139,7 @@ export default {
         "scroll-rtl": "scroll-rtl 40s linear infinite",
         "scroll-ltr-mobile": "scroll-ltr 60s linear infinite",
         "scroll-rtl-mobile": "scroll-rtl 60s linear infinite",
+        "content-appear": "content-appear 180ms cubic-bezier(0.2, 0, 0.2, 1) forwards",
       },
       boxShadow: {
         'glow': 'none',
