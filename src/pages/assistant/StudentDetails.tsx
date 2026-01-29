@@ -667,8 +667,8 @@ export default function StudentDetails() {
   };
 
   const getGroupLabel = () => {
-    if (!student?.academic_year || !student?.language_track) return null;
-    const year = ACADEMIC_YEAR_LABELS[student.academic_year];
+    if (!student?.grade || !student?.language_track) return null;
+    const year = ACADEMIC_YEAR_LABELS[student.grade];
     const track = LANGUAGE_TRACK_LABELS[student.language_track];
     if (!year || !track) return null;
     return isArabic ? `${year.ar} - ${track.ar}` : `${year.en} - ${track.en}`;
