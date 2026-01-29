@@ -10,12 +10,12 @@ import { useState } from 'react';
 import { Eye, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -188,114 +188,116 @@ export function SimulateStudentButton({
         {isArabic ? 'معاينة كطالب' : 'Simulate Student'}
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
+          <SheetHeader className="text-right">
+            <SheetTitle className="flex items-center gap-2 justify-end">
               {isArabic ? 'معاينة تجربة الطالب' : 'Student Experience Simulation'}
-            </DialogTitle>
-            <DialogDescription>
+              <Eye className="h-5 w-5 text-primary" />
+            </SheetTitle>
+            <SheetDescription className="text-right">
               {studentName}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : result ? (
-            <div className="space-y-4">
-              {/* Overall Status */}
-              <div
-                className={cn(
-                  'p-4 rounded-lg flex items-center gap-3',
-                  result.profileComplete
-                    ? 'bg-green-50 dark:bg-green-950/30'
-                    : 'bg-red-50 dark:bg-red-950/30'
-                )}
-              >
-                {result.profileComplete ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                ) : (
-                  <XCircle className="h-6 w-6 text-red-600" />
-                )}
-                <div>
-                  <div className="font-medium">
-                    {result.profileComplete
-                      ? isArabic ? 'الملف مكتمل ✅' : 'Profile Complete ✅'
-                      : isArabic ? 'الملف غير مكتمل ❌' : 'Profile Incomplete ❌'}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {result.profileComplete
-                      ? isArabic ? 'الطالب سيدخل للمنصة مباشرة' : 'Student will enter platform directly'
-                      : isArabic ? 'سيظهر للطالب نموذج استكمال البيانات' : 'Profile completion form will appear'}
-                  </div>
-                </div>
+          <div className="mt-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-
-              {/* Details */}
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isArabic ? 'نظام الدراسة:' : 'Study Mode:'}</span>
-                  <span className="font-medium">
-                    {result.details.attendanceMode === 'center' ? (isArabic ? 'سنتر' : 'Center') :
-                     result.details.attendanceMode === 'online' ? (isArabic ? 'أونلاين' : 'Online') :
-                     result.details.attendanceMode === 'hybrid' ? (isArabic ? 'هجين (قديم)' : 'Hybrid (legacy)') :
-                     isArabic ? 'غير محدد' : 'Not set'}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{isArabic ? 'تأكيد النظام:' : 'Mode Confirmed:'}</span>
-                  <span className={cn('font-medium', result.studyModeConfirmed ? 'text-green-600' : 'text-amber-600')}>
-                    {result.studyModeConfirmed ? (isArabic ? 'نعم ✓' : 'Yes ✓') : (isArabic ? 'لا' : 'No')}
-                  </span>
-                </div>
-
-                {result.details.attendanceMode === 'center' && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{isArabic ? 'المجموعة:' : 'Group:'}</span>
-                      <span className={cn('font-medium', result.hasActiveGroup ? 'text-green-600' : 'text-red-600')}>
-                        {result.details.groupName || (isArabic ? 'بدون مجموعة!' : 'No group!')}
-                      </span>
+            ) : result ? (
+              <div className="space-y-4">
+                {/* Overall Status */}
+                <div
+                  className={cn(
+                    'p-4 rounded-lg flex items-center gap-3',
+                    result.profileComplete
+                      ? 'bg-green-50 dark:bg-green-950/30'
+                      : 'bg-red-50 dark:bg-red-950/30'
+                  )}
+                >
+                  {result.profileComplete ? (
+                    <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0" />
+                  ) : (
+                    <XCircle className="h-6 w-6 text-red-600 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">
+                      {result.profileComplete
+                        ? isArabic ? 'الملف مكتمل ✅' : 'Profile Complete ✅'
+                        : isArabic ? 'الملف غير مكتمل ❌' : 'Profile Incomplete ❌'}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{isArabic ? 'مجموعات متاحة:' : 'Available Groups:'}</span>
-                      <span className="font-medium">{result.availableGroups}</span>
+                    <div className="text-sm text-muted-foreground">
+                      {result.profileComplete
+                        ? isArabic ? 'الطالب سيدخل للمنصة مباشرة' : 'Student will enter platform directly'
+                        : isArabic ? 'سيظهر للطالب نموذج استكمال البيانات' : 'Profile completion form will appear'}
                     </div>
-                  </>
-                )}
-              </div>
-
-              {/* Warnings */}
-              {result.warnings.length > 0 && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg space-y-1">
-                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-medium">
-                    <AlertCircle className="h-4 w-4" />
-                    {isArabic ? 'تحذيرات:' : 'Warnings:'}
                   </div>
-                  <ul className="text-sm text-amber-600 dark:text-amber-400 space-y-1 pr-6">
-                    {result.warnings.map((warning, i) => (
-                      <li key={i}>• {warning}</li>
-                    ))}
-                  </ul>
                 </div>
-              )}
 
-              {/* Refresh Button */}
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={runSimulation}
-              >
-                {isArabic ? 'تحديث المعاينة' : 'Refresh Simulation'}
-              </Button>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+                {/* Details */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isArabic ? 'نظام الدراسة:' : 'Study Mode:'}</span>
+                    <span className="font-medium">
+                      {result.details.attendanceMode === 'center' ? (isArabic ? 'سنتر' : 'Center') :
+                       result.details.attendanceMode === 'online' ? (isArabic ? 'أونلاين' : 'Online') :
+                       result.details.attendanceMode === 'hybrid' ? (isArabic ? 'هجين (قديم)' : 'Hybrid (legacy)') :
+                       isArabic ? 'غير محدد' : 'Not set'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{isArabic ? 'تأكيد النظام:' : 'Mode Confirmed:'}</span>
+                    <span className={cn('font-medium', result.studyModeConfirmed ? 'text-green-600' : 'text-amber-600')}>
+                      {result.studyModeConfirmed ? (isArabic ? 'نعم ✓' : 'Yes ✓') : (isArabic ? 'لا' : 'No')}
+                    </span>
+                  </div>
+
+                  {result.details.attendanceMode === 'center' && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isArabic ? 'المجموعة:' : 'Group:'}</span>
+                        <span className={cn('font-medium', result.hasActiveGroup ? 'text-green-600' : 'text-red-600')}>
+                          {result.details.groupName || (isArabic ? 'بدون مجموعة!' : 'No group!')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{isArabic ? 'مجموعات متاحة:' : 'Available Groups:'}</span>
+                        <span className="font-medium">{result.availableGroups}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Warnings */}
+                {result.warnings.length > 0 && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg space-y-1">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-medium">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {isArabic ? 'تحذيرات:' : 'Warnings:'}
+                    </div>
+                    <ul className="text-sm text-amber-600 dark:text-amber-400 space-y-1 pr-6">
+                      {result.warnings.map((warning, i) => (
+                        <li key={i}>• {warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Refresh Button */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={runSimulation}
+                >
+                  {isArabic ? 'تحديث المعاينة' : 'Refresh Simulation'}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
