@@ -31,7 +31,6 @@ import { canAccessContent, parseAcademicPath } from '@/lib/academicValidation';
 import { filterLessonsForStudents, hasValidVideo, calculateProgress, isCoursePreview } from '@/lib/contentVisibility';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { ChapterExamSection } from '@/components/course/ChapterExamSection';
-import { ContextualImage } from '@/components/ui/ContextualImage';
 
 interface Course {
   id: string;
@@ -577,11 +576,6 @@ export default function CourseView() {
           </Button>
         </div>
 
-        {/* Contextual Educational Imagery - Visual context only */}
-        <div className="container mx-auto px-3 sm:px-4 mb-4">
-          <ContextualImage variant="course" />
-        </div>
-
         {/* Grade Badge - Vodafone Style */}
         <div className="container mx-auto px-3 sm:px-4 mb-3">
           <Badge variant="outline" className="text-sm px-3 py-1">
@@ -898,17 +892,6 @@ export default function CourseView() {
 
                     return (
                     <div key={chapter.id} id={`chapter-${chapter.id}`} className="space-y-3">
-                      {/* Chapter Accent Image - Only for non-intro chapters, first chapter of numbered sequence */}
-                      {!isIntroChapter && chapterIndex === (chapters.findIndex(c => 
-                        !c.title_ar?.includes('أساسيات') && 
-                        !c.title?.toLowerCase().includes('basics') &&
-                        !c.title?.toLowerCase().includes('intro')
-                      )) && (
-                        <div className="mb-2">
-                          <ContextualImage variant="chapter" className="opacity-50" />
-                        </div>
-                      )}
-                      
                       {/* Chapter Header */}
                       <div className={cn(
                         "flex items-center gap-3 rounded-md p-3",

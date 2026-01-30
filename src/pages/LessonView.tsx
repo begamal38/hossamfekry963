@@ -58,7 +58,6 @@ import { ProgressImpactSection } from '@/components/lesson/ProgressImpactSection
 import { FocusSystemAwareness } from '@/components/lesson/FocusSystemAwareness';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { useChapterProgressOptimized } from '@/hooks/useChapterProgressOptimized';
-import { ContextualImage } from '@/components/ui/ContextualImage';
 import { toast } from 'sonner';
 import { UserType } from '@/hooks/useUnifiedFocusState';
 import { useEngagementSafe } from '@/components/consent';
@@ -957,11 +956,6 @@ export default function LessonView() {
 
         {/* Content Area - Centered and optimized for desktop */}
         <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl lg:max-w-3xl xl:max-w-4xl">
-          {/* Contextual Educational Imagery - Subtle visual context */}
-          <div className="mb-4">
-            <ContextualImage variant="lesson" />
-          </div>
-
           {/* Video Player Section */}
           <section className="mb-8" aria-labelledby="video-section-title">
             <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
