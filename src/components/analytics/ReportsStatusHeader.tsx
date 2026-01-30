@@ -23,6 +23,12 @@ interface ReportsStatusHeaderProps {
   isFiltered?: boolean;
   /** Callback to clear filter */
   onClearFilter?: () => void;
+  /** Dismiss the header card (owner state lives in the page) */
+  onDismiss?: () => void;
+  /** When true, show the dismiss button (X) */
+  dismissible?: boolean;
+  /** Visual state for exit animation before unmount */
+  state?: 'open' | 'closing';
 }
 
 export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
@@ -30,6 +36,9 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
   isRTL,
   isFiltered = false,
   onClearFilter,
+  onDismiss,
+  dismissible = true,
+  state = 'open',
 }) => {
   const visual = STATUS_VISUALS[statusCode];
   const StatusIcon = visual.icon;
@@ -39,11 +48,13 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
   return (
     <div
       className={cn(
-        "rounded-lg border overflow-hidden mb-4 content-appear",
+        "rounded-lg border overflow-hidden mb-4",
+        state === 'open' ? 'content-appear' : 'animate-out fade-out-0',
         visual.bgTintClass,
         "border-l-4",
         visual.dotClass.replace('bg-', 'border-l-')
       )}
+      style={state === 'closing' ? { animationDuration: '180ms' } : undefined}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div className="p-4">
@@ -91,14 +102,14 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
             </div>
           </div>
 
-          {/* Clear Filter Button - Only show if filtered */}
-          {isFiltered && onClearFilter && (
+          {/* Dismiss Button (X) - single owner state in page */}
+          {dismissible && onDismiss && (
             <Button
               variant="ghost"
               size="icon"
               className="shrink-0 h-8 w-8"
-              onClick={onClearFilter}
-              title={isRTL ? 'إزالة الفلتر' : 'Clear filter'}
+              onClick={onDismiss}
+              title={isRTL ? 'إغلاق' : 'Close'}
             >
               <X className="w-4 h-4" />
             </Button>
