@@ -227,7 +227,17 @@ export function applyEnrollmentFilters(
 
   // Study mode filter - safeFilterMatch handles hybrid → online normalization automatically
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter((e) => safeFilterMatch(e.profile?.attendance_mode, filters.studyModeFilter));
+    // IMPORTANT: profiles.attendance_mode can be NULL for users who haven't confirmed yet.
+    // In assistant subscription management, "أونلاين" should still include those NULL records
+    // (they are not "سنتر" and must remain visible when filtering for online).
+    if (filters.studyModeFilter === 'online') {
+      filtered = filtered.filter((e) => {
+        const mode = e.profile?.attendance_mode;
+        return mode == null || safeFilterMatch(mode, 'online');
+      });
+    } else {
+      filtered = filtered.filter((e) => safeFilterMatch(e.profile?.attendance_mode, filters.studyModeFilter));
+    }
   }
 
   // Center group filter
