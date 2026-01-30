@@ -133,6 +133,11 @@ function getActionItems(
       });
       break;
 
+    case 'PRE_EXAM_ENGAGING':
+      // This is a POSITIVE status - engagement exists before exams are published
+      // No action items needed - just informational
+      break;
+
     case 'STABLE':
       // No action items needed for stable status
       break;
@@ -161,12 +166,26 @@ export const ActionableBreakdown: React.FC<ActionableBreakdownProps> = ({
   const actionItems = getActionItems(statusCode, metrics);
   const visual = STATUS_VISUALS[statusCode];
 
-  // Don't show for stable status
-  if (statusCode === 'STABLE') {
+  // Don't show for stable or pre-exam engaging status - show positive message instead
+  if (statusCode === 'STABLE' || statusCode === 'PRE_EXAM_ENGAGING') {
+    const isPreExam = statusCode === 'PRE_EXAM_ENGAGING';
     return (
-      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
-        <p className="text-sm text-green-700 dark:text-green-400 font-medium">
-          {isRTL ? '✅ المنصة شغالة صح — مفيش حاجة محتاجة تدخل' : '✅ Platform is healthy — no action required'}
+      <div className={cn(
+        "border rounded-lg p-4 text-center",
+        isPreExam ? "bg-blue-500/10 border-blue-500/20" : "bg-green-500/10 border-green-500/20"
+      )}>
+        <p className={cn(
+          "text-sm font-medium",
+          isPreExam ? "text-blue-700 dark:text-blue-400" : "text-green-700 dark:text-green-400"
+        )}>
+          {isPreExam 
+            ? (isRTL 
+                ? '📚 الطلاب بيتعلموا بشكل ممتاز — الامتحانات هتبدأ قريب' 
+                : '📚 Students are learning well — exams will start soon')
+            : (isRTL 
+                ? '✅ المنصة شغالة صح — مفيش حاجة محتاجة تدخل' 
+                : '✅ Platform is healthy — no action required')
+          }
         </p>
       </div>
     );
