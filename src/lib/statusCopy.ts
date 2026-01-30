@@ -164,8 +164,8 @@ export const SYSTEM_STATUS_COPY: Record<SystemStatusCode, SystemStatusCopy> = {
     description: { ar: 'فيه امتحانات متاحة بس الطلاب مش بيمتحنوا', en: 'Exams available but students not testing' },
   },
   PRE_EXAM_ENGAGING: {
-    label: { ar: 'تفاعل نشط', en: 'Active Engagement' },
-    description: { ar: 'الطلاب بيتعلموا — الامتحانات لسه متنشرتش', en: 'Students learning — exams not yet published' },
+    label: { ar: 'مرحلة التعلم', en: 'Learning Phase' },
+    description: { ar: 'الطلاب بيتعلموا بشكل طبيعي — الامتحانات هتبدأ قريب', en: 'Students learning normally — exams will start soon' },
   },
   STABLE: {
     label: { ar: 'مستقر', en: 'Stable' },
