@@ -12,7 +12,7 @@ import { safeFilterMatch, safeString } from '@/lib/silentAutoFix';
 
 // ============= Filter Types =============
 
-export type StudyModeFilter = 'all' | 'online' | 'center';
+export type StudyModeFilter = 'all' | 'online' | 'center' | 'unset';
 
 export interface AssistantFilterState {
   searchTerm: string;
@@ -62,6 +62,7 @@ export const getStudyModeFilterOptions = (isRTL: boolean): FilterOption[] => [
   { value: 'all', label: isRTL ? 'كل الأنظمة' : 'All Modes' },
   { value: 'online', label: isRTL ? 'أونلاين' : 'Online' },
   { value: 'center', label: isRTL ? 'سنتر' : 'Center' },
+  { value: 'unset', label: isRTL ? 'غير محدد' : 'Not Set' },
 ];
 
 export const getStatusFilterOptions = (isRTL: boolean): FilterOption[] => [
@@ -225,17 +226,13 @@ export function applyEnrollmentFilters(
     );
   }
 
-  // Study mode filter - safeFilterMatch handles hybrid → online normalization automatically
+  // Study mode filter - with explicit 'unset' option for NULL values
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    // IMPORTANT: profiles.attendance_mode can be NULL for users who haven't confirmed yet.
-    // In assistant subscription management, "أونلاين" should still include those NULL records
-    // (they are not "سنتر" and must remain visible when filtering for online).
-    if (filters.studyModeFilter === 'online') {
-      filtered = filtered.filter((e) => {
-        const mode = e.profile?.attendance_mode;
-        return mode == null || safeFilterMatch(mode, 'online');
-      });
+    if (filters.studyModeFilter === 'unset') {
+      // Show only students with NULL attendance_mode
+      filtered = filtered.filter((e) => e.profile?.attendance_mode == null);
     } else {
+      // safeFilterMatch handles hybrid → online normalization automatically
       filtered = filtered.filter((e) => safeFilterMatch(e.profile?.attendance_mode, filters.studyModeFilter));
     }
   }
