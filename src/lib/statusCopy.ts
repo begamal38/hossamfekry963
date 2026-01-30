@@ -29,6 +29,7 @@ export type SystemStatusCode =
   | 'HIGH_FAILURE_RATE'
   | 'UNSTABLE_RESULTS'
   | 'NEEDS_EXAM_FOLLOWUP'
+  | 'PRE_EXAM_ENGAGING'  // New: Healthy engagement before exams are published
   | 'STABLE'
   | 'DATA_LOAD_ERROR';
 
@@ -61,6 +62,14 @@ export const STATUS_VISUALS: Record<SystemStatusCode, StatusVisualConfig> = {
     dotClass: 'bg-green-500',
     bgTintClass: 'bg-green-500/10',
     textClass: 'text-green-600',
+  },
+  PRE_EXAM_ENGAGING: {
+    color: 'blue',
+    icon: Activity,
+    emphasis: 'positive',
+    dotClass: 'bg-blue-500',
+    bgTintClass: 'bg-blue-500/10',
+    textClass: 'text-blue-600',
   },
   NEEDS_EXAM_FOLLOWUP: {
     color: 'amber',
@@ -152,7 +161,11 @@ export const SYSTEM_STATUS_COPY: Record<SystemStatusCode, SystemStatusCopy> = {
   },
   NEEDS_EXAM_FOLLOWUP: {
     label: { ar: 'غير مستقر', en: 'Unstable' },
-    description: { ar: 'فيه تفاعل بس محتاج متابعة الامتحانات', en: 'Engagement exists but exam follow-up is needed' },
+    description: { ar: 'فيه امتحانات متاحة بس الطلاب مش بيمتحنوا', en: 'Exams available but students not testing' },
+  },
+  PRE_EXAM_ENGAGING: {
+    label: { ar: 'تفاعل نشط', en: 'Active Engagement' },
+    description: { ar: 'الطلاب بيتعلموا — الامتحانات لسه متنشرتش', en: 'Students learning — exams not yet published' },
   },
   STABLE: {
     label: { ar: 'مستقر', en: 'Stable' },
@@ -247,6 +260,7 @@ export function getSystemStatusLevel(code: SystemStatusCode): SystemStatusLevel 
     case 'UNSTABLE_RESULTS':
     case 'NEEDS_EXAM_FOLLOWUP':
       return 'warning';
+    case 'PRE_EXAM_ENGAGING':
     case 'STABLE':
       return 'success';
     default:
