@@ -82,8 +82,8 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       className={cn(
-        "relative rounded-lg border border-border bg-card overflow-hidden transition-all duration-150",
-        "hover:border-primary/40 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98]",
+        "relative rounded-lg border border-border bg-card overflow-hidden content-appear",
+        "hover:border-primary/40 cursor-pointer hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98] transition-shadow duration-150",
         className
       )}
       dir={isRTL ? 'rtl' : 'ltr'}
@@ -94,17 +94,11 @@ export const SystemStatusIndicator: React.FC<SystemStatusIndicatorProps> = ({
         visual.bgTintClass
       )}>
         <div className="flex items-center gap-2.5">
-          {/* Pulsing Dot - Unified breathing animation */}
-          <div className="relative flex items-center justify-center">
-            <span className={cn(
-              "absolute w-3.5 h-3.5 rounded-full animate-focus-breathe",
-              visual.dotClass.replace('bg-', 'bg-').replace(/\/\d+/, '/30')
-            )} />
-            <span className={cn(
-              "relative w-2.5 h-2.5 rounded-full animate-subtle-pulse",
-              visual.dotClass
-            )} />
-          </div>
+          {/* Status Dot - Simple subtle pulse, single instance */}
+          <span className={cn(
+            "w-2.5 h-2.5 rounded-full animate-subtle-pulse",
+            visual.dotClass
+          )} />
           
           {/* Status Icon */}
           <StatusIcon className={cn("w-4 h-4", visual.textClass)} />
