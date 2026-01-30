@@ -10,7 +10,7 @@
  * - Uses same thresholds as Status Engine
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Users, BookOpen, Award, TrendingUp, BarChart3, Play, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -73,10 +73,24 @@ export default function Reports() {
     return !!state?.focusStatus;
   });
 
-  const handleClearFilter = () => {
+  const handleClearFilter = useCallback(() => {
     setIsFiltered(false);
     navigate(location.pathname, { replace: true, state: {} });
-  };
+  }, [navigate, location.pathname]);
+
+  // Single-owner visibility state for the status header card (prevents stacked duplicates)
+  const [statusHeaderState, setStatusHeaderState] = useState<'open' | 'closing' | 'closed'>('open');
+
+  const dismissStatusHeader = useCallback(() => {
+    // Keep routing/state consistent: if the view was opened via filter, clear it on dismiss.
+    if (isFiltered) handleClearFilter();
+
+    // Fade-out then unmount (matches global timing)
+    setStatusHeaderState('closing');
+    window.setTimeout(() => {
+      setStatusHeaderState('closed');
+    }, 180);
+  }, [isFiltered, handleClearFilter]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SUPPLEMENTARY DATA (for drill-down sections only)
@@ -517,12 +531,17 @@ export default function Reports() {
         {/* ═══════════════════════════════════════════════════════════════════
             SECTION A: Status Context Header (Top - No Numbers)
         ═══════════════════════════════════════════════════════════════════ */}
-        <ReportsStatusHeader
-          statusCode={systemStatus.statusCode}
-          isRTL={isRTL}
-          isFiltered={isFiltered}
-          onClearFilter={handleClearFilter}
-        />
+        {statusHeaderState !== 'closed' && (
+          <ReportsStatusHeader
+            statusCode={systemStatus.statusCode}
+            isRTL={isRTL}
+            isFiltered={isFiltered}
+            onClearFilter={handleClearFilter}
+            dismissible
+            onDismiss={dismissStatusHeader}
+            state={statusHeaderState === 'closing' ? 'closing' : 'open'}
+          />
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             SECTION B: Evidence Blocks (Why this status?)
