@@ -39,7 +39,7 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
   return (
     <div
       className={cn(
-        "rounded-lg border overflow-hidden mb-4",
+        "rounded-lg border overflow-hidden mb-4 content-appear",
         visual.bgTintClass,
         "border-l-4",
         visual.dotClass.replace('bg-', 'border-l-')
@@ -49,19 +49,12 @@ export const ReportsStatusHeader: React.FC<ReportsStatusHeaderProps> = ({
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            {/* Status Icon with Pulsing Dot */}
-            <div className="relative">
-              <div className={cn(
-                "w-12 h-12 rounded-lg flex items-center justify-center",
-                visual.bgTintClass
-              )}>
-                <StatusIcon className={cn("w-6 h-6", visual.textClass)} />
-              </div>
-              {/* Pulsing dot indicator - unified subtle pulse */}
-              <span className={cn(
-                "absolute -top-1 -right-1 w-3 h-3 rounded-full animate-subtle-pulse",
-                visual.dotClass
-              )} />
+            {/* Status Icon - NO pulsing dot here (dot is only on Dashboard indicator) */}
+            <div className={cn(
+              "w-12 h-12 rounded-lg flex items-center justify-center",
+              visual.bgTintClass
+            )}>
+              <StatusIcon className={cn("w-6 h-6", visual.textClass)} />
             </div>
 
             <div className="pt-0.5">
