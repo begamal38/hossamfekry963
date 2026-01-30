@@ -236,7 +236,7 @@ const TopStudents: React.FC = () => {
 
           <Button variant="outline" onClick={() => navigate('/assistant')} className="gap-2">
             <BackIcon className="w-4 h-4" />
-            {isArabic ? 'رجوع للوحة التحكم' : 'Back to Dashboard'}
+            {isArabic ? 'رجوع للمنصة' : 'Back to Platform'}
           </Button>
         </div>
       </main>
