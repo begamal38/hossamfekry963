@@ -5,6 +5,7 @@ export interface Governorate {
 }
 
 export const EGYPTIAN_GOVERNORATES: Governorate[] = [
+  // Egyptian Governorates
   { value: 'cairo', label_en: 'Cairo', label_ar: 'القاهرة' },
   { value: 'giza', label_en: 'Giza', label_ar: 'الجيزة' },
   { value: 'alexandria', label_en: 'Alexandria', label_ar: 'الإسكندرية' },
@@ -32,6 +33,8 @@ export const EGYPTIAN_GOVERNORATES: Governorate[] = [
   { value: 'aswan', label_en: 'Aswan', label_ar: 'أسوان' },
   { value: 'new_valley', label_en: 'New Valley', label_ar: 'الوادي الجديد' },
   { value: 'matrouh', label_en: 'Matrouh', label_ar: 'مطروح' },
+  // For students outside Egypt
+  { value: 'outside_egypt', label_en: 'Outside Egypt', label_ar: 'خارج مصر' },
 ];
 
 export const getGovernorateLabel = (value: string | null | undefined, isRTL: boolean): string => {
