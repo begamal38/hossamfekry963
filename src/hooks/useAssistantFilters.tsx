@@ -168,9 +168,22 @@ export function applyStudentFilters<T extends FilterableStudent>(
     );
   }
 
-  // Study mode filter - safeFilterMatch handles hybrid → online normalization automatically
+  // Study mode filter - with explicit 'unset' option for NULL values
   if (filters.studyModeFilter && filters.studyModeFilter !== 'all') {
-    filtered = filtered.filter((s) => safeFilterMatch(s.attendance_mode, filters.studyModeFilter));
+    if (filters.studyModeFilter === 'unset') {
+      // Show only students with NULL attendance_mode
+      filtered = filtered.filter((s) => s.attendance_mode == null);
+    } else if (filters.studyModeFilter === 'online') {
+      // Online filter: include 'online', 'hybrid' (legacy), AND null (not yet confirmed)
+      filtered = filtered.filter((s) => 
+        s.attendance_mode === 'online' || 
+        s.attendance_mode === 'hybrid' || 
+        s.attendance_mode == null
+      );
+    } else {
+      // safeFilterMatch handles other cases (e.g., 'center')
+      filtered = filtered.filter((s) => safeFilterMatch(s.attendance_mode, filters.studyModeFilter));
+    }
   }
 
   // Center group filter (requires centerGroupMembers mapping)
