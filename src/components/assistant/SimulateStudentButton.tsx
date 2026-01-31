@@ -189,7 +189,7 @@ export function SimulateStudentButton({
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl overflow-y-auto">
           <SheetHeader className="text-right">
             <SheetTitle className="flex items-center gap-2 justify-end">
               {isArabic ? 'معاينة تجربة الطالب' : 'Student Experience Simulation'}
