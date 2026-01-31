@@ -36,6 +36,7 @@ import {
   getCenterGroupFilterOptions,
   getCourseStatusFilterOptions,
   CourseStatusFilter,
+  type StudyModeFilter,
 } from '@/hooks/useAssistantFilters';
 import { useCenterGroups } from '@/hooks/useCenterGroups';
 import { useURLFilterState } from '@/hooks/useURLFilterState';
@@ -335,7 +336,7 @@ export default function Students() {
       searchTerm,
       gradeFilter,
       trackFilter,
-      studyModeFilter: studyModeFilter as 'all' | 'online' | 'center',
+      studyModeFilter: studyModeFilter as StudyModeFilter,
       centerGroupFilter,
     };
     

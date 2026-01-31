@@ -189,7 +189,12 @@ export function SimulateStudentButton({
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl overflow-y-auto">
+        <SheetContent
+          side="bottom"
+          // Extra top padding prevents the global close button (absolute top-right)
+          // from overlapping/truncating the header on mobile.
+          className="max-h-[85vh] rounded-t-2xl overflow-y-auto pt-10 pb-6"
+        >
           <SheetHeader className="text-right">
             <SheetTitle className="flex items-center gap-2 justify-end">
               {isArabic ? 'معاينة تجربة الطالب' : 'Student Experience Simulation'}

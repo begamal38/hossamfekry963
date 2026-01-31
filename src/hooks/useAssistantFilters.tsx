@@ -174,12 +174,9 @@ export function applyStudentFilters<T extends FilterableStudent>(
       // Show only students with NULL attendance_mode
       filtered = filtered.filter((s) => s.attendance_mode == null);
     } else if (filters.studyModeFilter === 'online') {
-      // Online filter: include 'online', 'hybrid' (legacy), AND null (not yet confirmed)
-      filtered = filtered.filter((s) => 
-        s.attendance_mode === 'online' || 
-        s.attendance_mode === 'hybrid' || 
-        s.attendance_mode == null
-      );
+      // Online filter: include anything that normalizes to 'online' via Silent Auto-Fix
+      // PLUS null (not yet confirmed).
+      filtered = filtered.filter((s) => s.attendance_mode == null || safeFilterMatch(s.attendance_mode, 'online'));
     } else {
       // safeFilterMatch handles other cases (e.g., 'center')
       filtered = filtered.filter((s) => safeFilterMatch(s.attendance_mode, filters.studyModeFilter));
