@@ -12,7 +12,8 @@ interface LessonProgress {
 interface UseLessonProgressReturn {
   completions: Record<string, LessonProgress>;
   isLessonCompleted: (lessonId: string) => boolean;
-  markLessonComplete: (lessonId: string) => Promise<void>;
+  /** Mark lesson complete - isStaff flag prevents analytics contamination */
+  markLessonComplete: (lessonId: string, isStaff?: boolean) => Promise<void>;
   canAccessLesson: (
     lessonId: string,
     lessonOrderIndex: number,
@@ -28,7 +29,9 @@ export function useLessonProgress(courseId: string): UseLessonProgressReturn {
 
   useEffect(() => {
     const fetchCompletions = async () => {
-      if (!user || !courseId) {
+      // PHASE GUARD: Require authenticated user and valid course
+      const userId = user?.id;
+      if (!userId || !courseId) {
         setLoading(false);
         return;
       }
@@ -51,7 +54,7 @@ export function useLessonProgress(courseId: string): UseLessonProgressReturn {
         const { data: completionsData, error } = await supabase
           .from('lesson_completions')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .in('lesson_id', lessonIds);
 
         if (error) throw error;
@@ -75,7 +78,8 @@ export function useLessonProgress(courseId: string): UseLessonProgressReturn {
     };
 
     fetchCompletions();
-  }, [user, courseId]);
+  // STABLE DEPS: Use user?.id instead of user object
+  }, [user?.id, courseId]);
 
   const isLessonCompleted = useCallback((lessonId: string): boolean => {
     return !!completions[lessonId]?.isCompleted;

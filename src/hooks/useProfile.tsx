@@ -42,17 +42,20 @@ export const useProfile = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchProfile = useCallback(async (forceRefresh = false) => {
+    // PHASE GUARD: Do not fetch until auth is resolved
     if (authLoading) return;
 
-    if (!user) {
+    const userId = user?.id;
+    
+    if (!userId) {
       profileCache = null;
       setProfile(null);
       setLoading(false);
       return;
     }
 
-    // Check cache first
-    const cachedForUser = profileCache?.userId === user.id ? profileCache : null;
+    // Check cache first (using userId for stable comparison)
+    const cachedForUser = profileCache?.userId === userId ? profileCache : null;
     const cacheFresh = cachedForUser && Date.now() - cachedForUser.fetchedAt < PROFILE_CACHE_TTL_MS;
 
     if (cacheFresh && !forceRefresh) {
@@ -61,7 +64,7 @@ export const useProfile = () => {
       return;
     }
 
-    // If we have stale cached data, use it while refreshing
+    // If we have stale cached data, use it while refreshing (no loading state)
     if (cachedForUser && !forceRefresh) {
       setProfile(cachedForUser.profile);
     }
@@ -70,7 +73,7 @@ export const useProfile = () => {
       const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (fetchError) throw fetchError;
@@ -84,7 +87,7 @@ export const useProfile = () => {
           const { data: membership } = await supabase
             .from('center_group_members')
             .select('group_id, center_groups!inner(name)')
-            .eq('student_id', user.id)
+            .eq('student_id', userId)
             .eq('is_active', true)
             .maybeSingle();
           
@@ -115,7 +118,7 @@ export const useProfile = () => {
           center_group_name: centerGroupName,
         };
 
-        profileCache = { userId: user.id, profile: userProfile, fetchedAt: Date.now() };
+        profileCache = { userId, profile: userProfile, fetchedAt: Date.now() };
         setProfile(userProfile);
         setError(null);
       } else {
@@ -125,14 +128,15 @@ export const useProfile = () => {
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError(err as Error);
-      // Keep stale data if we have it
-      if (!profile && cachedForUser) {
+      // Keep stale data if we have it (graceful degradation)
+      if (cachedForUser) {
         setProfile(cachedForUser.profile);
       }
     } finally {
       setLoading(false);
     }
-  }, [authLoading, user, profile]);
+  // STABLE DEPS: Use user?.id instead of user object to prevent reference instability
+  }, [authLoading, user?.id]);
 
   useEffect(() => {
     fetchProfile();

@@ -102,7 +102,10 @@ export const useStudentBehavior = (): StudentBehaviorData => {
    * Fetch behavior metrics from database
    */
   const fetchBehavior = useCallback(async () => {
-    if (!user) {
+    // PHASE GUARD: Extract userId for stable reference
+    const userId = user?.id;
+    
+    if (!userId) {
       setData({ statusCode: 'NEW', loading: false, metrics: null });
       return;
     }
@@ -117,10 +120,10 @@ export const useStudentBehavior = (): StudentBehaviorData => {
         { count: completedLessonsCount },
         { data: examAttempts },
       ] = await Promise.all([
-        supabase.from('profiles').select('created_at').eq('user_id', user.id).maybeSingle(),
-        supabase.from('focus_sessions').select('started_at, total_active_seconds').eq('user_id', user.id).order('started_at', { ascending: false }),
-        supabase.from('lesson_completions').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('exam_attempts').select('score, total_questions').eq('user_id', user.id).eq('is_completed', true),
+        supabase.from('profiles').select('created_at').eq('user_id', userId).maybeSingle(),
+        supabase.from('focus_sessions').select('started_at, total_active_seconds').eq('user_id', userId).order('started_at', { ascending: false }),
+        supabase.from('lesson_completions').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('exam_attempts').select('score, total_questions').eq('user_id', userId).eq('is_completed', true),
       ]);
 
       // Calculate account age
@@ -173,7 +176,8 @@ export const useStudentBehavior = (): StudentBehaviorData => {
         metrics: null,
       });
     }
-  }, [user, determineStatus]);
+  // STABLE DEPS: Use user?.id instead of user object
+  }, [user?.id, determineStatus]);
 
   // Fetch on mount and user change
   useEffect(() => {

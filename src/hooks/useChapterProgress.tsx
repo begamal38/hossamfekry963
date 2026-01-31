@@ -50,6 +50,9 @@ export function useChapterProgress(courseId: string): UseChapterProgressReturn {
       return;
     }
 
+    // Extract userId once for stable reference
+    const userId = user?.id;
+
     try {
       // Fetch all chapters for this course
       const { data: chapters } = await supabase
@@ -91,14 +94,14 @@ export function useChapterProgress(courseId: string): UseChapterProgressReturn {
       let completedLessonIds: Set<string> = new Set();
       let attemptsMap: Record<string, ExamAttempt> = {};
 
-      if (user) {
+      if (userId) {
         const lessonIds = (lessons || []).map(l => l.id);
         
         if (lessonIds.length > 0) {
           const { data: completions } = await supabase
             .from('lesson_completions')
             .select('lesson_id')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .in('lesson_id', lessonIds);
 
           completedLessonIds = new Set((completions || []).map(c => c.lesson_id));
@@ -110,7 +113,7 @@ export function useChapterProgress(courseId: string): UseChapterProgressReturn {
           const { data: attempts } = await supabase
             .from('exam_attempts')
             .select('exam_id, score, total_questions, is_completed')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .eq('is_completed', true)
             .in('exam_id', examIds);
 
@@ -149,7 +152,8 @@ export function useChapterProgress(courseId: string): UseChapterProgressReturn {
     } finally {
       setLoading(false);
     }
-  }, [courseId, user]);
+  // STABLE DEPS: Use user?.id instead of user object to prevent reference instability
+  }, [courseId, user?.id]);
 
   useEffect(() => {
     fetchData();

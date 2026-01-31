@@ -23,10 +23,14 @@ export const useUserRole = () => {
   const retryCountRef = useRef(0);
 
   const fetchRoles = useCallback(async () => {
-    // Don't query roles until auth is fully initialized.
+    // PHASE GUARD: Don't query roles until auth is fully initialized.
     if (authLoading) return;
 
-    if (!user || !session) {
+    // Extract userId for stable comparison
+    const userId = user?.id;
+    const sessionToken = session?.access_token;
+
+    if (!userId || !sessionToken) {
       roleCache = null;
       retryCountRef.current = 0;
       setRoles([]);
@@ -35,7 +39,7 @@ export const useUserRole = () => {
       return;
     }
 
-    const cachedForUser = roleCache?.userId === user.id ? roleCache : null;
+    const cachedForUser = roleCache?.userId === userId ? roleCache : null;
     const cacheFresh = cachedForUser && Date.now() - cachedForUser.fetchedAt < ROLE_CACHE_TTL_MS;
 
     // If we have fresh cached roles, use them immediately and don't block UI.
@@ -56,7 +60,7 @@ export const useUserRole = () => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -64,7 +68,7 @@ export const useUserRole = () => {
       const nextRoles = (data || []).map((r) => r.role as AppRole);
       
       // Update cache FIRST to ensure consistency
-      roleCache = { userId: user.id, roles: nextRoles, fetchedAt: Date.now() };
+      roleCache = { userId, roles: nextRoles, fetchedAt: Date.now() };
       // Then update state
       setRoles(nextRoles);
     } catch (error) {
@@ -78,7 +82,7 @@ export const useUserRole = () => {
       } else {
         console.warn('Role fetch failed (will treat as no roles).');
         setRoles([]);
-        roleCache = { userId: user.id, roles: [], fetchedAt: Date.now() };
+        roleCache = { userId, roles: [], fetchedAt: Date.now() };
       }
     } finally {
       if (!keepLoadingForRetry) {
@@ -86,7 +90,8 @@ export const useUserRole = () => {
         setHasAttemptedFetch(true);
       }
     }
-  }, [authLoading, session, user]);
+  // STABLE DEPS: Use user?.id and session?.access_token instead of objects
+  }, [authLoading, session?.access_token, user?.id]);
 
   // Initial fetch
   useEffect(() => {
@@ -95,7 +100,9 @@ export const useUserRole = () => {
 
   // Subscribe to role changes in realtime
   useEffect(() => {
-    if (!user) return;
+    // STABLE DEPS: Use userId for filter instead of user object
+    const userId = user?.id;
+    if (!userId) return;
 
     const channel = supabase
       .channel('user-roles-changes')
@@ -105,7 +112,7 @@ export const useUserRole = () => {
           event: '*',
           schema: 'public',
           table: 'user_roles',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${userId}`
         },
         () => {
           // Clear cache and refetch when role changes
@@ -118,7 +125,7 @@ export const useUserRole = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchRoles]);
+  }, [user?.id, fetchRoles]);
 
   const roleSet = useMemo(() => new Set(roles), [roles]);
 

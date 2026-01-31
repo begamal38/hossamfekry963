@@ -56,7 +56,9 @@ export function useCenterGroups(): UseCenterGroupsReturn {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchGroups = useCallback(async () => {
-    if (!user) {
+    // PHASE GUARD: Require authenticated user
+    const userId = user?.id;
+    if (!userId) {
       setLoading(false);
       return;
     }
@@ -93,7 +95,8 @@ export function useCenterGroups(): UseCenterGroupsReturn {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  // STABLE DEPS: Use user?.id instead of user object to prevent reference instability
+  }, [user?.id]);
 
   useEffect(() => {
     fetchGroups();
