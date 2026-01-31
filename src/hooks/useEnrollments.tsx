@@ -43,9 +43,12 @@ export const useEnrollments = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchEnrollments = useCallback(async (forceRefresh = false) => {
+    // PHASE GUARD: Do not fetch until auth is resolved
     if (authLoading) return;
 
-    if (!user) {
+    const userId = user?.id;
+
+    if (!userId) {
       enrollmentsCache = null;
       setEnrollments([]);
       setLoading(false);
@@ -53,7 +56,7 @@ export const useEnrollments = () => {
     }
 
     // Check cache
-    const cached = enrollmentsCache?.userId === user.id ? enrollmentsCache : null;
+    const cached = enrollmentsCache?.userId === userId ? enrollmentsCache : null;
     const cacheFresh = cached && Date.now() - cached.fetchedAt < ENROLLMENTS_CACHE_TTL_MS;
 
     if (cacheFresh && !forceRefresh) {
@@ -62,7 +65,7 @@ export const useEnrollments = () => {
       return;
     }
 
-    // Use stale data while refreshing
+    // Use stale data while refreshing (no loading flicker)
     if (cached && !forceRefresh) {
       setEnrollments(cached.enrollments);
     }
@@ -89,13 +92,13 @@ export const useEnrollments = () => {
             duration_hours
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('enrolled_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
       const typedEnrollments = (data || []) as unknown as EnrollmentWithCourse[];
-      enrollmentsCache = { userId: user.id, enrollments: typedEnrollments, fetchedAt: Date.now() };
+      enrollmentsCache = { userId, enrollments: typedEnrollments, fetchedAt: Date.now() };
       setEnrollments(typedEnrollments);
       setError(null);
     } catch (err) {
@@ -104,7 +107,8 @@ export const useEnrollments = () => {
     } finally {
       setLoading(false);
     }
-  }, [authLoading, user]);
+  // STABLE DEPS: Use user?.id instead of user object to prevent reference instability
+  }, [authLoading, user?.id]);
 
   useEffect(() => {
     fetchEnrollments();

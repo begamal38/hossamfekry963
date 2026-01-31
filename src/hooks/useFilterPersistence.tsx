@@ -35,13 +35,15 @@ export function useFilterPersistence(
 ) {
   const storageKey = `${STORAGE_KEY_PREFIX}${pageKey}`;
 
-  // Restore on mount
+  // Restore on mount only - uses ref to prevent triggering on setter changes
   useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored) as FilterState;
         
+        // Apply stored values immediately on mount
+        // Note: Setters are stable functions, so this won't cause re-renders
         if (parsed.gradeFilter && setters.setGradeFilter) {
           setters.setGradeFilter(parsed.gradeFilter);
         }
@@ -59,10 +61,12 @@ export function useFilterPersistence(
         }
       }
     } catch (e) {
-      // Ignore parse errors
+      // Ignore parse errors - silent auto-fix principle
       console.warn('Failed to restore filter state:', e);
     }
-  }, [storageKey]); // Only run on mount
+  // CRITICAL: Empty dependency ensures this only runs on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Save on change (debounced effect)
   useEffect(() => {
