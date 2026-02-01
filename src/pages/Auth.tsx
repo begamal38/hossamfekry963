@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Monitor, Building2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Monitor, Building2, Apple } from 'lucide-react';
+import { lovable } from '@/integrations/lovable/index';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,6 +78,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -256,6 +258,39 @@ const Auth = () => {
       });
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth('apple', {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        let errorMessage = tr('حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.', 'Something went wrong. Please try again.');
+
+        if (result.error.message?.includes('popup_closed')) {
+          errorMessage = tr('تم إغلاق نافذة تسجيل الدخول. حاول مرة أخرى.', 'The sign-in window was closed. Please try again.');
+        } else if (result.error.message?.includes('access_denied')) {
+          errorMessage = tr('تم رفض الوصول. يرجى المحاولة مرة أخرى.', 'Access denied. Please try again.');
+        }
+
+        toast({
+          variant: 'destructive',
+          title: tr('فشل تسجيل الدخول بـ Apple', 'Apple sign-in failed'),
+          description: errorMessage,
+        });
+      }
+      // Success is handled by OAuth redirect or session set
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: tr('خطأ', 'Error'),
+        description: tr('حصلت مشكلة أثناء تسجيل الدخول، حاول مرة أخرى.', 'Something went wrong. Please try again.'),
+      });
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -483,14 +518,55 @@ const Auth = () => {
                     <span className="text-sm font-semibold text-foreground">{tr('أسرع طريقة للتسجيل', 'Fastest way to sign up')}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">
-                    {tr('سجّل بحسابك في Google في ثانية واحدة - من غير باسورد!', 'Sign up with your Google account in one second - no password needed!')}
+                    {tr('سجّل بحسابك في ثانية واحدة - من غير باسورد!', 'Sign up in one second - no password needed!')}
                   </p>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="w-full h-12 gap-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm font-medium rounded-xl"
+                      onClick={handleGoogleSignIn}
+                      disabled={googleLoading || appleLoading}
+                    >
+                      {googleLoading ? (
+                        <div className="w-5 h-5 border-2 border-gray-400/30 border-t-gray-600 rounded-full animate-spin" />
+                      ) : (
+                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                      )}
+                      {tr('التسجيل بـ Google', 'Sign up with Google')}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="w-full h-12 gap-3 bg-black hover:bg-gray-900 text-white border border-black shadow-sm font-medium rounded-xl"
+                      onClick={handleAppleSignIn}
+                      disabled={googleLoading || appleLoading}
+                    >
+                      {appleLoading ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Apple className="w-5 h-5" />
+                      )}
+                      {tr('التسجيل بـ Apple', 'Sign up with Apple')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Login: Social login buttons */}
+              {isLogin && (
+                <div className="flex flex-col gap-2 mb-4">
                   <Button
                     type="button"
                     size="lg"
                     className="w-full h-12 gap-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm font-medium rounded-xl"
                     onClick={handleGoogleSignIn}
-                    disabled={googleLoading}
+                    disabled={googleLoading || appleLoading}
                   >
                     {googleLoading ? (
                       <div className="w-5 h-5 border-2 border-gray-400/30 border-t-gray-600 rounded-full animate-spin" />
@@ -502,32 +578,23 @@ const Auth = () => {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
                     )}
-                    {tr('التسجيل بـ Google', 'Sign up with Google')}
+                    {tr('الدخول بـ Google', 'Continue with Google')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="w-full h-12 gap-3 bg-black hover:bg-gray-900 text-white border border-black shadow-sm font-medium rounded-xl"
+                    onClick={handleAppleSignIn}
+                    disabled={googleLoading || appleLoading}
+                  >
+                    {appleLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Apple className="w-5 h-5" />
+                    )}
+                    {tr('الدخول بـ Apple', 'Continue with Apple')}
                   </Button>
                 </div>
-              )}
-
-              {/* Login: Simple Google button */}
-              {isLogin && (
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full h-12 mb-4 gap-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 shadow-sm font-medium rounded-xl"
-                  onClick={handleGoogleSignIn}
-                  disabled={googleLoading}
-                >
-                  {googleLoading ? (
-                    <div className="w-5 h-5 border-2 border-gray-400/30 border-t-gray-600 rounded-full animate-spin" />
-                  ) : (
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                  )}
-                  {tr('الدخول بـ Google', 'Continue with Google')}
-                </Button>
               )}
 
               <div className="relative mb-4">
