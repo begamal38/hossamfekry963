@@ -1131,36 +1131,30 @@ export default function ManageExams() {
                 isArabic={isArabic}
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                {['a', 'b', 'c', 'd'].map((opt, idx) => (
-                  <div key={opt}>
-                    <label className="block text-sm font-medium mb-1">
-                      {isArabic ? `${['أ', 'ب', 'ج', 'د'][idx]}` : opt.toUpperCase()}
-                      {questionForm.correct_option === opt && (
-                        <Badge variant="default" className="ms-2 bg-green-500 text-xs">
-                          ✓
-                        </Badge>
+              {/* Correct Answer Selection - image contains options, just pick A/B/C/D */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isArabic ? 'الإجابة الصحيحة' : 'Correct Answer'}
+                </label>
+                <div className="flex items-center justify-center gap-3">
+                  {['a', 'b', 'c', 'd'].map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setQuestionForm(prev => ({ ...prev, correct_option: opt }))}
+                      className={cn(
+                        "w-12 h-12 rounded-xl border-2 transition-all duration-200",
+                        "flex items-center justify-center text-lg font-bold",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        questionForm.correct_option === opt
+                          ? "border-green-500 bg-green-500 text-white shadow-md scale-105"
+                          : "border-border bg-card hover:border-green-500/50 hover:bg-green-500/5 text-foreground"
                       )}
-                    </label>
-                    <div className="flex gap-1">
-                      <Input
-                        value={questionForm[`option_${opt}` as keyof typeof questionForm]}
-                        onChange={(e) => setQuestionForm(prev => ({ ...prev, [`option_${opt}`]: e.target.value }))}
-                        placeholder={isArabic ? 'الإجابة' : 'Answer'}
-                        className="text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant={questionForm.correct_option === opt ? "default" : "outline"}
-                        size="icon"
-                        onClick={() => setQuestionForm(prev => ({ ...prev, correct_option: opt }))}
-                        className={cn("shrink-0", questionForm.correct_option === opt ? "bg-green-500 hover:bg-green-600" : "")}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    >
+                      {opt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-2 justify-end pt-2">

@@ -433,10 +433,10 @@ export default function TakeExam() {
               {/* Simple A, B, C, D selection - question image contains the options */}
               <div className="flex items-center justify-center gap-4 py-4">
                 {[
-                  { key: 'a', label: 'أ' },
-                  { key: 'b', label: 'ب' },
-                  { key: 'c', label: 'ج' },
-                  { key: 'd', label: 'د' },
+                  { key: 'a', label: 'A' },
+                  { key: 'b', label: 'B' },
+                  { key: 'c', label: 'C' },
+                  { key: 'd', label: 'D' },
                 ].map(option => (
                   <button
                     key={option.key}
