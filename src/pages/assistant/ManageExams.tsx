@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -182,6 +182,9 @@ export default function ManageExams() {
     option_d: '',
     correct_option: 'a'
   });
+  
+  // Ref for question textarea to enable paste-to-upload
+  const questionTextRef = useRef<HTMLTextAreaElement>(null);
 
   // Confirm dialogs
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -1122,23 +1125,26 @@ export default function ManageExams() {
           {/* Question Form */}
           {showQuestionForm && (
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              {/* Combined: Question Text + Image with paste support */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {isArabic ? 'نص السؤال' : 'Question Text'}
+                  {isArabic ? 'نص السؤال أو الصق صورة' : 'Question text or paste image'}
                 </label>
                 <Textarea
+                  ref={questionTextRef}
                   value={questionForm.question_text}
                   onChange={(e) => setQuestionForm(prev => ({ ...prev, question_text: e.target.value }))}
-                  placeholder={isArabic ? 'اكتب السؤال هنا...' : 'Write the question here...'}
+                  placeholder={isArabic ? 'اكتب السؤال هنا أو الصق صورة (Ctrl+V)...' : 'Write question or paste image (Ctrl+V)...'}
                   rows={2}
                 />
               </div>
 
-              {/* Image Upload - replaces external URL input */}
+              {/* Image Upload - supports paste from textarea */}
               <ExamImageUpload
                 value={questionForm.question_image_url}
                 onChange={(url) => setQuestionForm(prev => ({ ...prev, question_image_url: url }))}
                 isArabic={isArabic}
+                pasteTargetRef={questionTextRef}
               />
 
               <div className="grid grid-cols-2 gap-3">
