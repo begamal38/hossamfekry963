@@ -77,12 +77,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // THEN check for existing session with timeout guard
+    // CRITICAL: Prevents white screen for users in regions with network issues
+    const AUTH_TIMEOUT_MS = 5000; // 5 seconds max wait
+    
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => {
+      setTimeout(() => {
+        console.warn('[Auth] Session fetch timed out - proceeding as guest');
+        resolve({ data: { session: null } });
+      }, AUTH_TIMEOUT_MS);
     });
+    
+    Promise.race([sessionPromise, timeoutPromise])
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((err) => {
+        console.warn('[Auth] Session fetch failed:', err);
+        // FAIL-SAFE: Always resolve to prevent white screen
+        setSession(null);
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
