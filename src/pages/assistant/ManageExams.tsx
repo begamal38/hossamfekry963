@@ -53,6 +53,7 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
+import { ExamImageUpload } from '@/components/assistant/ExamImageUpload';
 import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
 
 type ExamStatus = 'draft' | 'published' | 'closed' | 'archived';
@@ -1133,18 +1134,12 @@ export default function ManageExams() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  <ImageIcon className="w-4 h-4 inline me-1" />
-                  {isArabic ? 'رابط صورة (اختياري)' : 'Image URL (Optional)'}
-                </label>
-                <Input
-                  value={questionForm.question_image_url}
-                  onChange={(e) => setQuestionForm(prev => ({ ...prev, question_image_url: e.target.value }))}
-                  placeholder="https://..."
-                  dir="ltr"
-                />
-              </div>
+              {/* Image Upload - replaces external URL input */}
+              <ExamImageUpload
+                value={questionForm.question_image_url}
+                onChange={(url) => setQuestionForm(prev => ({ ...prev, question_image_url: url }))}
+                isArabic={isArabic}
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 {['a', 'b', 'c', 'd'].map((opt, idx) => (
