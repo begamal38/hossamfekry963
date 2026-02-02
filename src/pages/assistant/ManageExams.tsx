@@ -45,7 +45,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAutoTranslate } from '@/hooks/useAutoTranslate';
-import { cn } from '@/lib/utils';
+import { cn, wrapChemicalEquations } from '@/lib/utils';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader';
@@ -1219,8 +1219,8 @@ export default function ManageExams() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm font-medium mb-2 line-clamp-2">
-                        {question.question_text || (isArabic ? '(سؤال صورة)' : '(Image question)')}
+                      <p className="text-sm font-medium mb-2 line-clamp-2" dir="auto">
+                        {wrapChemicalEquations(question.question_text) || (isArabic ? '(سؤال صورة)' : '(Image question)')}
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {['a', 'b', 'c', 'd'].map((opt) => (

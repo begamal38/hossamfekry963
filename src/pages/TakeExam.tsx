@@ -18,7 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, wrapChemicalEquations } from '@/lib/utils';
 
 interface ExamQuestion {
   id: string;
@@ -425,8 +425,8 @@ export default function TakeExam() {
           {/* Question Card */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">
-                <span className="text-primary">{currentQuestionIndex + 1}.</span> {currentQuestion.question_text}
+              <CardTitle className="text-lg" dir="auto">
+                <span className="text-primary">{currentQuestionIndex + 1}.</span> {wrapChemicalEquations(currentQuestion.question_text)}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -456,7 +456,7 @@ export default function TakeExam() {
                       )}>
                         {option.label}
                       </span>
-                      <span>{option.value}</span>
+                      <span dir="auto">{wrapChemicalEquations(option.value)}</span>
                     </div>
                   </button>
                 ))}
