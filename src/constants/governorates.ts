@@ -32,6 +32,8 @@ export const EGYPTIAN_GOVERNORATES: Governorate[] = [
   { value: 'aswan', label_en: 'Aswan', label_ar: 'أسوان' },
   { value: 'new_valley', label_en: 'New Valley', label_ar: 'الوادي الجديد' },
   { value: 'matrouh', label_en: 'Matrouh', label_ar: 'مطروح' },
+  // CRITICAL: Support international students (outside Egypt)
+  { value: 'outside_egypt', label_en: 'Outside Egypt', label_ar: 'خارج مصر' },
 ];
 
 export const getGovernorateLabel = (value: string | null | undefined, isRTL: boolean): string => {

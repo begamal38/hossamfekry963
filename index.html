@@ -112,7 +112,23 @@
     <!-- Meta Pixel noscript fallback -->
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1513712396356994&ev=PageView&noscript=1" /></noscript>
     
-    <div id="root"></div>
+    <div id="root">
+      <!-- CRITICAL: CSS-only loading fallback shown BEFORE React hydrates -->
+      <!-- Prevents white screen for users with slow networks or throttled regions -->
+      <div id="initial-loader" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f172a;direction:rtl;">
+        <div style="display:flex;gap:8px;">
+          <span style="width:14px;height:14px;border-radius:50%;background:#3b82f6;animation:pulse-dot 1.2s ease-in-out infinite;animation-delay:0ms;"></span>
+          <span style="width:14px;height:14px;border-radius:50%;background:#3b82f6;animation:pulse-dot 1.2s ease-in-out infinite;animation-delay:150ms;"></span>
+          <span style="width:14px;height:14px;border-radius:50%;background:#3b82f6;animation:pulse-dot 1.2s ease-in-out infinite;animation-delay:300ms;"></span>
+        </div>
+        <style>
+          @keyframes pulse-dot {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
