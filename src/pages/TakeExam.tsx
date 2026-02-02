@@ -430,34 +430,27 @@ export default function TakeExam() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              {/* Simple A, B, C, D selection - question image contains the options */}
+              <div className="flex items-center justify-center gap-4 py-4">
                 {[
-                  { key: 'a', label: 'أ', value: currentQuestion.option_a },
-                  { key: 'b', label: 'ب', value: currentQuestion.option_b },
-                  { key: 'c', label: 'ج', value: currentQuestion.option_c },
-                  { key: 'd', label: 'د', value: currentQuestion.option_d },
+                  { key: 'a', label: 'أ' },
+                  { key: 'b', label: 'ب' },
+                  { key: 'c', label: 'ج' },
+                  { key: 'd', label: 'د' },
                 ].map(option => (
                   <button
                     key={option.key}
                     onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
                     className={cn(
-                      "w-full text-start p-4 rounded-lg border-2 transition-all",
+                      "w-14 h-14 rounded-xl border-2 transition-all duration-200",
+                      "flex items-center justify-center text-lg font-bold",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       answers[currentQuestion.id] === option.key
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                        ? "border-primary bg-primary text-primary-foreground shadow-md scale-105"
+                        : "border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-foreground"
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
-                        answers[currentQuestion.id] === option.key
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      )}>
-                        {option.label}
-                      </span>
-                      <span dir="auto">{wrapChemicalEquations(option.value)}</span>
-                    </div>
+                    {option.label}
                   </button>
                 ))}
               </div>
