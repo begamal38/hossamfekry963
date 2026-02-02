@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -53,7 +53,7 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
-import { ExamImageUpload } from '@/components/assistant/ExamImageUpload';
+import { QuestionContentInput } from '@/components/assistant/QuestionContentInput';
 import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
 
 type ExamStatus = 'draft' | 'published' | 'closed' | 'archived';
@@ -182,9 +182,6 @@ export default function ManageExams() {
     option_d: '',
     correct_option: 'a'
   });
-  
-  // Ref for question textarea to enable paste-to-upload
-  const questionTextRef = useRef<HTMLTextAreaElement>(null);
 
   // Confirm dialogs
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -1125,26 +1122,13 @@ export default function ManageExams() {
           {/* Question Form */}
           {showQuestionForm && (
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-              {/* Combined: Question Text + Image with paste support */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  {isArabic ? 'نص السؤال أو الصق صورة' : 'Question text or paste image'}
-                </label>
-                <Textarea
-                  ref={questionTextRef}
-                  value={questionForm.question_text}
-                  onChange={(e) => setQuestionForm(prev => ({ ...prev, question_text: e.target.value }))}
-                  placeholder={isArabic ? 'اكتب السؤال هنا أو الصق صورة (Ctrl+V)...' : 'Write question or paste image (Ctrl+V)...'}
-                  rows={2}
-                />
-              </div>
-
-              {/* Image Upload - supports paste from textarea */}
-              <ExamImageUpload
-                value={questionForm.question_image_url}
-                onChange={(url) => setQuestionForm(prev => ({ ...prev, question_image_url: url }))}
+              {/* Unified Question Input - text AND image in one field */}
+              <QuestionContentInput
+                text={questionForm.question_text}
+                imageUrl={questionForm.question_image_url}
+                onTextChange={(text) => setQuestionForm(prev => ({ ...prev, question_text: text }))}
+                onImageChange={(url) => setQuestionForm(prev => ({ ...prev, question_image_url: url }))}
                 isArabic={isArabic}
-                pasteTargetRef={questionTextRef}
               />
 
               <div className="grid grid-cols-2 gap-3">
