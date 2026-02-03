@@ -50,13 +50,12 @@ Deno.serve(async (req) => {
     const platformUrl = 'https://hossamfekry.com';
 
     // Arabic welcome email HTML
-    // Brand colors matching the platform
-    const brandPrimary = '#3b82f6';
-    const brandPrimaryDark = '#2563eb';
-    const brandLight = '#eff6ff';
+    // SSOT Brand colors - Indigo Blue (HSL 209 56% 46%) matching platform design system
+    const brandPrimary = '#3173B8'; // Primary Indigo Blue
+    const brandPrimaryDark = '#1e5a9e';
+    const brandLight = '#f8fafc';
     const textDark = '#1e293b';
     const textMuted = '#64748b';
-    const logoUrl = 'https://hossamfekry.com/assets/logo-dab81b54.png';
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -164,8 +163,9 @@ Deno.serve(async (req) => {
     `;
 
     // Send the welcome email
+    // SSOT: Unified email sender - FollowUp@hossamfekry.com for ALL platform emails
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'منصة حسام فكري <notifications@hossamfekry.com>',
+      from: 'Hossam Fekry Platform <FollowUp@hossamfekry.com>',
       to: [email],
       subject: 'أهلاً بيك في منصة حسام فكري لتعليم الكيمياء 🧪',
       html: htmlContent,
