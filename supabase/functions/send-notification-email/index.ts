@@ -20,6 +20,7 @@ interface NotificationEmailRequest {
   course_id?: string;
 }
 
+// SSOT: Unified email sender for ALL platform communications
 const EMAIL_FROM = "Hossam Fekry Platform <FollowUp@hossamfekry.com>";
 
 const generateEmailHtml = (title: string, title_ar: string, message: string, message_ar: string) => `
@@ -46,7 +47,7 @@ const generateEmailHtml = (title: string, title_ar: string, message: string, mes
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .header { 
-      background: linear-gradient(135deg, #3173B8, #1e5a9e); 
+      background: linear-gradient(135deg, #3173B8, #1e5a9e); /* SSOT: Primary Indigo Blue */
       color: white; 
       padding: 30px 20px; 
       text-align: center; 
