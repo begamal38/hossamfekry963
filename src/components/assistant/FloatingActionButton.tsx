@@ -23,8 +23,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       onClick={onClick}
       className={cn(
         // Fixed position at bottom-right - higher bottom to avoid overlap with content
-        "fixed z-40",
-        isMobile ? "bottom-28 end-4 safe-area-inset-bottom" : "bottom-8 end-6",
+        "fixed z-50",
+        isMobile ? "bottom-24 end-4" : "bottom-8 end-6",
         // Unified: rounded-lg (10px), consistent with button system
         "flex items-center gap-2 rounded-lg shadow-lg",
         isMobile ? "px-4 py-3" : "px-3.5 py-2.5",
