@@ -11,6 +11,7 @@ import { TopStudentsStrip } from '@/components/home/TopStudentsStrip';
 import { IndigoAccentStrip } from '@/components/home/IndigoAccentStrip';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { WelcomeOnboarding } from '@/components/onboarding/WelcomeOnboarding';
+import { AppPromotionBanner } from '@/components/promotion/AppPromotionBanner';
 
 const Index: React.FC = () => {
   // Scroll to top on mount
@@ -28,6 +29,10 @@ const Index: React.FC = () => {
         canonical="https://hossamfekry.com"
       />
       <Navbar />
+      
+      {/* Light PWA promotion - non-intrusive, frequency-controlled */}
+      <AppPromotionBanner variant="inline" />
+      
       <main className="content-appear">
         {/* 1. Hero: أنا فين؟ - Single message + Single CTA */}
         <HeroSection />
