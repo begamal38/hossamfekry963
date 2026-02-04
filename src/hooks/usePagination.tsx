@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 interface UsePaginationOptions {
   itemsPerPage?: number;
@@ -29,6 +29,12 @@ interface UsePaginationResult<T> {
   resetToFirstPage: () => void;
 }
 
+/**
+ * Pagination hook following SSOT standards
+ * - Uses stable primitive dependencies
+ * - Effect-based page correction (no render-time setState)
+ * - Memoized calculations for performance
+ */
 export function usePagination<T>(
   items: T[],
   options: UsePaginationOptions = {}
@@ -36,49 +42,48 @@ export function usePagination<T>(
   const { itemsPerPage = 30, initialPage = 1 } = options;
   const [currentPage, setCurrentPage] = useState(initialPage);
   
-  // Calculate total pages
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(items.length / itemsPerPage));
-  }, [items.length, itemsPerPage]);
+  // Stable primitive: items.length
+  const itemsLength = items.length;
   
-  // Ensure current page is valid
-  const validatedPage = useMemo(() => {
-    if (currentPage > totalPages) return totalPages;
-    if (currentPage < 1) return 1;
-    return currentPage;
+  // Calculate total pages using stable primitive
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(itemsLength / itemsPerPage));
+  }, [itemsLength, itemsPerPage]);
+  
+  // Effect-based page correction (SSOT: no setState during render)
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
+    }
   }, [currentPage, totalPages]);
   
-  // Auto-correct page if it's out of bounds
-  if (validatedPage !== currentPage) {
-    setCurrentPage(validatedPage);
-  }
+  // Use validated page for calculations
+  const validatedPage = Math.max(1, Math.min(currentPage, totalPages));
   
   // Calculate indices
   const startIndex = (validatedPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, items.length);
+  const endIndex = Math.min(startIndex + itemsPerPage, itemsLength);
   
-  // Get current page items
+  // Get current page items - uses stable indices
   const currentItems = useMemo(() => {
     return items.slice(startIndex, endIndex);
   }, [items, startIndex, endIndex]);
   
-  // Navigation functions
+  // Navigation functions with stable dependencies
   const goToPage = useCallback((page: number) => {
     const targetPage = Math.max(1, Math.min(page, totalPages));
     setCurrentPage(targetPage);
   }, [totalPages]);
   
   const nextPage = useCallback(() => {
-    if (validatedPage < totalPages) {
-      setCurrentPage(validatedPage + 1);
-    }
-  }, [validatedPage, totalPages]);
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [totalPages]);
   
   const prevPage = useCallback(() => {
-    if (validatedPage > 1) {
-      setCurrentPage(validatedPage - 1);
-    }
-  }, [validatedPage]);
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
   
   const goToFirst = useCallback(() => {
     setCurrentPage(1);
@@ -96,7 +101,7 @@ export function usePagination<T>(
     currentItems,
     currentPage: validatedPage,
     totalPages,
-    totalItems: items.length,
+    totalItems: itemsLength,
     goToPage,
     nextPage,
     prevPage,
