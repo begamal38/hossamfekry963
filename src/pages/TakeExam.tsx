@@ -23,6 +23,7 @@ import { cn, wrapChemicalEquations } from '@/lib/utils';
 interface ExamQuestion {
   id: string;
   question_text: string;
+  question_image_url: string | null;
   option_a: string;
   option_b: string;
   option_c: string;
@@ -422,37 +423,69 @@ export default function TakeExam() {
             </CardContent>
           </Card>
 
-          {/* Question Card */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg" dir="auto">
-                <span className="text-primary">{currentQuestionIndex + 1}.</span> {wrapChemicalEquations(currentQuestion.question_text)}
-              </CardTitle>
+          {/* Question Card - Image-first design */}
+          <Card className="mb-6 overflow-hidden">
+            {/* Question number header */}
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+                  {currentQuestionIndex + 1}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {isArabic ? `من ${questions.length}` : `of ${questions.length}`}
+                </span>
+              </div>
             </CardHeader>
-            <CardContent>
-              {/* Simple A, B, C, D selection - question image contains the options */}
-              <div className="flex items-center justify-center gap-4 py-4">
-                {[
-                  { key: 'a', label: 'A' },
-                  { key: 'b', label: 'B' },
-                  { key: 'c', label: 'C' },
-                  { key: 'd', label: 'D' },
-                ].map(option => (
-                  <button
-                    key={option.key}
-                    onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
-                    className={cn(
-                      "w-14 h-14 rounded-xl border-2 transition-all duration-200",
-                      "flex items-center justify-center text-lg font-bold",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      answers[currentQuestion.id] === option.key
-                        ? "border-primary bg-primary text-primary-foreground shadow-md scale-105"
-                        : "border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-foreground"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            
+            <CardContent className="space-y-6">
+              {/* Question Image - Primary content */}
+              {currentQuestion.question_image_url ? (
+                <div className="relative rounded-xl overflow-hidden bg-muted/30 border">
+                  <img 
+                    src={currentQuestion.question_image_url} 
+                    alt={isArabic ? `السؤال ${currentQuestionIndex + 1}` : `Question ${currentQuestionIndex + 1}`}
+                    className="w-full h-auto max-h-[60vh] object-contain mx-auto"
+                    loading="eager"
+                  />
+                </div>
+              ) : currentQuestion.question_text ? (
+                /* Fallback: Text question if no image */
+                <div className="p-4 rounded-xl bg-muted/30 border">
+                  <p className="text-base leading-relaxed" dir="auto">
+                    {wrapChemicalEquations(currentQuestion.question_text)}
+                  </p>
+                </div>
+              ) : null}
+              
+              {/* Answer Selection - A/B/C/D Buttons */}
+              <div className="pt-2">
+                <p className="text-sm text-muted-foreground text-center mb-4">
+                  {isArabic ? 'اختر الإجابة الصحيحة:' : 'Select the correct answer:'}
+                </p>
+                <div className="flex items-center justify-center gap-3 sm:gap-4">
+                  {[
+                    { key: 'a', label: 'A' },
+                    { key: 'b', label: 'B' },
+                    { key: 'c', label: 'C' },
+                    { key: 'd', label: 'D' },
+                  ].map(option => (
+                    <button
+                      key={option.key}
+                      onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
+                      className={cn(
+                        "w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 transition-all duration-200",
+                        "flex items-center justify-center text-lg sm:text-xl font-bold",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "active:scale-[0.98]",
+                        answers[currentQuestion.id] === option.key
+                          ? "border-primary bg-primary text-primary-foreground shadow-lg scale-105"
+                          : "border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-foreground"
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
