@@ -132,15 +132,15 @@ const DownloadPage: React.FC = () => {
       />
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-8 pb-6 sm:pt-12 sm:pb-8 max-w-4xl">
+      <main className="container mx-auto px-4 pt-20 pb-6 sm:pt-24 sm:pb-8 max-w-4xl">
         {/* Hero Section */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
           className="text-center mb-8 sm:mb-12"
         >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
             <DownloadIcon className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
           
