@@ -907,6 +907,36 @@ export type Database = {
           },
         ]
       }
+      install_events: {
+        Row: {
+          browser_info: string | null
+          created_at: string
+          device_type: string
+          id: string
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser_info?: string | null
+          created_at?: string
+          device_type: string
+          id?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser_info?: string | null
+          created_at?: string
+          device_type?: string
+          id?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       lesson_answers: {
         Row: {
           answer: string
@@ -1703,6 +1733,17 @@ export type Database = {
         Returns: string
       }
       get_exam_attempts_count: { Args: { exam_uuid: string }; Returns: number }
+      get_install_statistics: {
+        Args: never
+        Returns: {
+          android_installs: number
+          ios_installs: number
+          macos_installs: number
+          other_installs: number
+          total_installs: number
+          windows_installs: number
+        }[]
+      }
       get_lesson_id_by_short_id: {
         Args: { p_short_id: number }
         Returns: string

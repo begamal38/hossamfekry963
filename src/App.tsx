@@ -32,6 +32,7 @@ const About = lazy(() => import("./pages/About"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const Install = lazy(() => import("./pages/Install"));
+const Download = lazy(() => import("./pages/Download"));
 const TakeExam = lazy(() => import("./pages/TakeExam"));
 const StudentExams = lazy(() => import("./pages/StudentExams"));
 const StudentMessages = lazy(() => import("./pages/StudentMessages"));
@@ -127,6 +128,7 @@ const App = () => (
                   <Route path="/campaigns" element={<Campaigns />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/install" element={<Install />} />
+                  <Route path="/download" element={<Download />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
 
