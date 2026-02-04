@@ -5,6 +5,7 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useInstallStatistics } from '@/hooks/useInstallStatistics';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Smartphone, 
   Monitor, 
@@ -13,15 +14,13 @@ import {
   Bell, 
   Gauge,
   Download as DownloadIcon,
-  Share,
-  Plus,
-  MoreVertical,
   Check,
   ChevronDown
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const DownloadPage: React.FC = () => {
+  const { t, isRTL } = useLanguage();
   const {
     statistics, 
     isLoading, 
@@ -40,54 +39,54 @@ const DownloadPage: React.FC = () => {
     await triggerInstall();
   };
 
-  // Benefits for students - simple Arabic
+  // Benefits for students - translated
   const benefits = [
     {
       icon: Zap,
-      title: 'أسرع في الفتح',
-      description: 'التطبيق بيفتح فوري من الشاشة الرئيسية',
+      titleKey: 'download.benefit.fast',
+      descKey: 'download.benefit.fastDesc',
     },
     {
       icon: Gauge,
-      title: 'مفيش تهنيج',
-      description: 'أداء أحسن من المتصفح العادي',
+      titleKey: 'download.benefit.performance',
+      descKey: 'download.benefit.performanceDesc',
     },
     {
       icon: Bell,
-      title: 'إشعارات فورية',
-      description: 'هتعرف بالحصص الجديدة والامتحانات',
+      titleKey: 'download.benefit.notifications',
+      descKey: 'download.benefit.notificationsDesc',
     },
     {
       icon: WifiOff,
-      title: 'يشتغل أوفلاين',
-      description: 'بعض الصفحات تشتغل بدون نت',
+      titleKey: 'download.benefit.offline',
+      descKey: 'download.benefit.offlineDesc',
     },
   ];
 
-  // Device-specific instructions
+  // Device-specific instructions - translated
   const getInstructions = () => {
     switch (deviceType) {
       case 'android':
         return {
-          title: 'أندرويد',
+          titleKey: 'download.device.android',
           icon: Smartphone,
           steps: [
-            'افتح المنصة من Chrome',
-            'اضغط على ⋮ (النقط التلاتة) فوق',
-            'اختار "تثبيت التطبيق" أو "Add to Home Screen"',
-            'اضغط "تثبيت"',
+            t('download.step.android.1'),
+            t('download.step.android.2'),
+            t('download.step.android.3'),
+            t('download.step.android.4'),
           ],
           hasNativePrompt: canInstall,
         };
       case 'ios':
         return {
-          title: 'آيفون / آيباد',
+          titleKey: 'download.device.ios',
           icon: Smartphone,
           steps: [
-            'افتح المنصة من Safari',
-            'اضغط على زر المشاركة ⬆️',
-            'اختار "إضافة إلى الشاشة الرئيسية"',
-            'اضغط "إضافة"',
+            t('download.step.ios.1'),
+            t('download.step.ios.2'),
+            t('download.step.ios.3'),
+            t('download.step.ios.4'),
           ],
           hasNativePrompt: false,
         };
@@ -95,24 +94,24 @@ const DownloadPage: React.FC = () => {
       case 'macos':
       case 'linux':
         return {
-          title: 'كمبيوتر',
+          titleKey: 'download.device.desktop',
           icon: Monitor,
           steps: [
-            'افتح المنصة من Chrome أو Edge',
-            'هتلاقي أيقونة التثبيت ⊕ في شريط العنوان',
-            'اضغط عليها واختار "تثبيت"',
-            'التطبيق هيظهر في قائمة البرامج',
+            t('download.step.desktop.1'),
+            t('download.step.desktop.2'),
+            t('download.step.desktop.3'),
+            t('download.step.desktop.4'),
           ],
           hasNativePrompt: canInstall,
         };
       default:
         return {
-          title: 'جهازك',
+          titleKey: 'download.device.default',
           icon: Smartphone,
           steps: [
-            'افتح المنصة من المتصفح',
-            'دور على خيار "تثبيت" أو "Add to Home Screen"',
-            'اتبع الخطوات',
+            t('download.step.default.1'),
+            t('download.step.default.2'),
+            t('download.step.default.3'),
           ],
           hasNativePrompt: canInstall,
         };
@@ -123,35 +122,34 @@ const DownloadPage: React.FC = () => {
   const IconComponent = instructions.icon;
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav" dir="rtl">
+    <div className="min-h-screen bg-background pb-mobile-nav" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
-        title="تحميل التطبيق - منصة حسام فكري"
+        title="Download App - Hossam Fekry Platform"
         titleAr="تحميل التطبيق - منصة حسام فكري"
-        description="ثبّت منصة حسام فكري كتطبيق على جهازك - أسرع وأسهل للمذاكرة"
+        description="Install Hossam Fekry platform as an app on your device - faster and easier for studying"
         descriptionAr="ثبّت منصة حسام فكري كتطبيق على جهازك - أسرع وأسهل للمذاكرة"
         canonical="https://hossamfekry.com/download"
       />
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-8 sm:mb-12"
         >
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <DownloadIcon className="w-10 h-10 text-primary" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <DownloadIcon className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
           </div>
           
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            ثبّت المنصة على جهازك 📱
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-2">
+            {t('download.title')}
           </h1>
           
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            خلّي المنصة زي أي تطبيق تاني على موبايلك أو الكمبيوتر - 
-            أسرع في الفتح وأسهل في الاستخدام
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-2">
+            {t('download.subtitle')}
           </p>
         </motion.div>
 
@@ -160,17 +158,17 @@ const DownloadPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <Card className="p-6 bg-green-500/10 border-green-500/30 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <Card className="p-4 sm:p-6 bg-green-500/10 border-green-500/30 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Check className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-xl font-bold text-green-700 dark:text-green-400 mb-2">
-                التطبيق مثبّت بالفعل! ✅
+              <h2 className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400 mb-2">
+                {t('download.alreadyInstalled')}
               </h2>
-              <p className="text-muted-foreground">
-                أنت بتستخدم المنصة كتطبيق دلوقتي
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {t('download.usingAsApp')}
               </p>
             </Card>
           </motion.div>
@@ -181,20 +179,26 @@ const DownloadPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-12"
+          className="mb-8 sm:mb-12"
         >
-          <h2 className="text-xl font-bold mb-6 text-center">ليه تثبّت التطبيق؟</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-center">
+            {t('download.whyInstall')}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {benefits.map((benefit, idx) => (
               <Card 
                 key={idx}
-                className="p-4 text-center hover:shadow-md transition-shadow"
+                className="p-3 sm:p-4 text-center hover:shadow-md transition-shadow"
               >
-                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <benefit.icon className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-1 text-sm">{benefit.title}</h3>
-                <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                <h3 className="font-semibold mb-1 text-xs sm:text-sm">
+                  {t(benefit.titleKey)}
+                </h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
+                  {t(benefit.descKey)}
+                </p>
               </Card>
             ))}
           </div>
@@ -206,54 +210,57 @@ const DownloadPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-12"
+            className="mb-8 sm:mb-12"
           >
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <IconComponent className="w-6 h-6 text-primary" />
+            <Card className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold">طريقة التثبيت - {instructions.title}</h2>
-                  <p className="text-sm text-muted-foreground">اتبع الخطوات دي</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold">
+                    {t('download.howToInstall')} - {t(instructions.titleKey)}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {t('download.followSteps')}
+                  </p>
                 </div>
               </div>
 
               {/* Native Install Button (Android/Desktop) */}
               {instructions.hasNativePrompt && (
-                <div className="mb-6">
+                <div className="mb-4 sm:mb-6">
                   <Button 
                     onClick={handleInstall}
                     size="lg"
                     className="w-full gap-2"
                   >
                     <DownloadIcon className="w-5 h-5" />
-                    ثبّت التطبيق دلوقتي
+                    {t('download.installNow')}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-2">
-                    أو اتبع الخطوات اليدوية
+                    {t('download.orManual')}
                   </p>
                 </div>
               )}
 
               {/* Manual Steps */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {instructions.steps.map((step, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-sm font-bold text-primary">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold text-primary">
                       {idx + 1}
                     </div>
-                    <p className="pt-1">{step}</p>
+                    <p className="pt-0.5 sm:pt-1 text-sm sm:text-base">{step}</p>
                   </div>
                 ))}
               </div>
 
               {/* iOS Special Note */}
               {deviceType === 'ios' && (
-                <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                  <p className="text-sm text-amber-700 dark:text-amber-400">
-                    <strong>ملاحظة للآيفون:</strong> لازم تفتح المنصة من Safari مش Chrome 
-                    عشان خيار "إضافة للشاشة الرئيسية" يظهر
+                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                  <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
+                    <strong>{t('download.iosNote')}</strong> {t('download.iosNoteDesc')}
                   </p>
                 </div>
               )}
@@ -267,8 +274,10 @@ const DownloadPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card className="p-6 bg-muted/30">
-            <h2 className="text-lg font-bold mb-4 text-center">إحصائيات التثبيت</h2>
+          <Card className="p-4 sm:p-6 bg-muted/30">
+            <h2 className="text-base sm:text-lg font-bold mb-4 text-center">
+              {t('download.statistics')}
+            </h2>
             
             {isLoading ? (
               <div className="flex justify-center py-4">
@@ -283,30 +292,38 @@ const DownloadPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
+                <div className="p-2 sm:p-3">
+                  <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
                     {statistics?.total_installs || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground">إجمالي التثبيتات</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    {t('download.totalInstalls')}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="p-2 sm:p-3">
+                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums">
                     {statistics?.android_installs || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground">أندرويد</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    {t('download.android')}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="p-2 sm:p-3">
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
                     {statistics?.ios_installs || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground">آيفون</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    {t('download.ios')}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="p-2 sm:p-3">
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
                     {(statistics?.windows_installs || 0) + (statistics?.macos_installs || 0)}
                   </p>
-                  <p className="text-xs text-muted-foreground">كمبيوتر</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    {t('download.desktop')}
+                  </p>
                 </div>
               </div>
             )}
@@ -314,8 +331,8 @@ const DownloadPage: React.FC = () => {
         </motion.div>
 
         {/* Scroll indicator */}
-        <div className="mt-8 text-center">
-          <ChevronDown className="w-6 h-6 mx-auto text-muted-foreground/50 animate-bounce" />
+        <div className="mt-6 sm:mt-8 text-center">
+          <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-muted-foreground/50 animate-bounce" />
         </div>
       </main>
       
