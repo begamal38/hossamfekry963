@@ -132,7 +132,7 @@ const DownloadPage: React.FC = () => {
       />
       <Navbar />
       
-      <main className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
+      <main className="container mx-auto px-4 pt-8 pb-6 sm:pt-12 sm:pb-8 max-w-4xl">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
