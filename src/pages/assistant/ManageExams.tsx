@@ -501,33 +501,29 @@ export default function ManageExams() {
   };
 
   const handleSaveQuestion = async () => {
+    // SSOT: Question requires either text OR image (image-first approach)
     if (!questionForm.question_text.trim() && !questionForm.question_image_url.trim()) {
       toast({
         variant: 'destructive',
         title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'أدخل نص السؤال أو صورة' : 'Enter question text or image',
+        description: isArabic ? 'أدخل نص السؤال أو الصق صورة' : 'Enter question text or paste an image',
       });
       return;
     }
 
-    if (!questionForm.option_a.trim() || !questionForm.option_b.trim() || 
-        !questionForm.option_c.trim() || !questionForm.option_d.trim()) {
-      toast({
-        variant: 'destructive',
-        title: isArabic ? 'خطأ' : 'Error',
-        description: isArabic ? 'يرجى ملء جميع الاختيارات' : 'Please fill all options',
-      });
-      return;
-    }
+    // NOTE: Options text fields removed per SSOT (memory/features/exams/option-selection-standards)
+    // Questions are image-based, containing the options visually
+    // Only correct_option (A/B/C/D) is required
 
     try {
       const questionData = {
-        question_text: questionForm.question_text,
+        question_text: questionForm.question_text || '',
         question_image_url: questionForm.question_image_url || null,
-        option_a: questionForm.option_a,
-        option_b: questionForm.option_b,
-        option_c: questionForm.option_c,
-        option_d: questionForm.option_d,
+        // Placeholder values - actual options are in the image
+        option_a: 'A',
+        option_b: 'B',
+        option_c: 'C',
+        option_d: 'D',
         correct_option: questionForm.correct_option,
         question_type: 'mcq' as const,
       };
@@ -603,6 +599,7 @@ export default function ManageExams() {
     setQuestionForm({
       question_text: '',
       question_image_url: '',
+      // Options not needed - image contains them (SSOT)
       option_a: '',
       option_b: '',
       option_c: '',
