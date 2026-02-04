@@ -19,6 +19,8 @@ import { AssistantPageHeader } from '@/components/assistant/AssistantPageHeader'
 import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { MobileDataCard } from '@/components/assistant/MobileDataCard';
 import { EmptyState } from '@/components/assistant/EmptyState';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { 
   applyEnrollmentFilters, 
   CenterGroup, 
@@ -282,6 +284,14 @@ const Enrollments = () => {
     );
     setFilteredEnrollments(filtered as Enrollment[]);
   }, [enrollments, searchTerm, gradeFilter, trackFilter, studyModeFilter, centerGroupFilter, statusFilter, centerGroupMembers]);
+
+  // Pagination - 30 enrollments per page
+  const pagination = usePagination(filteredEnrollments, { itemsPerPage: 30 });
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    pagination.resetToFirstPage();
+  }, [searchTerm, gradeFilter, trackFilter, studyModeFilter, centerGroupFilter, statusFilter]);
 
   const updateEnrollmentStatus = async (enrollmentId: string, newStatus: string, enrollment?: Enrollment) => {
     if (!user) return;
@@ -567,59 +577,95 @@ const Enrollments = () => {
                 onAction={hasActiveFilters ? clearFilters : undefined}
               />
             ) : (
-              <div className="space-y-3">
-                {filteredEnrollments.map((enrollment) => {
-                  const statusConfig = getStatusConfig(enrollment.status);
-                  const gradeLabel = getGradeLabel(enrollment.course?.grade);
-                  const modeLabel = enrollment.profile?.attendance_mode === 'center' 
-                    ? (isRTL ? 'سنتر' : 'Center')
-                    : enrollment.profile?.attendance_mode === 'online'
-                    ? (isRTL ? 'أونلاين' : 'Online')
-                    : null;
-                  
-                  return (
-                    <MobileDataCard
-                      key={enrollment.id}
-                      title={enrollment.profile?.full_name || (isRTL ? 'بدون اسم' : 'No name')}
-                      subtitle={isRTL ? enrollment.course?.title_ar : enrollment.course?.title}
-                      icon={User}
-                      iconColor="text-primary"
-                      iconBgColor="bg-primary/10"
-                      badge={isRTL ? statusConfig.label.ar : statusConfig.label.en}
-                      badgeVariant={statusConfig.variant}
-                      badgeClassName={statusConfig.className}
-                      secondaryBadge={modeLabel || undefined}
-                      secondaryBadgeVariant={enrollment.profile?.attendance_mode === 'center' ? 'secondary' : 'muted'}
-                      isRTL={isRTL}
-                      metadata={[
-                        // Grade info - primary identifier
-                        ...(gradeLabel ? [{
-                          label: isRTL ? gradeLabel.ar : gradeLabel.en,
-                          icon: BookOpen,
-                          className: 'text-primary font-medium',
-                        }] : []),
-                        // Phone number
-                        ...(enrollment.profile?.phone ? [{
-                          label: enrollment.profile.phone,
-                        }] : []),
-                        // Date enrolled
-                        {
-                          label: new Date(enrollment.enrolled_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
-                            month: 'short',
-                            day: 'numeric'
-                          }),
-                          icon: Calendar,
-                        },
-                      ]}
-                      actions={
-                        <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 w-full">
-                          {renderEnrollmentActions(enrollment)}
-                        </div>
-                      }
-                    />
-                  );
-                })}
-              </div>
+              <>
+                {/* Pagination - Top */}
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  startIndex={pagination.startIndex}
+                  endIndex={pagination.endIndex}
+                  onNextPage={pagination.nextPage}
+                  onPrevPage={pagination.prevPage}
+                  onGoToFirst={pagination.goToFirst}
+                  onGoToLast={pagination.goToLast}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPrevPage={pagination.hasPrevPage}
+                  isRTL={isRTL}
+                  className="mb-3"
+                />
+
+                <div className="space-y-3">
+                  {pagination.currentItems.map((enrollment) => {
+                    const statusConfig = getStatusConfig(enrollment.status);
+                    const gradeLabel = getGradeLabel(enrollment.course?.grade);
+                    const modeLabel = enrollment.profile?.attendance_mode === 'center' 
+                      ? (isRTL ? 'سنتر' : 'Center')
+                      : enrollment.profile?.attendance_mode === 'online'
+                      ? (isRTL ? 'أونلاين' : 'Online')
+                      : null;
+                    
+                    return (
+                      <MobileDataCard
+                        key={enrollment.id}
+                        title={enrollment.profile?.full_name || (isRTL ? 'بدون اسم' : 'No name')}
+                        subtitle={isRTL ? enrollment.course?.title_ar : enrollment.course?.title}
+                        icon={User}
+                        iconColor="text-primary"
+                        iconBgColor="bg-primary/10"
+                        badge={isRTL ? statusConfig.label.ar : statusConfig.label.en}
+                        badgeVariant={statusConfig.variant}
+                        badgeClassName={statusConfig.className}
+                        secondaryBadge={modeLabel || undefined}
+                        secondaryBadgeVariant={enrollment.profile?.attendance_mode === 'center' ? 'secondary' : 'muted'}
+                        isRTL={isRTL}
+                        metadata={[
+                          // Grade info - primary identifier
+                          ...(gradeLabel ? [{
+                            label: isRTL ? gradeLabel.ar : gradeLabel.en,
+                            icon: BookOpen,
+                            className: 'text-primary font-medium',
+                          }] : []),
+                          // Phone number
+                          ...(enrollment.profile?.phone ? [{
+                            label: enrollment.profile.phone,
+                          }] : []),
+                          // Date enrolled
+                          {
+                            label: new Date(enrollment.enrolled_at).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            }),
+                            icon: Calendar,
+                          },
+                        ]}
+                        actions={
+                          <div className="flex gap-2 mt-3 pt-3 border-t border-border/50 w-full">
+                            {renderEnrollmentActions(enrollment)}
+                          </div>
+                        }
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Pagination - Bottom */}
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  startIndex={pagination.startIndex}
+                  endIndex={pagination.endIndex}
+                  onNextPage={pagination.nextPage}
+                  onPrevPage={pagination.prevPage}
+                  onGoToFirst={pagination.goToFirst}
+                  onGoToLast={pagination.goToLast}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPrevPage={pagination.hasPrevPage}
+                  isRTL={isRTL}
+                  className="mt-4"
+                />
+              </>
             )}
           </div>
         </main>

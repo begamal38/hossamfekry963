@@ -27,6 +27,8 @@ import { SearchFilterBar } from '@/components/assistant/SearchFilterBar';
 import { StatusSummaryCard } from '@/components/dashboard/StatusSummaryCard';
 import { QuickEnrollmentDrawer } from '@/components/assistant/QuickEnrollmentDrawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Pagination } from '@/components/ui/Pagination';
+import { usePagination } from '@/hooks/usePagination';
 import { 
   applyStudentFilters, 
   CenterGroup, 
@@ -365,6 +367,14 @@ export default function Students() {
     setQuickEnrollOpen(true);
   };
 
+  // Pagination - 30 students per page
+  const pagination = usePagination(filteredStudents, { itemsPerPage: 30 });
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    pagination.resetToFirstPage();
+  }, [searchTerm, gradeFilter, trackFilter, studyModeFilter, centerGroupFilter, courseStatusFilter]);
+
   // Stats
   const stats = useMemo(() => ({
     total: students.length,
@@ -505,74 +515,110 @@ export default function Students() {
             onAction={hasActiveFilters ? clearFilters : undefined}
           />
         ) : (
-          <div className="space-y-2">
-            {filteredStudents.map((student) => {
-              const groupLabel = getGroupLabel(student.grade || student.academic_year, student.language_track, isRTL);
-              // Attendance mode label - tertiary, informational only
-              const modeLabel = student.attendance_mode === 'center' 
-                ? (isRTL ? 'سنتر' : 'Center')
-                : student.attendance_mode === 'online'
-                ? (isRTL ? 'أونلاين' : 'Online')
-                : null;
-              
-              return (
-                <MobileDataCard
-                  key={student.user_id}
-                  title={student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
-                  subtitle={student.phone || undefined}
-                  badge={groupLabel || undefined}
-                  badgeVariant="default"
-                  secondaryBadge={modeLabel || undefined}
-                  secondaryBadgeVariant={student.attendance_mode === 'center' ? 'secondary' : 'muted'}
-                  icon={User}
-                  iconColor="text-primary"
-                  iconBgColor="bg-primary/10"
-                  metadata={[
-                    // Enrollment count - show '0 كورس' with neutral styling for no courses
-                    ...(student.enrollmentCount > 0 
-                      ? [{ icon: GraduationCap, label: `${student.enrollmentCount} ${isRTL ? 'كورس' : 'courses'}` }] 
-                      : [{ icon: BookX, label: isRTL ? '0 كورس' : '0 courses', className: 'text-muted-foreground' }]
-                    ),
-                    // Progress indicator
-                    ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
-                    // Exam score with color coding
-                    ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
-                  ]}
-                  onClick={() => navigate(`/assistant/students/${student.short_id}`)}
-                  actions={
-                    <div className="flex items-center gap-1.5">
-                      <TooltipProvider delayDuration={300}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
-                              onClick={(e) => openQuickEnroll(student, e)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side={isRTL ? 'right' : 'left'}>
-                            <p>{isRTL ? 'إجراءات إضافية' : 'Actions'}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground"
-                        onClick={() => navigate(`/assistant/students/${student.short_id}`)}
-                      >
-                        <ChevronLeft className={`h-4 w-4 ${isRTL ? '' : 'rotate-180'}`} />
-                      </Button>
-                    </div>
-                  }
-                  isRTL={isRTL}
-                />
-              );
-            })}
-          </div>
+          <>
+            {/* Pagination - Top */}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              startIndex={pagination.startIndex}
+              endIndex={pagination.endIndex}
+              onNextPage={pagination.nextPage}
+              onPrevPage={pagination.prevPage}
+              onGoToFirst={pagination.goToFirst}
+              onGoToLast={pagination.goToLast}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+              isRTL={isRTL}
+              className="mb-3"
+            />
+
+            <div className="space-y-2">
+              {pagination.currentItems.map((student) => {
+                const groupLabel = getGroupLabel(student.grade || student.academic_year, student.language_track, isRTL);
+                // Attendance mode label - tertiary, informational only
+                const modeLabel = student.attendance_mode === 'center' 
+                  ? (isRTL ? 'سنتر' : 'Center')
+                  : student.attendance_mode === 'online'
+                  ? (isRTL ? 'أونلاين' : 'Online')
+                  : null;
+                
+                return (
+                  <MobileDataCard
+                    key={student.user_id}
+                    title={student.full_name || (isRTL ? 'بدون اسم' : 'No name')}
+                    subtitle={student.phone || undefined}
+                    badge={groupLabel || undefined}
+                    badgeVariant="default"
+                    secondaryBadge={modeLabel || undefined}
+                    secondaryBadgeVariant={student.attendance_mode === 'center' ? 'secondary' : 'muted'}
+                    icon={User}
+                    iconColor="text-primary"
+                    iconBgColor="bg-primary/10"
+                    metadata={[
+                      // Enrollment count - show '0 كورس' with neutral styling for no courses
+                      ...(student.enrollmentCount > 0 
+                        ? [{ icon: GraduationCap, label: `${student.enrollmentCount} ${isRTL ? 'كورس' : 'courses'}` }] 
+                        : [{ icon: BookX, label: isRTL ? '0 كورس' : '0 courses', className: 'text-muted-foreground' }]
+                      ),
+                      // Progress indicator
+                      ...(student.avgProgress > 0 ? [{ icon: TrendingUp, label: `${student.avgProgress}%` }] : []),
+                      // Exam score with color coding
+                      ...(student.totalExams > 0 ? [{ icon: Award, label: `${student.avgExamScore}%`, className: getScoreColor(student.avgExamScore) }] : []),
+                    ]}
+                    onClick={() => navigate(`/assistant/students/${student.short_id}`)}
+                    actions={
+                      <div className="flex items-center gap-1.5">
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                                onClick={(e) => openQuickEnroll(student, e)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side={isRTL ? 'right' : 'left'}>
+                              <p>{isRTL ? 'إجراءات إضافية' : 'Actions'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground"
+                          onClick={() => navigate(`/assistant/students/${student.short_id}`)}
+                        >
+                          <ChevronLeft className={`h-4 w-4 ${isRTL ? '' : 'rotate-180'}`} />
+                        </Button>
+                      </div>
+                    }
+                    isRTL={isRTL}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Pagination - Bottom */}
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              startIndex={pagination.startIndex}
+              endIndex={pagination.endIndex}
+              onNextPage={pagination.nextPage}
+              onPrevPage={pagination.prevPage}
+              onGoToFirst={pagination.goToFirst}
+              onGoToLast={pagination.goToLast}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+              isRTL={isRTL}
+              className="mt-4"
+            />
+          </>
         )}
 
         {/* Floating Import Button - Safe positioning */}
