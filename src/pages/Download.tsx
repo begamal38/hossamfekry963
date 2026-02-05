@@ -15,9 +15,13 @@ import {
   Gauge,
   Download as DownloadIcon,
   Check,
-  ChevronDown
+  ChevronDown,
+  Share,
+  Plus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { GooglePlayIcon, AppleIcon, WindowsIcon, PlatformIconsRow } from '@/components/ui/PlatformStoreIcons';
+import { cn } from '@/lib/utils';
 
 const DownloadPage: React.FC = () => {
   const { t, isRTL } = useLanguage();
@@ -69,7 +73,8 @@ const DownloadPage: React.FC = () => {
       case 'android':
         return {
           titleKey: 'download.device.android',
-          icon: Smartphone,
+          icon: GooglePlayIcon,
+          iconColor: 'text-[#00C853]',
           steps: [
             t('download.step.android.1'),
             t('download.step.android.2'),
@@ -81,7 +86,8 @@ const DownloadPage: React.FC = () => {
       case 'ios':
         return {
           titleKey: 'download.device.ios',
-          icon: Smartphone,
+          icon: AppleIcon,
+          iconColor: 'text-gray-800 dark:text-gray-200',
           steps: [
             t('download.step.ios.1'),
             t('download.step.ios.2'),
@@ -95,7 +101,8 @@ const DownloadPage: React.FC = () => {
       case 'linux':
         return {
           titleKey: 'download.device.desktop',
-          icon: Monitor,
+          icon: WindowsIcon,
+          iconColor: 'text-[#0078D4]',
           steps: [
             t('download.step.desktop.1'),
             t('download.step.desktop.2'),
@@ -107,7 +114,8 @@ const DownloadPage: React.FC = () => {
       default:
         return {
           titleKey: 'download.device.default',
-          icon: Smartphone,
+          icon: DownloadIcon,
+          iconColor: 'text-primary',
           steps: [
             t('download.step.default.1'),
             t('download.step.default.2'),
@@ -140,8 +148,17 @@ const DownloadPage: React.FC = () => {
           transition={{ duration: 0.3, ease: 'easeOut' }}
           className="text-center mb-8 sm:mb-12"
         >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <DownloadIcon className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+          {/* Platform Icons Row */}
+          <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#00C853]/10 border border-[#00C853]/20 flex items-center justify-center">
+              <GooglePlayIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[#00C853]" />
+            </div>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gray-500/10 border border-gray-500/20 flex items-center justify-center">
+              <AppleIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-800 dark:text-gray-200" />
+            </div>
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#0078D4]/10 border border-[#0078D4]/20 flex items-center justify-center">
+              <WindowsIcon className="w-6 h-6 sm:w-7 sm:h-7 text-[#0078D4]" />
+            </div>
           </div>
           
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 px-2">
@@ -214,8 +231,14 @@ const DownloadPage: React.FC = () => {
           >
             <Card className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                <div className={cn(
+                  "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0",
+                  deviceType === 'android' && "bg-[#00C853]/10",
+                  deviceType === 'ios' && "bg-gray-500/10",
+                  (deviceType === 'windows' || deviceType === 'macos' || deviceType === 'linux') && "bg-[#0078D4]/10",
+                  deviceType === 'unknown' && "bg-primary/10"
+                )}>
+                  <IconComponent className={cn("w-5 h-5 sm:w-6 sm:h-6", instructions.iconColor)} />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg sm:text-xl font-bold">
@@ -233,7 +256,7 @@ const DownloadPage: React.FC = () => {
                   <Button 
                     onClick={handleInstall}
                     size="lg"
-                    className="w-full gap-2"
+                    className="w-full gap-2 bg-primary hover:bg-primary/90"
                   >
                     <DownloadIcon className="w-5 h-5" />
                     {t('download.installNow')}
@@ -248,7 +271,13 @@ const DownloadPage: React.FC = () => {
               <div className="space-y-3 sm:space-y-4">
                 {instructions.steps.map((step, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold text-primary">
+                    <div className={cn(
+                      "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0 text-xs sm:text-sm font-bold",
+                      deviceType === 'android' && "bg-[#00C853]/10 text-[#00C853]",
+                      deviceType === 'ios' && "bg-gray-500/10 text-gray-700 dark:text-gray-300",
+                      (deviceType === 'windows' || deviceType === 'macos' || deviceType === 'linux') && "bg-[#0078D4]/10 text-[#0078D4]",
+                      deviceType === 'unknown' && "bg-primary/10 text-primary"
+                    )}>
                       {idx + 1}
                     </div>
                     <p className="pt-0.5 sm:pt-1 text-sm sm:text-base">{step}</p>
@@ -258,10 +287,20 @@ const DownloadPage: React.FC = () => {
 
               {/* iOS Special Note */}
               {deviceType === 'ios' && (
-                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                  <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
-                    <strong>{t('download.iosNote')}</strong> {t('download.iosNoteDesc')}
-                  </p>
+                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+                      <Share className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 font-medium mb-1">
+                        {t('download.iosNote')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('download.iosNoteDesc')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </Card>
@@ -293,7 +332,7 @@ const DownloadPage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
-                <div className="p-2 sm:p-3">
+                <div className="p-2 sm:p-3 rounded-lg bg-primary/5">
                   <p className="text-xl sm:text-2xl font-bold text-primary tabular-nums">
                     {statistics?.total_installs || 0}
                   </p>
@@ -301,24 +340,33 @@ const DownloadPage: React.FC = () => {
                     {t('download.totalInstalls')}
                   </p>
                 </div>
-                <div className="p-2 sm:p-3">
-                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums">
+                <div className="p-2 sm:p-3 rounded-lg bg-[#00C853]/5">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <GooglePlayIcon className="w-4 h-4 text-[#00C853]" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold text-[#00C853] tabular-nums">
                     {statistics?.android_installs || 0}
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
                     {t('download.android')}
                   </p>
                 </div>
-                <div className="p-2 sm:p-3">
-                  <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                <div className="p-2 sm:p-3 rounded-lg bg-gray-500/5">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <AppleIcon className="w-4 h-4 text-gray-800 dark:text-gray-200" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200 tabular-nums">
                     {statistics?.ios_installs || 0}
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
                     {t('download.ios')}
                   </p>
                 </div>
-                <div className="p-2 sm:p-3">
-                  <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
+                <div className="p-2 sm:p-3 rounded-lg bg-[#0078D4]/5">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <WindowsIcon className="w-3.5 h-3.5 text-[#0078D4]" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold text-[#0078D4] tabular-nums">
                     {(statistics?.windows_installs || 0) + (statistics?.macos_installs || 0)}
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
