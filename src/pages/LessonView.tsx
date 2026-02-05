@@ -51,6 +51,7 @@ import { FocusInfoStrip } from '@/components/lesson/FocusInfoStrip';
 import { PreviewLockOverlay } from '@/components/lesson/PreviewLockOverlay';
 import { UnifiedFocusBar } from '@/components/lesson/UnifiedFocusBar';
 import { WatchInsideTip } from '@/components/lesson/WatchInsideTip';
+import { LessonExamIndicator } from '@/components/lesson/LessonExamIndicator';
 import { OnboardingMessages } from '@/components/onboarding/OnboardingMessages';
 import { SmartNextStep } from '@/components/guidance/SmartNextStep';
 import { LessonContextStrip } from '@/components/lesson/LessonContextStrip';
@@ -107,6 +108,11 @@ interface LinkedExam {
   status: string;
 }
 
+interface ExamAttemptInfo {
+  score: number;
+  total_questions: number;
+}
+
 // Extend window for YouTube API
 declare global {
   interface Window {
@@ -133,6 +139,7 @@ export default function LessonView() {
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [courseLessons, setCourseLessons] = useState<Lesson[]>([]);
   const [linkedExam, setLinkedExam] = useState<LinkedExam | null>(null);
+  const [examAttempt, setExamAttempt] = useState<ExamAttemptInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string>(''); // active, suspended, expired, etc.
@@ -294,6 +301,21 @@ export default function LessonView() {
           .single();
         if (examData && examData.status === 'published') {
           setLinkedExam(examData);
+          
+          // Check if user has already attempted this exam
+          if (user) {
+            const { data: attemptData } = await supabase
+              .from('exam_attempts')
+              .select('score, total_questions')
+              .eq('exam_id', examData.id)
+              .eq('user_id', user.id)
+              .eq('is_completed', true)
+              .maybeSingle();
+            
+            if (attemptData) {
+              setExamAttempt(attemptData);
+            }
+          }
         }
       }
 
@@ -1042,6 +1064,20 @@ export default function LessonView() {
               </Button>
             </div>
           </section>
+
+          {/* Lesson Exam Indicator - Friendly awareness for enrolled students */}
+          {user && isEnrolled && linkedExam && (
+            <LessonExamIndicator
+              examId={linkedExam.id}
+              examTitle={linkedExam.title}
+              examTitleAr={linkedExam.title_ar}
+              hasAttempted={!!examAttempt}
+              attemptScore={examAttempt?.score}
+              attemptTotal={examAttempt?.total_questions}
+              isArabic={isArabic}
+              className="mb-6"
+            />
+          )}
 
           {/* Guidance Text - System-driven completion */}
           {user && hasValidVideo(lesson.video_url) && !completed && (
