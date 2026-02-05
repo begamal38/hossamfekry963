@@ -17,7 +17,8 @@ import {
   BarChart3,
   Image as ImageIcon,
   Loader2,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ import { EmptyState } from '@/components/assistant/EmptyState';
 import { FloatingActionButton } from '@/components/assistant/FloatingActionButton';
 import { QuestionContentInput } from '@/components/assistant/QuestionContentInput';
 import { useHierarchicalSelection } from '@/hooks/useHierarchicalSelection';
+import { ExamPreviewSheet } from '@/components/exam/ExamPreviewSheet';
 
 type ExamStatus = 'draft' | 'published' | 'closed' | 'archived';
 
@@ -189,6 +191,9 @@ export default function ManageExams() {
     type: 'delete' | 'publish' | 'close' | 'archive';
     exam: Exam | null;
   }>({ open: false, type: 'delete', exam: null });
+
+  // Preview state for ExamPreviewSheet
+  const [previewExam, setPreviewExam] = useState<Exam | null>(null);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -348,6 +353,34 @@ export default function ManageExams() {
         variant: 'destructive',
         title: 'خطأ',
         description: 'يرجى ملء جميع الحقول',
+      });
+      return;
+    }
+
+    // CHAPTER SAFETY: For NEW exams (not editing), chapter selection is REQUIRED
+    // Existing exams without chapters are grandfathered in but warned
+    const needsChapter = examForm.exam_scope === 'chapter';
+    const hasChapter = !!examForm.chapter_id;
+    const hasLesson = !!examForm.lesson_id;
+    
+    if (!editingExam && needsChapter && !hasChapter) {
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'اختر الباب' : 'Select Chapter',
+        description: isArabic 
+          ? 'يجب اختيار باب قبل إنشاء الامتحان'
+          : 'You must select a chapter before creating the exam',
+      });
+      return;
+    }
+    
+    if (!editingExam && !needsChapter && !hasLesson) {
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'اختر الحصة' : 'Select Lesson',
+        description: isArabic 
+          ? 'يجب اختيار حصة قبل إنشاء الامتحان'
+          : 'You must select a lesson before creating the exam',
       });
       return;
     }
@@ -685,6 +718,19 @@ export default function ManageExams() {
 
   const renderExamActions = (exam: Exam) => (
     <div className="flex flex-wrap gap-2 mt-3 w-full">
+      {/* Preview - shows exam as student sees it */}
+      {(exam.questions_count || 0) > 0 && (
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={() => setPreviewExam(exam)}
+          className="gap-1"
+        >
+          <Eye className="w-4 h-4" />
+          {isArabic ? 'معاينة' : 'Preview'}
+        </Button>
+      )}
+
       {/* Questions */}
       <Button 
         variant="outline"
@@ -873,28 +919,42 @@ export default function ManageExams() {
                   <div className="space-y-3">
                     {filteredExams.map((exam) => {
                       const config = statusConfig[exam.status];
+                      const hasNoChapter = !exam.chapter_id;
                       return (
-                        <MobileDataCard
-                          key={exam.id}
-                          title={isArabic ? exam.title_ar : exam.title}
-                          subtitle={getChapterName(exam.chapter_id)}
-                          icon={FileText}
-                          iconColor="text-primary"
-                          iconBgColor="bg-primary/10"
-                          badge={isArabic ? config.labelAr : config.label}
-                          badgeVariant={config.variant}
-                          isRTL={isArabic}
-                          metadata={[
-                            {
-                              label: `${exam.pass_mark}%`,
-                              icon: CheckCircle2,
-                            },
-                            ...(exam.time_limit_minutes ? [{
-                              label: `${exam.time_limit_minutes} ${isArabic ? 'د' : 'min'}`,
-                            }] : []),
-                          ]}
-                          actions={renderExamActions(exam)}
-                        />
+                        <div key={exam.id} className="relative">
+                          {/* No Chapter Warning Badge - visual, non-blocking */}
+                          {hasNoChapter && (
+                            <div className="absolute -top-1 -right-1 z-10">
+                              <Badge 
+                                variant="warning" 
+                                className="text-xs gap-1 shadow-sm"
+                              >
+                                <AlertTriangle className="w-3 h-3" />
+                                {isArabic ? 'غير مرتبط بباب' : 'No Chapter'}
+                              </Badge>
+                            </div>
+                          )}
+                          <MobileDataCard
+                            title={isArabic ? exam.title_ar : exam.title}
+                            subtitle={getChapterName(exam.chapter_id)}
+                            icon={FileText}
+                            iconColor="text-primary"
+                            iconBgColor="bg-primary/10"
+                            badge={isArabic ? config.labelAr : config.label}
+                            badgeVariant={config.variant}
+                            isRTL={isArabic}
+                            metadata={[
+                              {
+                                label: `${exam.pass_mark}%`,
+                                icon: CheckCircle2,
+                              },
+                              ...(exam.time_limit_minutes ? [{
+                                label: `${exam.time_limit_minutes} ${isArabic ? 'د' : 'min'}`,
+                              }] : []),
+                            ]}
+                            actions={renderExamActions(exam)}
+                          />
+                        </div>
                       );
                     })}
                   </div>
@@ -987,13 +1047,16 @@ export default function ManageExams() {
             {examForm.exam_scope === 'chapter' && (
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {isArabic ? 'الباب' : 'Chapter'}
+                  {isArabic ? 'الباب' : 'Chapter'} 
+                  {!editingExam && <span className="text-destructive">*</span>}
                 </label>
                 <Select 
                   value={examForm.chapter_id} 
                   onValueChange={(value) => setExamForm(prev => ({ ...prev, chapter_id: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={cn(
+                    !editingExam && !examForm.chapter_id && "border-amber-500/50"
+                  )}>
                     <SelectValue placeholder={isArabic ? "اختر الباب" : "Select chapter"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1004,6 +1067,13 @@ export default function ManageExams() {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Inline validation hint for NEW exams */}
+                {!editingExam && !examForm.chapter_id && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {isArabic ? 'مطلوب — يجب اختيار باب' : 'Required — must select a chapter'}
+                  </p>
+                )}
               </div>
             )}
 
@@ -1302,6 +1372,15 @@ export default function ManageExams() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Exam Preview Sheet - Assistant sees exam as student */}
+      <ExamPreviewSheet
+        open={!!previewExam}
+        onOpenChange={(open) => !open && setPreviewExam(null)}
+        examId={previewExam?.id || ''}
+        examTitle={previewExam?.title || ''}
+        examTitleAr={previewExam?.title_ar || ''}
+      />
     </div>
   );
 }

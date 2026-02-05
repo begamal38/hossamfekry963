@@ -10,6 +10,7 @@
  * - ExamProgressIndicator: Simple question progress display
  * - ExamTimer: Calm timer with progressive urgency
  * - ExamAnswerOption: Answer selection with soft confirmation
+ * - ExamPreviewSheet: Assistant-only read-only exam preview
  */
 
 export { ExamEmptyState } from './ExamEmptyState';
@@ -17,3 +18,4 @@ export { ExamFocusIndicator } from './ExamFocusIndicator';
 export { ExamProgressIndicator } from './ExamProgressIndicator';
 export { ExamTimer } from './ExamTimer';
 export { ExamAnswerOption } from './ExamAnswerOption';
+export { ExamPreviewSheet } from './ExamPreviewSheet';
