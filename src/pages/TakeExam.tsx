@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  ArrowRight,
-  CheckCircle2, 
-  Clock,
-  AlertCircle,
-  Trophy,
-  RotateCcw
-} from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { cn, wrapChemicalEquations } from '@/lib/utils';
+import { ExamStatusBar } from '@/components/exam/ExamStatusBar';
+import { ExamQuestionCard } from '@/components/exam/ExamQuestionCard';
+import { ExamNavigation } from '@/components/exam/ExamNavigation';
+import { ExamResultScreen } from '@/components/exam/ExamResultScreen';
 
 interface ExamQuestion {
   id: string;
@@ -65,10 +59,7 @@ export default function TakeExam() {
   const { toast } = useToast();
   const isArabic = language === 'ar';
   
-  // ═══════════════════════════════════════════════════════════════════
-  // ROLE GUARD: Staff (admin/assistant_teacher) MUST NOT take exams
-  // This prevents analytics contamination from testing/observation
-  // ═══════════════════════════════════════════════════════════════════
+  // Role guard: Staff cannot take exams
   const isStaff = !rolesLoading && (isAdmin() || isAssistantTeacher());
 
   const [exam, setExam] = useState<Exam | null>(null);
@@ -89,7 +80,6 @@ export default function TakeExam() {
 
   const fetchExamData = async () => {
     try {
-      // Fetch exam with course and chapter info
       const { data: examData, error: examError } = await supabase
         .from('exams')
         .select(`
@@ -103,7 +93,6 @@ export default function TakeExam() {
       if (examError) throw examError;
       setExam(examData);
 
-      // Fetch questions
       const { data: questionsData, error: questionsError } = await supabase
         .from('exam_questions')
         .select('*')
@@ -113,7 +102,6 @@ export default function TakeExam() {
       if (questionsError) throw questionsError;
       setQuestions(questionsData || []);
 
-      // Check for existing completed attempt
       const { data: attemptData } = await supabase
         .from('exam_attempts')
         .select('*')
@@ -144,10 +132,6 @@ export default function TakeExam() {
   };
 
   const handleSubmit = async () => {
-    // ═══════════════════════════════════════════════════════════════════
-    // ROLE GUARD: Staff MUST NOT submit exam attempts
-    // This prevents analytics contamination from testing/observation
-    // ═══════════════════════════════════════════════════════════════════
     if (isStaff) {
       toast({
         title: isArabic ? 'وضع المراقبة' : 'Observer Mode',
@@ -168,7 +152,6 @@ export default function TakeExam() {
     setSubmitting(true);
 
     try {
-      // Calculate score
       let correctCount = 0;
       const answersArray = questions.map(q => {
         const userAnswer = answers[q.id];
@@ -182,7 +165,6 @@ export default function TakeExam() {
         };
       });
 
-      // Save attempt
       const { error } = await supabase
         .from('exam_attempts')
         .insert({
@@ -197,7 +179,6 @@ export default function TakeExam() {
 
       if (error) throw error;
 
-      // Also save to exam_results for backward compatibility
       await supabase
         .from('exam_results')
         .insert({
@@ -220,9 +201,21 @@ export default function TakeExam() {
     }
   };
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const handlePrevious = () => {
+    setCurrentQuestionIndex(prev => Math.max(0, prev - 1));
+  };
 
+  const handleNext = () => {
+    setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1));
+  };
+
+  const handleJumpTo = (index: number) => {
+    setCurrentQuestionIndex(index);
+  };
+
+  const currentQuestion = questions[currentQuestionIndex];
+
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -239,6 +232,7 @@ export default function TakeExam() {
     );
   }
 
+  // Empty/Error State
   if (!exam || questions.length === 0) {
     return (
       <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -261,291 +255,79 @@ export default function TakeExam() {
     );
   }
 
-  // Show result screen
+  // Result Screen
   if (showResult && result) {
-    const percentage = Math.round((result.score / result.total) * 100);
-    const passed = percentage >= 60;
-
     return (
       <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
         <Navbar />
         <main className="pt-24 pb-16">
-          <div className="container mx-auto px-4 max-w-lg">
-            <Card className="text-center">
-              <CardContent className="py-12">
-                <div className={cn(
-                  "w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center",
-                  passed ? "bg-green-500/10" : "bg-amber-500/10"
-                )}>
-                  {passed ? (
-                    <Trophy className="w-12 h-12 text-green-500" />
-                  ) : (
-                    <RotateCcw className="w-12 h-12 text-amber-500" />
-                  )}
-                </div>
-
-                <h1 className="text-3xl font-bold mb-2">
-                  {passed 
-                    ? (isArabic ? 'أحسنت! 🎉' : 'Well Done! 🎉')
-                    : (isArabic ? 'حاول مرة تانية' : 'Try Again')
-                  }
-                </h1>
-
-                <div className="text-5xl font-bold text-primary my-6">
-                  {result.score}/{result.total}
-                </div>
-
-                <p className="text-xl mb-2">
-                  {percentage}%
-                </p>
-
-                <div className="mb-8 space-y-2">
-                  <p className={cn(
-                    "text-lg font-semibold",
-                    passed ? "text-green-600" : "text-amber-600"
-                  )}>
-                    {passed
-                      ? (isArabic ? '✅ اجتزت الاختبار بنجاح!' : '✅ You passed the exam!')
-                      : (isArabic ? '⚠️ لم تجتز — حاول مرة تانية' : '⚠️ Did not pass — try again')
-                    }
-                  </p>
-                  <p className="text-muted-foreground">
-                    {passed
-                      ? (isArabic ? 'ممتاز 👏 كمّل للباب التالي' : 'Excellent! Continue to the next chapter')
-                      : (isArabic ? 'راجع الحصص وحاول من جديد' : 'Review the lessons and try again')
-                    }
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <Button 
-                    onClick={() => navigate(`/course/${exam.course_id}`)}
-                    className="w-full"
-                  >
-                    {isArabic ? 'العودة للكورس' : 'Back to Course'}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/platform')}
-                    className="w-full"
-                  >
-                    {isArabic ? 'للمنصة' : 'To Platform'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Guidance */}
-            <Card className="mt-6 border-primary/20 bg-primary/5">
-              <CardContent className="py-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {isArabic 
-                    ? 'خلّص حصص الباب وبعدين ادخل على الاختبار عشان تثبّت الفهم عندك.'
-                    : 'Complete chapter lessons, then take the exam to reinforce your understanding.'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <ExamResultScreen
+            score={result.score}
+            total={result.total}
+            courseId={exam.course_id}
+            onBackToCourse={() => navigate(`/course/${exam.course_id}`)}
+            onToPlatform={() => navigate('/platform')}
+          />
         </main>
       </div>
     );
   }
 
+  // Main Exam View - 3-Zone Layout
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navbar />
 
-      <main className="pt-24 pb-16 content-appear">
+      {/* ZONE 1: Fixed Top Status Bar */}
+      <ExamStatusBar
+        title={isArabic ? exam.title_ar : exam.title}
+        chapterTitle={exam.chapter ? (isArabic ? exam.chapter.title_ar : exam.chapter.title) : undefined}
+        currentQuestion={currentQuestionIndex}
+        totalQuestions={questions.length}
+        onBack={() => navigate(-1)}
+      />
+
+      {/* ZONE 2: Main Question Area - Scrollable */}
+      <main className="pt-40 pb-36 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
-          {/* Header */}
-          <div className="mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate(-1)}
-              className="mb-4 gap-2"
-            >
-              <ArrowLeft className={cn("w-4 h-4", isRTL && "rotate-180")} />
-              {isArabic ? 'العودة' : 'Back'}
-            </Button>
-
-            <h1 className="text-2xl font-bold mb-2">
-              {isArabic ? exam.title_ar : exam.title}
-            </h1>
-            {exam.chapter && (
-              <p className="text-muted-foreground">
-                {isArabic ? exam.chapter.title_ar : exam.chapter.title}
-              </p>
-            )}
-          </div>
-
-          {/* Progress */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-muted-foreground">
-                {isArabic ? 'السؤال' : 'Question'} {currentQuestionIndex + 1} / {questions.length}
-              </span>
-              <span className="font-medium">{Math.round(progress)}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-
-          {/* Exam Rules & Guidance */}
-          <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardContent className="py-4">
-              <h3 className="text-sm font-semibold mb-2 text-center">
-                {isArabic ? '📋 تعليمات الاختبار' : '📋 Exam Instructions'}
-              </h3>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p className="flex items-center gap-2">
-                  <span className="text-primary">•</span>
+          {/* Exam Instructions - Only on first question */}
+          {currentQuestionIndex === 0 && (
+            <Card className="mb-4 border-primary/20 bg-primary/5">
+              <CardContent className="py-3">
+                <p className="text-sm text-muted-foreground text-center">
                   {isArabic 
-                    ? `عدد الأسئلة: ${questions.length} سؤال`
-                    : `Questions: ${questions.length}`
+                    ? `📋 ${questions.length} سؤال — اختر إجابة واحدة لكل سؤال`
+                    : `📋 ${questions.length} questions — Select one answer per question`
                   }
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-primary">•</span>
-                  {isArabic 
-                    ? 'اختر إجابة واحدة لكل سؤال'
-                    : 'Select one answer per question'
-                  }
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-primary">•</span>
-                  {isArabic 
-                    ? 'النتيجة تظهر فوراً بعد التسليم'
-                    : 'Results shown immediately after submission'
-                  }
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Question Card - Image-first design */}
-          <Card className="mb-6 overflow-hidden">
-            {/* Question number header */}
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-                  {currentQuestionIndex + 1}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {isArabic ? `من ${questions.length}` : `of ${questions.length}`}
-                </span>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Question Image - Primary content */}
-              {currentQuestion.question_image_url ? (
-                <div className="relative rounded-xl overflow-hidden bg-muted/30 border">
-                  <img 
-                    src={currentQuestion.question_image_url} 
-                    alt={isArabic ? `السؤال ${currentQuestionIndex + 1}` : `Question ${currentQuestionIndex + 1}`}
-                    className="w-full h-auto max-h-[60vh] object-contain mx-auto"
-                    loading="eager"
-                  />
-                </div>
-              ) : currentQuestion.question_text ? (
-                /* Fallback: Text question if no image */
-                <div className="p-4 rounded-xl bg-muted/30 border">
-                  <p className="text-base leading-relaxed" dir="auto">
-                    {wrapChemicalEquations(currentQuestion.question_text)}
-                  </p>
-                </div>
-              ) : null}
-              
-              {/* Answer Selection - A/B/C/D Buttons */}
-              <div className="pt-2">
-                <p className="text-sm text-muted-foreground text-center mb-4">
-                  {isArabic ? 'اختر الإجابة الصحيحة:' : 'Select the correct answer:'}
-                </p>
-                <div className="flex items-center justify-center gap-3 sm:gap-4">
-                  {[
-                    { key: 'a', label: 'A' },
-                    { key: 'b', label: 'B' },
-                    { key: 'c', label: 'C' },
-                    { key: 'd', label: 'D' },
-                  ].map(option => (
-                    <button
-                      key={option.key}
-                      onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
-                      className={cn(
-                        "w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 transition-all duration-200",
-                        "flex items-center justify-center text-lg sm:text-xl font-bold",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        "active:scale-[0.98]",
-                        answers[currentQuestion.id] === option.key
-                          ? "border-primary bg-primary text-primary-foreground shadow-lg scale-105"
-                          : "border-border bg-card hover:border-primary/50 hover:bg-primary/5 text-foreground"
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-              disabled={currentQuestionIndex === 0}
-              className="gap-2"
-            >
-              <ArrowRight className={cn("w-4 h-4", !isRTL && "rotate-180")} />
-              {isArabic ? 'السابق' : 'Previous'}
-            </Button>
-
-            {currentQuestionIndex === questions.length - 1 ? (
-              <Button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="gap-2 bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {submitting 
-                  ? (isArabic ? 'جاري الحفظ...' : 'Saving...')
-                  : (isArabic ? 'إنهاء الاختبار' : 'Submit Exam')
-                }
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                className="gap-2"
-              >
-                {isArabic ? 'التالي' : 'Next'}
-                <ArrowLeft className={cn("w-4 h-4", !isRTL && "rotate-180")} />
-              </Button>
-            )}
-          </div>
-
-          {/* Question indicators */}
-          <div className="flex flex-wrap gap-2 mt-8 justify-center">
-            {questions.map((q, idx) => (
-              <button
-                key={q.id}
-                onClick={() => setCurrentQuestionIndex(idx)}
-                className={cn(
-                  "w-10 h-10 rounded-full text-sm font-medium transition-all",
-                  currentQuestionIndex === idx
-                    ? "bg-primary text-primary-foreground"
-                    : answers[q.id]
-                      ? "bg-green-500/20 text-green-700 dark:text-green-400"
-                      : "bg-muted hover:bg-muted/80"
-                )}
-              >
-                {idx + 1}
-              </button>
-            ))}
-          </div>
+          {/* Question Card */}
+          <ExamQuestionCard
+            questionIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
+            questionText={currentQuestion.question_text}
+            questionImageUrl={currentQuestion.question_image_url}
+            selectedAnswer={answers[currentQuestion.id]}
+            onSelectAnswer={(option) => handleSelectAnswer(currentQuestion.id, option)}
+          />
         </div>
       </main>
+
+      {/* ZONE 3: Fixed Bottom Navigation */}
+      <ExamNavigation
+        currentIndex={currentQuestionIndex}
+        totalQuestions={questions.length}
+        answers={answers}
+        questionIds={questions.map(q => q.id)}
+        submitting={submitting}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onSubmit={handleSubmit}
+        onJumpTo={handleJumpTo}
+      />
     </div>
   );
 }
