@@ -388,11 +388,16 @@ export default function ManageExams() {
     try {
       const translatedTitle = await translateText(examForm.title_ar, 'en');
       
+      // AUTO CHAPTER RESOLUTION: Use chapter_id from form (works for both scopes)
+      // - For 'chapter' scope: user explicitly selected chapter
+      // - For 'lesson' scope: chapter_id was auto-derived from lesson.chapter_id
+      const resolvedChapterId = examForm.chapter_id || null;
+      
       const examData: Record<string, unknown> = {
         title_ar: examForm.title_ar,
         title: translatedTitle || examForm.title_ar,
         course_id: selectedCourse,
-        chapter_id: examForm.exam_scope === 'chapter' && examForm.chapter_id ? examForm.chapter_id : null,
+        chapter_id: resolvedChapterId,
         pass_mark: examForm.pass_mark,
         time_limit_minutes: examForm.time_limit_minutes ? parseInt(examForm.time_limit_minutes) : null,
         max_attempts: examForm.max_attempts,
@@ -421,7 +426,7 @@ export default function ManageExams() {
           title_ar: examForm.title_ar,
           title: (examData.title as string) || examForm.title_ar,
           course_id: selectedCourse,
-          chapter_id: examForm.exam_scope === 'chapter' && examForm.chapter_id ? examForm.chapter_id : null,
+          chapter_id: resolvedChapterId, // Uses auto-resolved chapter for both scopes
           pass_mark: examForm.pass_mark,
           time_limit_minutes: examForm.time_limit_minutes ? parseInt(examForm.time_limit_minutes) : null,
           max_attempts: examForm.max_attempts,
@@ -1079,26 +1084,78 @@ export default function ManageExams() {
 
             {/* Lesson Selection - shown when scope is lesson */}
             {examForm.exam_scope === 'lesson' && (
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  {isArabic ? 'الحصة' : 'Lesson'}
-                </label>
-                <Select 
-                  value={examForm.lesson_id} 
-                  onValueChange={(value) => setExamForm(prev => ({ ...prev, lesson_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={isArabic ? "اختر الحصة" : "Select lesson"} />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {lessons.map(lesson => (
-                      <SelectItem key={lesson.id} value={lesson.id}>
-                        {isArabic ? lesson.title_ar : lesson.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {isArabic ? 'الحصة' : 'Lesson'} 
+                    {!editingExam && <span className="text-destructive">*</span>}
+                  </label>
+                  <Select 
+                    value={examForm.lesson_id} 
+                    onValueChange={(value) => {
+                      // AUTO CHAPTER RESOLUTION: Derive chapter from lesson
+                      const selectedLesson = lessons.find(l => l.id === value);
+                      const derivedChapterId = selectedLesson?.chapter_id || '';
+                      setExamForm(prev => ({ 
+                        ...prev, 
+                        lesson_id: value,
+                        chapter_id: derivedChapterId // Auto-fill chapter from lesson
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className={cn(
+                      !editingExam && !examForm.lesson_id && "border-amber-500/50"
+                    )}>
+                      <SelectValue placeholder={isArabic ? "اختر الحصة" : "Select lesson"} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {lessons.map(lesson => (
+                        <SelectItem key={lesson.id} value={lesson.id}>
+                          {isArabic ? lesson.title_ar : lesson.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!editingExam && !examForm.lesson_id && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      {isArabic ? 'مطلوب — يجب اختيار حصة' : 'Required — must select a lesson'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Auto-derived chapter display (locked) */}
+                {examForm.lesson_id && examForm.chapter_id && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                      <Lock className="w-3 h-3 text-muted-foreground" />
+                      {isArabic ? 'الباب' : 'Chapter'}
+                    </label>
+                    <div className="h-10 px-3 rounded-md border bg-muted/50 flex items-center text-sm text-muted-foreground">
+                      {(() => {
+                        const ch = chapters.find(c => c.id === examForm.chapter_id);
+                        return ch ? (isArabic ? ch.title_ar : ch.title) : (isArabic ? 'غير محدد' : 'Not set');
+                      })()}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-green-600" />
+                      {isArabic ? 'تم تحديد الباب تلقائيًا من الحصة' : 'Chapter auto-assigned from lesson'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Warning if lesson has no chapter */}
+                {examForm.lesson_id && !examForm.chapter_id && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      {isArabic 
+                        ? 'هذه الحصة غير مرتبطة بباب — سيتم إنشاء الامتحان بدون باب'
+                        : 'This lesson has no chapter — exam will be created without a chapter'}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="grid grid-cols-2 gap-4">
