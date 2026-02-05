@@ -4,6 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 type DeviceType = 'android' | 'ios' | 'windows' | 'macos' | 'linux' | 'unknown';
 
+// Storage key for iOS standalone detection (prevents double counting)
+const IOS_INSTALL_RECORDED_KEY = 'pwa_ios_standalone_recorded';
+
 interface InstallStatistics {
   total_installs: number;
   android_installs: number;
@@ -58,6 +61,37 @@ const checkIfInstalled = (): boolean => {
   if (document.referrer.includes('android-app://')) return true;
   
   return false;
+};
+
+/**
+ * Check if running in iOS standalone mode specifically
+ * iOS does NOT fire 'appinstalled' event - we must detect standalone mode
+ */
+const isIOSStandalone = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = (navigator as any).standalone === true || 
+                       window.matchMedia('(display-mode: standalone)').matches;
+  
+  return isIOS && isStandalone;
+};
+
+/**
+ * Check if iOS install has already been recorded for this device
+ */
+const hasIOSInstallBeenRecorded = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(IOS_INSTALL_RECORDED_KEY) === 'true';
+};
+
+/**
+ * Mark iOS install as recorded
+ */
+const markIOSInstallRecorded = (): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(IOS_INSTALL_RECORDED_KEY, 'true');
+  }
 };
 
 /**
@@ -189,6 +223,26 @@ export const useInstallStatistics = (): UseInstallStatisticsReturn => {
   useEffect(() => {
     setIsInstalled(checkIfInstalled());
   }, []);
+
+  // iOS-specific install tracking
+  // iOS does NOT fire 'appinstalled' event, so we detect standalone mode
+  useEffect(() => {
+    // Only run on iOS devices
+    if (deviceType !== 'ios') return;
+    
+    // Check if running in standalone mode AND not already recorded
+    if (isIOSStandalone() && !hasIOSInstallBeenRecorded()) {
+      console.log('[PWA] iOS standalone mode detected - recording install');
+      
+      // Record the install
+      recordInstall().then(() => {
+        markIOSInstallRecorded();
+        console.log('[PWA] iOS install recorded successfully');
+      }).catch(err => {
+        console.error('[PWA] Failed to record iOS install:', err);
+      });
+    }
+  }, [deviceType, recordInstall]);
 
   // Fetch statistics on mount
   useEffect(() => {
