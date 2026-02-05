@@ -265,6 +265,8 @@ export default function TakeExam() {
             score={result.score}
             total={result.total}
             courseId={exam.course_id}
+            chapterTitle={exam.chapter?.title}
+            chapterTitleAr={exam.chapter?.title_ar}
             onBackToCourse={() => navigate(`/course/${exam.course_id}`)}
             onToPlatform={() => navigate('/platform')}
           />
