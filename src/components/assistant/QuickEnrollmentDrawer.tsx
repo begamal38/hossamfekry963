@@ -125,10 +125,11 @@ export const QuickEnrollmentDrawer: React.FC<QuickEnrollmentDrawerProps> = ({
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch courses
+      // Fetch only visible courses (hidden courses are closed for new enrollments)
       const { data: coursesData } = await supabase
         .from('courses')
         .select('id, title, title_ar, grade')
+        .eq('is_hidden', false)
         .order('grade');
       
       setCourses(coursesData || []);
