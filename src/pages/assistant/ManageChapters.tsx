@@ -92,6 +92,7 @@ export default function ManageChapters() {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, title_ar')
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false });
 
       if (error) {

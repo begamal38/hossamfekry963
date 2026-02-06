@@ -117,6 +117,7 @@ const ManageLessons = () => {
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, title_ar')
+        .eq('is_hidden', false)
         .order('created_at');
 
       if (error) throw error;
