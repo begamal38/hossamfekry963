@@ -35,10 +35,11 @@ export const Footer: React.FC = () => {
       
       {/* Content container with proper mobile bottom padding for nav clearance */}
       <div className="relative container mx-auto px-4 sm:px-6 py-10 sm:py-14 md:py-16 pb-28 md:pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 text-center md:text-right">
+        <div className="max-w-[1200px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6 text-center md:text-right">
           
           {/* Brand Section */}
-          <div className="space-y-5 2xl:space-y-6 flex flex-col items-center md:items-start">
+          <div className="space-y-5 flex flex-col items-center md:items-start">
             <Link to="/" className="inline-block p-2">
               <img 
                 src={logo} 
@@ -53,19 +54,18 @@ export const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Contact Information - Side by Side Phone Numbers */}
+          {/* Contact Information */}
           <div className="space-y-5 flex flex-col items-center md:items-start">
             <h4 className="font-bold text-lg text-foreground">
               {t('footer.contact')}
             </h4>
             <div className="space-y-4">
-              {/* Phone Numbers - Side by side with official WhatsApp icon */}
+              {/* Phone Numbers */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6">
                 <button 
                   onClick={() => openWhatsApp('01225565645')}
                   className="flex items-center gap-2 hover:opacity-70 transition-opacity text-sm group text-muted-foreground"
                 >
-                  {/* Official WhatsApp Brand Logo */}
                   <svg 
                     viewBox="0 0 24 24" 
                     className="w-5 h-5 group-hover:scale-110 transition-transform fill-[#25D366]"
@@ -98,64 +98,58 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Social Media, Download & Legal */}
-          <div className="space-y-6 flex flex-col items-center md:items-start">
-            {/* Download App Button - PRIMARY CTA */}
-            <div className="space-y-4 w-full">
-              <h4 className="font-bold text-lg text-center md:text-start text-foreground">
-                {t('footer.downloadApp')}
-              </h4>
-              
-              {/* Platform Icons - Clear and separate */}
-              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                <PlatformIconsRow iconSize="lg" />
-              </div>
-              
-              {/* Download Button - Clean, no overlapping icons */}
-              <Link to="/download" className="block w-full">
-                <Button 
-                  variant="outline" 
-                  className={cn(
-                    "w-full h-11 sm:h-12 transition-all text-sm sm:text-base",
-                    "border-primary/30 hover:bg-primary/10 hover:border-primary/50",
-                    "flex items-center justify-center gap-2"
-                  )}
-                >
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="font-medium">{t('footer.downloadAppBtn')}</span>
-                </Button>
-              </Link>
+          {/* Download App */}
+          <div className="space-y-4 flex flex-col items-center md:items-start">
+            <h4 className="font-bold text-lg text-center md:text-start text-foreground">
+              {t('footer.downloadApp')}
+            </h4>
+            
+            <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
+              <PlatformIconsRow iconSize="lg" />
+            </div>
+            
+            <Link to="/download" className="block w-full max-w-[220px]">
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "w-full h-11 sm:h-12 transition-all text-sm sm:text-base",
+                  "border-primary/30 hover:bg-primary/10 hover:border-primary/50",
+                  "flex items-center justify-center gap-2"
+                )}
+              >
+                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="font-medium">{t('footer.downloadAppBtn')}</span>
+              </Button>
+            </Link>
+          </div>
+
+          {/* Social & Legal */}
+          <div className="space-y-5 flex flex-col items-center md:items-start">
+            <h4 className="font-bold text-lg text-center md:text-right text-foreground">
+              {t('footer.followUs')}
+            </h4>
+            <div className="flex items-center justify-center md:justify-start gap-4">
+              <a 
+                href="https://www.facebook.com/mr.hossamfekry" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md bg-primary/10 text-primary"
+                aria-label="Facebook"
+              >
+                <Facebook className="w-6 h-6" />
+              </a>
+              <a 
+                href="https://www.instagram.com/hossamfekry963" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md bg-primary/10 text-primary"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-6 h-6" />
+              </a>
             </div>
 
-            {/* Social Media Icons */}
-            <div className="space-y-4 w-full">
-              <h4 className="font-bold text-lg text-center md:text-right text-foreground">
-                {t('footer.followUs')}
-              </h4>
-              <div className="flex items-center justify-center md:justify-start gap-4">
-                <a 
-                  href="https://www.facebook.com/mr.hossamfekry" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md bg-primary/10 text-primary"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="w-6 h-6" />
-                </a>
-                <a 
-                  href="https://www.instagram.com/hossamfekry963" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-md bg-primary/10 text-primary"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="w-6 h-6" />
-                </a>
-              </div>
-            </div>
-
-            {/* Legal Links */}
-            <div className="space-y-3 text-center md:text-right">
+            <div className="space-y-3 text-center md:text-right pt-2">
               <Link 
                 to="/terms" 
                 className="block hover:opacity-70 transition-opacity text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -170,6 +164,7 @@ export const Footer: React.FC = () => {
               </Link>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Bottom Bar - Copyright & Attribution */}
