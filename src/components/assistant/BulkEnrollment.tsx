@@ -222,6 +222,7 @@ export const BulkEnrollment: React.FC<BulkEnrollmentProps> = ({
       const { data } = await supabase
         .from('courses')
         .select('id, title, title_ar, grade')
+        .eq('is_hidden', false)
         .order('grade');
       setCourses(data || []);
     } catch (error) {

@@ -94,6 +94,7 @@ export const ManualEnrollment: React.FC<ManualEnrollmentProps> = ({
       const { data, error } = await supabase
         .from('courses')
         .select('id, title, title_ar, grade')
+        .eq('is_hidden', false)
         .order('grade');
       
       if (error) {

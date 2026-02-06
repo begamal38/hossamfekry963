@@ -209,7 +209,7 @@ export default function SendNotifications() {
       const staffUserIds = new Set((staffRoles || []).map(r => r.user_id));
 
       const [coursesRes, studentsRes] = await Promise.all([
-        supabase.from('courses').select('id, title, title_ar'),
+        supabase.from('courses').select('id, title, title_ar').eq('is_hidden', false),
         supabase.from('profiles').select('user_id, full_name, email, grade, attendance_mode, phone'),
       ]);
 
