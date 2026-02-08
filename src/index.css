@@ -13,6 +13,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global overflow protection — prevent text from breaking out of cards/containers */
+@layer base {
+  .overflow-hidden,
+  [class*="rounded-"] {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+  }
+}
+
 @layer base {
   :root {
     /* ═══════════════════════════════════════════════════════════════════════
