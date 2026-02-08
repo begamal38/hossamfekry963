@@ -162,7 +162,7 @@ const About = () => {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <stat.icon className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-2xl sm:text-3xl font-bold text-primary mb-2 break-words">{stat.value}</p>
+                  <p className="text-xl sm:text-3xl font-bold text-primary mb-2">{stat.value}</p>
                   <p className="text-muted-foreground text-sm">{stat.label}</p>
                 </div>
               ))}
