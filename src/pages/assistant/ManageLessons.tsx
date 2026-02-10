@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2, ArrowUpDown } from 'lucide-react';
+import { Plus, Video, Trash2, Youtube, Pencil, Layers, Clock, Gift, Loader2, ArrowUpDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +54,7 @@ interface Lesson {
   video_url: string | null;
   duration_minutes: number | null;
   is_free_lesson: boolean;
+  is_active: boolean;
 }
 
 const ManageLessons = () => {
@@ -154,7 +155,7 @@ const ManageLessons = () => {
     try {
       const { data, error } = await supabase
         .from('lessons')
-        .select('id, title, title_ar, lesson_type, course_id, chapter_id, order_index, video_url, duration_minutes, is_free_lesson')
+        .select('id, title, title_ar, lesson_type, course_id, chapter_id, order_index, video_url, duration_minutes, is_free_lesson, is_active')
         .eq('course_id', selectedCourse)
         .order('order_index');
 
@@ -305,6 +306,54 @@ const ManageLessons = () => {
       fetchLessons();
     } catch (error) {
       console.error('Error deleting lesson:', error);
+    }
+  };
+
+  const handleToggleActive = async (lesson: Lesson) => {
+    const newActive = !lesson.is_active;
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .update({ is_active: newActive })
+        .eq('id', lesson.id);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setLessons(prev => prev.map(l => l.id === lesson.id ? { ...l, is_active: newActive } : l));
+
+      // If activating, send notification to enrolled students
+      if (newActive && selectedCourse) {
+        try {
+          const { sendUnifiedNotification } = await import('@/lib/notificationService');
+          await sendUnifiedNotification({
+            type: 'lesson_available',
+            titleAr: 'حصة جديدة متاحة الآن',
+            messageAr: `حصة "${lesson.title_ar}" أصبحت متاحة في الكورس`,
+            targetType: 'course',
+            targetId: selectedCourse,
+            courseId: selectedCourse,
+            lessonId: lesson.id,
+            sendEmail: false,
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      toast({
+        title: isArabic ? 'تم بنجاح' : 'Success',
+        description: newActive 
+          ? (isArabic ? 'تم تفعيل الحصة — الطلاب يقدروا يشوفوها دلوقتي' : 'Lesson activated')
+          : (isArabic ? 'تم إخفاء الحصة — مش هتظهر للطلاب' : 'Lesson hidden from students')
+      });
+    } catch (error) {
+      console.error('Error toggling lesson:', error);
+      toast({
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في تحديث حالة الحصة' : 'Failed to update lesson status',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -465,10 +514,10 @@ const ManageLessons = () => {
                   key={lesson.id}
                   title={isArabic ? lesson.title_ar : lesson.title}
                   subtitle={getChapterName(lesson.chapter_id) || undefined}
-                  badge={lesson.is_free_lesson ? (isArabic ? 'مجانية' : 'Free') : undefined}
-                  badgeVariant={lesson.is_free_lesson ? 'success' : undefined}
+                  badge={!lesson.is_active ? (isArabic ? 'مخفية' : 'Hidden') : lesson.is_free_lesson ? (isArabic ? 'مجانية' : 'Free') : undefined}
+                  badgeVariant={!lesson.is_active ? 'warning' : lesson.is_free_lesson ? 'success' : undefined}
                   icon={Video}
-                  iconColor="text-blue-500"
+                  iconColor={lesson.is_active ? "text-blue-500" : "text-muted-foreground"}
                   metadata={[
                     { 
                       icon: Clock, 
@@ -477,10 +526,17 @@ const ManageLessons = () => {
                     ...(lesson.video_url ? [{ icon: Youtube, label: isArabic ? 'فيديو' : 'Video' }] : [])
                   ]}
                   actions={[
+                    { 
+                      icon: lesson.is_active ? Eye : EyeOff, 
+                      onClick: () => handleToggleActive(lesson), 
+                      variant: 'ghost' as const,
+                      className: lesson.is_active ? 'text-green-600' : 'text-amber-500'
+                    },
                     { icon: Pencil, onClick: () => handleEdit(lesson), variant: 'ghost' as const },
                     { icon: Trash2, onClick: () => handleDeleteLesson(lesson.id), variant: 'ghost' as const, className: 'text-destructive' }
                   ]}
                   isRTL={isRTL}
+                  className={cn(!lesson.is_active && "opacity-60")}
                 />
               ))}
             </div>

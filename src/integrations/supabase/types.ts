@@ -41,6 +41,67 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_notifications: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          event_type: string
+          exam_id: string | null
+          id: string
+          is_read: boolean
+          lesson_id: string | null
+          message_ar: string
+          student_id: string | null
+          student_name: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          event_type: string
+          exam_id?: string | null
+          id?: string
+          is_read?: boolean
+          lesson_id?: string | null
+          message_ar: string
+          student_id?: string | null
+          student_name?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          event_type?: string
+          exam_id?: string | null
+          id?: string
+          is_read?: boolean
+          lesson_id?: string | null
+          message_ar?: string
+          student_id?: string | null
+          student_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_notifications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_notifications_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_notifications_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assistant_teacher_permissions: {
         Row: {
           can_export_students: boolean
@@ -1080,6 +1141,7 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          is_active: boolean
           is_free_lesson: boolean
           key_points: Json | null
           lesson_type: string
@@ -1102,6 +1164,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_active?: boolean
           is_free_lesson?: boolean
           key_points?: Json | null
           lesson_type?: string
@@ -1124,6 +1187,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          is_active?: boolean
           is_free_lesson?: boolean
           key_points?: Json | null
           lesson_type?: string

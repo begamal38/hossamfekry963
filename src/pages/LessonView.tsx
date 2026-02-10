@@ -272,6 +272,13 @@ export default function LessonView() {
         .single();
 
       if (lessonError) throw lessonError;
+
+      // Block inactive lessons for non-staff users
+      if (!lessonData.is_active && !isStaff) {
+        navigate(-1);
+        return;
+      }
+
       setLesson(lessonData);
 
       const { data: courseData } = await supabase

@@ -117,9 +117,10 @@ export default function CourseView() {
 
   // Filter lessons for student view (show all lessons, chapter is organizational only)
   const visibleLessons = useMemo(() => {
-    // All lessons are visible now - chapter is for organization, not visibility
-    return lessons;
-  }, [lessons]);
+    // Staff can see all lessons; students only see active lessons
+    if (canBypassRestrictions) return lessons;
+    return lessons.filter(l => (l as any).is_active !== false);
+  }, [lessons, canBypassRestrictions]);
 
   // Group lessons by chapter for organized display
   const lessonsByChapter = useMemo(() => {
