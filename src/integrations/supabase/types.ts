@@ -1134,6 +1134,7 @@ export type Database = {
       }
       lessons: {
         Row: {
+          announcement_sent: boolean
           assistant_notes: string | null
           assistant_notes_ar: string | null
           chapter_id: string | null
@@ -1157,6 +1158,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          announcement_sent?: boolean
           assistant_notes?: string | null
           assistant_notes_ar?: string | null
           chapter_id?: string | null
@@ -1180,6 +1182,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          announcement_sent?: boolean
           assistant_notes?: string | null
           assistant_notes_ar?: string | null
           chapter_id?: string | null

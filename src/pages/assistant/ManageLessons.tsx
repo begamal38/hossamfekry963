@@ -96,6 +96,7 @@ const ManageLessons = () => {
     duration_minutes: 60,
     chapter_id: '',
     is_free_lesson: false,
+    is_active: false,
   });
   const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
 
@@ -175,6 +176,7 @@ const ManageLessons = () => {
       duration_minutes: 60,
       chapter_id: '',
       is_free_lesson: false,
+      is_active: false,
     });
     setEditingLesson(null);
     setShowForm(false);
@@ -188,6 +190,7 @@ const ManageLessons = () => {
       duration_minutes: lesson.duration_minutes || 60,
       chapter_id: lesson.chapter_id || '',
       is_free_lesson: lesson.is_free_lesson || false,
+      is_active: lesson.is_active,
     });
     setShowForm(true);
   };
@@ -242,6 +245,7 @@ const ManageLessons = () => {
         duration_minutes: durationMinutes,
         chapter_id: formData.chapter_id || null,
         is_free_lesson: formData.is_free_lesson,
+        is_active: formData.is_active,
       };
 
       if (editingLesson) {
@@ -257,15 +261,37 @@ const ManageLessons = () => {
           description: isArabic ? 'تم تحديث الحصة' : 'Lesson updated successfully'
         });
       } else {
-        const { error } = await supabase
+        const { data: newLesson, error } = await supabase
           .from('lessons')
           .insert({
             ...lessonData,
             course_id: selectedCourse,
             order_index: lessons.length,
-          });
+          })
+          .select('id')
+          .single();
 
         if (error) throw error;
+
+        // If created as public, send ONE notification and mark as announced
+        if (formData.is_active && selectedCourse && newLesson) {
+          try {
+            const { sendUnifiedNotification } = await import('@/lib/notificationService');
+            await sendUnifiedNotification({
+              type: 'lesson_available',
+              titleAr: 'حصة جديدة متاحة الآن',
+              messageAr: `حصة "${formData.title_ar}" أصبحت متاحة في الكورس`,
+              targetType: 'course',
+              targetId: selectedCourse,
+              courseId: selectedCourse,
+              lessonId: newLesson.id,
+              sendEmail: false,
+            });
+            await supabase.from('lessons').update({ announcement_sent: true }).eq('id', newLesson.id);
+          } catch {
+            // Non-blocking
+          }
+        }
 
         toast({
           title: isArabic ? 'تم بنجاح' : 'Success',
@@ -322,22 +348,33 @@ const ManageLessons = () => {
       // Update local state immediately
       setLessons(prev => prev.map(l => l.id === lesson.id ? { ...l, is_active: newActive } : l));
 
-      // If activating, send notification to enrolled students
+      // Send notification ONLY on first publish (hidden → public AND never announced)
       if (newActive && selectedCourse) {
-        try {
-          const { sendUnifiedNotification } = await import('@/lib/notificationService');
-          await sendUnifiedNotification({
-            type: 'lesson_available',
-            titleAr: 'حصة جديدة متاحة الآن',
-            messageAr: `حصة "${lesson.title_ar}" أصبحت متاحة في الكورس`,
-            targetType: 'course',
-            targetId: selectedCourse,
-            courseId: selectedCourse,
-            lessonId: lesson.id,
-            sendEmail: false,
-          });
-        } catch {
-          // Non-blocking
+        // Check if announcement was already sent
+        const { data: lessonData } = await supabase
+          .from('lessons')
+          .select('announcement_sent')
+          .eq('id', lesson.id)
+          .single();
+
+        if (lessonData && !lessonData.announcement_sent) {
+          try {
+            const { sendUnifiedNotification } = await import('@/lib/notificationService');
+            await sendUnifiedNotification({
+              type: 'lesson_available',
+              titleAr: 'حصة جديدة متاحة الآن',
+              messageAr: `حصة "${lesson.title_ar}" أصبحت متاحة في الكورس`,
+              targetType: 'course',
+              targetId: selectedCourse,
+              courseId: selectedCourse,
+              lessonId: lesson.id,
+              sendEmail: false,
+            });
+            // Lock: mark as announced so it never fires again
+            await supabase.from('lessons').update({ announcement_sent: true }).eq('id', lesson.id);
+          } catch {
+            // Non-blocking
+          }
         }
       }
 
@@ -636,6 +673,20 @@ const ManageLessons = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Visibility Toggle */}
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                />
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-green-500" />
+                  <span className="font-medium text-sm">{isArabic ? 'نشر الحصة للطلاب بعد الحفظ' : 'Make lesson public after save'}</span>
+                </div>
+              </label>
 
               {/* Free Lesson */}
               <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border hover:bg-muted/30 transition-colors">
