@@ -145,8 +145,11 @@ export const AssistantNotificationBell: React.FC<{ className?: string }> = ({ cl
 
       {isOpen && (
         <div className={cn(
-          "absolute top-full mt-2 w-80 sm:w-96 max-h-[70vh] bg-popover border border-border rounded-xl shadow-xl overflow-hidden z-[300]",
-          isArabic ? "left-0" : "right-0"
+          "fixed sm:absolute top-[64px] sm:top-full sm:mt-2",
+          "inset-x-2 sm:inset-x-auto sm:w-96",
+          "max-h-[60vh] bg-popover border border-border rounded-xl shadow-xl overflow-hidden z-[300]",
+          "origin-top-right animate-fade-in",
+          isArabic ? "sm:left-0" : "sm:right-0"
         )}>
           {/* Header */}
           <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/30">
