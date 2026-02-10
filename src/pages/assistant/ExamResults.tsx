@@ -329,10 +329,13 @@ export default function ExamResults() {
             </CardHeader>
             <CardContent>
               {attempts.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    {isArabic ? 'لا توجد محاولات بعد' : 'No attempts yet'}
+                <div className="text-center py-12">
+                  <Users className="w-14 h-14 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="font-semibold text-foreground mb-1">
+                    {isArabic ? 'لا توجد نتائج امتحانات بعد' : 'No exam results yet'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isArabic ? 'سيتم عرض النتائج هنا عند أول محاولة من الطلاب' : 'Results will appear here after the first student attempt'}
                   </p>
                 </div>
               ) : (
