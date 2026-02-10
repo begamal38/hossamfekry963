@@ -23,7 +23,8 @@ const GRADE_OPTIONS = [
 
 const Settings: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isRTL } = useLanguage();
+  const { isRTL, language } = useLanguage();
+  const isArabic = language === 'ar';
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isStudent, isAssistantTeacher, isAdmin } = useUserRole();
@@ -39,7 +40,7 @@ const Settings: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [grade, setGrade] = useState('');
   const [governorate, setGovernorate] = useState('');
-  const [initialGrade, setInitialGrade] = useState(''); // Track initial grade for validation
+  const [initialGrade, setInitialGrade] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   
   // Password change states
@@ -72,7 +73,7 @@ const Settings: React.FC = () => {
           setPhone(data.phone || '');
           setGrade(data.grade || '');
           setGovernorate(data.governorate || '');
-          setInitialGrade(data.grade || ''); // Store initial grade
+          setInitialGrade(data.grade || '');
           setAvatarUrl(data.avatar_url || '');
         }
       } catch (err) {
@@ -88,14 +89,15 @@ const Settings: React.FC = () => {
   const handleSave = async () => {
     if (!user) return;
 
-    // VALIDATION: Students cannot change grade once set
     if (isStudent() && initialGrade && grade !== initialGrade) {
       toast({
         variant: 'destructive',
-        title: 'غير مسموح',
-        description: 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل. تواصل مع الإدارة للمساعدة.',
+        title: isArabic ? 'غير مسموح' : 'Not Allowed',
+        description: isArabic 
+          ? 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل. تواصل مع الإدارة للمساعدة.'
+          : 'You cannot change your academic level after registration. Contact support for help.',
       });
-      setGrade(initialGrade); // Reset to original
+      setGrade(initialGrade);
       return;
     }
     
@@ -114,15 +116,15 @@ const Settings: React.FC = () => {
       if (error) throw error;
       
       toast({
-        title: 'تم الحفظ',
-        description: 'تم تحديث بيانات الحساب بنجاح',
+        title: isArabic ? 'تم الحفظ' : 'Saved',
+        description: isArabic ? 'تم تحديث بيانات الحساب بنجاح' : 'Account info updated successfully',
       });
     } catch (err) {
       console.error('Error updating profile:', err);
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'فشل في تحديث البيانات',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في تحديث البيانات' : 'Failed to update info',
       });
     } finally {
       setSaving(false);
@@ -133,8 +135,8 @@ const Settings: React.FC = () => {
     if (!newPassword || !confirmPassword) {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'يرجى إدخال كلمة المرور الجديدة وتأكيدها',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'يرجى إدخال كلمة المرور الجديدة وتأكيدها' : 'Please enter and confirm new password',
       });
       return;
     }
@@ -142,8 +144,8 @@ const Settings: React.FC = () => {
     if (newPassword.length < 6) {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters',
       });
       return;
     }
@@ -151,8 +153,8 @@ const Settings: React.FC = () => {
     if (newPassword !== confirmPassword) {
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: 'كلمة المرور الجديدة وتأكيدها غير متطابقتين',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'كلمة المرور الجديدة وتأكيدها غير متطابقتين' : 'Passwords do not match',
       });
       return;
     }
@@ -166,8 +168,8 @@ const Settings: React.FC = () => {
       if (error) throw error;
 
       toast({
-        title: 'تم التغيير',
-        description: 'تم تغيير كلمة المرور بنجاح',
+        title: isArabic ? 'تم التغيير' : 'Changed',
+        description: isArabic ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully',
       });
       setNewPassword('');
       setConfirmPassword('');
@@ -175,8 +177,8 @@ const Settings: React.FC = () => {
       console.error('Error changing password:', err);
       toast({
         variant: 'destructive',
-        title: 'خطأ',
-        description: err.message || 'فشل في تغيير كلمة المرور',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: err.message || (isArabic ? 'فشل في تغيير كلمة المرور' : 'Failed to change password'),
       });
     } finally {
       setSavingPassword(false);
@@ -199,11 +201,6 @@ const Settings: React.FC = () => {
     );
   }
 
-  const getGradeLabel = (value: string) => {
-    const option = GRADE_OPTIONS.find(o => o.value === value);
-    return option ? option.labelAr : value;
-  };
-
   return (
     <div className={cn("min-h-screen bg-muted/30 pb-mobile-nav", isRTL && "rtl")}>
       <Navbar />
@@ -211,8 +208,12 @@ const Settings: React.FC = () => {
       <main className="pt-24 pb-16 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold text-foreground mb-2">إعدادات الحساب</h1>
-            <p className="text-muted-foreground">قم بتعديل بيانات حسابك</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {isArabic ? 'إعدادات الحساب' : 'Account Settings'}
+            </h1>
+            <p className="text-muted-foreground">
+              {isArabic ? 'قم بتعديل بيانات حسابك' : 'Update your account info'}
+            </p>
           </div>
 
           <div className="bg-card rounded-2xl border border-border p-6 md:p-8 animate-fade-in-up animation-delay-100">
@@ -235,12 +236,14 @@ const Settings: React.FC = () => {
             <div className="space-y-6">
               {/* Full Name */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">الاسم بالكامل</label>
+                <label className="text-sm font-medium text-foreground">
+                  {isArabic ? 'الاسم بالكامل' : 'Full Name'}
+                </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="أدخل اسمك بالكامل"
+                    placeholder={isArabic ? 'أدخل اسمك بالكامل' : 'Enter your full name'}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-10"
@@ -250,19 +253,25 @@ const Settings: React.FC = () => {
 
               {/* Email (Read Only) */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">البريد الإلكتروني</label>
+                <label className="text-sm font-medium text-foreground">
+                  {isArabic ? 'البريد الإلكتروني' : 'Email'}
+                </label>
                 <Input
                   type="email"
                   value={user?.email || ''}
                   disabled
                   className="bg-muted"
                 />
-                <p className="text-xs text-muted-foreground">لا يمكن تغيير البريد الإلكتروني</p>
+                <p className="text-xs text-muted-foreground">
+                  {isArabic ? 'لا يمكن تغيير البريد الإلكتروني' : 'Email cannot be changed'}
+                </p>
               </div>
 
               {/* Phone */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">رقم الواتساب</label>
+                <label className="text-sm font-medium text-foreground">
+                  {isArabic ? 'رقم الواتساب' : 'WhatsApp Number'}
+                </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -278,29 +287,36 @@ const Settings: React.FC = () => {
               {/* Grade - Only show for students */}
               {isStudent() && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">المرحلة الدراسية</label>
+                  <label className="text-sm font-medium text-foreground">
+                    {isArabic ? 'المرحلة الدراسية' : 'Academic Level'}
+                  </label>
                   {initialGrade ? (
-                    // Students with set grade see read-only display
                     <div className="w-full h-10 px-3 rounded-md border border-input bg-muted text-foreground flex items-center">
-                      {GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade}
+                      {isArabic 
+                        ? (GRADE_OPTIONS.find(o => o.value === grade)?.labelAr || grade)
+                        : (GRADE_OPTIONS.find(o => o.value === grade)?.labelEn || grade)
+                      }
                     </div>
                   ) : (
-                    // Students without grade can set it
                     <select
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
                       className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                      <option value="">اختر المرحلة</option>
+                      <option value="">{isArabic ? 'اختر المرحلة' : 'Select level'}</option>
                       {GRADE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                          {option.labelAr}
+                          {isArabic ? option.labelAr : option.labelEn}
                         </option>
                       ))}
                     </select>
                   )}
                   {initialGrade && (
-                    <p className="text-xs text-muted-foreground">لا يمكن تغيير المرحلة الدراسية بعد التسجيل</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isArabic 
+                        ? 'لا يمكن تغيير المرحلة الدراسية بعد التسجيل'
+                        : 'Academic level cannot be changed after registration'}
+                    </p>
                   )}
                 </div>
               )}
@@ -309,17 +325,17 @@ const Settings: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  المحافظة
+                  {isArabic ? 'المحافظة' : 'Governorate'}
                 </label>
                 <select
                   value={governorate}
                   onChange={(e) => setGovernorate(e.target.value)}
                   className="w-full h-10 px-3 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  <option value="">اختر المحافظة</option>
+                  <option value="">{isArabic ? 'اختر المحافظة' : 'Select governorate'}</option>
                   {EGYPTIAN_GOVERNORATES.map((gov) => (
                     <option key={gov.value} value={gov.value}>
-                      {gov.label_ar}
+                      {isArabic ? gov.label_ar : gov.label_en}
                     </option>
                   ))}
                 </select>
@@ -335,12 +351,12 @@ const Settings: React.FC = () => {
                 {saving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    جاري الحفظ...
+                    {isArabic ? 'جاري الحفظ...' : 'Saving...'}
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    حفظ التغييرات
+                    {isArabic ? 'حفظ التغييرات' : 'Save Changes'}
                   </>
                 )}
               </Button>
@@ -351,18 +367,20 @@ const Settings: React.FC = () => {
           <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-200">
             <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              تغيير كلمة المرور
+              {isArabic ? 'تغيير كلمة المرور' : 'Change Password'}
             </h2>
 
             <div className="space-y-6">
               {/* New Password */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">كلمة المرور الجديدة</label>
+                <label className="text-sm font-medium text-foreground">
+                  {isArabic ? 'كلمة المرور الجديدة' : 'New Password'}
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type={showNewPassword ? 'text' : 'password'}
-                    placeholder="أدخل كلمة المرور الجديدة"
+                    placeholder={isArabic ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="pl-10 pr-10"
@@ -379,12 +397,14 @@ const Settings: React.FC = () => {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">تأكيد كلمة المرور</label>
+                <label className="text-sm font-medium text-foreground">
+                  {isArabic ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="أعد إدخال كلمة المرور الجديدة"
+                    placeholder={isArabic ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10 pr-10"
@@ -410,12 +430,12 @@ const Settings: React.FC = () => {
                 {savingPassword ? (
                   <>
                     <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    جاري التغيير...
+                    {isArabic ? 'جاري التغيير...' : 'Changing...'}
                   </>
                 ) : (
                   <>
                     <Lock className="w-5 h-5" />
-                    تغيير كلمة المرور
+                    {isArabic ? 'تغيير كلمة المرور' : 'Change Password'}
                   </>
                 )}
               </Button>
@@ -426,7 +446,7 @@ const Settings: React.FC = () => {
           <div className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6 animate-fade-in-up animation-delay-250">
             <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <Bell className="w-5 h-5 text-primary" />
-              إعدادات الإشعارات
+              {isArabic ? 'إعدادات الإشعارات' : 'Notification Settings'}
             </h2>
 
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
@@ -437,9 +457,14 @@ const Settings: React.FC = () => {
                   <VolumeX className="w-5 h-5 text-muted-foreground" />
                 )}
                 <div>
-                  <p className="font-medium text-foreground">صوت الإشعارات</p>
+                  <p className="font-medium text-foreground">
+                    {isArabic ? 'صوت الإشعارات' : 'Notification Sound'}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    {soundEnabled ? 'مفعّل - سيصدر صوت عند وصول إشعار جديد' : 'معطّل'}
+                    {soundEnabled 
+                      ? (isArabic ? 'مفعّل - سيصدر صوت عند وصول إشعار جديد' : 'Enabled - Sound will play on new notifications')
+                      : (isArabic ? 'معطّل' : 'Disabled')
+                    }
                   </p>
                 </div>
               </div>
@@ -449,7 +474,10 @@ const Settings: React.FC = () => {
                 onClick={() => toggleSound(!soundEnabled)}
                 className="gap-2"
               >
-                {soundEnabled ? 'تعطيل' : 'تفعيل'}
+                {soundEnabled 
+                  ? (isArabic ? 'تعطيل' : 'Disable')
+                  : (isArabic ? 'تفعيل' : 'Enable')
+                }
               </Button>
             </div>
           </div>
