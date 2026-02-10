@@ -150,7 +150,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-1">
+          <div className="flex md:hidden items-center gap-0.5 flex-shrink-0 overflow-hidden">
             <Button
               variant="ghost"
               size="icon"
