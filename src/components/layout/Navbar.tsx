@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { AssistantNotificationBell } from '@/components/notifications/AssistantNotificationBell';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ThemeSelector } from '@/components/theme/ThemeSelector';
 import { AliveIndicator } from '@/components/ui/AliveIndicator';
@@ -107,7 +108,7 @@ export const Navbar: React.FC = () => {
             
             {user ? (
               <>
-                <NotificationBell />
+                {canAccessDashboard() ? <AssistantNotificationBell /> : <NotificationBell />}
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -158,7 +159,7 @@ export const Navbar: React.FC = () => {
               <Search className="w-5 h-5" />
             </Button>
             <ThemeSelector />
-            {user && <NotificationBell />}
+            {user && (canAccessDashboard() ? <AssistantNotificationBell /> : <NotificationBell />)}
             <Button
               variant="ghost"
               size="icon"
