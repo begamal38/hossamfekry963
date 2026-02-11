@@ -55,6 +55,11 @@ export const HeroSection: React.FC = () => {
               </p>
             </div>
 
+            {/* Marketing highlight */}
+            <p className="text-center text-sm font-medium text-primary/80 animate-fade-in">
+              شرح عربي ولغات بنفس القوة • خبرة في تبسيط الكيمياء للطلاب العربي واللغات
+            </p>
+
             {/* Single CTA - Clear next action based on role */}
             <div className="flex justify-center">
               {user ? (
