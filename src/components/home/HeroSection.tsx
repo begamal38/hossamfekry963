@@ -56,10 +56,8 @@ export const HeroSection: React.FC = () => {
             </div>
 
             {/* Marketing highlight */}
-            <p className="text-center text-sm font-medium text-primary/80 animate-fade-in">
-              {isRTL
-                ? 'شرح عربي ولغات بنفس القوة • خبرة في تبسيط الكيمياء للطلاب العربي واللغات'
-                : 'Equally strong in Arabic & Languages • Expert at simplifying Chemistry for both tracks'}
+            <p className="text-center text-xs font-normal text-primary/70 animate-fade-in whitespace-nowrap">
+              {isRTL ? 'مناسب لطلاب العربي واللغات' : 'For Arabic & Languages students'}
             </p>
 
             {/* Single CTA - Clear next action based on role */}
