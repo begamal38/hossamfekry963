@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { ExamStatusBar } from '@/components/exam/ExamStatusBar';
 import { ExamQuestionCard } from '@/components/exam/ExamQuestionCard';
 import { ExamNavigation } from '@/components/exam/ExamNavigation';
 import { ExamResultScreen } from '@/components/exam/ExamResultScreen';
+import { ExamSubmitConfirmDialog } from '@/components/exam/ExamSubmitConfirmDialog';
 
 interface ExamQuestion {
   id: string;
@@ -71,6 +72,22 @@ export default function TakeExam() {
   const [existingAttempt, setExistingAttempt] = useState<ExamAttempt | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const answeredCount = Object.keys(answers).length;
+  const allAnswered = questions.length > 0 && answeredCount === questions.length;
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+  // Beforeunload warning when exam is in progress
+  useEffect(() => {
+    if (questions.length === 0 || showResult) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [questions.length, showResult]);
 
   useEffect(() => {
     if (examId && user) {
@@ -131,7 +148,7 @@ export default function TakeExam() {
     setAnswers(prev => ({ ...prev, [questionId]: option }));
   };
 
-  const handleSubmit = async () => {
+  const handleRequestSubmit = () => {
     if (isStaff) {
       toast({
         title: isArabic ? 'وضع المراقبة' : 'Observer Mode',
@@ -139,16 +156,11 @@ export default function TakeExam() {
       });
       return;
     }
+    setShowConfirmDialog(true);
+  };
 
-    if (Object.keys(answers).length < questions.length) {
-      toast({
-        variant: 'destructive',
-        title: isArabic ? 'انتبه!' : 'Warning!',
-        description: isArabic ? 'يرجى الإجابة على جميع الأسئلة' : 'Please answer all questions',
-      });
-      return;
-    }
-
+  const handleConfirmSubmit = async () => {
+    setShowConfirmDialog(false);
     setSubmitting(true);
 
     try {
@@ -306,6 +318,18 @@ export default function TakeExam() {
             </Card>
           )}
 
+          {/* All answered indicator */}
+          {allAnswered && !isLastQuestion && (
+            <Card className="mb-4 border-green-500/30 bg-green-500/10">
+              <CardContent className="py-3 flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                  {isArabic ? 'تم الإجابة على جميع الأسئلة ✔' : 'All questions answered ✔'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Question Card */}
           <ExamQuestionCard
             questionIndex={currentQuestionIndex}
@@ -327,8 +351,18 @@ export default function TakeExam() {
         submitting={submitting}
         onPrevious={handlePrevious}
         onNext={handleNext}
-        onSubmit={handleSubmit}
+        onSubmit={handleRequestSubmit}
         onJumpTo={handleJumpTo}
+      />
+
+      {/* Submit Confirmation Dialog */}
+      <ExamSubmitConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onConfirm={handleConfirmSubmit}
+        answeredCount={answeredCount}
+        totalQuestions={questions.length}
+        submitting={submitting}
       />
     </div>
   );

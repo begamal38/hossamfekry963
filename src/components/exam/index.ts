@@ -27,3 +27,4 @@ export { ExamStatusBar } from './ExamStatusBar';
 export { ExamQuestionCard } from './ExamQuestionCard';
 export { ExamNavigation } from './ExamNavigation';
 export { ExamResultScreen } from './ExamResultScreen';
+export { ExamSubmitConfirmDialog } from './ExamSubmitConfirmDialog';
