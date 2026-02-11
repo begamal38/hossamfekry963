@@ -35,7 +35,6 @@ export const MobileBottomNav: React.FC = () => {
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
-    // Handle platform routes - any assistant or platform route
     if (path === '/assistant' || path === '/platform') {
       return location.pathname.startsWith('/assistant') || 
              location.pathname.startsWith('/platform') ||
@@ -46,12 +45,23 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <nav 
-      className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-card border-t border-border"
+      className="fixed inset-x-0 bottom-0 z-50 md:hidden flex justify-center pointer-events-none"
       role="navigation"
       aria-label="Main navigation"
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 10px)' }}
     >
-      <div className="flex items-center justify-around h-16 px-1 max-w-full">
+      <div 
+        className={cn(
+          "pointer-events-auto",
+          "mx-3 w-[calc(100%-24px)] max-w-md",
+          "bg-card/95 backdrop-blur-sm",
+          "rounded-2xl",
+          "shadow-[0_2px_20px_-4px_rgba(0,0,0,0.15)]",
+          "border border-border/50",
+          "flex items-center justify-around",
+          "h-[68px] px-2"
+        )}
+      >
         {navItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
@@ -61,24 +71,31 @@ export const MobileBottomNav: React.FC = () => {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 px-1 gap-0.5 transition-colors duration-150",
-                "touch-manipulation",
-                active 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                "flex flex-col items-center justify-center flex-1 py-1.5 gap-1 transition-colors duration-150",
+                "touch-manipulation relative"
               )}
               aria-current={active ? 'page' : undefined}
             >
-              {/* Icon container - flat, minimal */}
+              {/* Icon container with active pill highlight */}
               <div className={cn(
-                "relative p-2 rounded-md",
-                active && "bg-primary/10"
+                "relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
+                active 
+                  ? "bg-primary/12" 
+                  : "bg-transparent"
               )}>
-                <Icon className="w-5 h-5" />
+                <Icon 
+                  className={cn(
+                    "w-[22px] h-[22px] transition-colors duration-150",
+                    active ? "text-primary" : "text-muted-foreground"
+                  )} 
+                  strokeWidth={active ? 2.2 : 1.8}
+                />
               </div>
               <span className={cn(
-                "text-[10px] font-medium leading-tight text-center",
-                active && "font-semibold text-primary"
+                "text-[10px] leading-tight text-center transition-colors duration-150",
+                active 
+                  ? "font-semibold text-primary" 
+                  : "font-medium text-muted-foreground"
               )}>
                 {item.label}
               </span>
