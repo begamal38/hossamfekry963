@@ -54,10 +54,10 @@ export const MobileBottomNav: React.FC = () => {
         className={cn(
           "pointer-events-auto",
           "mx-3 w-[calc(100%-24px)] max-w-md",
-          "bg-card/95 backdrop-blur-sm",
+          "bg-[#F7F9FC] dark:bg-card/95 backdrop-blur-[6px]",
           "rounded-2xl",
-          "shadow-[0_2px_20px_-4px_rgba(0,0,0,0.15)]",
-          "border border-border/50",
+          "shadow-[0_-6px_20px_rgba(0,0,0,0.06)]",
+          "border border-[#E6ECF2] dark:border-border/50",
           "flex items-center justify-around",
           "h-[68px] px-2"
         )}
@@ -76,6 +76,10 @@ export const MobileBottomNav: React.FC = () => {
               )}
               aria-current={active ? 'page' : undefined}
             >
+              {/* Active top indicator line */}
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-primary" />
+              )}
               {/* Icon container with active pill highlight */}
               <div className={cn(
                 "relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
