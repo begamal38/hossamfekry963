@@ -56,7 +56,22 @@ const AssistantMessages = lazy(() => import("./pages/assistant/Messages"));
 const TopStudents = lazy(() => import("./pages/assistant/TopStudents"));
 const ManageCenterGroups = lazy(() => import("./pages/assistant/ManageCenterGroups"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data stays fresh for 2 min — prevents unnecessary refetches on re-mount
+      staleTime: 2 * 60 * 1000,
+      // Keep unused data in cache for 10 min
+      gcTime: 10 * 60 * 1000,
+      // Don't refetch when user tabs back — reduces Supabase load significantly
+      refetchOnWindowFocus: false,
+      // Retry once on failure, not 3 times
+      retry: 1,
+      // Don't refetch on reconnect — stale data is fine for a few seconds
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 // Loading fallback component - language-agnostic pulsing dots
 const PageLoader = () => (

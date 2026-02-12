@@ -118,4 +118,30 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Target modern browsers for smaller output
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        // Split vendor chunks for better browser caching
+        manualChunks: {
+          // React core — changes rarely, cached long-term
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Data layer — shared across all authenticated pages
+          'vendor-data': ['@tanstack/react-query', '@supabase/supabase-js'],
+          // UI library — large but stable
+          'vendor-ui': ['framer-motion', 'recharts'],
+          // Radix primitives — shared by all shadcn components
+          'vendor-radix': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-popover',
+          ],
+        },
+      },
+    },
+  },
 }));
