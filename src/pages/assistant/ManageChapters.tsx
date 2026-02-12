@@ -389,13 +389,6 @@ export default function ManageChapters() {
           </div>
         )}
 
-        {/* Floating Action Button */}
-        <FloatingActionButton
-          icon={Plus}
-          onClick={() => { resetForm(); setShowForm(true); }}
-          label={isArabic ? 'إضافة باب' : 'Add Chapter'}
-        />
-
         {/* Add/Edit Chapter Dialog */}
         <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
           <DialogContent className="w-[calc(100%-2rem)] sm:max-w-md">
@@ -431,6 +424,13 @@ export default function ManageChapters() {
           </DialogContent>
         </Dialog>
       </main>
+
+      {/* Floating Action Button - outside content-appear to preserve fixed positioning */}
+      <FloatingActionButton
+        icon={Plus}
+        onClick={() => { resetForm(); setShowForm(true); }}
+        label={isArabic ? 'إضافة باب' : 'Add Chapter'}
+      />
     </div>
   );
 }

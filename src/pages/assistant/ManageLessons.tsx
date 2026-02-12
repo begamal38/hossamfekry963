@@ -580,13 +580,6 @@ const ManageLessons = () => {
           )
         )}
 
-        {/* Floating Action Button */}
-        <FloatingActionButton
-          icon={Plus}
-          onClick={() => setShowForm(true)}
-          label={isArabic ? 'حصة جديدة' : 'New Lesson'}
-        />
-
         {/* Add/Edit Lesson Dialog */}
         <Dialog open={showForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
           <DialogContent className="w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -720,6 +713,13 @@ const ManageLessons = () => {
           </DialogContent>
         </Dialog>
       </main>
+
+      {/* Floating Action Button - outside content-appear to preserve fixed positioning */}
+      <FloatingActionButton
+        icon={Plus}
+        onClick={() => setShowForm(true)}
+        label={isArabic ? 'حصة جديدة' : 'New Lesson'}
+      />
     </div>
   );
 };

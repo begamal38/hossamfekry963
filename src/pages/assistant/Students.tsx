@@ -621,12 +621,6 @@ export default function Students() {
           </>
         )}
 
-        {/* Floating Import Button - Safe positioning */}
-        <FloatingActionButton
-          icon={Upload}
-          onClick={() => setImportDialogOpen(true)}
-          label={isRTL ? 'استيراد' : 'Import'}
-        />
 
         {/* Student Import Dialog */}
         <StudentImport
@@ -655,6 +649,13 @@ export default function Students() {
           />
         )}
       </main>
+
+      {/* Floating Import Button - outside content-appear to preserve fixed positioning */}
+      <FloatingActionButton
+        icon={Upload}
+        onClick={() => setImportDialogOpen(true)}
+        label={isRTL ? 'استيراد' : 'Import'}
+      />
     </div>
   );
 }
