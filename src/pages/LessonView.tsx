@@ -57,6 +57,7 @@ import { SmartNextStep } from '@/components/guidance/SmartNextStep';
 import { LessonContextStrip } from '@/components/lesson/LessonContextStrip';
 import { ProgressImpactSection } from '@/components/lesson/ProgressImpactSection';
 import { FocusSystemAwareness } from '@/components/lesson/FocusSystemAwareness';
+import { SmartStudyAssistant } from '@/components/lesson/SmartStudyAssistant';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { useChapterProgressOptimized } from '@/hooks/useChapterProgressOptimized';
 import { toast } from 'sonner';
@@ -1071,6 +1072,18 @@ export default function LessonView() {
               </Button>
             </div>
           </section>
+
+          {/* Smart Study Assistant - AI-generated content */}
+          {lesson.video_url && (
+            <SmartStudyAssistant
+              lessonId={lesson.id}
+              videoUrl={lesson.video_url}
+              lessonTitle={isArabic ? lesson.title_ar : lesson.title}
+              courseId={course?.id}
+              chapterId={lesson.chapter_id}
+              className="mb-6"
+            />
+          )}
 
           {/* Lesson Exam Indicator - Friendly awareness for enrolled students */}
           {user && isEnrolled && linkedExam && (
