@@ -58,6 +58,8 @@ import { LessonContextStrip } from '@/components/lesson/LessonContextStrip';
 import { ProgressImpactSection } from '@/components/lesson/ProgressImpactSection';
 import { FocusSystemAwareness } from '@/components/lesson/FocusSystemAwareness';
 import { SmartStudyAssistant } from '@/components/lesson/SmartStudyAssistant';
+import { VisualInfographic } from '@/components/lesson/VisualInfographic';
+import { useLessonAiContent } from '@/hooks/useLessonAiContent';
 import { useFocusSessionPersistence } from '@/hooks/useFocusSessionPersistence';
 import { useChapterProgressOptimized } from '@/hooks/useChapterProgressOptimized';
 import { toast } from 'sonner';
@@ -176,6 +178,9 @@ export default function LessonView() {
   
   // Focus feedback for calm, non-blocking state change notifications
   const { showPauseFeedback, showResumeFeedback, resetFeedback } = useFocusFeedback();
+  
+  // AI content for visual infographic (cached via hook)
+  const { content: aiContent, isReady: aiContentReady } = useLessonAiContent(lessonId || undefined);
 
   // Keep volatile values in refs so player lifecycle never re-initializes on re-renders
   const previewControlsRef = useRef({ startTimer: previewTimer.startTimer, pauseTimer: previewTimer.pauseTimer });
@@ -1081,6 +1086,16 @@ export default function LessonView() {
               lessonTitle={isArabic ? lesson.title_ar : lesson.title}
               courseId={course?.id}
               chapterId={lesson.chapter_id}
+              className="mb-6"
+            />
+          )}
+
+          {/* Visual Infographic - parsed from AI content */}
+          {aiContentReady && aiContent && (
+            <VisualInfographic
+              summaryText={aiContent.summary_text}
+              infographicText={aiContent.infographic_text}
+              revisionNotes={aiContent.revision_notes}
               className="mb-6"
             />
           )}
