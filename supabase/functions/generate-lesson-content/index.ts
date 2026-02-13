@@ -85,22 +85,27 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const prompt = `You are a professional chemistry teacher for Egyptian Thanaweya Amma students. The lesson explanation is mainly Arabic with English scientific terms.
+    const prompt = `You are an expert Egyptian chemistry teacher for Thanaweya Amma students.
+The student studies in Arabic, but understands scientific terms in English.
 
 Lesson Title: ${lesson_title || 'Chemistry Lesson'}
 YouTube Video URL: ${youtube_url}
 
-Generate comprehensive study content for this lesson in the following format. Write in Arabic with English chemical/scientific terms where appropriate.
+Generate structured study content in SIMPLE ARABIC, but keep important chemistry terms in ENGLISH inside brackets.
+Example style: "تفاعل الإحلال الأحادي (Single Displacement Reaction)" — "عدد التأكسد (Oxidation Number)" — "الفلز النشط (Active Metal)"
 
-IMPORTANT: Respond ONLY with valid JSON, no markdown formatting, no code blocks. The JSON must have exactly these three keys:
+IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks. The JSON must have exactly these three keys:
 
 {
-  "slides_content": "شرح تفصيلي للحصة على شكل شرائح:\\n\\n📌 المفاهيم الأساسية:\\n- [مفهوم 1]\\n- [مفهوم 2]\\n\\n📝 الشرح خطوة بخطوة:\\n1. [خطوة 1]\\n2. [خطوة 2]\\n\\n⚗️ شرح التفاعلات:\\n- [تفاعل 1 مع المعادلة]\\n- [تفاعل 2 مع المعادلة]",
-  
-  "infographic_content": "ملخص مرئي للحصة:\\n\\n🔑 نقاط التعلم البصري:\\n- [نقطة 1]\\n- [نقطة 2]\\n\\n💡 حقائق للتذكر السريع:\\n- [حقيقة 1]\\n- [حقيقة 2]\\n\\n📊 ملخص نقطي:\\n- [ملخص 1]\\n- [ملخص 2]",
-  
-  "revision_notes": "ملاحظات مراجعة مركزة للامتحان:\\n\\n📋 ملخص قصير وبسيط:\\n[ملخص الحصة في فقرة]\\n\\n⭐ أهم النقاط للامتحان:\\n- [نقطة 1]\\n- [نقطة 2]\\n\\n⚠️ أخطاء شائعة يجب تجنبها:\\n- [خطأ 1]\\n- [خطأ 2]"
-}`;
+  "slides_content": "SLIDE-STYLE EXPLANATION — step-by-step simplified explanation as if making slides:\\n\\n📌 أهم فكرة في الحصة:\\n- [الفكرة الرئيسية بالعربي مع المصطلح الإنجليزي]\\n\\n📝 شرح المفاهيم الأساسية:\\n- [مفهوم 1 (English Term)]\\n- [مفهوم 2 (English Term)]\\n\\n⚗️ القوانين أو المعادلات المهمة:\\n- [قانون/معادلة مع شرح بسيط]\\n\\n🎯 ربط الفكرة بالامتحان:\\n- [كيف بتيجي في الامتحان]\\n\\nUse bullet points. Keep sentences short and clear.",
+
+  "infographic_content": "INFOGRAPHIC — visual-learning friendly content:\\n\\n🔑 نقاط سريعة للحفظ:\\n- [نقطة 1 (English Term)]\\n- [نقطة 2]\\n\\n⚖️ مقارنات مهمة:\\n- [مقارنة 1]\\n- [مقارنة 2]\\n\\n🔗 علاقات بين المفاهيم:\\n- [علاقة 1]\\n\\n⚠️ ملاحظات مهمة للامتحان:\\n- [ملاحظة 1]\\n\\nStyle: Short lines. Memory-friendly.",
+
+  "revision_notes": "REVISION NOTES — quick revision before exam:\\n\\n📋 ملخص سريع للحصة:\\n[فقرة قصيرة]\\n\\n📐 أهم القوانين:\\n- [قانون 1]\\n\\n📚 أهم المصطلحات:\\n- [مصطلح عربي (English Term)]\\n\\n🔄 أفكار بتتكرر في الامتحانات:\\n- [فكرة 1]\\n- [فكرة 2]"
+}
+
+TONE: بسيط، واضح، مناسب لطلاب ثانوي، مش أكاديمي زيادة، مش عامي.
+IMPORTANT: Do NOT invent facts. Base content on the lesson topic. Focus on exam-relevant understanding.`;
 
     console.log('[generate-lesson-content] Calling Lovable AI for lesson:', lesson_id);
 
@@ -115,7 +120,7 @@ IMPORTANT: Respond ONLY with valid JSON, no markdown formatting, no code blocks.
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Egyptian chemistry teacher. Always respond with valid JSON only. No markdown, no code blocks, just raw JSON.',
+            content: 'You are an expert Egyptian chemistry teacher for Thanaweya Amma. Write in simple Arabic with English scientific terms in brackets. Always respond with valid JSON only. No markdown, no code blocks, just raw JSON.',
           },
           { role: 'user', content: prompt },
         ],
