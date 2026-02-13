@@ -998,6 +998,59 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_ai_content: {
+        Row: {
+          created_at: string
+          exam_tips: Json | null
+          generated_at: string | null
+          id: string
+          infographic_text: string | null
+          key_points: Json | null
+          lesson_id: string
+          revision_notes: string | null
+          status: string
+          summary_text: string | null
+          updated_at: string
+          video_url_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          exam_tips?: Json | null
+          generated_at?: string | null
+          id?: string
+          infographic_text?: string | null
+          key_points?: Json | null
+          lesson_id: string
+          revision_notes?: string | null
+          status?: string
+          summary_text?: string | null
+          updated_at?: string
+          video_url_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          exam_tips?: Json | null
+          generated_at?: string | null
+          id?: string
+          infographic_text?: string | null
+          key_points?: Json | null
+          lesson_id?: string
+          revision_notes?: string | null
+          status?: string
+          summary_text?: string | null
+          updated_at?: string
+          video_url_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_ai_content_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_answers: {
         Row: {
           answer: string

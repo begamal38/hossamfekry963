@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.bulk-update-durations]
 verify_jwt = false
+
+[functions.generate-lesson-content]
+verify_jwt = false
