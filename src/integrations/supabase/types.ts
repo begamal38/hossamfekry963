@@ -1004,6 +1004,7 @@ export type Database = {
           exam_tips: Json | null
           generated_at: string | null
           id: string
+          infographic_images: Json | null
           infographic_text: string | null
           key_points: Json | null
           lesson_id: string
@@ -1018,6 +1019,7 @@ export type Database = {
           exam_tips?: Json | null
           generated_at?: string | null
           id?: string
+          infographic_images?: Json | null
           infographic_text?: string | null
           key_points?: Json | null
           lesson_id: string
@@ -1032,6 +1034,7 @@ export type Database = {
           exam_tips?: Json | null
           generated_at?: string | null
           id?: string
+          infographic_images?: Json | null
           infographic_text?: string | null
           key_points?: Json | null
           lesson_id?: string
