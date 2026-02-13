@@ -1,12 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { BookOpen, FileText, Sparkles, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
+import { BookOpen, Lightbulb, FileText, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ExplanationTab } from '@/components/lesson/study-tabs/ExplanationTab';
-import { RevisionTab } from '@/components/lesson/study-tabs/RevisionTab';
-import { VisualSummaryTab } from '@/components/lesson/study-tabs/VisualSummaryTab';
 
 interface SmartStudyAssistantProps {
   lessonId: string;
@@ -21,11 +18,10 @@ interface AiContent {
   summary_text: string | null;
   infographic_text: string | null;
   revision_notes: string | null;
-  infographic_images: any[] | null;
   status: string;
 }
 
-type TabId = 'explanation' | 'revision' | 'visual';
+type TabId = 'slides' | 'infographic' | 'notes';
 
 export function SmartStudyAssistant({
   lessonId,
@@ -39,7 +35,7 @@ export function SmartStudyAssistant({
   const isArabic = language === 'ar';
   const [content, setContent] = useState<AiContent | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabId>('explanation');
+  const [activeTab, setActiveTab] = useState<TabId>('slides');
   const [expanded, setExpanded] = useState(true);
 
   const fetchContent = useCallback(async () => {
@@ -47,7 +43,7 @@ export function SmartStudyAssistant({
 
     const { data, error } = await supabase
       .from('lesson_ai_content')
-      .select('summary_text, infographic_text, revision_notes, infographic_images, status')
+      .select('summary_text, infographic_text, revision_notes, status')
       .eq('lesson_id', lessonId)
       .maybeSingle();
 
@@ -59,6 +55,8 @@ export function SmartStudyAssistant({
 
     if (data) {
       setContent(data as AiContent);
+      
+      // If still generating, poll every 5 seconds
       if (data.status === 'generating') {
         setTimeout(fetchContent, 5000);
       }
@@ -67,6 +65,7 @@ export function SmartStudyAssistant({
     setLoading(false);
   }, [lessonId]);
 
+  // Trigger generation if needed
   const triggerGeneration = useCallback(async () => {
     if (!lessonId || !videoUrl) return;
 
@@ -86,7 +85,9 @@ export function SmartStudyAssistant({
         return;
       }
 
-      if (response.data?.status === 'generated') {
+      const result = response.data;
+      if (result?.status === 'generated') {
+        // Refetch content
         fetchContent();
       }
     } catch (err) {
@@ -95,42 +96,50 @@ export function SmartStudyAssistant({
   }, [lessonId, videoUrl, lessonTitle, courseId, chapterId, fetchContent]);
 
   useEffect(() => {
-    fetchContent();
+    const init = async () => {
+      await fetchContent();
+    };
+    init();
   }, [fetchContent]);
 
+  // After fetching, trigger generation if no content exists
   useEffect(() => {
     if (!loading && !content && videoUrl) {
       triggerGeneration();
     }
   }, [loading, content, videoUrl, triggerGeneration]);
 
-  // Trigger infographic image generation once text content is ready
-  useEffect(() => {
-    if (content?.status === 'ready' && content.summary_text && !content.infographic_images) {
-      supabase.functions.invoke('generate-lesson-infographics', {
-        body: {
-          lesson_id: lessonId,
-          lesson_title: lessonTitle,
-          summary_text: content.summary_text,
-        },
-      }).then((res) => {
-        if (res.data?.images) {
-          setContent(prev => prev ? { ...prev, infographic_images: res.data.images } : prev);
-        }
-      }).catch(err => {
-        console.error('[SmartStudyAssistant] Infographic generation error:', err);
-      });
-    }
-  }, [content?.status, content?.summary_text, content?.infographic_images, lessonId, lessonTitle]);
-
+  // Don't render if no video URL
   if (!videoUrl) return null;
+
+  // Don't render if failed
   if (content?.status === 'failed') return null;
 
-  const tabs: { id: TabId; labelAr: string; label: string; icon: React.ReactNode }[] = [
-    { id: 'explanation', label: 'Explanation', labelAr: 'الشرح', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'revision', label: 'Revision', labelAr: 'مراجعة', icon: <FileText className="w-4 h-4" /> },
-    { id: 'visual', label: 'Visual Summary', labelAr: 'ملخص بصري', icon: <ImageIcon className="w-4 h-4" /> },
+  const tabs: { id: TabId; label: string; labelAr: string; icon: React.ReactNode; content: string | null }[] = [
+    {
+      id: 'slides',
+      label: 'Explanation',
+      labelAr: 'الشرح',
+      icon: <BookOpen className="w-4 h-4" />,
+      content: content?.summary_text || null,
+    },
+    {
+      id: 'infographic',
+      label: 'Visual Summary',
+      labelAr: 'ملخص بصري',
+      icon: <Lightbulb className="w-4 h-4" />,
+      content: content?.infographic_text || null,
+    },
+    {
+      id: 'notes',
+      label: 'Revision Notes',
+      labelAr: 'مراجعة',
+      icon: <FileText className="w-4 h-4" />,
+      content: content?.revision_notes || null,
+    },
   ];
+
+  const activeContent = tabs.find(t => t.id === activeTab)?.content;
 
   const isGenerating = !content || content.status === 'generating';
 
@@ -179,35 +188,25 @@ export function SmartStudyAssistant({
           </div>
 
           {/* Content Area */}
-          <div className="min-h-[120px]">
+          <div className="bg-muted/30 rounded-xl p-4 md:p-5 min-h-[120px]">
             {isGenerating ? (
-              <div className="bg-muted/30 rounded-xl p-4 md:p-5 space-y-3">
+              <div className="space-y-3">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-[90%]" />
                 <Skeleton className="h-4 w-[75%]" />
                 <Skeleton className="h-4 w-[85%]" />
                 <Skeleton className="h-4 w-[60%]" />
               </div>
+            ) : activeContent ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="text-foreground leading-relaxed whitespace-pre-line text-sm md:text-base">
+                  {activeContent}
+                </div>
+              </div>
             ) : (
-              <>
-                {activeTab === 'explanation' && (
-                  <ExplanationTab
-                    summaryText={content?.summary_text || null}
-                    infographicText={content?.infographic_text || null}
-                  />
-                )}
-                {activeTab === 'revision' && (
-                  <RevisionTab revisionNotes={content?.revision_notes || null} />
-                )}
-                {activeTab === 'visual' && (
-                  <VisualSummaryTab
-                    summaryText={content?.summary_text || null}
-                    infographicText={content?.infographic_text || null}
-                    revisionNotes={content?.revision_notes || null}
-                    infographicImages={content?.infographic_images || null}
-                  />
-                )}
-              </>
+              <p className="text-muted-foreground text-sm text-center py-4">
+                {isArabic ? 'لا يوجد محتوى لهذا القسم' : 'No content available for this section'}
+              </p>
             )}
           </div>
         </div>
