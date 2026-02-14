@@ -135,19 +135,24 @@ export function SmartStudyAssistant({
   const isGenerating = !content || content.status === 'generating';
 
   return (
-    <section className={cn('bg-card border border-border rounded-2xl overflow-hidden', className)}>
+    <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm', className)}>
       {/* Header */}
       <button
         onClick={() => setExpanded(prev => !prev)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/20 transition-colors"
       >
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
-          <h3 className="font-semibold text-foreground">
-            {isArabic ? 'مساعد المذاكرة الذكي' : 'Smart Study Assistant'}
-          </h3>
+          <div className="flex flex-col items-start">
+            <h3 className="font-semibold text-foreground text-sm">
+              {isArabic ? 'مساعد المذاكرة الذكي' : 'Smart Study Assistant'}
+            </h3>
+            {isArabic && !isGenerating && (
+              <span className="text-[10px] text-muted-foreground">افهم · راجع · اتأكد</span>
+            )}
+          </div>
           {isGenerating && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full animate-pulse">
               {isArabic ? 'جاري التحضير...' : 'Preparing...'}
@@ -160,20 +165,23 @@ export function SmartStudyAssistant({
       {expanded && (
         <div className="px-5 pb-5">
           {/* Tab Selector */}
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+          <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 border-b border-border/40 -mx-5 px-5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+                  'flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors relative',
                   activeTab === tab.id
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {tab.icon}
                 {isArabic ? tab.labelAr : tab.label}
+                {activeTab === tab.id && (
+                  <span className="absolute bottom-0 inset-x-1 h-0.5 bg-primary rounded-full" />
+                )}
               </button>
             ))}
           </div>
@@ -181,7 +189,7 @@ export function SmartStudyAssistant({
           {/* Content Area */}
           <div className="min-h-[120px]">
             {isGenerating ? (
-              <div className="bg-muted/30 rounded-xl p-4 md:p-5 space-y-3">
+              <div className="bg-muted/20 rounded-xl p-5 space-y-3.5">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-[90%]" />
                 <Skeleton className="h-4 w-[75%]" />
