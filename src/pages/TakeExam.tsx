@@ -302,7 +302,8 @@ export default function TakeExam() {
       />
 
       {/* ZONE 2: Main Question Area - Scrollable */}
-      <main className="pt-40 pb-36 content-appear">
+      {/* pb accounts for: exam nav (~120px) + mobile bottom nav (~88px) + breathing room */}
+      <main className="pt-40 pb-[220px] md:pb-36 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
           {/* Exam Instructions - Only on first question */}
           {currentQuestionIndex === 0 && (
