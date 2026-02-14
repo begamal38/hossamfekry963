@@ -36,6 +36,18 @@ const ICON_COLORS = [
   'text-cyan-600 bg-cyan-500/10',
 ];
 
+const TYPE_LABELS: Record<string, { ar: string; micro: string }> = {
+  concept: { ar: 'المفاهيم', micro: 'افهم بسرعة' },
+  structure: { ar: 'التركيب', micro: 'شوف بعينك' },
+  relationship: { ar: 'العلاقات', micro: 'اربط المعلومة' },
+  rule: { ar: 'القواعد', micro: 'احفظ القاعدة' },
+  exam_hint: { ar: 'للامتحان', micro: 'النقطة دي بتيجي كتير' },
+  concepts: { ar: 'المفاهيم', micro: 'افهم بسرعة' },
+  relationships: { ar: 'العلاقات', micro: 'اربط المعلومة' },
+  exam_tips: { ar: 'للامتحان', micro: 'النقطة دي بتيجي كتير' },
+  summary: { ar: 'ملخص', micro: 'راجع قبل الامتحان' },
+};
+
 function parseConcepts(text: string | null): ParsedConcept[] {
   if (!text) return [];
   const concepts: ParsedConcept[] = [];
@@ -89,6 +101,15 @@ function parseExamTips(text: string | null): string[] {
   return tips.slice(0, 4);
 }
 
+function parseDescriptionBullets(description: string): string[] {
+  if (!description) return [];
+  // Split by newlines or bullet markers
+  return description
+    .split(/[\n\r]+|(?:^|\s)[•\-]\s/)
+    .map(s => s.trim())
+    .filter(s => s.length > 2);
+}
+
 function InfographicImagesGrid({ images }: { images: any[] }) {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
@@ -98,40 +119,68 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
   
   return (
     <div>
-      <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-          <ImageIcon className="w-3.5 h-3.5 text-primary" />
+      <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+          <ImageIcon className="w-4 h-4 text-primary" />
         </div>
         {isArabic ? 'ملخصات بصرية' : 'Visual Summaries'}
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {images.map((img, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm"
-          >
-            <div className="px-3 py-2.5 bg-muted/20 border-b border-border/40">
-              <p className="text-xs font-medium text-foreground">{img.title_ar || img.title}</p>
-            </div>
-            <div className="relative aspect-[4/3] bg-muted/10">
-              {!loadedImages.has(i) && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Skeleton className="w-full h-full" />
-                </div>
-              )}
-              <img
-                src={img.url}
-                alt={img.title_ar || img.title}
-                loading="lazy"
-                className={cn(
-                  'w-full h-full object-contain transition-opacity duration-300',
-                  loadedImages.has(i) ? 'opacity-100' : 'opacity-0'
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {images.map((img, i) => {
+          const typeInfo = TYPE_LABELS[img.type] || TYPE_LABELS['concept'];
+          const descriptionBullets = parseDescriptionBullets(img.description_ar || '');
+          // Use new format title_en, fallback to old format title_ar/title
+          const displayTitle = img.title_en || img.title_ar || img.title;
+          
+          return (
+            <div
+              key={i}
+              className="rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              {/* Image area */}
+              <div className="relative aspect-[3/4] bg-muted/5">
+                {!loadedImages.has(i) && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Skeleton className="w-full h-full rounded-none" />
+                  </div>
                 )}
-                onLoad={() => setLoadedImages(prev => new Set(prev).add(i))}
-              />
+                <img
+                  src={img.url}
+                  alt={displayTitle}
+                  loading="lazy"
+                  className={cn(
+                    'w-full h-full object-contain transition-opacity duration-300',
+                    loadedImages.has(i) ? 'opacity-100' : 'opacity-0'
+                  )}
+                  onLoad={() => setLoadedImages(prev => new Set(prev).add(i))}
+                />
+              </div>
+              
+              {/* Text area below image */}
+              <div className="px-4 py-3.5 border-t border-border/40 space-y-2">
+                {/* English title */}
+                <h5 className="text-sm font-bold text-foreground">{displayTitle}</h5>
+                
+                {/* Micro label */}
+                <span className="inline-block text-[10px] text-primary/70 font-medium bg-primary/5 px-2 py-0.5 rounded-full">
+                  {isArabic ? typeInfo.micro : typeInfo.ar}
+                </span>
+                
+                {/* Arabic explanation bullets */}
+                {descriptionBullets.length > 0 && (
+                  <ul className="space-y-1.5 pt-1">
+                    {descriptionBullets.map((bullet, bi) => (
+                      <li key={bi} className="flex items-start gap-2 text-[13px] text-muted-foreground leading-relaxed">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0" />
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -168,7 +217,7 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
   
   const sections: React.ReactNode[] = [];
 
-  // AI Generated Infographic Images
+  // AI Generated Infographic Images (priority placement)
   if (infographicImages && infographicImages.length > 0) {
     sections.push(<InfographicImagesGrid key="images" images={infographicImages} />);
   }
