@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { lesson_id, lesson_title, summary_text } = await req.json();
+    const { lesson_id, lesson_title, summary_text, force_regenerate } = await req.json();
 
     if (!lesson_id || !summary_text) {
       return new Response(
@@ -32,11 +32,17 @@ serve(async (req) => {
       .eq('lesson_id', lesson_id)
       .maybeSingle();
 
-    if (existing?.infographic_images && (existing.infographic_images as any[]).length > 0) {
-      return new Response(
-        JSON.stringify({ status: 'already_generated', images: existing.infographic_images }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!force_regenerate && existing?.infographic_images && (existing.infographic_images as any[]).length > 0) {
+      // Check if old images need regeneration (have Arabic titles = old format)
+      const imgs = existing.infographic_images as any[];
+      const hasOldFormat = imgs.some(img => !img.description_ar);
+      if (!hasOldFormat) {
+        return new Response(
+          JSON.stringify({ status: 'already_generated', images: existing.infographic_images }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('[generate-lesson-infographics] Old format detected, regenerating with NanoBanana Pro');
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -44,40 +50,125 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Extract key concepts from summary for targeted image generation
-    const truncatedSummary = summary_text.substring(0, 800);
-
-    // Generate 4 infographic cards using Gemini image generation
-    const cardPrompts = [
-      {
-        type: 'concepts',
-        title_ar: 'المفاهيم الأساسية',
-        prompt: `Create a clean educational infographic card in Arabic for Egyptian chemistry students. White background, indigo blue (#3B6CB4) accent color. Title at top: "المفاهيم الأساسية". Show the main concepts from this lesson as organized visual blocks with icons. Lesson: "${lesson_title}". Key content: ${truncatedSummary.substring(0, 200)}. Style: flat design, minimal, professional, 4:3 aspect ratio. Include Arabic text with English chemistry terms in brackets.`
+    // Step 1: Use Gemini Flash to extract key concepts (text only, no images)
+    const planResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
       },
-      {
-        type: 'relationships',
-        title_ar: 'العلاقات بين المفاهيم',
-        prompt: `Create a clean educational concept map infographic in Arabic for Egyptian chemistry students. White background, indigo blue (#3B6CB4) accent. Title: "العلاقات بين المفاهيم". Show relationships between concepts using arrows and connected boxes. Lesson: "${lesson_title}". Content: ${truncatedSummary.substring(0, 200)}. Style: flat design, clear arrows, minimal, 4:3 aspect ratio. Arabic text with English chemistry terms.`
-      },
-      {
-        type: 'exam_tips',
-        title_ar: 'نصائح للامتحان',
-        prompt: `Create a clean educational exam tips infographic in Arabic for Egyptian chemistry students. White background with amber/warning accent color. Title: "مهم للامتحان". Show 3-4 key exam tips as highlighted bullet points with warning icons. Lesson: "${lesson_title}". Content: ${truncatedSummary.substring(0, 200)}. Style: flat design, attention-grabbing, 4:3 aspect ratio. Arabic text.`
-      },
-      {
-        type: 'summary',
-        title_ar: 'ملخص سريع',
-        prompt: `Create a clean educational quick summary infographic in Arabic for Egyptian chemistry students. White background, green accent color. Title: "ملخص سريع". Show the lesson summary as organized visual sections with small icons. Lesson: "${lesson_title}". Content: ${truncatedSummary.substring(0, 200)}. Style: flat design, scannable, 4:3 aspect ratio. Arabic with English chemistry terms in brackets.`
-      }
-    ];
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a chemistry education expert. Extract key concepts from lesson content. Respond in JSON only.'
+          },
+          {
+            role: 'user',
+            content: `Extract from this chemistry lesson the following. Return valid JSON only, no markdown.
+Lesson: "${lesson_title}"
+Content: ${summary_text.substring(0, 1000)}
 
-    const generatedImages: { url: string; title: string; title_ar: string; type: string }[] = [];
+Return this exact JSON structure:
+{
+  "cards": [
+    {
+      "type": "concept",
+      "title_en": "Main Concept Title",
+      "description_ar": "شرح قصير بالعربي في نقطتين أو ثلاثة",
+      "image_prompt": "A description for generating a clean diagram"
+    },
+    {
+      "type": "structure",
+      "title_en": "Structure or Formula",
+      "description_ar": "شرح التركيب بالعربي",
+      "image_prompt": "A description for generating a structure diagram"
+    },
+    {
+      "type": "relationship",
+      "title_en": "Relationship Map Title",
+      "description_ar": "شرح العلاقة بالعربي",
+      "image_prompt": "A description for a relationship flow diagram"
+    },
+    {
+      "type": "rule",
+      "title_en": "Rule or Law Title",
+      "description_ar": "شرح القاعدة بالعربي",
+      "image_prompt": "A description for a rule summary diagram"
+    },
+    {
+      "type": "exam_hint",
+      "title_en": "Exam Hint Title",
+      "description_ar": "نصيحة مهمة للامتحان بالعربي",
+      "image_prompt": "A description for an exam hint visual"
+    }
+  ]
+}
 
-    // Generate images sequentially to avoid rate limits
-    for (const card of cardPrompts) {
+Generate 4-5 cards relevant to the lesson content. Keep description_ar short (2-3 bullet points max). image_prompt should describe a clean academic diagram with English labels only.`
+          }
+        ],
+      }),
+    });
+
+    if (!planResponse.ok) {
+      console.error('[generate-lesson-infographics] Plan extraction failed:', planResponse.status);
+      throw new Error(`Plan extraction failed: ${planResponse.status}`);
+    }
+
+    const planData = await planResponse.json();
+    const planText = planData.choices?.[0]?.message?.content || '';
+    
+    // Parse JSON from response
+    let cardPlan: { cards: Array<{ type: string; title_en: string; description_ar: string; image_prompt: string }> };
+    try {
+      const jsonMatch = planText.match(/\{[\s\S]*\}/);
+      cardPlan = JSON.parse(jsonMatch ? jsonMatch[0] : planText);
+    } catch {
+      console.error('[generate-lesson-infographics] Failed to parse plan JSON, using fallback');
+      cardPlan = {
+        cards: [
+          { type: 'concept', title_en: 'Key Concepts', description_ar: 'المفاهيم الأساسية في الدرس', image_prompt: `Clean academic diagram showing key concepts from ${lesson_title} with labeled boxes and arrows` },
+          { type: 'relationship', title_en: 'Concept Relationships', description_ar: 'العلاقات بين المفاهيم', image_prompt: `Flow diagram showing relationships between concepts in ${lesson_title} with English labels` },
+          { type: 'rule', title_en: 'Rules & Laws', description_ar: 'القوانين والقواعد المهمة', image_prompt: `Summary diagram of rules and laws from ${lesson_title} with clear English labels` },
+          { type: 'exam_hint', title_en: 'Exam Tips', description_ar: 'نقاط مهمة للامتحان', image_prompt: `Exam tips visual for ${lesson_title} highlighting common mistakes with English labels` },
+        ]
+      };
+    }
+
+    // Step 2: Generate images using NanoBanana Pro (English labels only)
+    const generatedImages: Array<{
+      url: string;
+      title_en: string;
+      description_ar: string;
+      type: string;
+    }> = [];
+
+    for (const card of cardPlan.cards.slice(0, 5)) {
       try {
-        console.log(`[generate-lesson-infographics] Generating ${card.type} for lesson: ${lesson_id}`);
-        
+        console.log(`[generate-lesson-infographics] Generating ${card.type} with NanoBanana Pro for lesson: ${lesson_id}`);
+
+        const imagePrompt = `Create a clean academic infographic card for chemistry education.
+
+STYLE:
+- Pure white background
+- Soft blue borders (#3B6CB4 accent)
+- High contrast, large readable text
+- Simple flat design, no gradients
+- Portrait-friendly 3:4 aspect ratio
+- Minimal visual noise
+
+CONTENT:
+- Title at top in large bold text: "${card.title_en}"
+- ${card.image_prompt}
+- Use ONLY English text labels
+- NO Arabic text anywhere in the image
+- Clean scientific diagrams with labeled parts
+- Use arrows, boxes, and simple icons
+
+IMPORTANT: All text inside the image must be in English. Keep it minimal and readable on mobile screens.`;
+
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -85,19 +176,23 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-image',
+            model: 'google/gemini-3-pro-image-preview',
             messages: [
-              { role: 'user', content: card.prompt }
+              { role: 'user', content: imagePrompt }
             ],
             modalities: ['image', 'text'],
           }),
         });
 
         if (!aiResponse.ok) {
-          console.error(`[generate-lesson-infographics] AI error for ${card.type}:`, aiResponse.status);
+          console.error(`[generate-lesson-infographics] NanoBanana Pro error for ${card.type}:`, aiResponse.status);
           if (aiResponse.status === 429) {
-            // Rate limited, wait and continue with what we have
-            console.log('[generate-lesson-infographics] Rate limited, stopping generation');
+            console.log('[generate-lesson-infographics] Rate limited, waiting 5s...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            continue;
+          }
+          if (aiResponse.status === 402) {
+            console.error('[generate-lesson-infographics] Payment required');
             break;
           }
           continue;
@@ -107,14 +202,11 @@ serve(async (req) => {
         const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
         if (imageUrl) {
-          // Upload to Supabase Storage
           const fileName = `${lesson_id}/${card.type}.png`;
-          
-          // Convert base64 to binary
           const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
           const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('lesson-infographics')
             .upload(fileName, binaryData, {
               contentType: 'image/png',
@@ -123,30 +215,28 @@ serve(async (req) => {
 
           if (uploadError) {
             console.error(`[generate-lesson-infographics] Upload error for ${card.type}:`, uploadError);
-            // Still save the base64 URL as fallback
             generatedImages.push({
               url: imageUrl,
-              title: card.type,
-              title_ar: card.title_ar,
+              title_en: card.title_en,
+              description_ar: card.description_ar,
               type: card.type,
             });
           } else {
-            // Get public URL
             const { data: publicUrlData } = supabase.storage
               .from('lesson-infographics')
               .getPublicUrl(fileName);
 
             generatedImages.push({
               url: publicUrlData.publicUrl,
-              title: card.type,
-              title_ar: card.title_ar,
+              title_en: card.title_en,
+              description_ar: card.description_ar,
               type: card.type,
             });
           }
         }
 
-        // Small delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 2500));
       } catch (err) {
         console.error(`[generate-lesson-infographics] Error generating ${card.type}:`, err);
         continue;
