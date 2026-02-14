@@ -129,8 +129,8 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
         {images.map((img, i) => {
           const typeInfo = TYPE_LABELS[img.type] || TYPE_LABELS['concept'];
           const descriptionBullets = parseDescriptionBullets(img.description_ar || '');
-          // Use new format title_en, fallback to old format title_ar/title
           const displayTitle = img.title_en || img.title_ar || img.title;
+          const isOldFormat = !img.description_ar && !img.title_en;
           
           return (
             <div
@@ -154,19 +154,21 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
                   )}
                   onLoad={() => setLoadedImages(prev => new Set(prev).add(i))}
                 />
+                {isOldFormat && (
+                  <div className="absolute top-2 end-2 bg-amber-500/90 text-white text-[9px] px-1.5 py-0.5 rounded-md">
+                    {isArabic ? 'جاري التحديث...' : 'Updating...'}
+                  </div>
+                )}
               </div>
               
               {/* Text area below image */}
               <div className="px-4 py-3.5 border-t border-border/40 space-y-2">
-                {/* English title */}
                 <h5 className="text-sm font-bold text-foreground">{displayTitle}</h5>
                 
-                {/* Micro label */}
                 <span className="inline-block text-[10px] text-primary/70 font-medium bg-primary/5 px-2 py-0.5 rounded-full">
                   {isArabic ? typeInfo.micro : typeInfo.ar}
                 </span>
                 
-                {/* Arabic explanation bullets */}
                 {descriptionBullets.length > 0 && (
                   <ul className="space-y-1.5 pt-1">
                     {descriptionBullets.map((bullet, bi) => (
@@ -176,6 +178,12 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
                       </li>
                     ))}
                   </ul>
+                )}
+                
+                {isOldFormat && (
+                  <p className="text-[12px] text-muted-foreground italic">
+                    {isArabic ? typeInfo.ar : displayTitle}
+                  </p>
                 )}
               </div>
             </div>

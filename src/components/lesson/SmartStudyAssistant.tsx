@@ -104,24 +104,35 @@ export function SmartStudyAssistant({
     }
   }, [loading, content, videoUrl, triggerGeneration]);
 
-  // Trigger infographic image generation once text content is ready
+  // Detect old-format infographics (missing description_ar = old Gemini Flash generation with broken Arabic)
+  const needsRegeneration = content?.infographic_images && 
+    (content.infographic_images as any[]).length > 0 &&
+    (content.infographic_images as any[]).some((img: any) => !img.description_ar || !img.title_en);
+
+  // Trigger infographic image generation once text content is ready, or regenerate old format
   useEffect(() => {
-    if (content?.status === 'ready' && content.summary_text && !content.infographic_images) {
-      supabase.functions.invoke('generate-lesson-infographics', {
-        body: {
-          lesson_id: lessonId,
-          lesson_title: lessonTitle,
-          summary_text: content.summary_text,
-        },
-      }).then((res) => {
-        if (res.data?.images) {
-          setContent(prev => prev ? { ...prev, infographic_images: res.data.images } : prev);
-        }
-      }).catch(err => {
-        console.error('[SmartStudyAssistant] Infographic generation error:', err);
-      });
-    }
-  }, [content?.status, content?.summary_text, content?.infographic_images, lessonId, lessonTitle]);
+    const shouldGenerate = content?.status === 'ready' && content.summary_text && 
+      (!content.infographic_images || needsRegeneration);
+    
+    if (!shouldGenerate) return;
+
+    console.log('[SmartStudyAssistant] Generating infographics:', needsRegeneration ? 'REGENERATING old format' : 'first generation');
+    
+    supabase.functions.invoke('generate-lesson-infographics', {
+      body: {
+        lesson_id: lessonId,
+        lesson_title: lessonTitle,
+        summary_text: content.summary_text,
+        force_regenerate: !!needsRegeneration,
+      },
+    }).then((res) => {
+      if (res.data?.images) {
+        setContent(prev => prev ? { ...prev, infographic_images: res.data.images } : prev);
+      }
+    }).catch(err => {
+      console.error('[SmartStudyAssistant] Infographic generation error:', err);
+    });
+  }, [content?.status, content?.summary_text, needsRegeneration, lessonId, lessonTitle]);
 
   if (!videoUrl) return null;
   if (content?.status === 'failed') return null;
