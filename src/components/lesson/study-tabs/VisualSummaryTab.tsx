@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { 
   Atom, Beaker, FlaskConical, Lightbulb, 
   ArrowRight, Target, TestTube, Scale, Layers,
-  AlertTriangle, BookOpen, Sparkles, ImageIcon
+  AlertTriangle, Sparkles, ImageIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 interface VisualSummaryTabProps {
   summaryText: string | null;
@@ -26,21 +27,13 @@ interface ParsedComparison {
 }
 
 const CONCEPT_ICONS = [Atom, Beaker, FlaskConical, Lightbulb, TestTube, Layers];
-const CARD_COLORS = [
-  'bg-primary/8 border-primary/20',
-  'bg-emerald-500/8 border-emerald-500/20',
-  'bg-amber-500/8 border-amber-500/20',
-  'bg-rose-500/8 border-rose-500/20',
-  'bg-violet-500/8 border-violet-500/20',
-  'bg-cyan-500/8 border-cyan-500/20',
-];
 const ICON_COLORS = [
-  'text-primary bg-primary/15',
-  'text-emerald-600 bg-emerald-500/15',
-  'text-amber-600 bg-amber-500/15',
-  'text-rose-600 bg-rose-500/15',
-  'text-violet-600 bg-violet-500/15',
-  'text-cyan-600 bg-cyan-500/15',
+  'text-primary bg-primary/10',
+  'text-emerald-600 bg-emerald-500/10',
+  'text-amber-600 bg-amber-500/10',
+  'text-rose-600 bg-rose-500/10',
+  'text-violet-600 bg-violet-500/10',
+  'text-cyan-600 bg-cyan-500/10',
 ];
 
 function parseConcepts(text: string | null): ParsedConcept[] {
@@ -96,7 +89,6 @@ function parseExamTips(text: string | null): string[] {
   return tips.slice(0, 4);
 }
 
-// AI-generated infographic images section
 function InfographicImagesGrid({ images }: { images: any[] }) {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
@@ -107,19 +99,21 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
   return (
     <div>
       <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-        <ImageIcon className="w-4 h-4 text-primary" />
+        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+          <ImageIcon className="w-3.5 h-3.5 text-primary" />
+        </div>
         {isArabic ? 'ملخصات بصرية' : 'Visual Summaries'}
       </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {images.map((img, i) => (
           <div
             key={i}
-            className="rounded-xl border border-border overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow"
+            className="rounded-xl border border-border/60 overflow-hidden bg-card shadow-sm"
           >
-            <div className="px-3 py-2 bg-muted/30 border-b border-border">
+            <div className="px-3 py-2.5 bg-muted/20 border-b border-border/40">
               <p className="text-xs font-medium text-foreground">{img.title_ar || img.title}</p>
             </div>
-            <div className="relative aspect-[4/3] bg-muted/20">
+            <div className="relative aspect-[4/3] bg-muted/10">
               {!loadedImages.has(i) && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Skeleton className="w-full h-full" />
@@ -161,8 +155,8 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
   
   if (!hasContent) {
     return (
-      <div className="bg-muted/30 rounded-xl p-4 text-center">
-        <div className="flex flex-col items-center gap-2">
+      <div className="bg-muted/30 rounded-xl p-5 text-center">
+        <div className="flex flex-col items-center gap-2.5">
           <Sparkles className="w-6 h-6 text-muted-foreground/40" />
           <p className="text-muted-foreground text-sm">
             {isArabic ? 'جاري تحضير الملخص البصري...' : 'Preparing visual summary...'}
@@ -172,85 +166,104 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
     );
   }
   
-  return (
-    <div className="space-y-5">
-      {/* AI Generated Infographic Images */}
-      {infographicImages && infographicImages.length > 0 && (
-        <InfographicImagesGrid images={infographicImages} />
-      )}
-      
-      {/* Concept Cards */}
-      {parsed.concepts.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Atom className="w-4 h-4 text-primary" />
-            {isArabic ? 'المفاهيم الأساسية' : 'Key Concepts'}
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-            {parsed.concepts.map((concept, i) => {
-              const Icon = CONCEPT_ICONS[i % CONCEPT_ICONS.length];
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    'rounded-xl border p-3 transition-all duration-200 hover:scale-[1.02]',
-                    CARD_COLORS[i % CARD_COLORS.length]
-                  )}
-                >
-                  <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center mb-2', ICON_COLORS[i % ICON_COLORS.length])}>
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground leading-snug mb-0.5">{concept.name}</p>
-                  {concept.definition && (
-                    <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{concept.definition}</p>
-                  )}
+  const sections: React.ReactNode[] = [];
+
+  // AI Generated Infographic Images
+  if (infographicImages && infographicImages.length > 0) {
+    sections.push(<InfographicImagesGrid key="images" images={infographicImages} />);
+  }
+
+  // Concept Cards
+  if (parsed.concepts.length > 0) {
+    sections.push(
+      <div key="concepts">
+        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+            <Atom className="w-3.5 h-3.5 text-primary" />
+          </div>
+          {isArabic ? 'المفاهيم الأساسية' : 'Key Concepts'}
+        </h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {parsed.concepts.map((concept, i) => {
+            const Icon = CONCEPT_ICONS[i % CONCEPT_ICONS.length];
+            return (
+              <div
+                key={i}
+                className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm transition-all duration-200 hover:shadow-md"
+              >
+                <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center mb-2.5', ICON_COLORS[i % ICON_COLORS.length])}>
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      
-      {/* Comparison Cards */}
-      {parsed.comparisons.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Scale className="w-4 h-4 text-primary" />
-            {isArabic ? 'مقارنات' : 'Comparisons'}
-          </h4>
-          <div className="space-y-2">
-            {parsed.comparisons.map((comp, i) => (
-              <div key={i} className="flex items-center gap-2 flex-wrap">
-                <span className="bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/20">
-                  {comp.left}
-                </span>
-                <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-500/20">
-                  {comp.right}
-                </span>
+                <p className="text-xs font-semibold text-foreground leading-snug mb-1">{concept.name}</p>
+                {concept.definition && (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{concept.definition}</p>
+                )}
               </div>
-            ))}
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Comparison Cards
+  if (parsed.comparisons.length > 0) {
+    sections.push(
+      <div key="comparisons">
+        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+            <Scale className="w-3.5 h-3.5 text-primary" />
           </div>
+          {isArabic ? 'مقارنات' : 'Comparisons'}
+        </h4>
+        <div className="space-y-2.5">
+          {parsed.comparisons.map((comp, i) => (
+            <div key={i} className="flex items-center gap-2.5 flex-wrap">
+              <span className="bg-primary/8 text-primary text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/15">
+                {comp.left}
+              </span>
+              <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="bg-amber-500/8 text-amber-600 dark:text-amber-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-500/15">
+                {comp.right}
+              </span>
+            </div>
+          ))}
         </div>
-      )}
-      
-      {/* Exam Focus */}
-      {parsed.examTips.length > 0 && (
-        <div className="bg-amber-500/5 border-2 border-amber-500/25 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            {isArabic ? 'مهم للامتحان' : 'Exam Focus'}
-          </h4>
-          <ul className="space-y-2">
-            {parsed.examTips.map((tip, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Target className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                <span className="text-xs text-foreground leading-relaxed">{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      </div>
+    );
+  }
+
+  // Exam Focus
+  if (parsed.examTips.length > 0) {
+    sections.push(
+      <div key="exam" className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+        <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center">
+            <AlertTriangle className="w-3.5 h-3.5" />
+          </div>
+          {isArabic ? 'مهم للامتحان' : 'Exam Focus'}
+          {isArabic && <span className="text-[10px] text-amber-600/60 dark:text-amber-400/60 font-normal ms-1">النقطة دي بتيجي كتير</span>}
+        </h4>
+        <ul className="space-y-2.5">
+          {parsed.examTips.map((tip, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              <Target className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <span className="text-[13px] text-foreground leading-relaxed">{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {sections.map((section, i) => (
+        <React.Fragment key={i}>
+          {section}
+          {i < sections.length - 1 && <Separator />}
+        </React.Fragment>
+      ))}
     </div>
   );
 }
