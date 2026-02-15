@@ -34,6 +34,7 @@ import { useUnreadMessagesCount } from '@/hooks/useUnreadMessagesCount';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
 import { SystemStatusIndicator } from '@/components/assistant/SystemStatusIndicator';
+import { SyncAssistantPanel } from '@/components/assistant/SyncAssistantPanel';
 
 interface Stats {
   totalStudents: number;
@@ -482,6 +483,11 @@ export default function AssistantDashboard() {
                       </Link>
                     </Button>
                   </div>
+                </div>
+
+                {/* AI Content Sync */}
+                <div className="pt-2 border-t border-border/40">
+                  <SyncAssistantPanel />
                 </div>
               </div>
             )}

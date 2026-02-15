@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.generate-lesson-infographics]
 verify_jwt = false
+
+[functions.sync-lesson-content]
+verify_jwt = false
