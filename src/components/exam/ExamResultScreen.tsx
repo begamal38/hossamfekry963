@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, RotateCcw, BookOpen, Layers, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Trophy, RotateCcw, BookOpen, Layers, ArrowLeft, ArrowRight, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ interface ExamResultScreenProps {
   onBackToCourse: () => void;
   onToPlatform: () => void;
   onReviewLesson?: () => void;
+  onReviewAnswers?: () => void;
 }
 
 /**
@@ -39,6 +40,7 @@ export const ExamResultScreen: React.FC<ExamResultScreenProps> = ({
   onBackToCourse,
   onToPlatform,
   onReviewLesson,
+  onReviewAnswers,
 }) => {
   const { isRTL } = useLanguage();
   const isArabic = isRTL;
@@ -157,6 +159,18 @@ export const ExamResultScreen: React.FC<ExamResultScreenProps> = ({
                     {displayChapter ? 'Continue Chapter' : 'Continue Course'}
                   </>
                 )}
+              </Button>
+            )}
+
+            {/* Review Answers CTA */}
+            {onReviewAnswers && (
+              <Button
+                variant="outline"
+                onClick={onReviewAnswers}
+                className="w-full h-11 gap-2"
+              >
+                <ClipboardList className="w-4 h-4" />
+                {isArabic ? 'مراجعة الإجابات' : 'Review Answers'}
               </Button>
             )}
 

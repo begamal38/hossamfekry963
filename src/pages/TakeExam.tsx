@@ -13,6 +13,7 @@ import { ExamStatusBar } from '@/components/exam/ExamStatusBar';
 import { ExamQuestionCard } from '@/components/exam/ExamQuestionCard';
 import { ExamNavigation } from '@/components/exam/ExamNavigation';
 import { ExamResultScreen } from '@/components/exam/ExamResultScreen';
+import { ExamReviewScreen } from '@/components/exam/ExamReviewScreen';
 import { ExamSubmitConfirmDialog } from '@/components/exam/ExamSubmitConfirmDialog';
 
 interface ExamQuestion {
@@ -71,6 +72,7 @@ export default function TakeExam() {
   const [submitting, setSubmitting] = useState(false);
   const [existingAttempt, setExistingAttempt] = useState<ExamAttempt | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -131,6 +133,13 @@ export default function TakeExam() {
         setExistingAttempt(attemptData);
         setShowResult(true);
         setResult({ score: attemptData.score, total: attemptData.total_questions });
+        // Restore answers from attempt for review
+        const savedAnswers = attemptData.answers as any[];
+        if (Array.isArray(savedAnswers)) {
+          const restored: Record<string, string> = {};
+          savedAnswers.forEach((a: any) => { if (a.question_id && a.selected) restored[a.question_id] = a.selected; });
+          setAnswers(restored);
+        }
       }
     } catch (error) {
       console.error('Error fetching exam:', error);
@@ -267,6 +276,22 @@ export default function TakeExam() {
     );
   }
 
+  // Review Screen
+  if (showReview && result) {
+    return (
+      <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+        <Navbar />
+        <main className="pt-24 pb-16">
+          <ExamReviewScreen
+            questions={questions}
+            answers={answers}
+            onBack={() => setShowReview(false)}
+          />
+        </main>
+      </div>
+    );
+  }
+
   // Result Screen
   if (showResult && result) {
     return (
@@ -281,6 +306,7 @@ export default function TakeExam() {
             chapterTitleAr={exam.chapter?.title_ar}
             onBackToCourse={() => navigate(`/course/${exam.course_id}`)}
             onToPlatform={() => navigate('/platform')}
+            onReviewAnswers={() => setShowReview(true)}
           />
         </main>
       </div>

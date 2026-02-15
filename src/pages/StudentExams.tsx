@@ -44,6 +44,7 @@ interface ExamWithDetails {
   attempts: {
     id: string;
     score: number;
+    total_questions: number;
     is_completed: boolean;
     completed_at: string | null;
   }[];
@@ -121,7 +122,7 @@ const StudentExams: React.FC = () => {
       // Get user's attempts
       const { data: attempts } = await supabase
         .from('exam_attempts')
-        .select('id, exam_id, score, is_completed, completed_at')
+        .select('id, exam_id, score, total_questions, is_completed, completed_at')
         .eq('user_id', user.id)
         .in('exam_id', examData.map(e => e.id));
       
@@ -162,7 +163,11 @@ const StudentExams: React.FC = () => {
       };
     }
     
-    const passed = lastAttempt && lastAttempt.score >= exam.pass_mark;
+    // Calculate percentage: (correct / total_questions) * 100, compare with pass_mark (which is a percentage-based value out of max_score)
+    const lastPercentage = lastAttempt && lastAttempt.total_questions > 0
+      ? (lastAttempt.score / lastAttempt.total_questions) * exam.max_score
+      : 0;
+    const passed = lastAttempt && lastPercentage >= exam.pass_mark;
     const canRetake = exam.max_attempts === null || completedAttempts.length < exam.max_attempts;
     
     if (passed) {
@@ -170,7 +175,8 @@ const StudentExams: React.FC = () => {
         status: 'passed', 
         label: isArabic ? 'ناجح' : 'Passed',
         color: 'bg-green-500/10 text-green-600',
-        score: lastAttempt.score
+        score: lastAttempt.score,
+        totalQ: lastAttempt.total_questions
       };
     }
     
@@ -179,7 +185,8 @@ const StudentExams: React.FC = () => {
         status: 'retry', 
         label: isArabic ? 'أعد المحاولة' : 'Retry',
         color: 'bg-amber-500/10 text-amber-600',
-        score: lastAttempt?.score
+        score: lastAttempt?.score,
+        totalQ: lastAttempt?.total_questions
       };
     }
     
@@ -187,7 +194,8 @@ const StudentExams: React.FC = () => {
       status: 'failed', 
       label: isArabic ? 'لم تنجح' : 'Failed',
       color: 'bg-red-500/10 text-red-600',
-      score: lastAttempt?.score
+      score: lastAttempt?.score,
+      totalQ: lastAttempt?.total_questions
     };
   };
 
@@ -363,10 +371,11 @@ const StudentExams: React.FC = () => {
                             <Target className="w-3.5 h-3.5" />
                             {isArabic ? 'الحد الأدنى:' : 'Pass:'} {exam.pass_mark}/{exam.max_score}
                           </span>
-                          {examStatus.score !== undefined && (
+                          {examStatus.score !== undefined && examStatus.totalQ !== undefined && (
                             <span className="flex items-center gap-1 font-medium text-foreground">
                               <Award className="w-3.5 h-3.5" />
-                              {isArabic ? 'درجتك:' : 'Score:'} {examStatus.score}/{exam.max_score}
+                              {isArabic ? 'درجتك:' : 'Score:'} {examStatus.score}/{examStatus.totalQ}
+                              {' '}({examStatus.totalQ > 0 ? Math.round((examStatus.score / examStatus.totalQ) * 100) : 0}%)
                             </span>
                           )}
                         </div>
