@@ -14,6 +14,8 @@ interface SmartStudyAssistantProps {
   lessonTitle?: string;
   courseId?: string;
   chapterId?: string | null;
+  /** Course grade string e.g. "third_arabic" or "second_languages" */
+  courseGrade?: string;
   className?: string;
 }
 
@@ -26,14 +28,17 @@ interface AiContent {
   key_points?: any;
 }
 
-/** English content cached inside key_points JSON */
-interface EnContent {
-  summary_text: string | null;
-  infographic_text: string | null;
-  revision_notes: string | null;
-}
-
 type TabId = 'explanation' | 'revision' | 'visual';
+
+/**
+ * Determine the content language from the course grade.
+ * Courses with "languages" track → English content.
+ * Everything else (arabic track or unknown) → Arabic content.
+ */
+function getTrackLanguage(courseGrade?: string): 'ar' | 'en' {
+  if (!courseGrade) return 'ar';
+  return courseGrade.includes('languages') ? 'en' : 'ar';
+}
 
 export function SmartStudyAssistant({
   lessonId,
@@ -41,13 +46,17 @@ export function SmartStudyAssistant({
   lessonTitle,
   courseId,
   chapterId,
+  courseGrade,
   className,
 }: SmartStudyAssistantProps) {
   const { language } = useLanguage();
   const isArabic = language === 'ar';
+
+  // Track-based content language — NOT the UI language
+  const trackLang = getTrackLanguage(courseGrade);
+  const isTrackArabic = trackLang === 'ar';
+
   const [content, setContent] = useState<AiContent | null>(null);
-  const [enContent, setEnContent] = useState<EnContent | null>(null);
-  const [enGenerating, setEnGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('explanation');
   const [expanded, setExpanded] = useState(true);
@@ -69,11 +78,6 @@ export function SmartStudyAssistant({
 
     if (data) {
       setContent(data as AiContent);
-      // Extract cached English content from key_points
-      const kp = data.key_points as any;
-      if (kp?.en?.summary_text) {
-        setEnContent(kp.en as EnContent);
-      }
       if (data.status === 'generating') {
         setTimeout(fetchContent, 5000);
       }
@@ -82,7 +86,7 @@ export function SmartStudyAssistant({
     setLoading(false);
   }, [lessonId]);
 
-  const triggerGeneration = useCallback(async (lang: string = 'ar') => {
+  const triggerGeneration = useCallback(async () => {
     if (!lessonId || !videoUrl) return;
 
     try {
@@ -93,7 +97,7 @@ export function SmartStudyAssistant({
           youtube_url: videoUrl,
           course_id: courseId,
           chapter_id: chapterId,
-          language: lang,
+          course_grade: courseGrade,
         },
       });
 
@@ -102,42 +106,24 @@ export function SmartStudyAssistant({
         return;
       }
 
-      if (lang === 'en' && response.data?.en_content) {
-        setEnContent(response.data.en_content as EnContent);
-        setEnGenerating(false);
-      } else if (response.data?.status === 'generated' || response.data?.status === 'already_generated') {
-        if (lang === 'en' && response.data?.en_content) {
-          setEnContent(response.data.en_content as EnContent);
-          setEnGenerating(false);
-        } else {
-          fetchContent();
-        }
+      if (response.data?.status === 'generated' || response.data?.status === 'already_generated') {
+        fetchContent();
       }
     } catch (err) {
       console.error('[SmartStudyAssistant] Generation error:', err);
-      if (lang === 'en') setEnGenerating(false);
     }
-  }, [lessonId, videoUrl, lessonTitle, courseId, chapterId, fetchContent]);
+  }, [lessonId, videoUrl, lessonTitle, courseId, chapterId, courseGrade, fetchContent]);
 
   useEffect(() => {
     fetchContent();
   }, [fetchContent]);
 
-  // Trigger Arabic generation if no content exists
+  // Trigger generation if no content exists
   useEffect(() => {
     if (!loading && !content && videoUrl) {
-      triggerGeneration('ar');
+      triggerGeneration();
     }
   }, [loading, content, videoUrl, triggerGeneration]);
-
-  // When language switches to English and no cached English content, generate it
-  useEffect(() => {
-    if (language === 'en' && content?.status === 'ready' && !enContent && !enGenerating && videoUrl) {
-      console.log('[SmartStudyAssistant] Generating English content');
-      setEnGenerating(true);
-      triggerGeneration('en');
-    }
-  }, [language, content?.status, enContent, enGenerating, videoUrl, triggerGeneration]);
 
   // Detect old-format infographics
   const needsRegeneration = content?.infographic_images && 
@@ -177,18 +163,27 @@ export function SmartStudyAssistant({
   ];
 
   const isGenerating = !content || content.status === 'generating';
-  const isEnPending = language === 'en' && enGenerating;
 
-  // Select content based on current language
-  const displaySummary = language === 'en' && enContent?.summary_text 
-    ? enContent.summary_text 
-    : content?.summary_text || null;
-  const displayInfographic = language === 'en' && enContent?.infographic_text 
-    ? enContent.infographic_text 
-    : content?.infographic_text || null;
-  const displayRevision = language === 'en' && enContent?.revision_notes 
-    ? enContent.revision_notes 
-    : content?.revision_notes || null;
+  // Content is always from the track-determined columns (main columns for Arabic, key_points.en for Languages)
+  let displaySummary: string | null = null;
+  let displayInfographic: string | null = null;
+  let displayRevision: string | null = null;
+
+  if (isTrackArabic) {
+    // Arabic track: use main columns
+    displaySummary = content?.summary_text || null;
+    displayInfographic = content?.infographic_text || null;
+    displayRevision = content?.revision_notes || null;
+  } else {
+    // Languages track: use key_points.en if available, fallback to main columns
+    const kp = content?.key_points as any;
+    displaySummary = kp?.en?.summary_text || content?.summary_text || null;
+    displayInfographic = kp?.en?.infographic_text || content?.infographic_text || null;
+    displayRevision = kp?.en?.revision_notes || content?.revision_notes || null;
+  }
+
+  // Text direction is determined by track, not UI language
+  const contentDir = isTrackArabic ? 'rtl' : 'ltr';
 
   return (
     <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm', className)}>
@@ -209,7 +204,7 @@ export function SmartStudyAssistant({
               <span className="text-[10px] text-muted-foreground">افهم · راجع · اتأكد</span>
             )}
           </div>
-          {(isGenerating || isEnPending) && (
+          {isGenerating && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full animate-pulse">
               {isArabic ? 'جاري التحضير...' : 'Preparing...'}
             </span>
@@ -242,9 +237,9 @@ export function SmartStudyAssistant({
             ))}
           </div>
 
-          {/* Content Area */}
-          <div className="min-h-[120px]">
-            {(isGenerating || isEnPending) ? (
+          {/* Content Area — direction from track */}
+          <div className="min-h-[120px]" dir={contentDir}>
+            {isGenerating ? (
               <div className="bg-muted/20 rounded-xl p-5 space-y-3.5">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-[90%]" />
