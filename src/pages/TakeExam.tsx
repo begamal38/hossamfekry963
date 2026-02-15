@@ -285,6 +285,8 @@ export default function TakeExam() {
           <ExamReviewScreen
             questions={questions}
             answers={answers}
+            score={result.score}
+            total={result.total}
             onBack={() => setShowReview(false)}
           />
         </main>
