@@ -16,14 +16,25 @@ function hashVideoUrl(url: string): string {
   return hash.toString(36);
 }
 
+/**
+ * Determine content language from course grade.
+ * "languages" track → English, everything else → Arabic.
+ */
+function getTrackLanguage(courseGrade?: string): 'ar' | 'en' {
+  if (!courseGrade) return 'ar';
+  return courseGrade.includes('languages') ? 'en' : 'ar';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { lesson_id, lesson_title, youtube_url, course_id, chapter_id, language } = await req.json();
-    const targetLang = language || 'ar';
+    const { lesson_id, lesson_title, youtube_url, course_id, chapter_id, course_grade, language } = await req.json();
+
+    // Track-based language: course_grade takes priority, fallback to legacy `language` param
+    const targetLang = course_grade ? getTrackLanguage(course_grade) : (language || 'ar');
 
     if (!lesson_id || !youtube_url) {
       return new Response(
@@ -41,13 +52,13 @@ serve(async (req) => {
     // Check if content already exists
     const { data: existing } = await supabase
       .from('lesson_ai_content')
-      .select('id, video_url_hash, status, key_points')
+      .select('id, video_url_hash, status, key_points, summary_text')
       .eq('lesson_id', lesson_id)
       .maybeSingle();
 
     // For Arabic (default): check main columns
     if (targetLang === 'ar') {
-      if (existing && existing.video_url_hash === videoHash && existing.status === 'ready') {
+      if (existing && existing.video_url_hash === videoHash && existing.status === 'ready' && existing.summary_text) {
         return new Response(
           JSON.stringify({ status: 'already_generated', id: existing.id }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -61,33 +72,33 @@ serve(async (req) => {
       }
     }
 
-    // For English: check if English cache exists in key_points
+    // For English (languages track): check if content exists in main columns or key_points.en
     if (targetLang === 'en' && existing) {
-      const kp = existing.key_points as any;
-      if (kp && kp.en && kp.en.summary_text) {
+      // If main columns have English content (generated for languages track), it's ready
+      if (existing.status === 'ready' && existing.summary_text) {
         return new Response(
-          JSON.stringify({ 
-            status: 'already_generated', 
-            id: existing.id,
-            en_content: kp.en 
-          }),
+          JSON.stringify({ status: 'already_generated', id: existing.id }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (existing.status === 'generating') {
+        return new Response(
+          JSON.stringify({ status: 'already_generating', id: existing.id }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
 
-    // For Arabic generation: mark as generating
-    if (targetLang === 'ar') {
-      if (existing) {
-        await supabase
-          .from('lesson_ai_content')
-          .update({ status: 'generating', video_url_hash: videoHash, updated_at: new Date().toISOString() })
-          .eq('id', existing.id);
-      } else {
-        await supabase
-          .from('lesson_ai_content')
-          .insert({ lesson_id, status: 'generating', video_url_hash: videoHash });
-      }
+    // Mark as generating
+    if (existing) {
+      await supabase
+        .from('lesson_ai_content')
+        .update({ status: 'generating', video_url_hash: videoHash, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('lesson_ai_content')
+        .insert({ lesson_id, status: 'generating', video_url_hash: videoHash });
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -141,7 +152,7 @@ IMPORTANT: Do NOT invent facts. Base content on the lesson topic.`;
       ? 'You are an expert chemistry teacher. Write clear English study content. Always respond with valid JSON only. No markdown, no code blocks.'
       : 'You are an expert Egyptian chemistry teacher for Thanaweya Amma. Write in simple Arabic with English scientific terms in brackets. Always respond with valid JSON only. No markdown, no code blocks, just raw JSON.';
 
-    console.log(`[generate-lesson-content] Generating ${targetLang} content for lesson:`, lesson_id);
+    console.log(`[generate-lesson-content] Generating ${targetLang} content for lesson:`, lesson_id, 'course_grade:', course_grade);
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -162,12 +173,10 @@ IMPORTANT: Do NOT invent facts. Base content on the lesson topic.`;
       const errText = await aiResponse.text();
       console.error('[generate-lesson-content] AI error:', aiResponse.status, errText);
 
-      if (targetLang === 'ar') {
-        await supabase
-          .from('lesson_ai_content')
-          .update({ status: 'failed', updated_at: new Date().toISOString() })
-          .eq('lesson_id', lesson_id);
-      }
+      await supabase
+        .from('lesson_ai_content')
+        .update({ status: 'failed', updated_at: new Date().toISOString() })
+        .eq('lesson_id', lesson_id);
 
       if (aiResponse.status === 429) {
         return new Response(
@@ -197,47 +206,20 @@ IMPORTANT: Do NOT invent facts. Base content on the lesson topic.`;
       parsed = { slides_content: rawContent, infographic_content: '', revision_notes: '' };
     }
 
-    if (targetLang === 'ar') {
-      // Store Arabic in main columns (default behavior)
-      const { error: updateError } = await supabase
-        .from('lesson_ai_content')
-        .update({
-          summary_text: parsed.slides_content || null,
-          infographic_text: parsed.infographic_content || null,
-          revision_notes: parsed.revision_notes || null,
-          status: 'ready',
-          generated_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('lesson_id', lesson_id);
-
-      if (updateError) throw updateError;
-    } else {
-      // Store English in key_points JSON (cache without schema change)
-      const enContent = {
+    // Store in main columns regardless of language — track determines content once
+    const { error: updateError } = await supabase
+      .from('lesson_ai_content')
+      .update({
         summary_text: parsed.slides_content || null,
         infographic_text: parsed.infographic_content || null,
         revision_notes: parsed.revision_notes || null,
-      };
-      
-      const currentKp = (existing?.key_points as any) || {};
-      const newKp = { ...currentKp, en: enContent };
+        status: 'ready',
+        generated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('lesson_id', lesson_id);
 
-      const { error: updateError } = await supabase
-        .from('lesson_ai_content')
-        .update({
-          key_points: newKp,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('lesson_id', lesson_id);
-
-      if (updateError) throw updateError;
-
-      return new Response(
-        JSON.stringify({ status: 'generated', lesson_id, en_content: enContent }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    if (updateError) throw updateError;
 
     console.log(`[generate-lesson-content] Successfully generated ${targetLang} content for lesson:`, lesson_id);
 

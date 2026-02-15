@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-type SyncMode = 'all' | 'missing_en' | 'missing_ar' | 'visuals_only';
+type SyncMode = 'all' | 'missing_content' | 'visuals_only';
 
 interface BatchResult {
   status: string;
@@ -23,8 +23,7 @@ interface BatchResult {
 
 const MODES: { value: SyncMode; labelAr: string; labelEn: string }[] = [
   { value: 'all', labelAr: 'مزامنة الكل', labelEn: 'Sync All' },
-  { value: 'missing_en', labelAr: 'الإنجليزي الناقص', labelEn: 'Missing English' },
-  { value: 'missing_ar', labelAr: 'العربي الناقص', labelEn: 'Missing Arabic' },
+  { value: 'missing_content', labelAr: 'المحتوى الناقص', labelEn: 'Missing Content' },
   { value: 'visuals_only', labelAr: 'الصور البصرية فقط', labelEn: 'Visuals Only' },
 ];
 
@@ -107,9 +106,14 @@ export function SyncAssistantPanel() {
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
           <RefreshCw className="w-4 h-4 text-primary" />
         </div>
-        <h3 className="font-semibold text-foreground text-sm">
-          {isRTL ? 'مزامنة مساعد المذاكرة' : 'Sync Study Assistant'}
-        </h3>
+        <div>
+          <h3 className="font-semibold text-foreground text-sm">
+            {isRTL ? 'مزامنة مساعد المذاكرة' : 'Sync Study Assistant'}
+          </h3>
+          <p className="text-[10px] text-muted-foreground">
+            {isRTL ? 'المحتوى يتحدد حسب مسار الكورس (عربي / لغات)' : 'Content language is determined by course track'}
+          </p>
+        </div>
       </div>
 
       {/* Mode selector */}

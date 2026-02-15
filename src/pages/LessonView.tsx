@@ -93,6 +93,7 @@ interface Course {
   title_ar: string;
   slug: string;
   is_free: boolean;
+  grade: string;
 }
 
 interface Chapter {
@@ -286,7 +287,7 @@ export default function LessonView() {
 
       const { data: courseData } = await supabase
         .from('courses')
-        .select('id, title, title_ar, slug, is_free')
+        .select('id, title, title_ar, slug, is_free, grade')
         .eq('id', lessonData.course_id)
         .single();
 
@@ -1083,6 +1084,7 @@ export default function LessonView() {
               lessonTitle={isArabic ? lesson.title_ar : lesson.title}
               courseId={course?.id}
               chapterId={lesson.chapter_id}
+              courseGrade={course?.grade}
               className="mb-6"
             />
           )}

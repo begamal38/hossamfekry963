@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-type SyncMode = 'all' | 'missing_en' | 'missing_ar' | 'visuals_only';
+type SyncMode = 'all' | 'missing_content' | 'visuals_only';
 
 interface SyncRequest {
   mode: SyncMode;
@@ -24,13 +24,18 @@ function hashVideoUrl(url: string): string {
   return hash.toString(36);
 }
 
+function getTrackLanguage(courseGrade?: string): 'ar' | 'en' {
+  if (!courseGrade) return 'ar';
+  return courseGrade.includes('languages') ? 'en' : 'ar';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { mode, batch_size = 15, offset = 0 }: SyncRequest = await req.json();
+    const { mode = 'all', batch_size = 15, offset = 0 }: SyncRequest = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -39,10 +44,10 @@ serve(async (req) => {
 
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
-    // Fetch all lessons with video URLs
+    // Fetch lessons with video URLs + course grade
     const { data: lessons, error: lessonsError } = await supabase
       .from('lessons')
-      .select('id, title, title_ar, video_url, course_id, chapter_id')
+      .select('id, title, title_ar, video_url, course_id, chapter_id, courses:course_id(grade)')
       .not('video_url', 'is', null)
       .eq('is_active', true)
       .order('created_at', { ascending: true })
@@ -56,7 +61,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch existing AI content for these lessons
+    // Fetch existing AI content
     const lessonIds = lessons.map(l => l.id);
     const { data: existingContent } = await supabase
       .from('lesson_ai_content')
@@ -67,7 +72,7 @@ serve(async (req) => {
       (existingContent || []).map(c => [c.lesson_id, c])
     );
 
-    // Count total lessons for progress
+    // Count total
     const { count: totalCount } = await supabase
       .from('lessons')
       .select('*', { count: 'exact', head: true })
@@ -78,18 +83,19 @@ serve(async (req) => {
 
     for (const lesson of lessons) {
       const existing = contentMap.get(lesson.id);
-      const hasArabic = existing && existing.status === 'ready' && !!existing.summary_text;
-      const kp = existing?.key_points as any;
-      const hasEnglish = kp?.en?.summary_text;
+      const hasContent = existing && existing.status === 'ready' && !!existing.summary_text;
       const hasVisuals = existing?.infographic_images && (existing.infographic_images as any[]).length > 0;
+
+      // Determine track language from course grade
+      const courseGrade = (lesson as any).courses?.grade;
+      const trackLang = getTrackLanguage(courseGrade);
 
       try {
         if (mode === 'visuals_only') {
-          if (hasVisuals || !hasArabic) {
+          if (hasVisuals || !hasContent) {
             results.push({ lesson_id: lesson.id, action: 'skip_visuals', success: true });
             continue;
           }
-          // Trigger infographic generation
           const { error } = await supabase.functions.invoke('generate-lesson-infographics', {
             body: { lesson_id: lesson.id, lesson_title: lesson.title, summary_text: existing!.summary_text }
           });
@@ -98,37 +104,17 @@ serve(async (req) => {
           continue;
         }
 
-        let needAr = false;
-        let needEn = false;
-
-        if (mode === 'all') {
-          needAr = !hasArabic;
-          needEn = !hasEnglish;
-        } else if (mode === 'missing_ar') {
-          needAr = !hasArabic;
-        } else if (mode === 'missing_en') {
-          needEn = !hasEnglish && hasArabic; // Only generate EN if AR base exists or we generate it
-        }
-
-        if (!needAr && !needEn) {
+        // For 'all' or 'missing_content': generate if content is missing
+        if (hasContent) {
           results.push({ lesson_id: lesson.id, action: 'skip', success: true });
           continue;
         }
 
-        // Generate Arabic first if needed
-        if (needAr) {
-          const arResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, 'ar');
-          results.push({ lesson_id: lesson.id, action: 'generate_ar', success: arResult.success, error: arResult.error });
-          if (!arResult.success) continue;
-          await delay(2000);
-        }
+        // Generate content in the track-determined language
+        const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
+        results.push({ lesson_id: lesson.id, action: `generate_${trackLang}`, success: genResult.success, error: genResult.error });
+        await delay(2000);
 
-        // Generate English if needed
-        if (needEn || (mode === 'all' && !hasEnglish)) {
-          const enResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, 'en');
-          results.push({ lesson_id: lesson.id, action: 'generate_en', success: enResult.success, error: enResult.error });
-          await delay(2000);
-        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         results.push({ lesson_id: lesson.id, action: 'error', success: false, error: msg });
@@ -173,7 +159,8 @@ async function generateContent(
   supabase: any,
   apiKey: string,
   lesson: { id: string; title: string; title_ar: string; video_url: string | null; course_id: string; chapter_id: string | null },
-  lang: 'ar' | 'en'
+  lang: 'ar' | 'en',
+  courseGrade?: string,
 ): Promise<{ success: boolean; error?: string }> {
   if (!lesson.video_url) return { success: false, error: 'No video URL' };
 
@@ -184,20 +171,19 @@ async function generateContent(
     // Check current state
     const { data: existing } = await supabase
       .from('lesson_ai_content')
-      .select('id, status, key_points')
+      .select('id, status')
       .eq('lesson_id', lesson.id)
       .maybeSingle();
 
-    if (lang === 'ar') {
-      if (existing?.status === 'generating') return { success: true, error: 'already generating' };
-      if (existing) {
-        await supabase.from('lesson_ai_content')
-          .update({ status: 'generating', video_url_hash: videoHash, updated_at: new Date().toISOString() })
-          .eq('id', existing.id);
-      } else {
-        await supabase.from('lesson_ai_content')
-          .insert({ lesson_id: lesson.id, status: 'generating', video_url_hash: videoHash });
-      }
+    if (existing?.status === 'generating') return { success: true, error: 'already generating' };
+
+    if (existing) {
+      await supabase.from('lesson_ai_content')
+        .update({ status: 'generating', video_url_hash: videoHash, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase.from('lesson_ai_content')
+        .insert({ lesson_id: lesson.id, status: 'generating', video_url_hash: videoHash });
     }
 
     const systemPrompt = lang === 'en'
@@ -223,11 +209,9 @@ async function generateContent(
     if (!aiResponse.ok) {
       const status = aiResponse.status;
       await aiResponse.text();
-      if (lang === 'ar') {
-        await supabase.from('lesson_ai_content')
-          .update({ status: 'failed', updated_at: new Date().toISOString() })
-          .eq('lesson_id', lesson.id);
-      }
+      await supabase.from('lesson_ai_content')
+        .update({ status: 'failed', updated_at: new Date().toISOString() })
+        .eq('lesson_id', lesson.id);
       return { success: false, error: `AI error: ${status}` };
     }
 
@@ -242,38 +226,24 @@ async function generateContent(
       parsed = { slides_content: rawContent, infographic_content: '', revision_notes: '' };
     }
 
-    if (lang === 'ar') {
-      await supabase.from('lesson_ai_content').update({
-        summary_text: parsed.slides_content || null,
-        infographic_text: parsed.infographic_content || null,
-        revision_notes: parsed.revision_notes || null,
-        status: 'ready',
-        generated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq('lesson_id', lesson.id);
-    } else {
-      const enContent = {
-        summary_text: parsed.slides_content || null,
-        infographic_text: parsed.infographic_content || null,
-        revision_notes: parsed.revision_notes || null,
-      };
-      const currentKp = (existing?.key_points as any) || {};
-      await supabase.from('lesson_ai_content').update({
-        key_points: { ...currentKp, en: enContent },
-        updated_at: new Date().toISOString(),
-      }).eq('lesson_id', lesson.id);
-    }
+    // Always store in main columns — one language per lesson, determined by track
+    await supabase.from('lesson_ai_content').update({
+      summary_text: parsed.slides_content || null,
+      infographic_text: parsed.infographic_content || null,
+      revision_notes: parsed.revision_notes || null,
+      status: 'ready',
+      generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('lesson_id', lesson.id);
 
-    console.log(`[sync-lesson-content] Generated ${lang} for lesson ${lesson.id}`);
+    console.log(`[sync-lesson-content] Generated ${lang} (track: ${courseGrade}) for lesson ${lesson.id}`);
     return { success: true };
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown';
-    if (lang === 'ar') {
-      await supabase.from('lesson_ai_content')
-        .update({ status: 'failed', updated_at: new Date().toISOString() })
-        .eq('lesson_id', lesson.id);
-    }
+    await supabase.from('lesson_ai_content')
+      .update({ status: 'failed', updated_at: new Date().toISOString() })
+      .eq('lesson_id', lesson.id);
     return { success: false, error: msg };
   }
 }
