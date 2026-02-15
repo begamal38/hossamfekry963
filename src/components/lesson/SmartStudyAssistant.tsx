@@ -23,6 +23,14 @@ interface AiContent {
   revision_notes: string | null;
   infographic_images: any[] | null;
   status: string;
+  key_points?: any;
+}
+
+/** English content cached inside key_points JSON */
+interface EnContent {
+  summary_text: string | null;
+  infographic_text: string | null;
+  revision_notes: string | null;
 }
 
 type TabId = 'explanation' | 'revision' | 'visual';
@@ -38,6 +46,8 @@ export function SmartStudyAssistant({
   const { language } = useLanguage();
   const isArabic = language === 'ar';
   const [content, setContent] = useState<AiContent | null>(null);
+  const [enContent, setEnContent] = useState<EnContent | null>(null);
+  const [enGenerating, setEnGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('explanation');
   const [expanded, setExpanded] = useState(true);
@@ -47,7 +57,7 @@ export function SmartStudyAssistant({
 
     const { data, error } = await supabase
       .from('lesson_ai_content')
-      .select('summary_text, infographic_text, revision_notes, infographic_images, status')
+      .select('summary_text, infographic_text, revision_notes, infographic_images, status, key_points')
       .eq('lesson_id', lessonId)
       .maybeSingle();
 
@@ -59,6 +69,11 @@ export function SmartStudyAssistant({
 
     if (data) {
       setContent(data as AiContent);
+      // Extract cached English content from key_points
+      const kp = data.key_points as any;
+      if (kp?.en?.summary_text) {
+        setEnContent(kp.en as EnContent);
+      }
       if (data.status === 'generating') {
         setTimeout(fetchContent, 5000);
       }
@@ -67,7 +82,7 @@ export function SmartStudyAssistant({
     setLoading(false);
   }, [lessonId]);
 
-  const triggerGeneration = useCallback(async () => {
+  const triggerGeneration = useCallback(async (lang: string = 'ar') => {
     if (!lessonId || !videoUrl) return;
 
     try {
@@ -78,6 +93,7 @@ export function SmartStudyAssistant({
           youtube_url: videoUrl,
           course_id: courseId,
           chapter_id: chapterId,
+          language: lang,
         },
       });
 
@@ -86,11 +102,20 @@ export function SmartStudyAssistant({
         return;
       }
 
-      if (response.data?.status === 'generated') {
-        fetchContent();
+      if (lang === 'en' && response.data?.en_content) {
+        setEnContent(response.data.en_content as EnContent);
+        setEnGenerating(false);
+      } else if (response.data?.status === 'generated' || response.data?.status === 'already_generated') {
+        if (lang === 'en' && response.data?.en_content) {
+          setEnContent(response.data.en_content as EnContent);
+          setEnGenerating(false);
+        } else {
+          fetchContent();
+        }
       }
     } catch (err) {
       console.error('[SmartStudyAssistant] Generation error:', err);
+      if (lang === 'en') setEnGenerating(false);
     }
   }, [lessonId, videoUrl, lessonTitle, courseId, chapterId, fetchContent]);
 
@@ -98,26 +123,34 @@ export function SmartStudyAssistant({
     fetchContent();
   }, [fetchContent]);
 
+  // Trigger Arabic generation if no content exists
   useEffect(() => {
     if (!loading && !content && videoUrl) {
-      triggerGeneration();
+      triggerGeneration('ar');
     }
   }, [loading, content, videoUrl, triggerGeneration]);
 
-  // Detect old-format infographics (missing description_ar = old Gemini Flash generation with broken Arabic)
+  // When language switches to English and no cached English content, generate it
+  useEffect(() => {
+    if (language === 'en' && content?.status === 'ready' && !enContent && !enGenerating && videoUrl) {
+      console.log('[SmartStudyAssistant] Generating English content');
+      setEnGenerating(true);
+      triggerGeneration('en');
+    }
+  }, [language, content?.status, enContent, enGenerating, videoUrl, triggerGeneration]);
+
+  // Detect old-format infographics
   const needsRegeneration = content?.infographic_images && 
     (content.infographic_images as any[]).length > 0 &&
     (content.infographic_images as any[]).some((img: any) => !img.description_ar || !img.title_en);
 
-  // Trigger infographic image generation once text content is ready, or regenerate old format
+  // Trigger infographic generation
   useEffect(() => {
     const shouldGenerate = content?.status === 'ready' && content.summary_text && 
       (!content.infographic_images || needsRegeneration);
     
     if (!shouldGenerate) return;
 
-    console.log('[SmartStudyAssistant] Generating infographics:', needsRegeneration ? 'REGENERATING old format' : 'first generation');
-    
     supabase.functions.invoke('generate-lesson-infographics', {
       body: {
         lesson_id: lessonId,
@@ -144,6 +177,18 @@ export function SmartStudyAssistant({
   ];
 
   const isGenerating = !content || content.status === 'generating';
+  const isEnPending = language === 'en' && enGenerating;
+
+  // Select content based on current language
+  const displaySummary = language === 'en' && enContent?.summary_text 
+    ? enContent.summary_text 
+    : content?.summary_text || null;
+  const displayInfographic = language === 'en' && enContent?.infographic_text 
+    ? enContent.infographic_text 
+    : content?.infographic_text || null;
+  const displayRevision = language === 'en' && enContent?.revision_notes 
+    ? enContent.revision_notes 
+    : content?.revision_notes || null;
 
   return (
     <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm', className)}>
@@ -164,7 +209,7 @@ export function SmartStudyAssistant({
               <span className="text-[10px] text-muted-foreground">افهم · راجع · اتأكد</span>
             )}
           </div>
-          {isGenerating && (
+          {(isGenerating || isEnPending) && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full animate-pulse">
               {isArabic ? 'جاري التحضير...' : 'Preparing...'}
             </span>
@@ -199,7 +244,7 @@ export function SmartStudyAssistant({
 
           {/* Content Area */}
           <div className="min-h-[120px]">
-            {isGenerating ? (
+            {(isGenerating || isEnPending) ? (
               <div className="bg-muted/20 rounded-xl p-5 space-y-3.5">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-[90%]" />
@@ -211,18 +256,18 @@ export function SmartStudyAssistant({
               <>
                 {activeTab === 'explanation' && (
                   <ExplanationTab
-                    summaryText={content?.summary_text || null}
-                    infographicText={content?.infographic_text || null}
+                    summaryText={displaySummary}
+                    infographicText={displayInfographic}
                   />
                 )}
                 {activeTab === 'revision' && (
-                  <RevisionTab revisionNotes={content?.revision_notes || null} />
+                  <RevisionTab revisionNotes={displayRevision} />
                 )}
                 {activeTab === 'visual' && (
                   <VisualSummaryTab
-                    summaryText={content?.summary_text || null}
-                    infographicText={content?.infographic_text || null}
-                    revisionNotes={content?.revision_notes || null}
+                    summaryText={displaySummary}
+                    infographicText={displayInfographic}
+                    revisionNotes={displayRevision}
                     infographicImages={content?.infographic_images || null}
                   />
                 )}
