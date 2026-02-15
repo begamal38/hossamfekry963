@@ -19,6 +19,8 @@ interface ReviewQuestion {
 interface ExamReviewScreenProps {
   questions: ReviewQuestion[];
   answers: Record<string, string>;
+  score: number;
+  total: number;
   onBack: () => void;
 }
 
@@ -32,44 +34,53 @@ const getOptionText = (q: ReviewQuestion, key: string) => {
 };
 
 export const ExamReviewScreen: React.FC<ExamReviewScreenProps> = ({
-  questions, answers, onBack,
+  questions, answers, score, total, onBack,
 }) => {
   const { isRTL } = useLanguage();
   const isArabic = isRTL;
   const BackIcon = isArabic ? ArrowRight : ArrowLeft;
+  const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
   return (
-    <div className="container mx-auto px-4 max-w-2xl py-6 pb-[220px] md:pb-20 content-appear">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
-          <BackIcon className="w-5 h-5" />
-        </Button>
-        <h1 className="text-xl font-bold text-foreground">
-          {isArabic ? 'مراجعة الإجابات' : 'Review Answers'}
-        </h1>
+    <div className="min-h-screen">
+      {/* Sticky top bar */}
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b py-3 px-4">
+        <div className="container mx-auto max-w-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 -ms-2">
+              <BackIcon className="w-5 h-5" />
+            </Button>
+            <h1 className="text-lg font-bold text-foreground">
+              {isArabic ? 'مراجعة الامتحان' : 'Exam Review'}
+            </h1>
+          </div>
+          <div className="text-sm font-medium text-muted-foreground tabular-nums">
+            {score}/{total} ({percentage}%)
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Questions list */}
+      <div className="container mx-auto px-4 max-w-2xl py-5 pb-[220px] md:pb-20 space-y-4 content-appear">
         {questions.map((q, idx) => {
           const selected = answers[q.id];
           const isCorrect = selected === q.correct_option;
 
           return (
             <Card key={q.id} className={cn(
-              "border transition-colors",
+              "border transition-colors overflow-hidden",
               isCorrect ? "border-green-500/30" : "border-red-500/30"
             )}>
               <CardContent className="py-4 px-4 space-y-3">
                 {/* Question header */}
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2.5">
                   <span className={cn(
                     "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
                     isCorrect ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
                   )}>
                     {idx + 1}
                   </span>
-                  <p className="text-sm font-medium text-foreground leading-relaxed pt-1">
+                  <p className="text-sm font-medium text-foreground leading-relaxed pt-1 break-words">
                     {q.question_text}
                   </p>
                 </div>
@@ -101,7 +112,6 @@ export const ExamReviewScreen: React.FC<ExamReviewScreenProps> = ({
                           !isSelected && !isCorrectOption && "border-border/50 opacity-60"
                         )}
                       >
-                        {/* Status icon */}
                         {isCorrectOption && (
                           <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
                         )}
@@ -117,34 +127,50 @@ export const ExamReviewScreen: React.FC<ExamReviewScreenProps> = ({
                         )}>
                           {key}
                         </span>
-                        <span className="flex-1">{text}</span>
+                        <span className="flex-1 break-words">{text}</span>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Result badge */}
-                <div className={cn(
-                  "text-xs font-medium px-3 py-1 rounded-full w-fit",
-                  isCorrect ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
-                )}>
-                  {isCorrect
-                    ? (isArabic ? '✔ إجابة صحيحة' : '✔ Correct')
-                    : (isArabic ? '✖ إجابة خاطئة' : '✖ Wrong')
-                  }
+                {/* Result summary */}
+                <div className="space-y-1.5 pt-1">
+                  <div className={cn(
+                    "text-xs font-medium px-3 py-1 rounded-full w-fit",
+                    isCorrect ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+                  )}>
+                    {isCorrect
+                      ? (isArabic ? '✔ إجابة صحيحة' : '✔ Correct')
+                      : (isArabic ? '✖ إجابة خاطئة' : '✖ Wrong')
+                    }
+                  </div>
+
+                  {/* Wrong answer detail */}
+                  {!isCorrect && (
+                    <div className="text-xs text-muted-foreground space-y-0.5 ps-1">
+                      <p>
+                        {isArabic ? 'إجابتك:' : 'Your answer:'}{' '}
+                        <span className="font-bold text-red-600 uppercase">{selected || '—'}</span>
+                      </p>
+                      <p>
+                        {isArabic ? 'الإجابة الصحيحة:' : 'Correct answer:'}{' '}
+                        <span className="font-bold text-green-600 uppercase">{q.correct_option}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
-      </div>
 
-      {/* Back button at bottom */}
-      <div className="mt-6">
-        <Button variant="outline" onClick={onBack} className="w-full h-11">
-          <BackIcon className={cn("w-4 h-4", isArabic ? "ml-2" : "mr-2")} />
-          {isArabic ? 'العودة للنتيجة' : 'Back to Result'}
-        </Button>
+        {/* Back button at bottom */}
+        <div className="pt-2">
+          <Button variant="outline" onClick={onBack} className="w-full h-11">
+            <BackIcon className={cn("w-4 h-4", isArabic ? "ml-2" : "mr-2")} />
+            {isArabic ? 'العودة للنتيجة' : 'Back to Result'}
+          </Button>
+        </div>
       </div>
     </div>
   );
