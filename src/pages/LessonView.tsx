@@ -873,7 +873,7 @@ export default function LessonView() {
   const isVisitorFreeLesson = !user && isFreeLesson;
 
   return (
-    <div className="min-h-screen bg-background pb-mobile-nav content-appear" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-[120px] md:pb-8 content-appear" dir={isRTL ? 'rtl' : 'ltr'}>
       <SEOHead 
         title={seoTitle}
         titleAr={seoTitle}
@@ -1270,7 +1270,7 @@ export default function LessonView() {
           )}
 
           {/* Navigation - Single source, clear hierarchy */}
-          <nav className="flex items-center justify-between gap-4 py-2" aria-label="Lesson navigation">
+          <nav className="flex items-center justify-between gap-4 py-4 mb-4" aria-label="Lesson navigation">
             {/* Previous - Secondary style (outline) */}
             <div className="flex-1">
               {previousLesson ? (

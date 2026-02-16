@@ -106,7 +106,7 @@ export const ExamQuestionCard: React.FC<ExamQuestionCardProps> = ({
             <p className="text-sm text-muted-foreground text-center mb-4">
               {isArabic ? 'اختر الإجابة الصحيحة:' : 'Select the correct answer:'}
             </p>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <div className="flex items-center justify-center gap-2.5 sm:gap-4 flex-wrap">
               {[
                 { key: 'a', label: 'A' },
                 { key: 'b', label: 'B' },
@@ -117,8 +117,8 @@ export const ExamQuestionCard: React.FC<ExamQuestionCardProps> = ({
                   key={option.key}
                   onClick={() => onSelectAnswer(option.key)}
                   className={cn(
-                    "w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 transition-all duration-200",
-                    "flex items-center justify-center text-lg sm:text-xl font-bold",
+                    "w-[3.25rem] h-[3.25rem] sm:w-16 sm:h-16 rounded-xl border-2 transition-all duration-200",
+                    "flex items-center justify-center text-base sm:text-xl font-bold",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     "active:scale-[0.98]",
                     selectedAnswer === option.key

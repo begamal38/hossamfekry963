@@ -187,7 +187,7 @@ export function SmartStudyAssistant({
   const contentDir = isTrackArabic ? 'rtl' : 'ltr';
 
   return (
-    <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm', className)}>
+    <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm w-full', className)}>
       {/* Header */}
       <button
         onClick={() => setExpanded(prev => !prev)}
@@ -217,7 +217,7 @@ export function SmartStudyAssistant({
       {expanded && (
         <div className="px-5 pb-5">
           {/* Tab Selector */}
-          <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 border-b border-border/40 -mx-5 px-5">
+          <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 border-b border-border/40 -mx-5 px-5 scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
