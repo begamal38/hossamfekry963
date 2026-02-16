@@ -56,7 +56,7 @@ serve(async (req) => {
     if (lessonsError) throw lessonsError;
     if (!lessons || lessons.length === 0) {
       return new Response(
-        JSON.stringify({ status: 'complete', processed: 0, message: 'No more lessons to process' }),
+        JSON.stringify({ status: 'complete', processed: 0, skipped: 0, failed: 0, total_lessons: 0, has_more: false, next_offset: offset, results: [] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -65,7 +65,7 @@ serve(async (req) => {
     const lessonIds = lessons.map(l => l.id);
     const { data: existingContent } = await supabase
       .from('lesson_ai_content')
-      .select('lesson_id, summary_text, status, key_points, infographic_images')
+      .select('lesson_id, summary_text, infographic_text, revision_notes, status, infographic_images')
       .in('lesson_id', lessonIds);
 
     const contentMap = new Map(
@@ -85,35 +85,79 @@ serve(async (req) => {
       const existing = contentMap.get(lesson.id);
       const hasContent = existing && existing.status === 'ready' && !!existing.summary_text;
       const hasVisuals = existing?.infographic_images && (existing.infographic_images as any[]).length > 0;
-
-      // Determine track language from course grade
       const courseGrade = (lesson as any).courses?.grade;
       const trackLang = getTrackLanguage(courseGrade);
 
       try {
+        // ── MODE: visuals_only ──
+        // Only generate visuals for lessons that have text content but no visuals
         if (mode === 'visuals_only') {
-          if (hasVisuals || !hasContent) {
+          if (hasVisuals) {
             results.push({ lesson_id: lesson.id, action: 'skip_visuals', success: true });
             continue;
           }
+          if (!hasContent) {
+            // Can't generate visuals without text content
+            results.push({ lesson_id: lesson.id, action: 'skip_no_text', success: true });
+            continue;
+          }
           const { error } = await supabase.functions.invoke('generate-lesson-infographics', {
-            body: { lesson_id: lesson.id, lesson_title: lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
+            body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
           });
           results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: !error, error: error?.message });
           await delay(3000);
           continue;
         }
 
-        // For 'all' or 'missing_content': generate if content is missing
-        if (hasContent) {
-          results.push({ lesson_id: lesson.id, action: 'skip', success: true });
+        // ── MODE: missing_content ──
+        // Only generate text content where missing. Never touch visuals.
+        if (mode === 'missing_content') {
+          if (hasContent) {
+            results.push({ lesson_id: lesson.id, action: 'skip', success: true });
+            continue;
+          }
+          const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
+          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error });
+          await delay(2000);
           continue;
         }
 
-        // Generate content in the track-determined language
-        const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
-        results.push({ lesson_id: lesson.id, action: `generate_${trackLang}`, success: genResult.success, error: genResult.error });
-        await delay(2000);
+        // ── MODE: all ──
+        // Full recovery: generate text if missing, then visuals if missing
+        if (!hasContent) {
+          const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
+          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error });
+          if (!genResult.success) continue;
+          await delay(2000);
+
+          // After generating text, also generate visuals
+          // Re-fetch the newly created content for the summary_text
+          const { data: freshContent } = await supabase
+            .from('lesson_ai_content')
+            .select('summary_text')
+            .eq('lesson_id', lesson.id)
+            .maybeSingle();
+
+          if (freshContent?.summary_text) {
+            const { error: visErr } = await supabase.functions.invoke('generate-lesson-infographics', {
+              body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: freshContent.summary_text, course_grade: courseGrade }
+            });
+            if (visErr) {
+              results.push({ lesson_id: lesson.id, action: 'generate_visuals_failed', success: false, error: visErr.message });
+            }
+            await delay(3000);
+          }
+        } else if (!hasVisuals) {
+          // Text exists but visuals missing
+          const { error: visErr } = await supabase.functions.invoke('generate-lesson-infographics', {
+            body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
+          });
+          results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: !visErr, error: visErr?.message });
+          await delay(3000);
+        } else {
+          // Both text and visuals exist
+          results.push({ lesson_id: lesson.id, action: 'skip', success: true });
+        }
 
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -121,8 +165,8 @@ serve(async (req) => {
       }
     }
 
-    const processed = results.filter(r => r.action !== 'skip' && r.action !== 'skip_visuals').length;
-    const skipped = results.filter(r => r.action === 'skip' || r.action === 'skip_visuals').length;
+    const processed = results.filter(r => !r.action.startsWith('skip')).length;
+    const skipped = results.filter(r => r.action.startsWith('skip')).length;
     const failed = results.filter(r => !r.success).length;
 
     return new Response(
@@ -168,7 +212,6 @@ async function generateContent(
     const videoHash = hashVideoUrl(lesson.video_url);
     const lessonTitle = lang === 'ar' ? lesson.title_ar : lesson.title;
 
-    // Check current state
     const { data: existing } = await supabase
       .from('lesson_ai_content')
       .select('id, status')
@@ -226,7 +269,6 @@ async function generateContent(
       parsed = { slides_content: rawContent, infographic_content: '', revision_notes: '' };
     }
 
-    // Always store in main columns — one language per lesson, determined by track
     await supabase.from('lesson_ai_content').update({
       summary_text: parsed.slides_content || null,
       infographic_text: parsed.infographic_content || null,
