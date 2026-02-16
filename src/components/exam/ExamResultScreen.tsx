@@ -96,7 +96,7 @@ export const ExamResultScreen: React.FC<ExamResultScreenProps> = ({
   const displayLesson = isArabic ? lessonTitleAr : lessonTitle;
 
   return (
-    <div className="container mx-auto px-4 max-w-lg py-8 content-appear">
+    <div className="container mx-auto px-4 max-w-lg py-8 pb-[120px] md:pb-8 content-appear">
       <Card className="text-center border-0 shadow-lg">
         <CardContent className="py-10 px-6">
           {/* Result Icon */}

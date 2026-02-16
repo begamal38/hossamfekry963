@@ -125,7 +125,7 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
         </div>
         {isArabic ? 'ملخصات بصرية' : 'Visual Summaries'}
       </h4>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {images.map((img, i) => {
           const typeInfo = TYPE_LABELS[img.type] || TYPE_LABELS['concept'];
           const descriptionBullets = parseDescriptionBullets(img.description_ar || '');
@@ -240,7 +240,7 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
           </div>
           {isArabic ? 'المفاهيم الأساسية' : 'Key Concepts'}
         </h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {parsed.concepts.map((concept, i) => {
             const Icon = CONCEPT_ICONS[i % CONCEPT_ICONS.length];
             return (

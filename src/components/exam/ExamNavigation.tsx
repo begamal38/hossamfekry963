@@ -41,8 +41,8 @@ export const ExamNavigation: React.FC<ExamNavigationProps> = ({
   const isFirstQuestion = currentIndex === 0;
 
   return (
-    <div className="fixed left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t bottom-[88px] md:bottom-0 safe-area-bottom">
-      <div className="container mx-auto px-4 py-3 max-w-2xl">
+    <div className="fixed left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t bottom-[88px] md:bottom-0 safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="container mx-auto px-3 sm:px-4 py-3 max-w-2xl">
         {/* Question Indicators - Scrollable */}
         <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 scrollbar-hide justify-center">
           {questionIds.map((qId, idx) => (

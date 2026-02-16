@@ -61,7 +61,7 @@ export const ExamReviewScreen: React.FC<ExamReviewScreenProps> = ({
       </div>
 
       {/* Questions list */}
-      <div className="container mx-auto px-4 max-w-2xl py-5 pb-[220px] md:pb-20 space-y-4 content-appear">
+      <div className="container mx-auto px-3 sm:px-4 max-w-2xl py-5 pb-[240px] md:pb-20 space-y-4 content-appear">
         {questions.map((q, idx) => {
           const selected = answers[q.id];
           const isCorrect = selected === q.correct_option;

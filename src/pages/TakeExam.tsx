@@ -281,7 +281,7 @@ export default function TakeExam() {
     return (
       <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
         <Navbar />
-        <main className="pt-24 pb-16">
+        <main className="pt-24 pb-[120px] md:pb-16">
           <ExamReviewScreen
             questions={questions}
             answers={answers}
@@ -299,7 +299,7 @@ export default function TakeExam() {
     return (
       <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
         <Navbar />
-        <main className="pt-24 pb-16">
+        <main className="pt-24 pb-[120px] md:pb-16">
           <ExamResultScreen
             score={result.score}
             total={result.total}
@@ -331,7 +331,7 @@ export default function TakeExam() {
 
       {/* ZONE 2: Main Question Area - Scrollable */}
       {/* pb accounts for: exam nav (~120px) + mobile bottom nav (~88px) + breathing room */}
-      <main className="pt-40 pb-[220px] md:pb-36 content-appear">
+      <main className="pt-40 pb-[240px] md:pb-36 content-appear">
         <div className="container mx-auto px-4 max-w-2xl">
           {/* Exam Instructions - Only on first question */}
           {currentQuestionIndex === 0 && (
