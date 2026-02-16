@@ -97,7 +97,7 @@ serve(async (req) => {
             continue;
           }
           const { error } = await supabase.functions.invoke('generate-lesson-infographics', {
-            body: { lesson_id: lesson.id, lesson_title: lesson.title, summary_text: existing!.summary_text }
+            body: { lesson_id: lesson.id, lesson_title: lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
           });
           results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: !error, error: error?.message });
           await delay(3000);

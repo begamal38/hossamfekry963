@@ -143,6 +143,7 @@ export function SmartStudyAssistant({
         lesson_title: lessonTitle,
         summary_text: content.summary_text,
         force_regenerate: !!needsRegeneration,
+        course_grade: courseGrade,
       },
     }).then((res) => {
       if (res.data?.images) {
@@ -151,7 +152,7 @@ export function SmartStudyAssistant({
     }).catch(err => {
       console.error('[SmartStudyAssistant] Infographic generation error:', err);
     });
-  }, [content?.status, content?.summary_text, needsRegeneration, lessonId, lessonTitle]);
+  }, [content?.status, content?.summary_text, needsRegeneration, lessonId, lessonTitle, courseGrade]);
 
   if (!videoUrl) return null;
   if (content?.status === 'failed') return null;
