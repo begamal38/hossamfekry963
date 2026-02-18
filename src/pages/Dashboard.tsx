@@ -32,6 +32,11 @@ import { OverallProgressCard } from '@/components/dashboard/OverallProgressCard'
 import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
 import { StudentFocusStats } from '@/components/dashboard/StudentFocusStats';
 import { ExamHistorySection } from '@/components/dashboard/ExamHistorySection';
+import { StudyStreakCard } from '@/components/dashboard/StudyStreakCard';
+import { AchievementBadges } from '@/components/dashboard/AchievementBadges';
+import { UpcomingExamsCard } from '@/components/dashboard/UpcomingExamsCard';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { useStudentBehavior } from '@/hooks/useStudentBehavior';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -119,6 +124,7 @@ const Dashboard: React.FC = () => {
   // Get badge counts - MUST be before any early returns (React hooks rules)
   const { count: availableExamsCount } = useAvailableExamsCount();
   const { count: unreadMessagesCount } = useUnreadMessagesCount();
+  const { metrics: behaviorMetrics } = useStudentBehavior();
 
   // Scroll to top on mount
   useEffect(() => {
@@ -274,17 +280,10 @@ const Dashboard: React.FC = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="w-3.5 h-3.5 rounded-full bg-primary animate-pulse-dot"
-              style={{ animationDelay: `${i * 150}ms` }}
-            />
-          ))}
-        </div>
-      </div>
+      <>
+        <Navbar />
+        <DashboardSkeleton />
+      </>
     );
   }
 
@@ -375,9 +374,13 @@ const Dashboard: React.FC = () => {
                   {isArabic ? 'جاهز تكمل مذاكرة النهارده؟' : 'Ready to continue today?'}
                 </p>
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
-                  {hasValidName
-                    ? `${isArabic ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
-                    : `${isArabic ? 'أهلاً بيك' : 'Welcome'}! 👋`}
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const greeting = isArabic
+                      ? (hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور')
+                      : (hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening');
+                    return hasValidName ? `${greeting}, ${firstName}! 👋` : `${greeting}! 👋`;
+                  })()}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {/* Study Mode Badge - READ ONLY (hybrid normalized to online) */}
@@ -449,6 +452,12 @@ const Dashboard: React.FC = () => {
 
           {/* Quick Actions Strip - Ana Vodafone Grid */}
           <QuickActionsStrip actions={quickActions} isRTL={isArabic} className="mb-5" />
+
+          {/* Study Streak + Achievement Badges */}
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            <StudyStreakCard isArabic={isArabic} />
+            {behaviorMetrics && <AchievementBadges metrics={behaviorMetrics} isArabic={isArabic} />}
+          </div>
 
           {/* Smart Context Card - "Made for YOU" */}
           <SmartContextCard
@@ -601,6 +610,11 @@ const Dashboard: React.FC = () => {
             </div>
           )}
 
+
+          {/* Upcoming Exams */}
+          <div className="mb-5">
+            <UpcomingExamsCard isArabic={isArabic} />
+          </div>
 
           {/* Account Card - Mobile optimized */}
           <SectionCard
