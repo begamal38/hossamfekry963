@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
@@ -15,6 +15,8 @@ import { ExamNavigation } from '@/components/exam/ExamNavigation';
 import { ExamResultScreen } from '@/components/exam/ExamResultScreen';
 import { ExamReviewScreen } from '@/components/exam/ExamReviewScreen';
 import { ExamSubmitConfirmDialog } from '@/components/exam/ExamSubmitConfirmDialog';
+import { ExamCountdownBar } from '@/components/exam/ExamCountdownBar';
+import { useExamTimer } from '@/hooks/useExamTimer';
 
 interface ExamQuestion {
   id: string;
@@ -35,6 +37,7 @@ interface Exam {
   max_score: number;
   course_id: string;
   chapter_id: string | null;
+  time_limit_minutes: number | null;
   course?: {
     title: string;
     title_ar: string;
@@ -75,12 +78,95 @@ export default function TakeExam() {
   const [showReview, setShowReview] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [examStartedAt, setExamStartedAt] = useState<string | null>(null);
+  const [autoSubmitted, setAutoSubmitted] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const answeredCount = Object.keys(answers).length;
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-  // Beforeunload warning when exam is in progress
+  // Auto-submit when time expires
+  const handleTimeUp = useCallback(() => {
+    if (isSubmittingRef.current || showResult || existingAttempt) return;
+    setAutoSubmitted(true);
+    // Trigger submit directly (bypass confirm dialog)
+    handleAutoSubmit();
+  }, [showResult, existingAttempt]);
+
+  // Timer hook
+  const { remainingSeconds, totalSeconds, isTimerActive, isExpired, percentRemaining } = useExamTimer({
+    timeLimitMinutes: exam?.time_limit_minutes ?? null,
+    startedAt: examStartedAt,
+    isActive: !showResult && !existingAttempt && questions.length > 0,
+    onTimeUp: handleTimeUp,
+  });
+
+  // Auto-submit function (no confirmation dialog)
+  const handleAutoSubmit = useCallback(async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setSubmitting(true);
+
+    try {
+      let correctCount = 0;
+      const answersArray = questions.map(q => {
+        const userAnswer = answers[q.id];
+        const isCorrect = userAnswer === q.correct_option;
+        if (isCorrect) correctCount++;
+        return {
+          question_id: q.id,
+          selected: userAnswer || null,
+          correct: q.correct_option,
+          is_correct: isCorrect,
+        };
+      });
+
+      const { error } = await supabase
+        .from('exam_attempts')
+        .insert({
+          exam_id: examId,
+          user_id: user!.id,
+          score: correctCount,
+          total_questions: questions.length,
+          answers: answersArray,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      await supabase
+        .from('exam_results')
+        .insert({
+          exam_id: examId,
+          user_id: user!.id,
+          score: Math.round((correctCount / questions.length) * (exam?.max_score || 100)),
+        });
+
+      setResult({ score: correctCount, total: questions.length });
+      setShowResult(true);
+
+      toast({
+        title: isArabic ? 'انتهى وقت الامتحان' : 'Time is up',
+        description: isArabic 
+          ? 'انتهى وقت الامتحان وتم تسليم الإجابات تلقائياً'
+          : 'Time is up. Your answers were submitted automatically.',
+      });
+    } catch (error) {
+      console.error('Error auto-submitting exam:', error);
+      toast({
+        variant: 'destructive',
+        title: isArabic ? 'خطأ' : 'Error',
+        description: isArabic ? 'فشل في حفظ النتيجة' : 'Failed to save result',
+      });
+    } finally {
+      setSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+  }, [questions, answers, examId, user, exam, isArabic, toast]);
+
+
   useEffect(() => {
     if (questions.length === 0 || showResult) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -133,13 +219,15 @@ export default function TakeExam() {
         setExistingAttempt(attemptData);
         setShowResult(true);
         setResult({ score: attemptData.score, total: attemptData.total_questions });
-        // Restore answers from attempt for review
         const savedAnswers = attemptData.answers as any[];
         if (Array.isArray(savedAnswers)) {
           const restored: Record<string, string> = {};
           savedAnswers.forEach((a: any) => { if (a.question_id && a.selected) restored[a.question_id] = a.selected; });
           setAnswers(restored);
         }
+      } else {
+        // Record exam start time for timer (use existing in-progress attempt or create timestamp)
+        setExamStartedAt(new Date().toISOString());
       }
     } catch (error) {
       console.error('Error fetching exam:', error);
@@ -330,9 +418,19 @@ export default function TakeExam() {
       />
 
       {/* ZONE 2: Main Question Area - Scrollable */}
-      {/* pb accounts for: exam nav (~120px) + mobile bottom nav (~88px) + breathing room */}
-      <main className="pt-40 pb-[240px] md:pb-36 content-appear">
+      {/* pt accounts for: navbar(64) + status bar(~96) + timer bar if present */}
+      <main className={`${isTimerActive ? 'pt-48' : 'pt-40'} pb-[240px] md:pb-36 content-appear`}>
         <div className="container mx-auto px-4 max-w-2xl">
+          {/* Timer Countdown Bar */}
+          {isTimerActive && (
+            <ExamCountdownBar
+              remainingSeconds={remainingSeconds}
+              totalSeconds={totalSeconds}
+              percentRemaining={percentRemaining}
+              className="mb-4"
+            />
+          )}
+
           {/* Exam Instructions - Only on first question */}
           {currentQuestionIndex === 0 && (
             <Card className="mb-4 border-primary/20 bg-primary/5">
@@ -366,7 +464,7 @@ export default function TakeExam() {
             questionText={currentQuestion.question_text}
             questionImageUrl={currentQuestion.question_image_url}
             selectedAnswer={answers[currentQuestion.id]}
-            onSelectAnswer={(option) => handleSelectAnswer(currentQuestion.id, option)}
+            onSelectAnswer={(option) => !isExpired && handleSelectAnswer(currentQuestion.id, option)}
           />
         </div>
       </main>

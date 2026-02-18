@@ -1181,8 +1181,14 @@ export default function ManageExams() {
                   min={1}
                   value={examForm.time_limit_minutes}
                   onChange={(e) => setExamForm(prev => ({ ...prev, time_limit_minutes: e.target.value }))}
-                  placeholder={isArabic ? 'اختياري' : 'Optional'}
+                  placeholder={isArabic ? 'مثال: 15' : 'e.g. 15'}
                 />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {isArabic 
+                    ? 'الطالب هيتم إغلاق الامتحان تلقائياً بعد انتهاء الوقت'
+                    : 'The exam will auto-close when time expires'
+                  }
+                </p>
               </div>
             </div>
 
