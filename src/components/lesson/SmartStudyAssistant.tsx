@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { BookOpen, FileText, Sparkles, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -187,7 +188,12 @@ export function SmartStudyAssistant({
   const contentDir = isTrackArabic ? 'rtl' : 'ltr';
 
   return (
-    <section className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm w-full', className)}>
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 100 }}
+      className={cn('bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm w-full', className)}
+    >
       {/* Header */}
       <button
         onClick={() => setExpanded(prev => !prev)}
@@ -214,64 +220,97 @@ export function SmartStudyAssistant({
         {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
 
-      {expanded && (
-        <div className="px-5 pb-5">
-          {/* Tab Selector */}
-          <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 border-b border-border/40 -mx-5 px-5 scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors relative',
-                  activeTab === tab.id
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {tab.icon}
-                {isArabic ? tab.labelAr : tab.label}
-                {activeTab === tab.id && (
-                  <span className="absolute bottom-0 inset-x-1 h-0.5 bg-primary rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Content Area — direction from track */}
-          <div className="min-h-[120px]" dir={contentDir}>
-            {isGenerating ? (
-              <div className="bg-muted/20 rounded-xl p-5 space-y-3.5">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-[90%]" />
-                <Skeleton className="h-4 w-[75%]" />
-                <Skeleton className="h-4 w-[85%]" />
-                <Skeleton className="h-4 w-[60%]" />
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5">
+              {/* Tab Selector */}
+              <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 border-b border-border/40 -mx-5 px-5 scrollbar-hide">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors relative',
+                      activeTab === tab.id
+                        ? 'text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {tab.icon}
+                    {isArabic ? tab.labelAr : tab.label}
+                    {activeTab === tab.id && (
+                      <motion.span
+                        layoutId="study-tab-indicator"
+                        className="absolute bottom-0 inset-x-1 h-0.5 bg-primary rounded-full"
+                      />
+                    )}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <>
-                {activeTab === 'explanation' && (
-                  <ExplanationTab
-                    summaryText={displaySummary}
-                    infographicText={displayInfographic}
-                  />
+
+              {/* Content Area — direction from track */}
+              <div className="min-h-[120px]" dir={contentDir}>
+                {isGenerating ? (
+                  <div className="bg-muted/20 rounded-xl p-6 space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {isArabic ? 'بنحضر المحتوى...' : 'Generating content...'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {isArabic ? 'كمان ثواني وهيكون جاهز' : 'Almost ready'}
+                        </p>
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-[90%]" />
+                    <Skeleton className="h-4 w-[75%]" />
+                    <Skeleton className="h-4 w-[60%]" />
+                  </div>
+                ) : (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeTab}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {activeTab === 'explanation' && (
+                        <ExplanationTab
+                          summaryText={displaySummary}
+                          infographicText={displayInfographic}
+                        />
+                      )}
+                      {activeTab === 'revision' && (
+                        <RevisionTab revisionNotes={displayRevision} />
+                      )}
+                      {activeTab === 'visual' && (
+                        <VisualSummaryTab
+                          summaryText={displaySummary}
+                          infographicText={displayInfographic}
+                          revisionNotes={displayRevision}
+                          infographicImages={content?.infographic_images || null}
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 )}
-                {activeTab === 'revision' && (
-                  <RevisionTab revisionNotes={displayRevision} />
-                )}
-                {activeTab === 'visual' && (
-                  <VisualSummaryTab
-                    summaryText={displaySummary}
-                    infographicText={displayInfographic}
-                    revisionNotes={displayRevision}
-                    infographicImages={content?.infographic_images || null}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </section>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
   );
 }

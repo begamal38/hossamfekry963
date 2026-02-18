@@ -43,6 +43,7 @@ interface Course {
   slug: string | null;
   is_hidden?: boolean;
   enrolled_count?: number;
+  created_at?: string;
 }
 
 interface Enrollment {
