@@ -280,30 +280,30 @@ export default function AssistantDashboard() {
       <PullToRefresh onRefresh={handleRefresh} className="h-[calc(100vh-4rem)] md:h-auto md:overflow-visible">
         <main className="pt-20 sm:pt-24 pb-8 content-appear">
           <div className="container mx-auto px-3 sm:px-4 max-w-4xl">
-          {/* Welcome Header - Compact */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
+          {/* Welcome Header */}
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-5 pt-1">
+            <div className="min-w-0 flex-1 basis-[60%]">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-snug break-words">
                 {(() => {
                   const hour = new Date().getHours();
                   const greeting = isRTL
                     ? (hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور')
                     : (hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening');
-                  return hasValidName ? `${greeting}, ${firstName}! 👋` : `${greeting}! 👋`;
+                  return hasValidName ? `${greeting}، ${firstName} 👋` : `${greeting} 👋`;
                 })()}
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
                 {t('assistant.platformSubtitle')}
               </p>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <PlatformGuidance role="assistant_teacher" isArabic={isRTL} />
-              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0 h-9 w-9">
                 <Link to="/assistant/notifications">
                   <Bell className="w-5 h-5" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0 h-9 w-9">
                 <Link to="/settings">
                   <Settings className="w-5 h-5" />
                 </Link>
