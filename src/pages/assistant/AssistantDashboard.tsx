@@ -35,6 +35,8 @@ import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { SystemStatusTooltip } from '@/components/assistant/SystemStatusTooltip';
 import { SystemStatusIndicator } from '@/components/assistant/SystemStatusIndicator';
 import { SyncAssistantPanel } from '@/components/assistant/SyncAssistantPanel';
+import { StudentStatusOverview } from '@/components/assistant/StudentStatusOverview';
+import { ActivityFeed } from '@/components/assistant/ActivityFeed';
 
 interface Stats {
   totalStudents: number;
@@ -282,9 +284,13 @@ export default function AssistantDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="min-w-0 flex-1">
               <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                {hasValidName 
-                  ? `${isRTL ? 'أهلاً' : 'Hey'} ${firstName}! 👋`
-                  : `${isRTL ? 'أهلاً بيك' : 'Welcome'}! 👋`}
+                {(() => {
+                  const hour = new Date().getHours();
+                  const greeting = isRTL
+                    ? (hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور')
+                    : (hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening');
+                  return hasValidName ? `${greeting}, ${firstName}! 👋` : `${greeting}! 👋`;
+                })()}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 {t('assistant.platformSubtitle')}
@@ -365,6 +371,15 @@ export default function AssistantDashboard() {
             />
           </div>
 
+          {/* Student Status Overview */}
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              {isRTL ? 'حالة الطلاب' : 'Student Status'}
+            </h3>
+            <StudentStatusOverview isRTL={isRTL} />
+          </div>
+
           {/* Conversion Insights */}
           <div className="mb-5">
             <ConversionInsightsCard />
@@ -407,6 +422,15 @@ export default function AssistantDashboard() {
                 <span className="text-xs font-medium text-foreground">{t('assistant.exams')}</span>
               </Link>
             </div>
+          </SectionCard>
+          {/* Recent Activity Feed */}
+          <SectionCard
+            title={isRTL ? 'آخر النشاطات' : 'Recent Activity'}
+            icon={TrendingUp}
+            isRTL={isRTL}
+            className="mb-5"
+          >
+            <ActivityFeed isRTL={isRTL} />
           </SectionCard>
 
           {/* Advanced Actions - Collapsible */}
