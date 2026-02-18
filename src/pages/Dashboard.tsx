@@ -373,13 +373,13 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-1">
                   {isArabic ? 'جاهز تكمل مذاكرة النهارده؟' : 'Ready to continue today?'}
                 </p>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-snug break-words">
                   {(() => {
                     const hour = new Date().getHours();
                     const greeting = isArabic
                       ? (hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور')
                       : (hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening');
-                    return hasValidName ? `${greeting}, ${firstName}! 👋` : `${greeting}! 👋`;
+                    return hasValidName ? `${greeting}، ${firstName} 👋` : `${greeting} 👋`;
                   })()}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
