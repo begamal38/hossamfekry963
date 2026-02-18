@@ -1,6 +1,7 @@
 import React, { forwardRef, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Play, Loader2, CheckCircle, BookOpen, Users } from 'lucide-react';
+import { Clock, Play, Loader2, CheckCircle, BookOpen, Users, Sparkles, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,7 +32,8 @@ interface Course {
   lessons_count: number;
   duration_hours: number;
   slug: string | null;
-  enrolled_count?: number; // Number of enrolled students
+  enrolled_count?: number;
+  created_at?: string;
 }
 
 interface CourseCardProps {
@@ -94,6 +96,10 @@ const CourseCardInner = ({
   const coverImage = course.thumbnail_url || DEFAULT_COURSE_COVER;
   const hasCustomCover = !!course.thumbnail_url;
   
+  // Dynamic badges
+  const isNew = course.created_at ? (Date.now() - new Date(course.created_at).getTime()) < 14 * 24 * 60 * 60 * 1000 : false;
+  const isPopular = (course.enrolled_count ?? 0) >= 10;
+  
   const handleAction = () => {
     if (onAction) {
       onAction(course.id, course.is_free, course.price, course.grade, course.slug);
@@ -101,14 +107,14 @@ const CourseCardInner = ({
   };
 
   return (
-    <article 
+    <motion.article 
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 100, delay: index * 0.05 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
       className={cn(
-        "group relative bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-150",
-        // Clean shadow - Vodafone style
-        "shadow-card hover:shadow-elevated",
-        // Desktop: subtle lift on hover
-        "md:hover:-translate-y-1 md:hover:border-primary/30",
-        // Mobile: optimized touch feedback
+        "group relative bg-card rounded-2xl border border-border/50 overflow-hidden transition-colors duration-150",
+        "shadow-card hover:shadow-elevated hover:border-primary/30",
         "active:scale-[0.98] touch-manipulation select-none"
       )}
     >
@@ -153,6 +159,24 @@ const CourseCardInner = ({
             <ContentTypeBadge isFree={course.is_free} />
           )}
         </div>
+
+        {/* New / Popular dynamic badges (bottom-left of image) */}
+        {!isPreview && !isAssistantOrAdmin && (isNew || isPopular) && (
+          <div className="absolute bottom-3 left-3 z-10 flex gap-1.5">
+            {isNew && (
+              <Badge className="bg-emerald-500 text-white shadow-lg gap-1 text-[10px]">
+                <Sparkles className="w-3 h-3" />
+                {isArabic ? 'جديد' : 'New'}
+              </Badge>
+            )}
+            {isPopular && !isNew && (
+              <Badge className="bg-accent text-accent-foreground shadow-lg gap-1 text-[10px]">
+                <TrendingUp className="w-3 h-3" />
+                {isArabic ? 'شائع' : 'Popular'}
+              </Badge>
+            )}
+          </div>
+        )}
         
         {/* Enrolled/Teacher Badge (top-right) */}
         {isEnrolled && !isAssistantOrAdmin && !isPreview && (
@@ -296,7 +320,7 @@ const CourseCardInner = ({
           </Button>
         )}
       </div>
-    </article>
+    </motion.article>
   );
 };
 
