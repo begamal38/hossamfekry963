@@ -18,7 +18,9 @@ import {
   Image as ImageIcon,
   Loader2,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  Timer
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
@@ -954,9 +956,12 @@ export default function ManageExams() {
                                 label: `${exam.pass_mark}%`,
                                 icon: CheckCircle2,
                               },
-                              ...(exam.time_limit_minutes ? [{
-                                label: `${exam.time_limit_minutes} ${isArabic ? 'د' : 'min'}`,
-                              }] : []),
+                              {
+                                label: exam.time_limit_minutes 
+                                  ? `${exam.time_limit_minutes} ${isArabic ? 'دقيقة' : 'min'}`
+                                  : (isArabic ? 'بدون وقت' : 'No limit'),
+                                icon: exam.time_limit_minutes ? Timer : Clock,
+                              },
                             ]}
                             actions={renderExamActions(exam)}
                           />
@@ -1185,8 +1190,12 @@ export default function ManageExams() {
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                   {isArabic 
-                    ? 'الطالب هيتم إغلاق الامتحان تلقائياً بعد انتهاء الوقت'
-                    : 'The exam will auto-close when time expires'
+                    ? editingExam 
+                      ? 'الوقت يطبق فقط على الطلاب الذين يبدأون الامتحان بعد تحديده'
+                      : 'الطالب هيتم إغلاق الامتحان تلقائياً بعد انتهاء الوقت'
+                    : editingExam
+                      ? 'Time applies only to new attempts'
+                      : 'The exam will auto-close when time expires'
                   }
                 </p>
               </div>
