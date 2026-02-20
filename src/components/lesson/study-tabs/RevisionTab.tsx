@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 
 interface RevisionTabProps {
   revisionNotes: string | null;
+  isTrackArabic?: boolean;
 }
 
 interface RevisionSection {
@@ -126,10 +127,9 @@ function parseRevisionSections(text: string | null): RevisionSection[] {
   return sections;
 }
 
-function RevisionSectionCard({ section }: { section: RevisionSection }) {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+function RevisionSectionCard({ section, isTrackArabic }: { section: RevisionSection; isTrackArabic: boolean }) {
   const [open, setOpen] = useState(true);
+  const isArabic = isTrackArabic;
   
   return (
     <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
@@ -170,9 +170,9 @@ function RevisionSectionCard({ section }: { section: RevisionSection }) {
   );
 }
 
-export function RevisionTab({ revisionNotes }: RevisionTabProps) {
+export function RevisionTab({ revisionNotes, isTrackArabic = true }: RevisionTabProps) {
   const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const isUIArabic = language === 'ar';
   
   const sections = useMemo(
     () => parseRevisionSections(revisionNotes),
@@ -183,16 +183,16 @@ export function RevisionTab({ revisionNotes }: RevisionTabProps) {
     return (
       <div className="bg-muted/30 rounded-xl p-5 text-center">
         <p className="text-muted-foreground text-sm">
-          {isArabic ? 'لا يوجد محتوى لهذا القسم' : 'No content available'}
+          {isUIArabic ? 'لا يوجد محتوى لهذا القسم' : 'No content available'}
         </p>
       </div>
     );
   }
   
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', isTrackArabic ? 'text-right' : 'text-left')}>
       {sections.map(section => (
-        <RevisionSectionCard key={section.id} section={section} />
+        <RevisionSectionCard key={section.id} section={section} isTrackArabic={isTrackArabic} />
       ))}
     </div>
   );
