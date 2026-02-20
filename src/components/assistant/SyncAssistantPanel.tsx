@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { RefreshCw, Play, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Play, CheckCircle, XCircle, Loader2, AlertTriangle, Clock, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface BatchResult {
   failed: number;
   has_more: boolean;
   next_offset: number;
-  results: Array<{ lesson_id: string; action: string; success: boolean; error?: string }>;
+  results: Array<{ lesson_id: string; action: string; success: boolean; error?: string; retried?: boolean }>;
 }
 
 const MODES: { value: SyncMode; labelAr: string; labelEn: string }[] = [
@@ -35,12 +35,14 @@ export function SyncAssistantPanel() {
   const [processedTotal, setProcessedTotal] = useState(0);
   const [skippedTotal, setSkippedTotal] = useState(0);
   const [failedTotal, setFailedTotal] = useState(0);
+  const [retriedTotal, setRetriedTotal] = useState(0);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusHint, setStatusHint] = useState<string | null>(null);
   const abortRef = useRef(false);
 
-  const BATCH_SIZE = 15;
+  const BATCH_SIZE = 5;
 
   const runSync = useCallback(async () => {
     setRunning(true);
@@ -49,14 +51,18 @@ export function SyncAssistantPanel() {
     setProcessedTotal(0);
     setSkippedTotal(0);
     setFailedTotal(0);
+    setRetriedTotal(0);
     setCurrentOffset(0);
     setTotalLessons(0);
+    setStatusHint(null);
     abortRef.current = false;
 
     let offset = 0;
 
     while (!abortRef.current) {
       try {
+        setStatusHint(isRTL ? 'جاري إرسال الدفعة...' : 'Sending batch...');
+
         const { data, error: fnError } = await supabase.functions.invoke('sync-lesson-content', {
           body: { mode, batch_size: BATCH_SIZE, offset },
         });
@@ -68,11 +74,16 @@ export function SyncAssistantPanel() {
 
         const result = data as BatchResult;
 
+        // Count retried items
+        const batchRetried = (result.results || []).filter(r => r.retried).length;
+
         if (result.status === 'complete' || !result.has_more) {
           setTotalLessons(result.total_lessons || totalLessons);
           setProcessedTotal(prev => prev + (result.processed || 0));
           setSkippedTotal(prev => prev + (result.skipped || 0));
           setFailedTotal(prev => prev + (result.failed || 0));
+          setRetriedTotal(prev => prev + batchRetried);
+          setStatusHint(null);
           setDone(true);
           break;
         }
@@ -81,16 +92,22 @@ export function SyncAssistantPanel() {
         setProcessedTotal(prev => prev + result.processed);
         setSkippedTotal(prev => prev + result.skipped);
         setFailedTotal(prev => prev + result.failed);
+        setRetriedTotal(prev => prev + batchRetried);
         setCurrentOffset(result.next_offset);
         offset = result.next_offset;
+
+        // Pause between batches to avoid overloading
+        setStatusHint(isRTL ? 'في انتظار فتحة AI...' : 'Waiting for AI slot...');
+        await new Promise(resolve => setTimeout(resolve, 4000));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
         break;
       }
     }
 
+    setStatusHint(null);
     setRunning(false);
-  }, [mode]);
+  }, [mode, isRTL]);
 
   const stopSync = useCallback(() => {
     abortRef.current = true;
@@ -154,6 +171,12 @@ export function SyncAssistantPanel() {
             <span className="flex items-center gap-1 text-muted-foreground">
               {isRTL ? `تخطي: ${skippedTotal}` : `Skipped: ${skippedTotal}`}
             </span>
+            {retriedTotal > 0 && (
+              <span className="flex items-center gap-1 text-amber-600">
+                <RotateCcw className="w-3.5 h-3.5" />
+                {isRTL ? `إعادة: ${retriedTotal}` : `Retried: ${retriedTotal}`}
+              </span>
+            )}
             {failedTotal > 0 && (
               <span className="flex items-center gap-1 text-red-600">
                 <XCircle className="w-3.5 h-3.5" />
@@ -161,6 +184,14 @@ export function SyncAssistantPanel() {
               </span>
             )}
           </div>
+
+          {/* Status hint */}
+          {statusHint && running && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 animate-pulse">
+              <Clock className="w-3 h-3" />
+              {statusHint}
+            </div>
+          )}
         </div>
       )}
 
