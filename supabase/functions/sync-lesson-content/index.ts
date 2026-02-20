@@ -29,13 +29,22 @@ function getTrackLanguage(courseGrade?: string): 'ar' | 'en' {
   return courseGrade.includes('languages') ? 'en' : 'ar';
 }
 
+/** Retry-aware delay. Returns true if should abort. */
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { mode = 'all', batch_size = 15, offset = 0 }: SyncRequest = await req.json();
+    // Cap batch_size to 5 for safety
+    const body: SyncRequest = await req.json();
+    const mode = body.mode || 'all';
+    const batch_size = Math.min(body.batch_size || 5, 10);
+    const offset = body.offset || 0;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -79,8 +88,9 @@ serve(async (req) => {
       .not('video_url', 'is', null)
       .eq('is_active', true);
 
-    const results: Array<{ lesson_id: string; action: string; success: boolean; error?: string }> = [];
+    const results: Array<{ lesson_id: string; action: string; success: boolean; error?: string; retried?: boolean }> = [];
 
+    // Process lessons SEQUENTIALLY — one at a time
     for (const lesson of lessons) {
       const existing = contentMap.get(lesson.id);
       const hasContent = existing && existing.status === 'ready' && !!existing.summary_text;
@@ -90,48 +100,46 @@ serve(async (req) => {
 
       try {
         // ── MODE: visuals_only ──
-        // Only generate visuals for lessons that have text content but no visuals
         if (mode === 'visuals_only') {
           if (hasVisuals) {
             results.push({ lesson_id: lesson.id, action: 'skip_visuals', success: true });
             continue;
           }
           if (!hasContent) {
-            // Can't generate visuals without text content
             results.push({ lesson_id: lesson.id, action: 'skip_no_text', success: true });
             continue;
           }
-          const { error } = await supabase.functions.invoke('generate-lesson-infographics', {
-            body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
+          const visResult = await invokeWithRetry(supabase, 'generate-lesson-infographics', {
+            lesson_id: lesson.id,
+            lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title,
+            summary_text: existing!.summary_text,
+            course_grade: courseGrade,
           });
-          results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: !error, error: error?.message });
+          results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: visResult.success, error: visResult.error, retried: visResult.retried });
           await delay(3000);
           continue;
         }
 
         // ── MODE: missing_content ──
-        // Only generate text content where missing. Never touch visuals.
         if (mode === 'missing_content') {
           if (hasContent) {
             results.push({ lesson_id: lesson.id, action: 'skip', success: true });
             continue;
           }
-          const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
-          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error });
-          await delay(2000);
+          const genResult = await generateContentWithRetry(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
+          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error, retried: genResult.retried });
+          await delay(3000);
           continue;
         }
 
         // ── MODE: all ──
-        // Full recovery: generate text if missing, then visuals if missing
         if (!hasContent) {
-          const genResult = await generateContent(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
-          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error });
+          const genResult = await generateContentWithRetry(supabase, LOVABLE_API_KEY, lesson, trackLang, courseGrade);
+          results.push({ lesson_id: lesson.id, action: `generate_text_${trackLang}`, success: genResult.success, error: genResult.error, retried: genResult.retried });
           if (!genResult.success) continue;
-          await delay(2000);
+          await delay(3000);
 
           // After generating text, also generate visuals
-          // Re-fetch the newly created content for the summary_text
           const { data: freshContent } = await supabase
             .from('lesson_ai_content')
             .select('summary_text')
@@ -139,23 +147,27 @@ serve(async (req) => {
             .maybeSingle();
 
           if (freshContent?.summary_text) {
-            const { error: visErr } = await supabase.functions.invoke('generate-lesson-infographics', {
-              body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: freshContent.summary_text, course_grade: courseGrade }
+            const visResult = await invokeWithRetry(supabase, 'generate-lesson-infographics', {
+              lesson_id: lesson.id,
+              lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title,
+              summary_text: freshContent.summary_text,
+              course_grade: courseGrade,
             });
-            if (visErr) {
-              results.push({ lesson_id: lesson.id, action: 'generate_visuals_failed', success: false, error: visErr.message });
+            if (!visResult.success) {
+              results.push({ lesson_id: lesson.id, action: 'generate_visuals_failed', success: false, error: visResult.error, retried: visResult.retried });
             }
-            await delay(3000);
+            await delay(4000);
           }
         } else if (!hasVisuals) {
-          // Text exists but visuals missing
-          const { error: visErr } = await supabase.functions.invoke('generate-lesson-infographics', {
-            body: { lesson_id: lesson.id, lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title, summary_text: existing!.summary_text, course_grade: courseGrade }
+          const visResult = await invokeWithRetry(supabase, 'generate-lesson-infographics', {
+            lesson_id: lesson.id,
+            lesson_title: trackLang === 'ar' ? lesson.title_ar : lesson.title,
+            summary_text: existing!.summary_text,
+            course_grade: courseGrade,
           });
-          results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: !visErr, error: visErr?.message });
-          await delay(3000);
+          results.push({ lesson_id: lesson.id, action: 'generate_visuals', success: visResult.success, error: visResult.error, retried: visResult.retried });
+          await delay(4000);
         } else {
-          // Both text and visuals exist
           results.push({ lesson_id: lesson.id, action: 'skip', success: true });
         }
 
@@ -195,8 +207,56 @@ serve(async (req) => {
   }
 });
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Invoke a Supabase function with one retry on 429 (rate limit).
+ * Waits 10s before retrying.
+ */
+async function invokeWithRetry(
+  supabase: any,
+  fnName: string,
+  body: Record<string, any>,
+): Promise<{ success: boolean; error?: string; retried?: boolean }> {
+  const attempt = async () => {
+    const { data, error } = await supabase.functions.invoke(fnName, { body });
+    return { data, error };
+  };
+
+  let res = await attempt();
+  if (res.error) {
+    const msg = res.error.message || '';
+    // Check for rate limit
+    if (msg.includes('429') || msg.toLowerCase().includes('rate')) {
+      console.log(`[sync-lesson-content] 429 on ${fnName}, waiting 10s and retrying...`);
+      await delay(10000);
+      res = await attempt();
+      if (res.error) {
+        return { success: false, error: res.error.message, retried: true };
+      }
+      return { success: true, retried: true };
+    }
+    return { success: false, error: msg };
+  }
+  return { success: true };
+}
+
+/**
+ * Generate text content with one retry on 429.
+ */
+async function generateContentWithRetry(
+  supabase: any,
+  apiKey: string,
+  lesson: { id: string; title: string; title_ar: string; video_url: string | null; course_id: string; chapter_id: string | null },
+  lang: 'ar' | 'en',
+  courseGrade?: string,
+): Promise<{ success: boolean; error?: string; retried?: boolean }> {
+  const result = await generateContent(supabase, apiKey, lesson, lang, courseGrade);
+  if (!result.success && result.error?.includes('429')) {
+    console.log(`[sync-lesson-content] 429 on text generation, waiting 10s and retrying...`);
+    await delay(10000);
+    const retry = await generateContent(supabase, apiKey, lesson, lang, courseGrade);
+    return { ...retry, retried: true };
+  }
+  return result;
 }
 
 async function generateContent(
