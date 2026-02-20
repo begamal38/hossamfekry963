@@ -14,6 +14,7 @@ interface VisualSummaryTabProps {
   infographicText: string | null;
   revisionNotes: string | null;
   infographicImages: any[] | null;
+  isTrackArabic?: boolean;
 }
 
 interface ParsedConcept {
@@ -110,9 +111,8 @@ function parseDescriptionBullets(description: string): string[] {
     .filter(s => s.length > 2);
 }
 
-function InfographicImagesGrid({ images }: { images: any[] }) {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+function InfographicImagesGrid({ images, isTrackArabic }: { images: any[]; isTrackArabic: boolean }) {
+  const isArabic = isTrackArabic;
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   
   if (!images || images.length === 0) return null;
@@ -194,9 +194,9 @@ function InfographicImagesGrid({ images }: { images: any[] }) {
   );
 }
 
-export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, infographicImages }: VisualSummaryTabProps) {
+export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, infographicImages, isTrackArabic = true }: VisualSummaryTabProps) {
   const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const isArabic = isTrackArabic;
   
   const parsed = useMemo(() => {
     const allText = [summaryText, infographicText, revisionNotes].filter(Boolean).join('\n\n');
@@ -227,7 +227,7 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
 
   // AI Generated Infographic Images (priority placement)
   if (infographicImages && infographicImages.length > 0) {
-    sections.push(<InfographicImagesGrid key="images" images={infographicImages} />);
+    sections.push(<InfographicImagesGrid key="images" images={infographicImages} isTrackArabic={isTrackArabic} />);
   }
 
   // Concept Cards
@@ -314,7 +314,7 @@ export function VisualSummaryTab({ summaryText, infographicText, revisionNotes, 
   }
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-6', isTrackArabic ? 'text-right' : 'text-left')}>
       {sections.map((section, i) => (
         <React.Fragment key={i}>
           {section}

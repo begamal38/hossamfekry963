@@ -290,10 +290,11 @@ export function SmartStudyAssistant({
                         <ExplanationTab
                           summaryText={displaySummary}
                           infographicText={displayInfographic}
+                          isTrackArabic={isTrackArabic}
                         />
                       )}
                       {activeTab === 'revision' && (
-                        <RevisionTab revisionNotes={displayRevision} />
+                        <RevisionTab revisionNotes={displayRevision} isTrackArabic={isTrackArabic} />
                       )}
                       {activeTab === 'visual' && (
                         <VisualSummaryTab
@@ -301,6 +302,7 @@ export function SmartStudyAssistant({
                           infographicText={displayInfographic}
                           revisionNotes={displayRevision}
                           infographicImages={content?.infographic_images || null}
+                          isTrackArabic={isTrackArabic}
                         />
                       )}
                     </motion.div>

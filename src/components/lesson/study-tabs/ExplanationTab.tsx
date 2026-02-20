@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator';
 interface ExplanationTabProps {
   summaryText: string | null;
   infographicText: string | null;
+  /** Whether the course track is Arabic (determines content labels, not UI language) */
+  isTrackArabic?: boolean;
 }
 
 interface ContentBlock {
@@ -140,10 +142,9 @@ function parseIntoBlocks(summaryText: string | null, infographicText: string | n
   return blocks;
 }
 
-function ContentBlockCard({ block, isLast }: { block: ContentBlock; isLast: boolean }) {
-  const { language } = useLanguage();
-  const isArabic = language === 'ar';
+function ContentBlockCard({ block, isLast, isTrackArabic }: { block: ContentBlock; isLast: boolean; isTrackArabic: boolean }) {
   const [open, setOpen] = useState(true);
+  const isArabic = isTrackArabic;
   
   return (
     <div className="space-y-0">
@@ -187,9 +188,9 @@ function ContentBlockCard({ block, isLast }: { block: ContentBlock; isLast: bool
   );
 }
 
-export function ExplanationTab({ summaryText, infographicText }: ExplanationTabProps) {
+export function ExplanationTab({ summaryText, infographicText, isTrackArabic = true }: ExplanationTabProps) {
   const { language } = useLanguage();
-  const isArabic = language === 'ar';
+  const isUIArabic = language === 'ar';
   
   const blocks = useMemo(
     () => parseIntoBlocks(summaryText, infographicText),
@@ -200,16 +201,16 @@ export function ExplanationTab({ summaryText, infographicText }: ExplanationTabP
     return (
       <div className="bg-muted/30 rounded-xl p-5 text-center">
         <p className="text-muted-foreground text-sm">
-          {isArabic ? 'لا يوجد محتوى لهذا القسم' : 'No content available'}
+          {isUIArabic ? 'لا يوجد محتوى لهذا القسم' : 'No content available'}
         </p>
       </div>
     );
   }
   
   return (
-    <div className="space-y-4">
+    <div className={cn('space-y-4', isTrackArabic ? 'text-right' : 'text-left')}>
       {blocks.map((block, i) => (
-        <ContentBlockCard key={block.id} block={block} isLast={i === blocks.length - 1} />
+        <ContentBlockCard key={block.id} block={block} isLast={i === blocks.length - 1} isTrackArabic={isTrackArabic} />
       ))}
     </div>
   );
