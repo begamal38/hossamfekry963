@@ -122,19 +122,35 @@ export default function TakeExam() {
         };
       });
 
-      const { error } = await supabase
+      // Update existing in-progress attempt to completed
+      const { error: updateError } = await supabase
         .from('exam_attempts')
-        .insert({
-          exam_id: examId,
-          user_id: user!.id,
+        .update({
           score: correctCount,
           total_questions: questions.length,
           answers: answersArray,
           is_completed: true,
           completed_at: new Date().toISOString(),
-        });
+        })
+        .eq('exam_id', examId)
+        .eq('user_id', user!.id)
+        .eq('is_completed', false);
 
-      if (error) throw error;
+      // Fallback: if no in-progress attempt found, insert new one
+      if (updateError) {
+        const { error: insertError } = await supabase
+          .from('exam_attempts')
+          .insert({
+            exam_id: examId,
+            user_id: user!.id,
+            score: correctCount,
+            total_questions: questions.length,
+            answers: answersArray,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          });
+        if (insertError) throw insertError;
+      }
 
       await supabase
         .from('exam_results')
@@ -207,7 +223,8 @@ export default function TakeExam() {
       if (questionsError) throw questionsError;
       setQuestions(questionsData || []);
 
-      const { data: attemptData } = await supabase
+      // Check for completed attempt first
+      const { data: completedAttempt } = await supabase
         .from('exam_attempts')
         .select('*')
         .eq('exam_id', examId)
@@ -215,19 +232,49 @@ export default function TakeExam() {
         .eq('is_completed', true)
         .maybeSingle();
 
-      if (attemptData) {
-        setExistingAttempt(attemptData);
+      if (completedAttempt) {
+        setExistingAttempt(completedAttempt);
         setShowResult(true);
-        setResult({ score: attemptData.score, total: attemptData.total_questions });
-        const savedAnswers = attemptData.answers as any[];
+        setResult({ score: completedAttempt.score, total: completedAttempt.total_questions });
+        const savedAnswers = completedAttempt.answers as any[];
         if (Array.isArray(savedAnswers)) {
           const restored: Record<string, string> = {};
           savedAnswers.forEach((a: any) => { if (a.question_id && a.selected) restored[a.question_id] = a.selected; });
           setAnswers(restored);
         }
       } else {
-        // Record exam start time for timer (use existing in-progress attempt or create timestamp)
-        setExamStartedAt(new Date().toISOString());
+        // Check for in-progress attempt (survives page refresh)
+        const { data: inProgressAttempt } = await supabase
+          .from('exam_attempts')
+          .select('id, started_at, answers')
+          .eq('exam_id', examId)
+          .eq('user_id', user!.id)
+          .eq('is_completed', false)
+          .maybeSingle();
+
+        if (inProgressAttempt) {
+          // Resume existing attempt — restore timer and answers
+          setExamStartedAt(inProgressAttempt.started_at);
+          const savedAnswers = inProgressAttempt.answers as any[];
+          if (Array.isArray(savedAnswers) && savedAnswers.length > 0) {
+            const restored: Record<string, string> = {};
+            savedAnswers.forEach((a: any) => { if (a.question_id && a.selected) restored[a.question_id] = a.selected; });
+            setAnswers(restored);
+          }
+        } else {
+          // Create new in-progress attempt to persist start time
+          const startTime = new Date().toISOString();
+          await supabase.from('exam_attempts').insert({
+            exam_id: examId,
+            user_id: user!.id,
+            score: 0,
+            total_questions: questionsData?.length || 0,
+            answers: [],
+            is_completed: false,
+            started_at: startTime,
+          });
+          setExamStartedAt(startTime);
+        }
       }
     } catch (error) {
       console.error('Error fetching exam:', error);
@@ -274,19 +321,35 @@ export default function TakeExam() {
         };
       });
 
-      const { error } = await supabase
+      // Update existing in-progress attempt to completed
+      const { error: updateError } = await supabase
         .from('exam_attempts')
-        .insert({
-          exam_id: examId,
-          user_id: user!.id,
+        .update({
           score: correctCount,
           total_questions: questions.length,
           answers: answersArray,
           is_completed: true,
           completed_at: new Date().toISOString(),
-        });
+        })
+        .eq('exam_id', examId)
+        .eq('user_id', user!.id)
+        .eq('is_completed', false);
 
-      if (error) throw error;
+      // Fallback: if no in-progress attempt found, insert new one
+      if (updateError) {
+        const { error: insertError } = await supabase
+          .from('exam_attempts')
+          .insert({
+            exam_id: examId,
+            user_id: user!.id,
+            score: correctCount,
+            total_questions: questions.length,
+            answers: answersArray,
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+          });
+        if (insertError) throw insertError;
+      }
 
       await supabase
         .from('exam_results')
