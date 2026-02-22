@@ -27,6 +27,7 @@ interface AiContent {
   infographic_images: any[] | null;
   status: string;
   key_points?: any;
+  video_url_hash?: string | null;
 }
 
 type TabId = 'explanation' | 'revision' | 'visual';
@@ -67,7 +68,7 @@ export function SmartStudyAssistant({
 
     const { data, error } = await supabase
       .from('lesson_ai_content')
-      .select('summary_text, infographic_text, revision_notes, infographic_images, status, key_points')
+      .select('summary_text, infographic_text, revision_notes, infographic_images, status, key_points, video_url_hash')
       .eq('lesson_id', lessonId)
       .maybeSingle();
 
@@ -126,6 +127,9 @@ export function SmartStudyAssistant({
     }
   }, [loading, content, videoUrl, triggerGeneration]);
 
+  // Detect legacy content: generated without video_url_hash or with old-format infographics
+  const isLegacyContent = content && content.status === 'ready' && !(content as any).video_url_hash;
+
   // Detect old-format infographics
   const needsRegeneration = content?.infographic_images && 
     (content.infographic_images as any[]).length > 0 &&
@@ -164,7 +168,7 @@ export function SmartStudyAssistant({
     { id: 'visual', label: 'Visual Summary', labelAr: 'ملخص بصري', icon: <ImageIcon className="w-4 h-4" /> },
   ];
 
-  const isGenerating = !content || content.status === 'generating';
+  const isGenerating = !content || content.status === 'generating' || isLegacyContent;
 
   // Content is always from the track-determined columns (main columns for Arabic, key_points.en for Languages)
   let displaySummary: string | null = null;
