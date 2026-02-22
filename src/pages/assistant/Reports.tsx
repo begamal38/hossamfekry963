@@ -433,16 +433,20 @@ export default function Reports() {
       totalScore: number;
     }>();
 
+    // Build a lookup map from the exams state (which has title + course data)
+    const examsMap = new Map(exams.map((e: any) => [e.id, e]));
+
     examAttempts.forEach(attempt => {
       if (!attempt.is_completed) return;
       
       const examId = attempt.exam_id;
       if (!examStats.has(examId)) {
+        const examInfo = examsMap.get(examId);
         examStats.set(examId, {
-          title: examId,
-          titleAr: examId,
-          courseName: '',
-          courseNameAr: '',
+          title: examInfo?.title || examId,
+          titleAr: examInfo?.title_ar || examId,
+          courseName: examInfo?.course?.title || '',
+          courseNameAr: examInfo?.course?.title_ar || '',
           attempts: 0,
           passed: 0,
           failed: 0,
@@ -472,7 +476,7 @@ export default function Reports() {
       avgScore: stat.attempts > 0 ? Math.round(stat.totalScore / stat.attempts) : 0,
       firstAttemptPassRate: 0,
     }));
-  }, [examAttempts]);
+  }, [examAttempts, exams]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HELPER FUNCTIONS

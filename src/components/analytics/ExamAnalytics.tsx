@@ -1,7 +1,6 @@
 import React from 'react';
-import { Award, CheckCircle2, XCircle, Users, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Award, CheckCircle2, XCircle, Users, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 interface ExamStat {
@@ -22,6 +21,12 @@ interface ExamAnalyticsProps {
   isArabic: boolean;
 }
 
+const getStatusBadge = (passRate: number, isArabic: boolean) => {
+  if (passRate >= 80) return { label: isArabic ? 'ممتاز' : 'Excellent', variant: 'success' as const };
+  if (passRate >= 50) return { label: isArabic ? 'متوسط' : 'Average', variant: 'warning' as const };
+  return { label: isArabic ? 'يحتاج مراجعة' : 'Needs Review', variant: 'destructive' as const };
+};
+
 export const ExamAnalytics: React.FC<ExamAnalyticsProps> = ({ exams, isArabic }) => {
   if (exams.length === 0) {
     return (
@@ -37,17 +42,15 @@ export const ExamAnalytics: React.FC<ExamAnalyticsProps> = ({ exams, isArabic })
     );
   }
 
-  // Calculate overall stats
   const totalAttempts = exams.reduce((sum, e) => sum + e.totalAttempts, 0);
   const totalPassed = exams.reduce((sum, e) => sum + e.passCount, 0);
   const totalFailed = exams.reduce((sum, e) => sum + e.failCount, 0);
   const overallPassRate = totalAttempts > 0 ? Math.round((totalPassed / totalAttempts) * 100) : 0;
 
-  // Sort by pass rate to highlight problem exams
   const sortedExams = [...exams].sort((a, b) => {
-    const aPassRate = a.totalAttempts > 0 ? (a.passCount / a.totalAttempts) * 100 : 0;
-    const bPassRate = b.totalAttempts > 0 ? (b.passCount / b.totalAttempts) * 100 : 0;
-    return aPassRate - bPassRate;
+    const aRate = a.totalAttempts > 0 ? (a.passCount / a.totalAttempts) * 100 : 0;
+    const bRate = b.totalAttempts > 0 ? (b.passCount / b.totalAttempts) * 100 : 0;
+    return aRate - bRate;
   });
 
   return (
@@ -65,10 +68,7 @@ export const ExamAnalytics: React.FC<ExamAnalyticsProps> = ({ exams, isArabic })
           <p className="text-xs text-muted-foreground">{isArabic ? 'إجمالي المحاولات' : 'Total Attempts'}</p>
         </div>
         <div className="text-center">
-          <p className={cn(
-            "text-2xl font-bold",
-            overallPassRate >= 60 ? "text-green-600" : "text-amber-600"
-          )}>
+          <p className={cn("text-2xl font-bold", overallPassRate >= 60 ? "text-green-600" : "text-amber-600")}>
             {overallPassRate}%
           </p>
           <p className="text-xs text-muted-foreground">{isArabic ? 'نسبة النجاح' : 'Pass Rate'}</p>
@@ -90,7 +90,7 @@ export const ExamAnalytics: React.FC<ExamAnalyticsProps> = ({ exams, isArabic })
             ? Math.round((exam.passCount / exam.totalAttempts) * 100) 
             : 0;
           const isProblematic = passRate < 50 && exam.totalAttempts >= 3;
-          const isStrong = passRate >= 80;
+          const status = getStatusBadge(passRate, isArabic);
 
           return (
             <div 
@@ -114,43 +114,36 @@ export const ExamAnalytics: React.FC<ExamAnalyticsProps> = ({ exams, isArabic })
                     {isArabic ? exam.courseNameAr : exam.courseName}
                   </p>
                 </div>
-                <Badge className={cn(
-                  "shrink-0",
-                  passRate >= 70 && "bg-green-600",
-                  passRate >= 50 && passRate < 70 && "bg-amber-600",
-                  passRate < 50 && "bg-red-600"
-                )}>
-                  {passRate}%
+                <Badge variant={status.variant} className="shrink-0 text-xs">
+                  {status.label}
                 </Badge>
               </div>
 
-              {/* Pass/Fail Bar */}
+              {/* Pass/Fail Bar with percentage label */}
               <div className="mb-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span className="text-green-600">{isArabic ? `نجاح ${passRate}%` : `Pass ${passRate}%`}</span>
+                  <span className="text-red-600">{isArabic ? `رسوب ${100 - passRate}%` : `Fail ${100 - passRate}%`}</span>
+                </div>
                 <div className="flex h-2 rounded-full overflow-hidden bg-muted">
-                  <div 
-                    className="bg-green-500 transition-all"
-                    style={{ width: `${passRate}%` }}
-                  />
-                  <div 
-                    className="bg-red-400 transition-all"
-                    style={{ width: `${100 - passRate}%` }}
-                  />
+                  <div className="bg-green-500 transition-all" style={{ width: `${passRate}%` }} />
+                  <div className="bg-red-400 transition-all" style={{ width: `${100 - passRate}%` }} />
                 </div>
               </div>
 
-              {/* Stats Row */}
-              <div className="flex items-center gap-4 text-xs">
+              {/* Stats Row - labeled */}
+              <div className="flex items-center gap-4 text-xs flex-wrap">
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Users className="h-3 w-3" />
-                  {exam.totalAttempts} {isArabic ? 'محاولة' : 'attempts'}
+                  {exam.totalAttempts} {isArabic ? 'طالب' : 'students'}
                 </span>
                 <span className="flex items-center gap-1 text-green-600">
                   <CheckCircle2 className="h-3 w-3" />
-                  {exam.passCount}
+                  {exam.passCount} {isArabic ? 'ناجح' : 'passed'}
                 </span>
                 <span className="flex items-center gap-1 text-red-600">
                   <XCircle className="h-3 w-3" />
-                  {exam.failCount}
+                  {exam.failCount} {isArabic ? 'راسب' : 'failed'}
                 </span>
                 <span className="text-muted-foreground">
                   {isArabic ? 'متوسط' : 'Avg'}: {exam.avgScore}%
